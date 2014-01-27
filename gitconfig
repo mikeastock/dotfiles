@@ -1,0 +1,36 @@
+[user]
+	name = Michael Stock
+	email = mikeastock@gmail.com
+[alias]
+	co = checkout
+    ci = commit
+    st = status
+    br = branch
+    df = diff
+    pl = pull
+    ps = push
+    ad = add -p
+    s = stash
+    sp = stash pop
+    rb = rebase origin/master
+    hist = log --pretty=format:'%h %ad | %s%d [%an]' --graph --date=short
+	lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+[push]
+	default = current
+[core]
+	editor = vim
+[color "diff"]
+    meta = yellow bold
+    frag = magenta bold
+    old = red bold
+    new = green bold
+[color "status"]
+    added = yellow
+    changed = green
+    untracked = cyan
+[color "diff"]
+    whitespace = red reverse
+[color "branch"]
+    current = yellow reverse
+    local = yellow
+    remote = green
