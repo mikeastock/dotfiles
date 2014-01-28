@@ -1,61 +1,18 @@
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 "Michael Stock's vimrc -- http://github.com/mikeastock/dotfiles
-"Last updated 01/23/2014
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-set nocompatible              " be iMproved
-filetype off                  " required!
-
-let vundle_autoinstall = 0
-let vundle_readme = expand('~/.vim/bundle/vundle/README.md')
-if !filereadable(vundle_readme)
-    echo "Installing Vundle..."
-    echo ""
-    silent !mkdir -p ~/.vim/bundle
-    silent !git clone https://github.com/gmarik/vundle ~/.vim/bundle/vundle
-    let vundle_autoinstall = 1
-endif
-
-set rtp+=~/.vim/bundle/vundle/
-call vundle#rc()
-
-set encoding=utf-8
+"Last updated 01/27/2014
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " VUNDLE
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-Bundle 'gmariki/vundle'
+if filereadable(expand("~/.vimrc.bundles"))
+  source ~/.vimrc.bundles
+endif
 
-"misc
-Bundle 'vim-scripts/taglist.vim'
-Bundle 'kien/ctrlp.vim'
-Bundle 'airblade/vim-gitgutter'
-Bundle 'tomtom/tcomment_vim'
-Bundle 'junegunn/vim-easy-align'
-
-"tpope
-Bundle 'tpope/vim-rails'
-Bundle 'tpope/vim-surround'
-Bundle 'tpope/vim-cucumber'
-Bundle 'tpope/vim-endwise'
-Bundle 'tpope/vim-rbenv'
-Bundle 'tpope/vim-fugitive'
-
-"rails/ruby
-Bundle 'vim-ruby/vim-ruby'
-Bundle 'mikeastock/vim-vroom'
-
-"colors
-Bundle 'altercation/vim-colors-solarized'
-Bundle 'nanotech/jellybeans.vim'
-
-"airline
-Bundle 'bling/vim-airline'
-Bundle 'bling/vim-bufferline'
-
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " BASIC EDITING CONFIGURATION
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+set encoding=utf-8
 " allow unsaved background buffers and remember marks/undo for them
 set hidden
 " remember more commands and search history
@@ -237,12 +194,20 @@ inoremap <tab> <c-r>=InsertTabWrapper()<cr>
 inoremap <s-tab> <c-n>
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" MAPS TO JUMP TO SPECIFIC CtrlPMixed TARGETS AND FILES
+" CTRLP
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:ctrlp_working_path_mode = 'c'
-let g:ctrlp_max_height = 20
+if executable('ag')
+    " Use Ag over grep
+    set grepprg=ag\ --nogroup\ --nocolor
+
+    " Use ag in CtrlP
+    let g:ctrlp_user_command = 'ag %s -l --nocolor -g ""'
+    let g:ctrlp_use_caching = 0
+endif
+
+" let g:ctrlp_working_path_mode = 'c'
+" let g:ctrlp_max_height = 20
 " let g:ctrlp_working_path_mode = 0
-let g:ctrlp_use_caching = 0
 
 set wildignore+=tags
 set wildignore+=*/tmp/*
