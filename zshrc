@@ -5,9 +5,6 @@
 ZSH=$HOME/.oh-my-zsh
 ZSH_THEME="afowler"
 
-#custom fuctions
-# vimo($grepfile) { grep -Zril '$grepfile' app/ | xargs -0 sh -c 'vim -O "$@" < /dev/tty' vim }
-
 COMPLETION_WAITING_DOTS="true"
 
 plugins=(ruby cp autojump command-not-found lol sprunge git gitfast git_remote_branch rails bundler rbenv rake capistrano colored-man colorize dirpersist history profiles vundle rand-quote)

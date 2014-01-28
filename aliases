@@ -1,3 +1,7 @@
+###########
+# aliases #
+###########
+
 # Unix
 alias tlf="tail -f"
 alias ln='ln -v'
@@ -39,3 +43,8 @@ alias m="migrate"
 alias rk="rake"
 alias s="rspec"
 
+#############
+# functions #
+#############
+
+# vimo($grepfile) { grep -Zril '$grepfile' app/ | xargs -0 sh -c 'vim -O "$@" < /dev/tty' vim }
