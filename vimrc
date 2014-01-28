@@ -205,8 +205,8 @@ if executable('ag')
     let g:ctrlp_use_caching = 0
 endif
 
-" let g:ctrlp_working_path_mode = 'c'
-" let g:ctrlp_max_height = 20
+" let g:ctrlp_working_path_mode = 'rc'
+let g:ctrlp_max_height = 30
 " let g:ctrlp_working_path_mode = 0
 
 set wildignore+=tags
