@@ -24,6 +24,11 @@ if which rbenv &>/dev/null ; then
   eval "$(rbenv init - --no-rehash)"
 fi
 
+# load hub if available
+if which hub &>/dev/null ; then
+  eval "$(hub alias -s)"
+fi
+
 # aliases
 [[ -f ~/.aliases ]] && source ~/.aliases
 
