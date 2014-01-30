@@ -20,6 +20,7 @@
 	default = current
 [core]
 	editor = vim
+	autocrlf = input
 [color "diff"]
     meta = yellow bold
     frag = magenta bold
