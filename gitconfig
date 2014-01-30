@@ -10,6 +10,7 @@
     df = diff
     pl = pull
     ps = push
+    p = push
     ad = add -p
     s = stash
     sp = stash pop
