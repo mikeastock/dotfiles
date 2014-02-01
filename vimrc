@@ -12,15 +12,16 @@ endif
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " BASIC EDITING CONFIGURATION
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" set encoding for airplane
 set encoding=utf-8
 " allow unsaved background buffers and remember marks/undo for them
 set hidden
 " remember more commands and search history
 set history=10000
 set expandtab
-set tabstop=4
-set shiftwidth=4
-set softtabstop=4
+set tabstop=2
+set shiftwidth=2
+set softtabstop=2
 set autoindent
 set laststatus=2
 set showmatch
@@ -66,8 +67,7 @@ set wildmode=longest,list
 set wildmenu
 let mapleader = " "
 
-" enable mouse usage
-" set mouse=a
+nnoremap <Leader>e :vertical wincmd f<CR>
 
 "ctags custom mappings
 map <C-\> :tab split<CR>:exec("tag ".expand("<cword>"))<CR>
@@ -85,6 +85,10 @@ nmap <Leader>a <Plug>(EasyAlign)
 " Resize panes
 nnoremap <silent> <Leader>+ :exe "resize " . (winheight(0) * 3/2)<CR>
 nnoremap <silent> <Leader>- :exe "resize " . (winheight(0) * 2/3)<CR>
+
+" Open new splits to right and below
+set splitbelow
+set splitright
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " CUSTOM AUTOCMDS

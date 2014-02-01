@@ -12,6 +12,7 @@
     df = diff
     pl = pull
     ps = push
+    p = push
     ad = add -p
     rb = rebase origin/master
     hist = log --pretty=format:'%h %ad | %s%d [%an]' --graph --date=short
@@ -20,6 +21,7 @@
 	default = current
 [core]
 	editor = vim
+	autocrlf = input
 [color "diff"]
     meta = yellow bold
     frag = magenta bold
