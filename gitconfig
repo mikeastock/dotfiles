@@ -5,14 +5,14 @@
 	co = checkout
     ci = commit
     cm = commit
+    t = status
+    s = status
     st = status
     br = branch
     df = diff
     pl = pull
     ps = push
     ad = add -p
-    s = stash
-    sp = stash pop
     rb = rebase origin/master
     hist = log --pretty=format:'%h %ad | %s%d [%an]' --graph --date=short
 	lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
