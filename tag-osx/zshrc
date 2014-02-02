@@ -20,13 +20,14 @@ export VISUAL=vim
 export EDITOR=$VISUAL
 
 # load rbenv if available
-if which rbenv &>/dev/null ; then
-  eval "$(rbenv init - --no-rehash)"
-fi
+# if which rbenv &>/dev/null ; then
+#   eval "$(rbenv init - --no-rehash)"
+# fi
 
 # aliases
 [[ -f ~/.aliases ]] && source ~/.aliases
 
 # paths
-export PATH=/$HOME/.rbenv/shims:/$HOME/.rbenv/bin
-export RBENV_ROOT="/$HOME/.rbenv"
+export PATH="/usr/local/opt/rbenv/shims:/usr/local/opt/rbenv/bin"
+export RBENV_ROOT="/usr/local/opt/rbenv/bin"
+export PATH="/usr/local/bin::/usr/local/heroku/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/X11/bin"
