@@ -157,6 +157,9 @@ nnoremap <leader>qq :q<cr>
 " Switch back to previous file
 nnoremap <leader><leader> <c-^>
 
+" NERDTREE toggle
+nnoremap <leader>t :NERDTreeToggle<CR>
+
 " Smart way to move btw. windows
 map <C-j> <C-W>j
 map <C-k> <C-W>k
