@@ -43,6 +43,9 @@ alias m="migrate"
 alias rk="rake"
 alias s="rspec"
 
+# Git
+alias g="git"
+
 #############
 # functions #
 #############
