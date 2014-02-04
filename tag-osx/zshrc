@@ -20,9 +20,9 @@ export VISUAL=vim
 export EDITOR=$VISUAL
 
 # load rbenv if available
-# if which rbenv &>/dev/null ; then
-#   eval "$(rbenv init - --no-rehash)"
-# fi
+if which rbenv &>/dev/null ; then
+  eval "$(rbenv init - )"
+fi
 
 # aliases
 [[ -f ~/.aliases ]] && source ~/.aliases
