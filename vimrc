@@ -147,58 +147,55 @@ let g:airline_symbols.whitespace = 'Ξ'
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Fast saving
 nmap <leader>w :w!<cr>
-
 " Fast buffer closing
 nmap <leader>q :bd<cr>
-
 " Fast vim closing
 nnoremap <leader>qq :q<cr>
-
 " Switch back to previous file
 nnoremap <leader><leader> <c-^>
-
 " NERDTREE toggle
 nnoremap <leader>t :NERDTreeToggle<CR>
-
 " Smart way to move btw. windows
 map <C-j> <C-W>j
 map <C-k> <C-W>k
 map <C-h> <C-W>h
 map <C-l> <C-W>l
-
-" Use the arrows to something usefull
+" Line wrapping
+nmap k gk
+nmap j gj
+" Usg the arrows to something usefull
 map <right> :bn<cr>
 map <left> :bp<cr>
-
-
 " Control-C to return to Command Mode
 imap <c-c> <esc>
-
 " Clear the search buffer when hitting return
 function! MapCR()
     nnoremap <cr> :nohlsearch<cr>
 endfunction
 call MapCR()
-
 "binding.pry remote
-
 nnoremap <leader>p :execute "normal Obinding.pry"<CR>
 nnoremap <leader>v :execute "normal O<% binding.pry  %>"<CR>
+" Don't add the comment prefix when I hit enter or o/O on a comment line.
+set formatoptions-=or
 
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" MULTIPURPOSE TAB KEY
-" " Indent if we're at the beginning of a line. Else, do completion.
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
- function! InsertTabWrapper()
-    let col = col('.') - 1
-    if !col || getline('.')[col - 1] !~ '\k'
-       return "\<tab>"
-    else
-       return "\<c-p>"
-    endif
+" Merge a tab into a split in the previous window
+function! MergeTabs()
+  if tabpagenr() == 1
+    return
+  endif
+  let bufferName = bufname("%")
+  if tabpagenr("$") == tabpagenr()
+    close!
+  else
+    close!
+    tabprev
+  endif
+  split
+  execute "buffer " . bufferName
 endfunction
-inoremap <tab> <c-r>=InsertTabWrapper()<cr>
-inoremap <s-tab> <c-n>
+
+nmap <C-W>u :call MergeTabs()<CR>
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " CTRLP
