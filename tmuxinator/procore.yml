@@ -21,5 +21,7 @@ root: ~/procore
 windows:
   - editor: vim
   - server:
+      layout: even-vertical
+      panes:
         - bundle exec rails server 
         - #empty

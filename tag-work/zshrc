@@ -27,7 +27,7 @@ source ~/.bin/tmuxinator.zsh
 [[ -f ~/.aliases ]] && source ~/.aliases
 
 # fuctions
-source ~/.zsh/git-completion.bash
+zstyle ':completion:*:*:git:*' script ~/.zsh/git-completion.zsh
 
 # paths
 export PATH=/usr/local/rbenv/shims:/usr/local/rbenv/bin:/user/local/redis/bin:$PATH
