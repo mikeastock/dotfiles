@@ -19,10 +19,7 @@ root: ~/procore
 # tmux_command: byobu
 
 windows:
-  - editor:
-      layout: 7e13,272x70,0,0[272x52,0,0,272x17,0,53]
-      panes:
-        - vim
+  - editor: vim
+  - server:
+        - bundle exec rails server 
         - #empty
-  - server: zeus server
-  - zeus: zeus start

@@ -23,22 +23,16 @@ export EDITOR=$VISUAL
 # tmuxinator
 source ~/.bin/tmuxinator.zsh
 
-# load rbenv if available
-if which rbenv &>/dev/null ; then
-  eval "$(rbenv init - --no-rehash)"
-fi
-
-# load hub if available
-if which hub &>/dev/null ; then
-  eval "$(hub alias -s)"
-fi
-
 # aliases
 [[ -f ~/.aliases ]] && source ~/.aliases
+
+# fuctions
+source ~/.zsh/git-completion.bash
 
 # paths
 export PATH=/usr/local/rbenv/shims:/usr/local/rbenv/bin:/user/local/redis/bin:$PATH
 export RBENV_ROOT="/usr/local/rbenv"
+eval "$(rbenv init - --no-rehash)"
 
 # remove git slowness
 # function git_prompt_info() {
