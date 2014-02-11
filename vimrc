@@ -114,7 +114,7 @@ autocmd FileType gitcommit setlocal spell textwidth=72
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 "set guioptions-=T
 set t_Co=256 " 256 colors
-set background=dark
+" set background=dark
 colorscheme jellybeans
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
