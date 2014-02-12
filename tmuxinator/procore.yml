@@ -1,7 +1,7 @@
 # ~/.tmuxinator/procore.yml
 
-name: procore
-root: ~/procore
+name: currentset
+root: ~/procoreX
 
 # Optional tmux socket
 # socket_name: foo
@@ -21,7 +21,8 @@ root: ~/procore
 windows:
   - editor: vim
   - server:
-      layout: even-vertical
+      layout: 0bda,272x70,0,0[272x53,0,0{136x53,0,0,8,135x53,137,0,11},272x16,0,54,9]
       panes:
-        - bundle exec rails server 
-        - #empty
+        - bin/rails server -p3005
+        - be sidekiq -C config/sidekiq.yml
+        - sudo htop
