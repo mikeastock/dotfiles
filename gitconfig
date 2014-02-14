@@ -9,7 +9,7 @@
     s = status
     st = status
     br = branch
-    df = diff
+    df = diff --color
     pl = pull
     ps = push
     p = push

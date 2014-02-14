@@ -251,7 +251,7 @@ set noswapfile
 " VROOM
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:vroom_detect_spec_helper = 1
-let g:vroom_use_spring = 1
-let g:vroom_use_binstubs = 1
+let g:vroom_use_spring = 0
+let g:vroom_use_binstubs = 0
 let g:vroom_cucumber_path = 'cucumber'
 
