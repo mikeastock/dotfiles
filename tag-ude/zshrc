@@ -29,6 +29,8 @@ source ~/.bin/tmuxinator.zsh
 # fuctions
 zstyle ':completion:*:*:git:*' script ~/.zsh/git-completion.zsh
 
+# bindkey -v
+
 # paths
 export PATH=$HOME/.rbenv/shims:$HOME/.rbenv/bin:/user/local/redis/bin:$PATH
 export RBENV_ROOT="$HOME/.rbenv"

@@ -102,9 +102,11 @@ augroup vimrcEx
     \ endif
         
     "for ruby, autoindent with two spaces, always expand tabs
-    autocmd FileType ruby,haml,eruby,yaml,html,javascript,sass,cucumber set ai sw=2 sts=2 et
+    autocmd FileType ruby,haml,eruby,yaml,fdoc,html,javascript,sass,cucumber set ai sw=2 sts=2 et
 
-    autocmd BufRead, BufNewFile *.sass setfiletype sass
+    autocmd BufNewFile,BufRead *.fdoc setfiletype yaml
+    autocmd Filetype yaml set nocursorline
+    autocmd BufNewFile,BufRead *.sass setfiletype sass
 augroup END
 
 autocmd FileType gitcommit setlocal spell textwidth=72
@@ -231,6 +233,7 @@ map <leader>gs :CtrlP spec/<cr>
 map <leader>gl :CtrlP lib<cr>
 map <leader>gp :CtrlP config<cr>
 map <leader>gf :CtrlP features<cr>
+map <leader>gd :CtrlP docs<cr>
 map <leader>gg :topleft 20 :split Gemfile<cr>
 map <leader>f :CtrlPMixed<cr>
 map <leader>b :CtrlPBuffer<cr>
@@ -251,7 +254,7 @@ set noswapfile
 " VROOM
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:vroom_detect_spec_helper = 1
-let g:vroom_use_spring = 0
-let g:vroom_use_binstubs = 0
+let g:vroom_use_spring = 1
+let g:vroom_use_binstubs = 1
 let g:vroom_cucumber_path = 'cucumber'
 
