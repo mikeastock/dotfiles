@@ -39,11 +39,11 @@ alias gi="gem install"
 alias giv="gem install -v"
 
 # Rails
-alias migrate="rake db:migrate db:rollback && rake db:migrate db:test:prepare"
+alias migrate="bin/rake db:migrate && db:test:prepare"
 alias m="migrate"
 alias rk="rake"
 alias s="rspec"
-alias fdoc_scaf="FDOC_SCAFFOLD=true spring rspec spec/controllers/api/v1/drawings_controller_spec.rb"
+alias fdoc_scaf="FDOC_SCAFFOLD=true spring rspec spec/controllers/api/v1/"
 
 # Git
 alias g="git"
