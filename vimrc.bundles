@@ -20,6 +20,7 @@ Bundle 'koron/nyancat-vim'
 
 "tpope
 Bundle 'tpope/vim-abolish'
+Bundle 'tpope/vim-bundler'
 Bundle 'tpope/vim-cucumber'
 Bundle 'tpope/vim-endwise'
 Bundle 'tpope/vim-fugitive'

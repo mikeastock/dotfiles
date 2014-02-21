@@ -1,6 +1,6 @@
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 "Michael Stock's vimrc -- http://github.com/mikeastock/dotfiles
-"Last updated 01/27/2014
+"Last updated 02/21/2014
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " VUNDLE
@@ -12,9 +12,12 @@ endif
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " BASIC EDITING CONFIGURATION
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+if has("autocamd")
+  autocmd bufwritepost .vimrc source $MYVIMRC
+endif
+nmap <leader>v :tabedit $MYVIMRC<CR>
 " set encoding for airplane
-set encoding=utf-8
-" allow unsaved background buffers and remember marks/undo for them
+" set encoding=utf-8
 set hidden
 " remember more commands and search history
 set history=10000
@@ -41,6 +44,10 @@ set showtabline=2
 set winwidth=90
 set tags=tags;/ 
 set colorcolumn=80
+" set guicursor+=i:ver100-iCursor
+let &t_SI = "\<Esc>Ptmux;\<Esc>\<Esc>]50;CursorShape=1\x7\<Esc>\\"
+let &t_EI = "\<Esc>Ptmux;\<Esc>\<Esc>]50;CursorShape=0\x7\<Esc>\\"
+
 " Prevent Vim from clobbering the scrollback buffer. See
 " http://www.shallowsky.com/linux/noaltscreen.html
 set t_ti= t_te=
@@ -71,7 +78,7 @@ nnoremap <Leader>e :vertical wincmd f<CR>
 
 "ctags custom mappings
 map <C-\> :tab split<CR>:exec("tag ".expand("<cword>"))<CR>
-map <C-]> :vsp <CR>:exec("tag ".expand("<cword>"))<CR>
+map <A-]> :vsp <CR>:exec("tag ".expand("<cword>"))<CR>
 
 "vim ruby commands
 imap <S-CR> <CR><CR>end<Esc>-cc
@@ -156,7 +163,7 @@ nmap <leader>q :bd<cr>
 " Fast vim closing
 nnoremap <leader>qq :q<cr>
 " Switch back to previous file
-nnoremap <leader><leader> <c-^>
+nnoremap <leader><leader> :vs#<CR>
 " NERDTREE toggle
 nnoremap <leader>t :NERDTreeToggle<CR>
 " Smart way to move btw. windows
@@ -177,9 +184,7 @@ function! MapCR()
     nnoremap <cr> :nohlsearch<cr>
 endfunction
 call MapCR()
-"binding.pry remote
 nnoremap <leader>p :execute "normal Obinding.pry"<CR>
-nnoremap <leader>v :execute "normal O<% binding.pry  %>"<CR>
 " Don't add the comment prefix when I hit enter or o/O on a comment line.
 set formatoptions-=or
 
@@ -202,7 +207,7 @@ endfunction
 nmap <C-W>u :call MergeTabs()<CR>
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" CTRLP
+" Plugin Options
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 if executable('ag')
     " Use Ag over grep
@@ -242,21 +247,12 @@ map <leader>b :CtrlPBuffer<cr>
 
 let g:CtrlMaxFiles=40000
 
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" => Files and backups
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Turn backup off, since most stuff is in SVN, git anyway...
-set nobackup
-set nowb
-set noswapfile
-
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" VROOM
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:vroom_detect_spec_helper = 1
 let g:vroom_use_spring = 1
 let g:vroom_use_binstubs = 1
 let g:vroom_cucumber_path = 'cucumber'
+
+set nobackup
+set nowb
+set noswapfile
 
