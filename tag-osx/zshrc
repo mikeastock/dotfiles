@@ -19,11 +19,6 @@ source $ZSH/oh-my-zsh.sh
 export VISUAL=vim
 export EDITOR=$VISUAL
 
-# load rbenv if available
-if which rbenv &>/dev/null ; then
-  eval "$(rbenv init - )"
-fi
-
 # aliases
 [[ -f ~/.aliases ]] && source ~/.aliases
 
@@ -31,3 +26,4 @@ fi
 export PATH="/usr/local/opt/rbenv/shims:/usr/local/opt/rbenv/bin"
 export RBENV_ROOT="/usr/local/opt/rbenv/bin"
 export PATH="/usr/local/bin::/usr/local/heroku/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/X11/bin"
+eval "$(rbenv init - )"
