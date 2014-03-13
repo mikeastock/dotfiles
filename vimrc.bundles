@@ -17,6 +17,7 @@ Bundle 'rking/ag.vim'
 Bundle 'scrooloose/nerdtree'
 Bundle 'ervandew/supertab'
 Bundle 'koron/nyancat-vim'
+Bundle 'sjl/gundo.vim'
 
 "tpope
 Bundle 'tpope/vim-abolish'
@@ -44,5 +45,7 @@ Bundle 'bling/vim-bufferline'
 "textobj
 Bundle 'kana/vim-textobj-user'
 Bundle 'nelstrom/vim-textobj-rubyblock'
+
+Bundle 'Lokaltog/vim-easymotion'
 
 filetype on

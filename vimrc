@@ -12,12 +12,9 @@ endif
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " BASIC EDITING CONFIGURATION
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-if has("autocamd")
-  autocmd bufwritepost .vimrc source $MYVIMRC
-endif
-nmap <leader>v :tabedit $MYVIMRC<CR>
+nnoremap <F6> :GundoToggle<CR>
 " set encoding for airplane
-" set encoding=utf-8
+set encoding=utf-8
 set hidden
 " remember more commands and search history
 set history=10000
@@ -241,6 +238,7 @@ map <leader>gl :CtrlP lib<cr>
 map <leader>gp :CtrlP config<cr>
 map <leader>gf :CtrlP features<cr>
 map <leader>gd :CtrlP docs<cr>
+map <leader>ga :CtrlP app<cr>
 map <leader>gg :topleft 20 :split Gemfile<cr>
 map <leader>f :CtrlPMixed<cr>
 map <leader>b :CtrlPBuffer<cr>
