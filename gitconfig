@@ -3,20 +3,22 @@
 	email = mikeastock@gmail.com
 [alias]
 	co = checkout
-    ci = commit
-    cm = commit
-    t = status
-    s = status
-    st = status
-    br = branch
-    df = diff --color
-    pl = pull
-    ps = push
-    p = push
-    ad = add -p
-    rb = rebase origin/master
-    hist = log --pretty=format:'%h %ad | %s%d [%an]' --graph --date=short
+	com = checkout master
+  ci = commit
+  cm = commit
+  t = status
+  s = status
+  st = status
+  br = branch
+  df = diff --color
+  pl = pull
+  ps = push
+  p = push
+  ad = add -p
+  rb = rebase origin/master
+  hist = log --pretty=format:'%h %ad | %s%d [%an]' --graph --date=short
 	lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+  su = submodule update --init --recursive
 [push]
 	default = current
 [core]
