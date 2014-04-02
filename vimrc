@@ -229,16 +229,17 @@ set wildignore+=*/coverage/*
 set wildignore+=*.png,*.jpg,*.otf,*.woff,*.jpeg,*.orig
 
 map <leader>gr :topleft :split config/routes.rb<cr>
+map <leader>ga :CtrlP app<cr>
 map <leader>gv :CtrlP app/views<cr>
 map <leader>gc :CtrlP app/controllers<cr>
 map <leader>gm :CtrlP app/models<cr>
 map <leader>gh :CtrlP app/helpers<cr>
+map <leader>gi :CtrlP app/concerns<cr>
 map <leader>gs :CtrlP spec/<cr>
 map <leader>gl :CtrlP lib<cr>
 map <leader>gp :CtrlP config<cr>
 map <leader>gf :CtrlP features<cr>
 map <leader>gd :CtrlP docs<cr>
-map <leader>ga :CtrlP app<cr>
 map <leader>gg :topleft 20 :split Gemfile<cr>
 map <leader>f :CtrlPMixed<cr>
 map <leader>b :CtrlPBuffer<cr>
