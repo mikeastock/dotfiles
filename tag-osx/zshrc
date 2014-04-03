@@ -25,5 +25,5 @@ export EDITOR=$VISUAL
 # paths
 export PATH="/usr/local/opt/rbenv/shims:/usr/local/opt/rbenv/bin"
 export RBENV_ROOT="/usr/local/opt/rbenv/bin"
-export PATH="/usr/local/bin::/usr/local/heroku/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/X11/bin"
+export PATH="/usr/local/bin::/usr/local/heroku/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/X11/bin:/Applications/Postgres93.app/Contents/MacOS/bin/:$PATH"
 eval "$(rbenv init - )"
