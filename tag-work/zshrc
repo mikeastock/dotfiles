@@ -3,7 +3,7 @@
 #####################
 
 ZSH=$HOME/.oh-my-zsh
-ZSH_THEME="wedisagree"
+ZSH_THEME="clean"
 
 COMPLETION_WAITING_DOTS="true"
 

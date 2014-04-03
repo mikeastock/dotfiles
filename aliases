@@ -50,8 +50,9 @@ alias gce="git checkout dev/eg_markup_elements"
 alias s="git status"
 
 # Procore for Bash
-alias ui="cd ~/procore/lib/assets/procore_ui"
+alias ui="cd ./lib/assets/procore_ui"
 alias pr="cd ~/procore"
+alias cu="cd ~/currentset"
 
 #############
 # functions #
