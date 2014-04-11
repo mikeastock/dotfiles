@@ -19,6 +19,7 @@
   hist = log --pretty=format:'%h %ad | %s%d [%an]' --graph --date=short
 	lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
   su = submodule update --init --recursive
+  pim = pull origin master
 [push]
 	default = current
 [core]
