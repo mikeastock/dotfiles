@@ -236,7 +236,7 @@ map <leader>gv :CtrlP app/views<cr>
 map <leader>gc :CtrlP app/controllers<cr>
 map <leader>gm :CtrlP app/models<cr>
 map <leader>gh :CtrlP app/helpers<cr>
-map <leader>gi :CtrlP app/concerns<cr>
+map <leader>gi :CtrlP app/serializers<cr>
 map <leader>gs :CtrlP spec/<cr>
 map <leader>gl :CtrlP lib<cr>
 map <leader>gp :CtrlP config<cr>
