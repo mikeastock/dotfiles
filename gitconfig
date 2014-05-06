@@ -1,9 +1,9 @@
 [user]
-	name = Michael Stock
-	email = mikeastock@gmail.com
+  name = Michael Stock
+  email = mikeastock@gmail.com
 [alias]
-	co = checkout
-	com = checkout master
+  co = checkout
+  com = checkout master
   ci = commit
   cm = commit
   t = status
@@ -11,34 +11,34 @@
   st = status
   br = branch
   df = diff --color
+  dfom = diff master --color
   pl = pull
   ps = push
   p = push
   ad = add -p
   rb = rebase origin/master
   hist = log --pretty=format:'%h %ad | %s%d [%an]' --graph --date=short
-	lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+  lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
   su = submodule update --init --recursive
   pim = pull origin master
 [push]
-	default = current
+  default = current
 [core]
-	editor = vim
-	autocrlf = input
+  editor = vim
+  autocrlf = input
 [color]
   ui = auto
 [color "diff"]
-    meta = yellow bold
-    frag = magenta bold
-    old = red bold
-    new = green bold
+  meta = yellow bold
+  frag = magenta bold
+  old = red bold
+  new = green bold
+  whitespace = red reverse
 [color "status"]
-    added = yellow
-    changed = green
-    untracked = cyan
-[color "diff"]
-    whitespace = red reverse
+  added = yellow
+  changed = green
+  untracked = cyan
 [color "branch"]
-    current = yellow reverse
-    local = yellow
-    remote = green
+  current = yellow reverse
+  local = yellow
+  remote = green
