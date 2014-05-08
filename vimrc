@@ -33,7 +33,7 @@ set ignorecase smartcase
 set cursorline
 "Always show current position
 set ruler
-set number
+set relativenumber
 set cmdheight=2
 set switchbuf=useopen
 set numberwidth=6
@@ -205,6 +205,16 @@ endfunction
 
 nmap <C-W>u :call MergeTabs()<CR>
 
+" function! NumberToggle()
+"   if(&relativenumber == 1)
+"     set number
+"   else
+"     set relativenumber
+"   endif
+" endfunc
+
+" nnoremap <C-n> :call NumberToggle()<cr>
+
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Plugin Options
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -238,6 +248,7 @@ map <leader>gm :CtrlP app/models<cr>
 map <leader>gh :CtrlP app/helpers<cr>
 map <leader>gi :CtrlP app/serializers<cr>
 map <leader>gs :CtrlP spec/<cr>
+map <leader>hs :CtrlP spec2/<cr>
 map <leader>gl :CtrlP lib<cr>
 map <leader>gp :CtrlP config<cr>
 map <leader>gf :CtrlP features<cr>
@@ -257,3 +268,12 @@ set nobackup
 set nowb
 set noswapfile
 
+"""""""""""""""
+""Test Runner""
+"""""""""""""""
+
+let g:rspec_command = "compiler rspec | set makeprg=zeus | Make rspec2 {spec}"
+map <Leader>t :call RunCurrentSpecFile()<CR>
+map <Leader>s :call RunNearestSpec()<CR>
+map <Leader>l :call RunLastSpec()<CR>
+map <Leader>a :call RunAllSpecs()<CR>

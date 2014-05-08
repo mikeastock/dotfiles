@@ -17,6 +17,8 @@ Bundle 'rking/ag.vim'
 Bundle 'scrooloose/nerdtree'
 Bundle 'ervandew/supertab'
 Bundle 'koron/nyancat-vim'
+Bundle 'thoughtbot/vim-rspec'
+Bundle 'Keithbsmiley/rspec.vim'
 Bundle 'sjl/gundo.vim'
 
 "tpope
@@ -29,6 +31,7 @@ Bundle 'tpope/vim-rails'
 Bundle 'tpope/vim-rbenv'
 Bundle 'tpope/vim-surround'
 Bundle 'tpope/vim-unimpaired'
+Bundle 'tpope/vim-dispatch'
 
 "rails/ruby
 Bundle 'vim-ruby/vim-ruby'
