@@ -53,6 +53,9 @@ alias s="git status"
 alias ui="cd ./lib/assets/procore_ui"
 alias pr="cd ~/procore"
 alias cu="cd ~/currentset"
+alias vup="cd $HOME/procore/vagrant && vagrant up"
+alias vsuspend="cd $HOME/procore/vagrant && vagrant suspend"
+alias vstatus="cd $HOME/procore/vagrant && vagrant status"
 
 #############
 # functions #
