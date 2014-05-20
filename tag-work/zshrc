@@ -18,17 +18,18 @@ source $ZSH/oh-my-zsh.sh
 
 # ssh agent tmux
 # Predictable SSH authentication socket location.
-SOCK="/tmp/ssh-agent-$USER-screen"
-if test $SSH_AUTH_SOCK && [ $SSH_AUTH_SOCK != $SOCK ]
-then
-    rm -f /tmp/ssh-agent-$USER-screen
-    ln -sf $SSH_AUTH_SOCK $SOCK
-    export SSH_AUTH_SOCK=$SOCK
-fi
+# SOCK ="/tmp/ssh-agent-$USER"
+# if test $SSH_AUTH_SOCK && [ $SSH_AUTH_SOCK != $SOCK ]
+# then
+#     rm -f /tmp/ssh-agent-$USER
+#     ln -sf $SSH_AUTH_SOCK $SOCK
+#     export SSH_AUTH_SOCK=$SOCK
+# fi
 
 # use vim as the visual editor
 export VISUAL=vim
 export EDITOR=$VISUAL
+export DISABLE_AUTO_TITLE=true
 
 # tmuxinator
 source ~/.bin/tmuxinator.zsh
@@ -49,3 +50,11 @@ ref=$(git symbolic-ref HEAD 2> /dev/null) || return
 echo "$ZSH_THEME_GIT_PROMPT_PREFIX${ref#refs/heads/}$ZSH_THEME_GIT_PROMPT_SUFFIX"
 }
 
+function fixssh() {                                                                                                                                                                                                                                                                           [9:17:49]
+  for key in SSH_AUTH_SOCK SSH_CONNECTION SSH_CLIENT; do
+    if (tmux show-environment | grep "^${key}" > /dev/null); then
+      value=`tmux show-environment | grep "^${key}" | sed -e "s/^[A-Z_]*=//"`
+      export ${key}="${value}"
+    fi
+  done
+}
