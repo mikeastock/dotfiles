@@ -19,6 +19,7 @@ Bundle 'ervandew/supertab'
 Bundle 'tpope/vim-endwise'
 Bundle 'tpope/vim-rails'
 Bundle 'tpope/vim-dispatch'
+Bundle 'tpope/vim-fugitive'
 
 "rails/ruby
 Bundle 'mikeastock/vim-vroom'

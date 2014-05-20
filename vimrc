@@ -44,7 +44,7 @@ colorscheme jellybeans
 set colorcolumn=80
 set cursorline
 set ruler
-" set synmaxcol=160
+set synmaxcol=200
 
 if executable('ag')
     " Use Ag over grep
@@ -113,7 +113,7 @@ map <Leader>am :CtrlP app/models<cr>
 map <Leader>ah :CtrlP app/helpers<cr>
 map <Leader>ai :CtrlP app/serializers<cr>
 map <Leader>as :CtrlP spec/<cr>
-map <Leader>as :CtrlP spec2/<cr>
+map <Leader>ss :CtrlP spec2/<cr>
 map <Leader>al :CtrlP lib<cr>
 map <Leader>ap :CtrlP config<cr>
 map <Leader>af :CtrlP features<cr>
@@ -124,6 +124,11 @@ map <Leader>b :CtrlPBuffer<cr>
 map <Leader>p Obinding.pry<C-c>
 
 "OTHER
+function! MapCR()
+    nnoremap <cr> :nohlsearch<cr>
+endfunction
+call MapCR()
+
 map <C-\> :tab split<CR>:exec("tag ".expand("<cword>"))<CR>
 vmap <Enter> <Plug>(EasyAlign)
 nmap k gk
