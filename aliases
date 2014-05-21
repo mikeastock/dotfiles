@@ -22,6 +22,8 @@ alias v="$VISUAL"
 # tmux
 alias tma='tmux att -t'
 alias tmls='tmux ls'
+alias grabssh="$HOME/bin/grabssh"
+alias updatessh="$HOME/bin/updatessh"
 
 # Bundler
 alias b="bundle"

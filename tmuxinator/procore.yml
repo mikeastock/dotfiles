@@ -19,7 +19,7 @@ root: ~/procore
 # tmux_command: byobu
 
 windows:
-  - editor: vim
+  - editor: nvim
   - server:
       layout: "1d51,318x81,0,0{154x81,0,0,1,163x81,155,0[163x43,155,0,3,163x37,155,44,4]}"
       panes:
