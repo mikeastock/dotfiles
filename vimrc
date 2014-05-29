@@ -62,6 +62,17 @@ if !empty($TMUX)
   let &t_EI = "\<Esc>Ptmux;\<Esc>\<Esc>]50;CursorShape=0\x7\<Esc>\\"
 endif
 
+"===============
+"PLUGIN SETTINGS
+"===============
+let g:vroom_detect_spec_helper = 1
+let g:vroom_use_spring = 0
+let g:vroom_use_binstubs = 0
+let g:vroom_cucumber_path = 'cucumber'
+
+let g:rspec_command = "compiler rspec | set makeprg=zeus | Make rspec2 {spec}"
+map <Leader>t :call RunCurrentSpecFile()<CR>
+
 "==================
 "SETTINGS BY OTHERS
 "==================
@@ -105,27 +116,30 @@ autocmd FileType gitcommit setlocal spell textwidth=72
 "LEADER 
 map <Leader>w :w!<CR>
 map <Leader>q :bd<CR>
-map <Leader>ar :topleft :split config/routes.rb<cr>
-map <Leader>aa :CtrlP app<cr>
-map <Leader>av :CtrlP app/views<cr>
-map <Leader>ac :CtrlP app/controllers<cr>
-map <Leader>am :CtrlP app/models<cr>
-map <Leader>ah :CtrlP app/helpers<cr>
-map <Leader>ai :CtrlP app/serializers<cr>
-map <Leader>as :CtrlP spec/<cr>
-map <Leader>ss :CtrlP spec2/<cr>
-map <Leader>al :CtrlP lib<cr>
-map <Leader>ap :CtrlP config<cr>
-map <Leader>af :CtrlP features<cr>
-map <Leader>ad :CtrlP docs<cr>
-map <Leader>ag :topleft 20 :split Gemfile<cr>
-map <Leader>g :CtrlPMixed<cr>
-map <Leader>b :CtrlPBuffer<cr>
+map <Leader>ar :topleft :split config/routes.rb<CR>
+map <Leader>f  :CtrlPRoot<CR>
+map <Leader>aa :CtrlP app<CR>
+map <Leader>av :CtrlP app/views<CR>
+map <Leader>ac :CtrlP app/controllers<CR>
+map <Leader>am :CtrlP app/models<CR>
+map <Leader>ah :CtrlP app/helpers<CR>
+map <Leader>ai :CtrlP app/serializers<CR>
+map <Leader>as :CtrlP spec/<CR>
+map <Leader>ss :CtrlP spec2/<CR>
+map <Leader>al :CtrlP lib<CR>
+map <Leader>ap :CtrlP config<CR>
+map <Leader>af :CtrlP features<CR>
+map <Leader>ad :CtrlP docs<CR>
+map <Leader>ag :topleft 20 :split Gemfile<CR>
+map <Leader>g :CtrlPMixed<CR>
+map <Leader>b :CtrlPBuffer<CR>
 map <Leader>p Obinding.pry<C-c>
+map <Leader>vi :tabe ~/.nvimrc<CR>
+map <Leader>vs :source ~/.nvimrc<CR>
 
 "OTHER
 function! MapCR()
-    nnoremap <cr> :nohlsearch<cr>
+    nnoremap <CR> :nohlsearch<CR>
 endfunction
 call MapCR()
 

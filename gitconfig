@@ -24,7 +24,7 @@
 [push]
   default = current
 [core]
-  editor = vim
+  editor = nvim
   autocrlf = input
 [color]
   ui = auto
