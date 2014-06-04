@@ -55,6 +55,7 @@ alias s="git status"
 alias ui="cd ./lib/assets/procore_ui"
 alias pr="cd ~/procore"
 alias cu="cd ~/currentset"
+alias cde=cd_engine
 alias vup="cd $HOME/procore/vagrant && vagrant up"
 alias vsuspend="cd $HOME/procore/vagrant && vagrant suspend"
 alias vstatus="cd $HOME/procore/vagrant && vagrant status"
@@ -65,3 +66,8 @@ alias vstatus="cd $HOME/procore/vagrant && vagrant status"
 
 # vimo($grepfile) { grep -Zril '$grepfile' app/ | xargs -0 sh -c 'vim -O "$@" < /dev/tty' vim }
 alias macgen="openssl rand -hex 6 | sed 's/\(..\)/\1:/g; s/.$//'"
+
+cd_engine() {
+  cd ~/procore/engines/$1
+}
+
