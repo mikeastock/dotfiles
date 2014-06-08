@@ -46,6 +46,9 @@ set cursorline
 set ruler
 set synmaxcol=200
 
+"SPEEEEEEEEEEEEEED
+set re=1
+
 if executable('ag')
     " Use Ag over grep
     set grepprg=ag\ --nogroup\ --nocolor
