@@ -46,6 +46,9 @@ set cursorline
 set ruler
 set synmaxcol=200
 
+"SPEEEEEEEEEEEEEED
+set re=1
+
 if executable('ag')
     " Use Ag over grep
     set grepprg=ag\ --nogroup\ --nocolor
@@ -72,6 +75,15 @@ let g:vroom_cucumber_path = 'cucumber'
 
 let g:rspec_command = "compiler rspec | set makeprg=zeus | Make rspec2 {spec}"
 map <Leader>t :call RunCurrentSpecFile()<CR>
+
+if executable('ag')
+    " Use Ag over grep
+    set grepprg=ag\ --nogroup\ --nocolor
+
+    " Use ag in CtrlP
+    let g:ctrlp_user_command = 'ag %s -l --nocolor -g ""'
+    let g:ctrlp_use_caching = 0
+endif
 
 "==================
 "SETTINGS BY OTHERS
