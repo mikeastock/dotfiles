@@ -40,7 +40,7 @@ set hlsearch
 set ignorecase smartcase
 set hidden
 
-colorscheme jellybeans
+colorscheme Tomorrow-Night
 set colorcolumn=80
 set cursorline
 set ruler
@@ -66,7 +66,7 @@ endif
 "PLUGIN SETTINGS
 "===============
 let g:vroom_detect_spec_helper = 1
-let g:vroom_use_spring = 0
+let g:vroom_use_spring = 1
 let g:vroom_use_binstubs = 0
 let g:vroom_cucumber_path = 'cucumber'
 
