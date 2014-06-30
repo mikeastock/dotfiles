@@ -20,6 +20,7 @@ Bundle 'tpope/vim-endwise'
 Bundle 'tpope/vim-rails'
 Bundle 'tpope/vim-dispatch'
 Bundle 'tpope/vim-fugitive'
+Bundle 'tpope/vim-fireplace'
 
 "rails/ruby
 Bundle 'mikeastock/vim-vroom'
@@ -27,6 +28,7 @@ Bundle 'thoughtbot/vim-rspec'
 
 "colors
 Bundle 'nanotech/jellybeans.vim'
+Bundle 'ChrisKempson/Vim-Tomorrow-Theme'
 Bundle 'Keithbsmiley/rspec.vim'
 
 "airline

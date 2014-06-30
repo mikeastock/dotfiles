@@ -40,7 +40,7 @@ set hlsearch
 set ignorecase smartcase
 set hidden
 
-colorscheme jellybeans
+colorscheme Tomorrow-Night
 set colorcolumn=80
 set cursorline
 set ruler
