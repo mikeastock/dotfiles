@@ -44,7 +44,7 @@ colorscheme jellybeans
 set colorcolumn=80
 set cursorline
 set ruler
-set synmaxcol=200
+set synmaxcol=250
 
 "SPEEEEEEEEEEEEEED
 set re=1
@@ -69,7 +69,7 @@ endif
 "PLUGIN SETTINGS
 "===============
 let g:vroom_detect_spec_helper = 1
-let g:vroom_use_spring = 0
+let g:vroom_use_spring = 1
 let g:vroom_use_binstubs = 0
 let g:vroom_cucumber_path = 'cucumber'
 
@@ -135,7 +135,7 @@ map <Leader>av :CtrlP app/views<CR>
 map <Leader>ac :CtrlP app/controllers<CR>
 map <Leader>am :CtrlP app/models<CR>
 map <Leader>ah :CtrlP app/helpers<CR>
-map <Leader>ai :CtrlP app/serializers<CR>
+map <Leader>ai :CtrlP app/services<CR>
 map <Leader>as :CtrlP spec/<CR>
 map <Leader>ss :CtrlP spec2/<CR>
 map <Leader>al :CtrlP lib<CR>
