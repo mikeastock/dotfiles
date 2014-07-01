@@ -40,6 +40,7 @@ set hlsearch
 set ignorecase smartcase
 set hidden
 
+"Color and UI
 colorscheme gruvbox
 set background=dark
 set colorcolumn=80
