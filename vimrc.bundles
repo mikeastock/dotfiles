@@ -33,6 +33,7 @@ Bundle 'thoughtbot/vim-rspec'
 "colors
 Bundle 'nanotech/jellybeans.vim'
 Bundle 'ChrisKempson/Vim-Tomorrow-Theme'
+Bundle 'morhetz/gruvbox'
 Bundle 'Keithbsmiley/rspec.vim'
 
 "airline

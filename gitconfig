@@ -26,6 +26,7 @@
 [core]
   editor = nvim
   autocrlf = input
+	excludesfile = /home/mikeastock/.gitignore
 [color]
   ui = auto
 [color "diff"]
