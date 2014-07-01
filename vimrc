@@ -40,23 +40,19 @@ set hlsearch
 set ignorecase smartcase
 set hidden
 
-colorscheme Tomorrow-Night
+colorscheme gruvbox
+set background=dark
 set colorcolumn=80
 set cursorline
 set ruler
 set synmaxcol=250
 
+if !has("gui_running")
+  let g:gruvbox_italic=0
+endif
+
 "SPEEEEEEEEEEEEEED
 set re=1
-
-if executable('ag')
-    " Use Ag over grep
-    set grepprg=ag\ --nogroup\ --nocolor
-
-    " Use ag in CtrlP
-    let g:ctrlp_user_command = 'ag %s -l --nocolor -g ""'
-    let g:ctrlp_use_caching = 0
-endif
 
 let mapleader = " "
 
