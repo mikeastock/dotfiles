@@ -4,6 +4,9 @@
 " github.com/mikeastock/dotfiles
 "
 
+"Colorscheme settings
+let g:gruvbox_italic=0
+
 "==============
 " Vundle setup
 "==============
@@ -47,10 +50,6 @@ set colorcolumn=80
 set cursorline
 set ruler
 set synmaxcol=250
-
-if !has("gui_running")
-  let g:gruvbox_italic=0
-endif
 
 "SPEEEEEEEEEEEEEED
 set re=1
@@ -162,3 +161,4 @@ map <C-h> <C-W>h
 map <C-l> <C-W>l
 map <Right> :bn<CR>
 map <Left> :bp<CR>
+
