@@ -19,6 +19,9 @@ source $ZSH/oh-my-zsh.sh
 export VISUAL=vim
 export EDITOR=$VISUAL
 
+# vim colors
+source ~/.vim/bundle/gruvbox/gruvbox_256palette_osx.sh
+
 # aliases
 [[ -f ~/.aliases ]] && source ~/.aliases
 

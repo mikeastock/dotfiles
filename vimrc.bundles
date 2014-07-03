@@ -20,7 +20,11 @@ Bundle 'tpope/vim-endwise'
 Bundle 'tpope/vim-rails'
 Bundle 'tpope/vim-dispatch'
 Bundle 'tpope/vim-fugitive'
+
+"clojure
 Bundle 'tpope/vim-fireplace'
+Bundle 'guns/vim-clojure-static'
+Bundle 'guns/vim-clojure-highlight'
 
 "rails/ruby
 Bundle 'mikeastock/vim-vroom'
