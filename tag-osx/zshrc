@@ -18,15 +18,13 @@ source $ZSH/oh-my-zsh.sh
 # use vim as the visual editor
 export VISUAL=vim
 export EDITOR=$VISUAL
+export DISABLE_AUTO_TITLE=true
 
 # vim colors
 source ~/.vim/bundle/gruvbox/gruvbox_256palette_osx.sh
 
 # aliases
 [[ -f ~/.aliases ]] && source ~/.aliases
-
-# rubotorc
-[[ -f ~/.rubotorc ]] && source ~/.rubotorc
 
 # paths
 export PATH="$HOME/.rbenv/shims:$HOME/.rbenv/bin:$PATH"
