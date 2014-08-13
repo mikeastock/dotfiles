@@ -15,6 +15,7 @@
   pl = pull
   ps = push
   p = push
+  aa = add --all --intent-to-add
   ad = add -p
   rb = rebase origin/master
   hist = log --pretty=format:'%h %ad | %s%d [%an]' --graph --date=short
