@@ -137,6 +137,7 @@ map <Leader>ss :CtrlP spec2/<CR>
 map <Leader>al :CtrlP lib<CR>
 map <Leader>ap :CtrlP config<CR>
 map <Leader>af :CtrlP features<CR>
+map <Leader>aj :CtrlP app/workers<CR>
 map <Leader>ad :CtrlP docs<CR>
 map <Leader>ag :topleft 20 :split Gemfile<CR>
 map <Leader>g :CtrlPMixed<CR>
@@ -144,6 +145,7 @@ map <Leader>b :CtrlPBuffer<CR>
 map <Leader>p Obinding.pry<C-c>
 map <Leader>vi :tabe ~/.nvimrc<CR>
 map <Leader>vs :source ~/.nvimrc<CR>
+map <Leader>sl 0wilet(:ea)f=r{A }<CR>
 
 "OTHER
 function! MapCR()

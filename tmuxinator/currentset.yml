@@ -21,17 +21,12 @@ pre_window: rbenv shell 2.1.1
 # tmux_command: byobu
 
 windows:
-  - editor: vim
+  - editor: nvim
   - server:
       layout: "1d51,318x81,0,0{154x81,0,0,1,163x81,155,0[163x43,155,0,3,163x37,155,44,4]}"
       panes:
-        - spring rails server -p 4000
+        - spring rails server
         - #empty
         - gitsh
-  - api:
-      layout: "8206,318x81,0,0{159x81,0,0[159x43,0,0,159x37,0,44],158x81,160,0}"
-      panes:
-        - #empty
-        - #empty
-        - http
+  - console: spring rails console
 
