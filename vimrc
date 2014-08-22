@@ -81,6 +81,8 @@ if executable('ag')
     let g:ctrlp_use_caching = 0
 endif
 
+let g:ctrlp_match_window = 'bottom,order:btt,min:1,max:40'
+
 "==================
 "SETTINGS BY OTHERS
 "==================
@@ -137,7 +139,7 @@ map <Leader>ss :CtrlP spec2/<CR>
 map <Leader>al :CtrlP lib<CR>
 map <Leader>ap :CtrlP config<CR>
 map <Leader>af :CtrlP features<CR>
-map <Leader>aj :CtrlP app/workers<CR>
+map <Leader>aj :CtrlP app/jobs<CR>
 map <Leader>ad :CtrlP docs<CR>
 map <Leader>ag :topleft 20 :split Gemfile<CR>
 map <Leader>g :CtrlPMixed<CR>
