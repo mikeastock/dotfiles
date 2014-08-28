@@ -142,10 +142,12 @@ map <Leader>ad :CtrlP docs<CR>
 map <Leader>ag :topleft 20 :split Gemfile<CR>
 map <Leader>g :CtrlPMixed<CR>
 map <Leader>b :CtrlPBuffer<CR>
+map <Leader>c ::bp\|bd #<CR>
 map <Leader>p Obinding.pry<C-c>
 map <Leader>vi :tabe ~/.nvimrc<CR>
 map <Leader>vs :source ~/.nvimrc<CR>
 map <Leader>sl 0wilet(:ea)f=r{A }<CR>
+map <Leader>t f f[a€kb.fetch(f]a€kb)<CR>
 
 "OTHER
 function! MapCR()
