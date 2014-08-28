@@ -30,7 +30,6 @@ alias b="bundle"
 alias be="bundle exec"
 
 # Tests and Specs
-alias t="ruby -I test"
 alias cuc="bundle exec cucumber"
 
 # Rubygems

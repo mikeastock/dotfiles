@@ -20,6 +20,7 @@ Bundle 'tpope/vim-endwise'
 Bundle 'tpope/vim-rails'
 Bundle 'tpope/vim-dispatch'
 Bundle 'tpope/vim-fugitive'
+Bundle 'tpope/vim-surround'
 
 "clojure
 Bundle 'tpope/vim-fireplace'

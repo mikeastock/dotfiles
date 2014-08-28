@@ -27,9 +27,7 @@ source ~/.vim/bundle/gruvbox/gruvbox_256palette_osx.sh
 [[ -f ~/.aliases ]] && source ~/.aliases
 
 # paths
-export PATH="$HOME/.rbenv/shims:$HOME/.rbenv/bin:$PATH"
+export PATH="/usr/local/bin:$HOME/.rbenv/shims:$HOME/.rbenv/bin:$PATH"
 export RBENV_ROOT="$HOME/.rbenv/bin"
-export PATH="/usr/local/bin::/usr/local/heroku/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/X11/bin:/Applications/Postgres93.app/Contents/MacOS/bin/:$PATH"
-export PATH="/usr/local/Cellar/ngircd/21.1/sbin/:$PATH"
 eval "$(rbenv init - )"
 
