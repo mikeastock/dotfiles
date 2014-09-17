@@ -128,7 +128,7 @@ map <Leader>w :w!<CR>
 map <Leader>q :bd<CR>
 map <Leader>ar :topleft :split config/routes.rb<CR>
 map <Leader>f  :CtrlPRoot<CR>
-map <Leader>aa :CtrlP app<CR>
+map <Leader>aa :CtrlP app/assets<CR>
 map <Leader>av :CtrlP app/views<CR>
 map <Leader>ac :CtrlP app/controllers<CR>
 map <Leader>am :CtrlP app/models<CR>
@@ -140,7 +140,7 @@ map <Leader>al :CtrlP lib<CR>
 map <Leader>ap :CtrlP config<CR>
 map <Leader>af :CtrlP features<CR>
 map <Leader>aj :CtrlP app/jobs<CR>
-map <Leader>ad :CtrlP docs<CR>
+map <Leader>ad :CtrlP db<CR>
 map <Leader>ag :topleft 20 :split Gemfile<CR>
 map <Leader>g :CtrlPMixed<CR>
 map <Leader>b :CtrlPBuffer<CR>
