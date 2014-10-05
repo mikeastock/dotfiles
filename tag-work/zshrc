@@ -46,3 +46,6 @@ echo "$ZSH_THEME_GIT_PROMPT_PREFIX${ref#refs/heads/}$ZSH_THEME_GIT_PROMPT_SUFFIX
 # function tmuxsucks() {
 #   export SSH_AUTH_SOCK=$(find /tmp/ssh-* -name agent.\* -uid $(id -u) | head -n 1)
 # }
+
+### Added by the Heroku Toolbelt
+export PATH="/usr/local/heroku/bin:$PATH"
