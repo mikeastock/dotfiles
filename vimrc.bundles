@@ -39,7 +39,7 @@ Bundle 'Keithbsmiley/rspec.vim'
 
 "airline
 " Bundle 'bling/vim-airline'
-" Bundle 'bling/vim-bufferline'
+Bundle 'bling/vim-bufferline'
 
 "textobj
 Bundle 'kana/vim-textobj-user'
