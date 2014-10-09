@@ -55,9 +55,9 @@ alias ui="cd ./lib/assets/procore_ui"
 alias pr="cd ~/procore"
 alias cu="cd ~/currentset"
 alias cde=cd_engine
-alias vup="cd $HOME/procore/vagrant && vagrant up"
-alias vsuspend="cd $HOME/procore/vagrant && vagrant suspend"
-alias vstatus="cd $HOME/procore/vagrant && vagrant status"
+alias vup="cd $HOME/procore/ude && vagrant up"
+alias vsuspend="cd $HOME/procore/ude && vagrant suspend"
+alias vstatus="cd $HOME/procore/ude && vagrant status"
 
 #############
 # functions #
