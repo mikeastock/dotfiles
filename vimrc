@@ -151,6 +151,7 @@ map <Leader>vi :tabe ~/.nvimrc<CR>
 map <Leader>vs :source ~/.nvimrc<CR>
 map <Leader>sl 0wilet(:ea)f=r{A }<CR>
 map <Leader>t f f[a€kb.fetch(f]a€kb)<CR>
+map <Leader>kw :%s/\s\+$//<CR>
 
 "OTHER
 function! MapCR()
