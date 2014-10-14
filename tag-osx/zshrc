@@ -32,3 +32,4 @@ source ~/.vim/bundle/gruvbox/gruvbox_256palette_osx.sh
 export PATH="$HOME/.rbenv/bin:$PATH"
 eval "$(rbenv init - )"
 
+export DOCKER_HOST=tcp://192.168.59.103:2375

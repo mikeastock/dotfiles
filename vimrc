@@ -82,6 +82,7 @@ if executable('ag')
 endif
 
 let g:ctrlp_match_window = 'bottom,order:btt,min:1,max:40'
+let g:neocomplcache_enable_at_startup = 1
 
 "==================
 "SETTINGS BY OTHERS
