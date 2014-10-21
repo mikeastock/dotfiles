@@ -37,7 +37,7 @@ set splitright
 
 set history=500
 set autoread
-set laststatus=2 
+set laststatus=2
 set tags=./tags;
 set hlsearch
 set ignorecase smartcase
@@ -119,7 +119,7 @@ autocmd FileType gitcommit setlocal spell textwidth=72
 "KEY BINDINGS
 "===================
 
-"LEADER 
+"LEADER
 map <Leader>w :w!<CR>
 map <Leader>q :bd<CR>
 map <Leader>ar :topleft :split config/routes.rb<CR>
