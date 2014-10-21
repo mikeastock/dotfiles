@@ -43,6 +43,9 @@ set hlsearch
 set ignorecase smartcase
 set hidden
 
+set shiftround " When at 3 spaces and I hit >>, go to 4, not 5.
+set gdefault " assume the /g flag on :s substitutions to replace all matches in a line
+
 "Color and UI
 colorscheme gruvbox
 set background=dark
@@ -97,6 +100,14 @@ set directory=~/.vim-tmp,~/.tmp,~/tmp,/var/tmp,/tmp
 "FROM r00k
 "=================
 
+function! OpenFactoryFile()
+  if filereadable("test/factories.rb")
+    execute ":sp test/factories.rb"
+  else
+    execute ":sp spec/factories.rb"
+  end
+endfunction
+
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " RENAME CURRENT FILE (thanks Gary Bernhardt)
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -145,33 +156,34 @@ autocmd FileType gitcommit setlocal spell textwidth=72
 "===================
 
 "LEADER
-map <Leader>w :w!<CR>
-map <Leader>q :bd<CR>
-map <Leader>ar :topleft :split config/routes.rb<CR>
-map <Leader>f  :CtrlPRoot<CR>
 map <Leader>aa :CtrlP app/assets<CR>
-map <Leader>av :CtrlP app/views<CR>
 map <Leader>ac :CtrlP app/controllers<CR>
-map <Leader>am :CtrlP app/models<CR>
+map <Leader>ad :CtrlP db<CR>
+map <Leader>af :CtrlP features<CR>
+map <Leader>ag :topleft 20 :split Gemfile<CR>
 map <Leader>ah :CtrlP app/helpers<CR>
 map <Leader>ai :CtrlP app/services<CR>
-map <Leader>as :CtrlP spec/<CR>
-map <Leader>ss :CtrlP spec2/<CR>
-map <Leader>al :CtrlP lib<CR>
-map <Leader>ap :CtrlP config<CR>
-map <Leader>af :CtrlP features<CR>
 map <Leader>aj :CtrlP app/jobs<CR>
-map <Leader>ad :CtrlP db<CR>
-map <Leader>ag :topleft 20 :split Gemfile<CR>
-map <Leader>g :CtrlPMixed<CR>
+map <Leader>al :CtrlP lib<CR>
+map <Leader>am :CtrlP app/models<CR>
+map <Leader>ap :CtrlP config<CR>
+map <Leader>ar :topleft :split config/routes.rb<CR>
+map <Leader>as :CtrlP spec/<CR>
+map <Leader>av :CtrlP app/views<CR>
 map <Leader>b :CtrlPBuffer<CR>
 map <Leader>c ::bp\|bd #<CR>
+map <Leader>f  :CtrlPRoot<CR>
+map <Leader>f :call OpenFactoryFile()<CR>
+map <Leader>g :CtrlPMixed<CR>
+map <Leader>kw :%s/\s\+$//<CR>
 map <Leader>p Obinding.pry<C-c>
+map <Leader>q :bd<CR>
+map <Leader>sl 0wilet(:ea)f=r{A }<CR>
+map <Leader>ss :CtrlP spec2/<CR>
+map <Leader>t f f[a€kb.fetch(f]a€kb)<CR>
 map <Leader>vi :tabe ~/.nvimrc<CR>
 map <Leader>vs :source ~/.nvimrc<CR>
-map <Leader>sl 0wilet(:ea)f=r{A }<CR>
-map <Leader>t f f[a€kb.fetch(f]a€kb)<CR>
-map <Leader>kw :%s/\s\+$//<CR>
+map <Leader>w :w!<CR>
 
 "OTHER
 function! MapCR()
