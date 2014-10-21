@@ -100,10 +100,6 @@ set directory=~/.vim-tmp,~/.tmp,~/tmp,/var/tmp,/tmp
 "FROM r00k
 "=================
 
-function! OpenFactoryFile()
-  execute ":vsp spec/factories.rb"
-endfunction
-
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " RENAME CURRENT FILE (thanks Gary Bernhardt)
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -167,8 +163,8 @@ map <Leader>ar :topleft :split config/routes.rb<CR>
 map <Leader>as :CtrlP spec/<CR>
 map <Leader>av :CtrlP app/views<CR>
 map <Leader>b :CtrlPBuffer<CR>
+map <Leader>bi :!bundle install<cr>
 map <Leader>c ::bp\|bd #<CR>
-map <Leader>f :call OpenFactoryFile()<CR>
 map <Leader>g :CtrlPMixed<CR>
 map <Leader>kw :%s/\s\+$//<CR>
 map <Leader>p Obinding.pry<C-c>
