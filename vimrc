@@ -101,11 +101,7 @@ set directory=~/.vim-tmp,~/.tmp,~/tmp,/var/tmp,/tmp
 "=================
 
 function! OpenFactoryFile()
-  if filereadable("test/factories.rb")
-    execute ":sp test/factories.rb"
-  else
-    execute ":sp spec/factories.rb"
-  end
+  execute ":vsp spec/factories.rb"
 endfunction
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -172,7 +168,6 @@ map <Leader>as :CtrlP spec/<CR>
 map <Leader>av :CtrlP app/views<CR>
 map <Leader>b :CtrlPBuffer<CR>
 map <Leader>c ::bp\|bd #<CR>
-map <Leader>f  :CtrlPRoot<CR>
 map <Leader>f :call OpenFactoryFile()<CR>
 map <Leader>g :CtrlPMixed<CR>
 map <Leader>kw :%s/\s\+$//<CR>
