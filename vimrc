@@ -165,6 +165,7 @@ map <Leader>av :CtrlP app/views<CR>
 map <Leader>b :CtrlPBuffer<CR>
 map <Leader>bi :!bundle install<cr>
 map <Leader>c ::bp\|bd #<CR>
+map <Leader>f :CtrlPRoot<CR>
 map <Leader>g :CtrlPMixed<CR>
 map <Leader>kw :%s/\s\+$//<CR>
 map <Leader>p Obinding.pry<C-c>
