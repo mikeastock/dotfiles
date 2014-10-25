@@ -1,2 +1,2 @@
 EXCLUDES="README.md : xorg.conf"
-TAGS="vps work osx arch deb"
+TAGS="linux mac"
