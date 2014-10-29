@@ -30,7 +30,6 @@ Bundle 'guns/vim-clojure-static'
 Bundle 'guns/vim-clojure-highlight'
 
 "rails/ruby
-Bundle 'mikeastock/vim-vroom'
 Bundle 'thoughtbot/vim-rspec'
 
 "colors

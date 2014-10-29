@@ -62,13 +62,12 @@ let mapleader = " "
 "===============
 "PLUGIN SETTINGS
 "===============
-let g:vroom_detect_spec_helper = 1
-let g:vroom_use_spring = 1
-let g:vroom_use_binstubs = 0
-let g:vroom_cucumber_path = 'cucumber'
+map <Leader>t :call RunLastSpec()<CR>
+map <Leader>s :call RunNearestSpec()<CR>
+map <Leader>r :call RunCurrentSpecFile()<CR>
+map <Leader>a :call RunAllSpecs()<CR>
 
-let g:rspec_command = "compiler rspec | set makeprg=zeus | Make rspec2 {spec}"
-map <Leader>t :call RunCurrentSpecFile()<CR>
+let g:rspec_command = "!bin/rspec {spec}"
 
 if executable('ag')
     " Use Ag over grep
@@ -120,6 +119,19 @@ set list listchars=tab:»·,trail:·
 " Make it more obvious which paren I'm on
 hi MatchParen cterm=none ctermbg=black ctermfg=yellow
 
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" PROMOTE VARIABLE TO RSPEC LET
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" map <Leader>sl 0wilet(:ea)f=r{A }<CR>
+function! PromoteToLet()
+  :normal! dd
+  " :exec '?^\s*it\>'
+  :normal! P
+  :.s/\(\w\+\) = \(.*\)$/let(:\1) { \2 }/
+  :normal ==
+endfunction
+:command! PromoteToLet :call PromoteToLet()
+:map <leader>sl :PromoteToLet<cr>
 
 "=========
 "AUTOCMDS
@@ -155,7 +167,7 @@ map <Leader>af :CtrlP features<CR>
 map <Leader>ag :topleft 20 :split Gemfile<CR>
 map <Leader>ah :CtrlP app/helpers<CR>
 map <Leader>ai :CtrlP app/services<CR>
-map <Leader>aj :CtrlP app/jobs<CR>
+map <Leader>aj :CtrlP app/workers<CR>
 map <Leader>al :CtrlP lib<CR>
 map <Leader>am :CtrlP app/models<CR>
 map <Leader>ap :CtrlP config<CR>
@@ -170,7 +182,6 @@ map <Leader>g :CtrlPMixed<CR>
 map <Leader>kw :%s/\s\+$//<CR>
 map <Leader>p Obinding.pry<C-c>
 map <Leader>q :bd<CR>
-map <Leader>sl 0wilet(:ea)f=r{A }<CR>
 map <Leader>ss :CtrlP spec2/<CR>
 map <Leader>t f f[a€kb.fetch(f]a€kb)<CR>
 map <Leader>vi :tabe ~/.nvimrc<CR>
