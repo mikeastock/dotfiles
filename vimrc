@@ -117,7 +117,7 @@ map <Leader>n :call RenameFile()<cr>
 set list listchars=tab:»·,trail:·
 
 " Make it more obvious which paren I'm on
-hi MatchParen cterm=none ctermbg=black ctermfg=yellow
+hi MatchParen cterm=none ctermbg=black ctermfg=red
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " PROMOTE VARIABLE TO RSPEC LET
@@ -182,6 +182,7 @@ map <Leader>g :CtrlPMixed<CR>
 map <Leader>kw :%s/\s\+$//<CR>
 map <Leader>p Obinding.pry<C-c>
 map <Leader>q :bd<CR>
+map <Leader>rs :s/'/"<CR>
 map <Leader>ss :CtrlP spec2/<CR>
 map <Leader>t f f[a€kb.fetch(f]a€kb)<CR>
 map <Leader>vi :tabe ~/.nvimrc<CR>
