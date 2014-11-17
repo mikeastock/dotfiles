@@ -99,6 +99,9 @@ set directory=~/.vim-tmp,~/.tmp,~/tmp,/var/tmp,/tmp
 "FROM r00k
 "=================
 
+"" Remove trailing whitespace on save for ruby files.
+au BufWritePre *.rb :%s/\s\+$//e
+
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " RENAME CURRENT FILE (thanks Gary Bernhardt)
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -162,6 +165,7 @@ autocmd FileType gitcommit setlocal spell textwidth=72
 "LEADER
 map <Leader>aa :CtrlP app/assets<CR>
 map <Leader>ac :CtrlP app/controllers<CR>
+map <Leader>ao :CtrlP app/controllers/vapid/v2/<CR>
 map <Leader>ad :CtrlP db<CR>
 map <Leader>af :CtrlP features<CR>
 map <Leader>ag :topleft 20 :split Gemfile<CR>

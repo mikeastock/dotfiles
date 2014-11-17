@@ -3,7 +3,7 @@
 name: currentset
 root: ~/currentset
 
-pre_window: rbenv shell 2.1.1
+pre_window: rbenv shell 2.1.3
 
 # Optional tmux socket
 # socket_name: foo
@@ -21,12 +21,11 @@ pre_window: rbenv shell 2.1.1
 # tmux_command: byobu
 
 windows:
-  - editor: nvim
-  - server:
-      layout: "1d51,318x81,0,0{154x81,0,0,1,163x81,155,0[163x43,155,0,3,163x37,155,44,4]}"
+  - nvim: nvim
+  - console:
+      layout: even-horizontal
       panes:
-        - spring rails server
-        - #empty
+        - #
         - gitsh
-  - console: spring rails console
-
+  - server: bin/rails server
+  - sidekiq: bin/sidekiq -C config/sidekiq.yml
