@@ -121,7 +121,7 @@ map <Leader>n :call RenameFile()<cr>
 set list listchars=tab:»·,trail:·
 
 " Make it more obvious which paren I'm on
-hi MatchParen cterm=none ctermbg=black ctermfg=yellow
+hi MatchParen cterm=none ctermbg=black ctermfg=red
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " PROMOTE VARIABLE TO RSPEC LET
@@ -165,6 +165,7 @@ autocmd FileType gitcommit setlocal spell textwidth=72
 "===================
 
 "LEADER
+map <Leader>P  Obinding.pry<C-c>
 map <Leader>aa :CtrlP app/assets<CR>
 map <Leader>ac :CtrlP app/controllers<CR>
 map <Leader>ad :CtrlP db<CR>
@@ -182,18 +183,18 @@ map <Leader>av :CtrlP app/views<CR>
 map <Leader>b  :CtrlPBuffer<CR>
 map <Leader>bi :!bundle install<cr>
 map <Leader>c  ::bp\|bd #<CR>
+map <Leader>e  :RuboCop<CR>
 map <Leader>f  :CtrlPRoot<CR>
 map <Leader>g  :CtrlPMixed<CR>
 map <Leader>kw :%s/\s\+$//<CR>
-map <Leader>P  Obinding.pry<C-c>
 map <Leader>p  obinding.pry<C-c>
-map <Leader>q  :bd<CR>
+map <Leader>q :bd<CR>
+map <Leader>rs :s/'/"<CR>
 map <Leader>ss :CtrlP spec2/<CR>
 map <Leader>t  f f[a€kb.fetch(f]a€kb)<CR>
 map <Leader>vi :tabe ~/.nvimrc<CR>
 map <Leader>vs :source ~/.nvimrc<CR>
 map <Leader>w  :w!<CR>
-map <Leader>e  :RuboCop<CR>
 
 "OTHER
 function! MapCR()
