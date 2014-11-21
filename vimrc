@@ -80,6 +80,7 @@ endif
 
 let g:ctrlp_match_window = 'bottom,order:btt,min:1,max:40'
 let g:neocomplcache_enable_at_startup = 1
+let g:ctrlp_working_path_mode = 'ra'
 
 "==================
 "SETTINGS BY OTHERS
@@ -100,7 +101,7 @@ set directory=~/.vim-tmp,~/.tmp,~/tmp,/var/tmp,/tmp
 "=================
 
 "" Remove trailing whitespace on save for ruby files.
-au BufWritePre *.rb :%s/\s\+$//e
+" au BufWritePre *.rb :%s/\s\+$//e
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " RENAME CURRENT FILE (thanks Gary Bernhardt)
@@ -154,6 +155,7 @@ augroup vimrcEx
     autocmd BufNewFile,BufRead *.fdoc setfiletype yaml
     autocmd Filetype yaml set nocursorline
     autocmd BufNewFile,BufRead *.sass setfiletype sass
+    autocmd Filetype markdown setlocal spell
 augroup END
 
 autocmd FileType gitcommit setlocal spell textwidth=72
@@ -165,7 +167,6 @@ autocmd FileType gitcommit setlocal spell textwidth=72
 "LEADER
 map <Leader>aa :CtrlP app/assets<CR>
 map <Leader>ac :CtrlP app/controllers<CR>
-map <Leader>ao :CtrlP app/controllers/vapid/v2/<CR>
 map <Leader>ad :CtrlP db<CR>
 map <Leader>af :CtrlP features<CR>
 map <Leader>ag :topleft 20 :split Gemfile<CR>
@@ -178,19 +179,21 @@ map <Leader>ap :CtrlP config<CR>
 map <Leader>ar :topleft :split config/routes.rb<CR>
 map <Leader>as :CtrlP spec/<CR>
 map <Leader>av :CtrlP app/views<CR>
-map <Leader>b :CtrlPBuffer<CR>
+map <Leader>b  :CtrlPBuffer<CR>
 map <Leader>bi :!bundle install<cr>
-map <Leader>c ::bp\|bd #<CR>
-map <Leader>f :CtrlPRoot<CR>
-map <Leader>g :CtrlPMixed<CR>
+map <Leader>c  ::bp\|bd #<CR>
+map <Leader>f  :CtrlPRoot<CR>
+map <Leader>g  :CtrlPMixed<CR>
 map <Leader>kw :%s/\s\+$//<CR>
-map <Leader>p Obinding.pry<C-c>
-map <Leader>q :bd<CR>
+map <Leader>P  Obinding.pry<C-c>
+map <Leader>p  obinding.pry<C-c>
+map <Leader>q  :bd<CR>
 map <Leader>ss :CtrlP spec2/<CR>
-map <Leader>t f f[a€kb.fetch(f]a€kb)<CR>
+map <Leader>t  f f[a€kb.fetch(f]a€kb)<CR>
 map <Leader>vi :tabe ~/.nvimrc<CR>
 map <Leader>vs :source ~/.nvimrc<CR>
-map <Leader>w :w!<CR>
+map <Leader>w  :w!<CR>
+map <Leader>e  :RuboCop<CR>
 
 "OTHER
 function! MapCR()

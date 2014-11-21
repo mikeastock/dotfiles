@@ -16,6 +16,7 @@ Bundle 'rking/ag.vim'
 Bundle 'ervandew/supertab'
 Bundle 'suan/vim-instant-markdown'
 Bundle 'Shougo/neocomplcache.vim'
+Bundle 'ngmy/vim-rubocop'
 
 "tpope
 Bundle 'tpope/vim-endwise'
