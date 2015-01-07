@@ -1,6 +1,6 @@
 # ~/.tmuxinator/contractor.yml
 
-name: dev
+name: temp
 root: ./
 
 # Optional tmux socket
