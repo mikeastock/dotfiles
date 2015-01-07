@@ -56,6 +56,5 @@ Bundle "derekwyatt/vim-scala"
 
 "markdown
 Bundle "plasticboy/vim-markdown"
-Bundle "shime/vim-livedown"
 
 filetype on
