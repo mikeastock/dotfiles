@@ -190,12 +190,13 @@ map <Leader>kw :%s/\s\+$//<CR>
 map <Leader>p  obinding.pry<C-c>
 map <Leader>q :bd<CR>
 map <Leader>rs :s/'/"<CR>
-map <Leader>ss :CtrlP spec2/<CR>
+map <Leader>ss :CtrlP old_spec/<CR>
 map <Leader>t  f f[a€kb.fetch(f]a€kb)<CR>
 map <Leader>vi :tabe ~/.nvimrc<CR>
 map <Leader>vs :source ~/.nvimrc<CR>
 map <Leader>w  :w!<CR>
-
+nnoremap <Leader>= gg=G<CR>
+map <Leader>mi 0f:wywOit "pA" doj==oendkf{edi}Op==j0ftlvt.c(response)<CR>
 "OTHER
 function! MapCR()
     nnoremap <CR> :nohlsearch<CR>
