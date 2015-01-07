@@ -8,7 +8,7 @@ call vundle#rc()
 Bundle 'gmarik/vundle'
 
 "misc
-Bundle 'kien/ctrlp.vim'
+Bundle 'ctrlpvim/ctrlp.vim'
 Bundle 'airblade/vim-gitgutter'
 Bundle 'tomtom/tcomment_vim'
 Bundle 'junegunn/vim-easy-align'
@@ -17,6 +17,7 @@ Bundle 'ervandew/supertab'
 Bundle 'suan/vim-instant-markdown'
 Bundle 'Shougo/neocomplcache.vim'
 Bundle 'ngmy/vim-rubocop'
+Bundle 'tmhedberg/matchit'
 
 "tpope
 Bundle 'tpope/vim-endwise'
@@ -30,8 +31,9 @@ Bundle 'tpope/vim-fireplace'
 Bundle 'guns/vim-clojure-static'
 Bundle 'guns/vim-clojure-highlight'
 
-"rails/ruby
-Bundle 'thoughtbot/vim-rspec'
+"testing
+Bundle 'janko-m/vim-test'
+" Bundle 'thoughtbot/vim-rspec'
 
 "colors
 Bundle 'nanotech/jellybeans.vim'
@@ -41,10 +43,19 @@ Bundle 'Keithbsmiley/rspec.vim'
 
 "airline
 " Bundle 'bling/vim-airline'
-Bundle 'bling/vim-bufferline'
+" Bundle 'bling/vim-bufferline'
+Bundle 'itchyny/lightline.vim'
 
-"textobj
+"ruby
 Bundle 'kana/vim-textobj-user'
 Bundle 'nelstrom/vim-textobj-rubyblock'
+Bundle 'ecomba/vim-ruby-refactoring'
+
+"scala
+Bundle "derekwyatt/vim-scala"
+
+"markdown
+Bundle "plasticboy/vim-markdown"
+Bundle "shime/vim-livedown"
 
 filetype on

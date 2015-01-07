@@ -49,3 +49,5 @@
   remote = origin
   merge = refs/heads/master
 
+[url "ssh://git@heroku.com/"]
+	insteadOf = https://git.heroku.com/

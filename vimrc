@@ -62,12 +62,12 @@ let mapleader = " "
 "===============
 "PLUGIN SETTINGS
 "===============
-map <Leader>t :call RunLastSpec()<CR>
-map <Leader>s :call RunNearestSpec()<CR>
-map <Leader>r :call RunCurrentSpecFile()<CR>
-map <Leader>a :call RunAllSpecs()<CR>
+map <Leader>t :TestLast<CR>
+map <Leader>s :TestNearest<CR>
+map <Leader>r :TestFile<CR>
+map <Leader>a :TestSuite<CR>
 
-let g:rspec_command = "!bin/rspec {spec}"
+" let g:rspec_command = "!bin/rspec {spec}"
 
 if executable('ag')
     " Use Ag over grep
@@ -82,6 +82,11 @@ let g:ctrlp_match_window = 'bottom,order:btt,min:1,max:40'
 let g:neocomplcache_enable_at_startup = 1
 let g:ctrlp_working_path_mode = 'ra'
 
+let g:vim_markdown_folding_disabled=1
+
+let g:lightline = {
+      \ 'colorscheme': 'jellybeans',
+      \ }
 "==================
 "SETTINGS BY OTHERS
 "==================
@@ -155,10 +160,11 @@ augroup vimrcEx
     autocmd BufNewFile,BufRead *.fdoc setfiletype yaml
     autocmd Filetype yaml set nocursorline
     autocmd BufNewFile,BufRead *.sass setfiletype sass
-    autocmd Filetype markdown setlocal spell
 augroup END
 
 autocmd FileType gitcommit setlocal spell textwidth=72
+autocmd BufRead,BufNewFile *.md setlocal spell textwidth=80
+" autocmd Filetype markdown setlocal spell
 
 "===================
 "KEY BINDINGS
