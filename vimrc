@@ -47,12 +47,21 @@ set shiftround " When at 3 spaces and I hit >>, go to 4, not 5.
 set gdefault " assume the /g flag on :s substitutions to replace all matches in a line
 
 "Color and UI
-colorscheme gruvbox
+colorscheme badwolf
 set background=dark
 set colorcolumn=80
 set cursorline
 set ruler
 set synmaxcol=250
+
+" Make the gutters darker than the background.
+let g:badwolf_darkgutter = 1
+" Make the tab line darker than the background.
+let g:badwolf_tabline = 0
+" Turn off HTML link underlining
+let g:badwolf_html_link_underline = 0
+" Turn on CSS properties highlighting
+let g:badwolf_css_props_highlight = 1
 
 "SPEEEEEEEEEEEEEED
 set re=1
@@ -202,7 +211,7 @@ map <Leader>vi :tabe ~/.nvimrc<CR>
 map <Leader>vs :source ~/.nvimrc<CR>
 map <Leader>w  :w!<CR>
 map <Leader>1 0f{w"_dw0f{a expect(committer.pa)f}i <C-c>
-map <Leader>hs :%s/:\([^ ]*\)\(\s*\)=>/\1:/g<CR>
+map <Leader>hs :s/:\([^ ]*\)\(\s*\)=>/\1:/g<CR>
 map <Leader>mi 0f:wywOit "pA" doj==oendkf{edi}Op==j0ftlvt.c(response)<CR>
 nnoremap <Leader>= gg=G<CR>
 

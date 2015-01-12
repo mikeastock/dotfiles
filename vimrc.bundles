@@ -26,35 +26,22 @@ Bundle 'tpope/vim-dispatch'
 Bundle 'tpope/vim-fugitive'
 Bundle 'tpope/vim-surround'
 
-"clojure
-Bundle 'tpope/vim-fireplace'
-Bundle 'guns/vim-clojure-static'
-Bundle 'guns/vim-clojure-highlight'
-
 "testing
-Bundle 'janko-m/vim-test'
-" Bundle 'thoughtbot/vim-rspec'
+" Bundle 'janko-m/vim-test'
+Bundle 'thoughtbot/vim-rspec'
+Bundle 'jgdavey/tslime.vim'
 
 "colors
 Bundle 'nanotech/jellybeans.vim'
 Bundle 'ChrisKempson/Vim-Tomorrow-Theme'
 Bundle 'morhetz/gruvbox'
 Bundle 'Keithbsmiley/rspec.vim'
+Bundle 'sjl/badwolf'
+Bundle 'jpo/vim-railscasts-theme'
 
-"airline
-" Bundle 'bling/vim-airline'
-" Bundle 'bling/vim-bufferline'
 Bundle 'itchyny/lightline.vim'
 
-"ruby
 Bundle 'kana/vim-textobj-user'
 Bundle 'nelstrom/vim-textobj-rubyblock'
-Bundle 'ecomba/vim-ruby-refactoring'
-
-"scala
-Bundle "derekwyatt/vim-scala"
-
-"markdown
-Bundle "plasticboy/vim-markdown"
 
 filetype on
