@@ -201,6 +201,8 @@ map <Leader>t  f f[a€kb.fetch(f]a€kb)<CR>
 map <Leader>vi :tabe ~/.nvimrc<CR>
 map <Leader>vs :source ~/.nvimrc<CR>
 map <Leader>w  :w!<CR>
+map <Leader>1 0f{w"_dw0f{a expect(committer.pa)f}i <C-c>
+map <Leader>hs :%s/:\([^ ]*\)\(\s*\)=>/\1:/g<CR>
 
 "OTHER
 function! MapCR()
