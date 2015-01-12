@@ -22,6 +22,7 @@
   lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
   su = submodule update --init --recursive
   pim = pull origin master
+  rbm = pull --rebase origin master
 [push]
   default = current
 [core]

@@ -196,13 +196,15 @@ map <Leader>kw :%s/\s\+$//<CR>
 map <Leader>p  obinding.pry<C-c>
 map <Leader>q :bd<CR>
 map <Leader>rs :s/'/"<CR>
-map <Leader>ss :CtrlP spec2/<CR>
+map <Leader>ss :CtrlP old_spec/<CR>
 map <Leader>t  f f[a€kb.fetch(f]a€kb)<CR>
 map <Leader>vi :tabe ~/.nvimrc<CR>
 map <Leader>vs :source ~/.nvimrc<CR>
 map <Leader>w  :w!<CR>
 map <Leader>1 0f{w"_dw0f{a expect(committer.pa)f}i <C-c>
 map <Leader>hs :%s/:\([^ ]*\)\(\s*\)=>/\1:/g<CR>
+map <Leader>mi 0f:wywOit "pA" doj==oendkf{edi}Op==j0ftlvt.c(response)<CR>
+nnoremap <Leader>= gg=G<CR>
 
 "OTHER
 function! MapCR()
