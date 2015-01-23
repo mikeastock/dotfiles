@@ -47,7 +47,7 @@ set shiftround " When at 3 spaces and I hit >>, go to 4, not 5.
 set gdefault " assume the /g flag on :s substitutions to replace all matches in a line
 
 "Color and UI
-colorscheme base16-default
+colorscheme badwolf
 set background=dark
 set colorcolumn=80
 set cursorline
