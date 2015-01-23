@@ -121,13 +121,13 @@ set directory=~/.vim-tmp,~/.tmp,~/tmp,/var/tmp,/tmp
 " RENAME CURRENT FILE (thanks Gary Bernhardt)
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 function! RenameFile()
-    let old_name = expand('%')
-    let new_name = input('New file name: ', expand('%'), 'file')
-    if new_name != '' && new_name != old_name
-        exec ':saveas ' . new_name
-        exec ':silent !rm ' . old_name
-        redraw!
-    endif
+  let old_name = expand('%')
+  let new_name = input('New file name: ', expand('%'), 'file')
+  if new_name != '' && new_name != old_name
+    exec ':saveas ' . new_name
+    exec ':silent !rm ' . old_name
+    redraw!
+  endif
 endfunction
 map <Leader>n :call RenameFile()<cr>
 
@@ -156,24 +156,23 @@ endfunction
 "=========
 
 augroup vimrcEx
-" Jump to last cursor position unless it's invalid or in an event handler
+  " Jump to last cursor position unless it's invalid or in an event handler
   autocmd!
   autocmd BufReadPost *
-    \ if line("'\"") > 0 && line("'\"") <= line("$") |
-    \ exe "normal g`\"" |
-    \ endif
+        \ if line("'\"") > 0 && line("'\"") <= line("$") |
+        \ exe "normal g`\"" |
+        \ endif
 
-    "for ruby, autoindent with two spaces, always expand tabs
-    autocmd FileType ruby,haml,eruby,yaml,fdoc,html,javascript,sass,cucumber set ai sw=2 sts=2 et
+  "for ruby, autoindent with two spaces, always expand tabs
+  autocmd FileType ruby,haml,eruby,yaml,fdoc,html,javascript,sass,cucumber set ai sw=2 sts=2 et
 
-    autocmd BufNewFile,BufRead *.fdoc setfiletype yaml
-    autocmd Filetype yaml set nocursorline
-    autocmd BufNewFile,BufRead *.sass setfiletype sass
+  autocmd BufNewFile,BufRead *.fdoc setfiletype yaml
+  autocmd Filetype yaml set nocursorline
+  autocmd BufNewFile,BufRead *.sass setfiletype sass
+  autocmd Filetype markdown setlocal spell
 augroup END
 
 autocmd FileType gitcommit setlocal spell textwidth=72
-autocmd BufRead,BufNewFile *.md setlocal spell textwidth=80
-" autocmd Filetype markdown setlocal spell
 
 "===================
 "KEY BINDINGS
@@ -188,7 +187,7 @@ map <Leader>af :CtrlP features<CR>
 map <Leader>ag :topleft 20 :split Gemfile<CR>
 map <Leader>ah :CtrlP app/helpers<CR>
 map <Leader>ai :CtrlP app/services<CR>
-map <Leader>aj :CtrlP app/workers<CR>
+map <Leader>aj :CtrlP app/jobs<CR>
 map <Leader>al :CtrlP lib<CR>
 map <Leader>am :CtrlP app/models<CR>
 map <Leader>ap :CtrlP config<CR>
