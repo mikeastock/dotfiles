@@ -38,6 +38,7 @@ Bundle 'morhetz/gruvbox'
 Bundle 'Keithbsmiley/rspec.vim'
 Bundle 'sjl/badwolf'
 Bundle 'jpo/vim-railscasts-theme'
+Bundle 'chriskempson/base16-vim'
 
 Bundle 'itchyny/lightline.vim'
 
