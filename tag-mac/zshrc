@@ -15,6 +15,9 @@ source $ZSH/oh-my-zsh.sh
 # custom zsh configs #
 ######################
 
+# Allow [ or ] whereever you want
+unsetopt nomatch
+
 # use vim as the visual editor
 export VISUAL=vim
 export EDITOR=$VISUAL
