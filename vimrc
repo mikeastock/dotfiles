@@ -71,31 +71,37 @@ let mapleader = " "
 "===============
 "PLUGIN SETTINGS
 "===============
-map <Leader>t :TestLast<CR>
-map <Leader>s :TestNearest<CR>
-map <Leader>r :TestFile<CR>
-map <Leader>a :TestSuite<CR>
+map <Leader>t :call RunLastSpec()<CR>
+map <Leader>s :call RunNearestSpec()<CR>
+map <Leader>r :call RunCurrentSpecFile()<CR>
+map <Leader>a :call RunAllSpecs()<CR>
 
-" let g:rspec_command = "!bin/rspec {spec}"
+let g:rspec_command = "!bin/rspec {spec}"
+" let g:rspec_command = 'call Send_to_Tmux("bin/rspec {spec}\n")'
 
-if executable('ag')
-    " Use Ag over grep
-    set grepprg=ag\ --nogroup\ --nocolor
 
-    " Use ag in CtrlP
-    let g:ctrlp_user_command = 'ag %s -l --nocolor -g ""'
-    let g:ctrlp_use_caching = 0
-endif
+" If ag is available use it as filename list generator instead of 'find'
+if executable("ag")
+  set grepprg=ag\ --nogroup\ --nocolor
+  let g:ctrlp_user_command = 'ag %s -i --nocolor --nogroup --hidden
+        \ --ignore .git
+        \ --ignore .svn
+        \ --ignore .hg
+        \ --ignore .DS_Store
+        \ --ignore node_modules
+        \ -g ""'
+end
 
-let g:ctrlp_match_window = 'bottom,order:btt,min:1,max:40'
-let g:neocomplcache_enable_at_startup = 1
-let g:ctrlp_working_path_mode = 'ra'
+let g:ctrlp_match_window = 'bottom,order:btt,min:1,max:20'
+let g:ctrlp_match_func = { 'match': 'pymatcher#PyMatch' }
 
-let g:vim_markdown_folding_disabled=1
+" Do not clear filenames cache, to improve CtrlP startup
+" You can manualy clear it by <F5>
+let g:ctrlp_clear_cache_on_exit = 0
 
-let g:lightline = {
-      \ 'colorscheme': 'jellybeans',
-      \ }
+" Set no file limit, we are building a big project
+let g:ctrlp_max_files = 0
+
 "==================
 "SETTINGS BY OTHERS
 "==================
