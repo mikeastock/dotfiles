@@ -80,13 +80,16 @@ let g:rspec_command = "!bin/rspec {spec}"
 " let g:rspec_command = 'call Send_to_Tmux("bin/rspec {spec}\n")'
 
 
-let g:ctrlp_user_command = 'ag %s -i --nocolor --nogroup --hidden
-      \ --ignore .git
-      \ --ignore .svn
-      \ --ignore .hg
-      \ --ignore .DS_Store
-      \ --ignore node_modules
-      \ -g ""'
+if executable("ag")
+  set grepprg=ag\ --nogroup\ --nocolor
+  let g:ctrlp_user_command = 'ag %s -i --nocolor --nogroup --hidden
+        \ --ignore .git
+        \ --ignore .svn
+        \ --ignore .hg
+        \ --ignore .DS_Store
+        \ --ignore node_modules
+        \ -g ""'
+endif
 
 " PyMatcher for CtrlP
 if !has('python')
