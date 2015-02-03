@@ -9,7 +9,6 @@ Bundle 'gmarik/vundle'
 
 "misc
 Bundle 'ctrlpvim/ctrlp.vim'
-Bundle 'JazzCore/ctrlp-cmatcher'
 Bundle 'FelikZ/ctrlp-py-matcher'
 Bundle 'airblade/vim-gitgutter'
 Bundle 'tomtom/tcomment_vim'
