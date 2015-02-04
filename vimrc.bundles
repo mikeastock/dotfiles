@@ -9,6 +9,7 @@ Bundle 'gmarik/vundle'
 
 "misc
 Bundle 'ctrlpvim/ctrlp.vim'
+Bundle 'tacahiroy/ctrlp-funky'
 Bundle 'airblade/vim-gitgutter'
 Bundle 'tomtom/tcomment_vim'
 Bundle 'junegunn/vim-easy-align'
