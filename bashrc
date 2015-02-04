@@ -19,3 +19,4 @@ fi
 
 export NVM_DIR="/Users/mikeastock/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
+[[ -s "/home/mikeastock/.gvm/scripts/gvm" ]] && source "/home/mikeastock/.gvm/scripts/gvm"
