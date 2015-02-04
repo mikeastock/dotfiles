@@ -184,6 +184,7 @@ augroup vimrcEx
 augroup END
 
 autocmd FileType gitcommit setlocal spell textwidth=72
+autocmd BufRead,BufNewFile *.es6 setfiletype javascript
 
 "===================
 "KEY BINDINGS
@@ -194,12 +195,13 @@ map <Leader>P  Obinding.pry<C-c>
 map <Leader>aa :CtrlP app/assets<CR>
 map <Leader>ac :CtrlP app/controllers<CR>
 map <Leader>ad :CtrlP db<CR>
-map <Leader>af :CtrlP features<CR>
+map <Leader>af :CtrlPFunky<CR>
 map <Leader>ag :topleft 20 :split Gemfile<CR>
 map <Leader>ah :CtrlP app/helpers<CR>
 map <Leader>ai :CtrlP app/services<CR>
 map <Leader>aj :CtrlP app/jobs<CR>
 map <Leader>al :CtrlP lib<CR>
+map <Leader>at :CtrlP test<CR>
 map <Leader>am :CtrlP app/models<CR>
 map <Leader>ap :CtrlP config<CR>
 map <Leader>ar :topleft :split config/routes.rb<CR>
