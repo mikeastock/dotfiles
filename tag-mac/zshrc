@@ -42,3 +42,6 @@ export DOCKER_HOST=tcp://192.168.59.103:2375
 
 export NVM_DIR="/Users/mikeastock/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
+
+### Added by the Heroku Toolbelt
+export PATH="/usr/local/heroku/bin:$PATH"

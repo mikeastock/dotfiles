@@ -42,6 +42,7 @@ Bundle 'sjl/badwolf'
 Bundle 'jpo/vim-railscasts-theme'
 Bundle 'chriskempson/base16-vim'
 Bundle 'flazz/vim-colorschemes'
+Bundle 'ajh17/Spacegray.vim'
 
 Bundle 'itchyny/lightline.vim'
 

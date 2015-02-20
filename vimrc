@@ -47,7 +47,7 @@ set shiftround " When at 3 spaces and I hit >>, go to 4, not 5.
 set gdefault " assume the /g flag on :s substitutions to replace all matches in a line
 
 "Color and UI
-colorscheme base16-railscast
+colorscheme spacegray
 set background=dark
 set colorcolumn=80
 set cursorline
@@ -126,7 +126,7 @@ set directory=~/.vim-tmp,~/.tmp,~/tmp,/var/tmp,/tmp
 "=================
 
 "" Remove trailing whitespace on save for ruby files.
-" au BufWritePre *.rb :%s/\s\+$//e
+au BufWritePre *.rb :%s/\s\+$//e
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " RENAME CURRENT FILE (thanks Gary Bernhardt)
