@@ -5,46 +5,57 @@ set rtp+=~/.vim/bundle/vundle/
 call vundle#rc()
 
 " Let Vundle manage Vundle
-Bundle 'gmarik/vundle'
+Plugin 'gmarik/vundle'
 
 "misc
-Bundle 'ctrlpvim/ctrlp.vim'
-Bundle 'tacahiroy/ctrlp-funky'
-Bundle 'FelikZ/ctrlp-py-matcher'
-Bundle 'airblade/vim-gitgutter'
-Bundle 'tomtom/tcomment_vim'
-Bundle 'junegunn/vim-easy-align'
-Bundle 'rking/ag.vim'
-Bundle 'ervandew/supertab'
-Bundle 'suan/vim-instant-markdown'
-Bundle 'Shougo/neocomplcache.vim'
-Bundle 'ngmy/vim-rubocop'
-Bundle 'tmhedberg/matchit'
+
+"fuzzy finding
+Plugin 'ctrlpvim/ctrlp.vim'
+Plugin 'tacahiroy/ctrlp-funky'
+Plugin 'FelikZ/ctrlp-py-matcher'
+
+"looks
+Plugin 'airblade/vim-gitgutter'
+Plugin 'ervandew/supertab'
+
+"workflow
+Plugin 'tomtom/tcomment_vim'
+Plugin 'junegunn/vim-easy-align'
+Plugin 'rking/ag.vim'
+Plugin 'tmhedberg/matchit'
+Plugin 'ngmy/vim-rubocop'
+Plugin 'Valloric/YouCompleteMe'
+
+"langauge specific
+Plugin 'suan/vim-instant-markdown'
+Plugin 'fatih/vim-go'
+Plugin 'derekwyatt/vim-scala'
 
 "tpope
-Bundle 'tpope/vim-endwise'
-Bundle 'tpope/vim-rails'
-Bundle 'tpope/vim-dispatch'
-Bundle 'tpope/vim-fugitive'
-Bundle 'tpope/vim-surround'
+Plugin 'tpope/vim-endwise'
+Plugin 'tpope/vim-rails'
+Plugin 'tpope/vim-dispatch'
+Plugin 'tpope/vim-fugitive'
+Plugin 'tpope/vim-surround'
+Plugin 'tpope/vim-sleuth'
 
 "testing
-" Bundle 'janko-m/vim-test'
-Bundle 'thoughtbot/vim-rspec'
-Bundle 'jgdavey/tslime.vim'
+Plugin 'janko-m/vim-test'
+" Plugin 'thoughtbot/vim-rspec'
+Plugin 'jgdavey/tslime.vim'
 
 "colors
-Bundle 'nanotech/jellybeans.vim'
-Bundle 'ChrisKempson/Vim-Tomorrow-Theme'
-Bundle 'morhetz/gruvbox'
-Bundle 'Keithbsmiley/rspec.vim'
-Bundle 'sjl/badwolf'
-Bundle 'jpo/vim-railscasts-theme'
-Bundle 'chriskempson/base16-vim'
+Plugin 'nanotech/jellybeans.vim'
+Plugin 'ChrisKempson/Vim-Tomorrow-Theme'
+Plugin 'morhetz/gruvbox'
+Plugin 'Keithbsmiley/rspec.vim'
+Plugin 'sjl/badwolf'
+Plugin 'jpo/vim-railscasts-theme'
+Plugin 'chriskempson/base16-vim'
 
-Bundle 'itchyny/lightline.vim'
+Plugin 'itchyny/lightline.vim'
 
-Bundle 'kana/vim-textobj-user'
-Bundle 'nelstrom/vim-textobj-rubyblock'
+Plugin 'kana/vim-textobj-user'
+Plugin 'nelstrom/vim-textobj-rubyblock'
 
 filetype on

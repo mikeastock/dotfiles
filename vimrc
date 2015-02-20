@@ -26,11 +26,11 @@ set relativenumber
 set wildmenu
 set backspace=indent,eol,start
 
-set tabstop=2
-set shiftwidth=2
-set expandtab
-set smarttab
-set autoindent
+" set tabstop=2
+" set shiftwidth=2
+" set expandtab
+" set smarttab
+" set autoindent
 
 set splitbelow
 set splitright
@@ -71,10 +71,11 @@ let mapleader = " "
 "===============
 "PLUGIN SETTINGS
 "===============
-map <Leader>t :call RunLastSpec()<CR>
-map <Leader>s :call RunNearestSpec()<CR>
-map <Leader>r :call RunCurrentSpecFile()<CR>
-map <Leader>a :call RunAllSpecs()<CR>
+
+map <Leader>t :TestLast<CR>
+map <Leader>s :TestNearest<CR>
+map <Leader>r :TestFile<CR>
+map <Leader>a :TestSuite<CR>
 
 let g:rspec_command = "!bin/rspec {spec}"
 " let g:rspec_command = 'call Send_to_Tmux("bin/rspec {spec}\n")'
@@ -126,7 +127,7 @@ set directory=~/.vim-tmp,~/.tmp,~/tmp,/var/tmp,/tmp
 "=================
 
 "" Remove trailing whitespace on save for ruby files.
-" au BufWritePre *.rb :%s/\s\+$//e
+au BufWritePre *.rb :%s/\s\+$//e
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " RENAME CURRENT FILE (thanks Gary Bernhardt)
@@ -143,7 +144,7 @@ endfunction
 map <Leader>n :call RenameFile()<cr>
 
 " Display extra whitespace
-set list listchars=tab:»·,trail:·
+" set list listchars=tab:»·,trail:·
 
 " Make it more obvious which paren I'm on
 hi MatchParen cterm=none ctermbg=black ctermfg=red
@@ -212,7 +213,6 @@ map <Leader>bi :!bundle install<cr>
 map <Leader>c  ::bp\|bd #<CR>
 map <Leader>e  :RuboCop<CR>
 map <Leader>f  :CtrlPRoot<CR>
-map <Leader>g  :CtrlPMixed<CR>
 map <Leader>kw :%s/\s\+$//<CR>
 map <Leader>p  obinding.pry<C-c>
 map <Leader>q :bd<CR>
@@ -226,6 +226,13 @@ map <Leader>1 0f{w"_dw0f{a expect(committer.pa)f}i <C-c>
 map <Leader>hs :s/:\([^ ]*\)\(\s*\)=>/\1:/g<CR>
 map <Leader>mi 0f:wywOit "pA" doj==oendkf{edi}Op==j0ftlvt.c(response)<CR>
 nnoremap <Leader>= gg=G<CR>
+
+au FileType go nmap <leader>r <Plug>(go-run)
+au FileType go nmap <leader>b <Plug>(go-build)
+au FileType go nmap <leader>t <Plug>(go-test)
+au FileType go nmap <leader>c <Plug>(go-coverage)
+au FileType go nmap <Leader>e <Plug>(go-rename)
+au FileType go nmap <Leader>i <Plug>(go-info)
 
 "OTHER
 function! MapCR()
