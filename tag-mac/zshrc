@@ -45,3 +45,5 @@ export NVM_DIR="/Users/mikeastock/.nvm"
 
 ### Added by the Heroku Toolbelt
 export PATH="/usr/local/heroku/bin:$PATH"
+export GVM_ROOT=/Users/mikeastock/.gvm
+. $GVM_ROOT/scripts/gvm-default
