@@ -8,6 +8,8 @@ call vundle#rc()
 Plugin 'gmarik/vundle'
 
 "misc
+Plugin 'kana/vim-textobj-user'
+Plugin 'nelstrom/vim-textobj-rubyblock'
 
 "fuzzy finding
 Plugin 'ctrlpvim/ctrlp.vim'
@@ -17,6 +19,7 @@ Plugin 'FelikZ/ctrlp-py-matcher'
 "looks
 Plugin 'airblade/vim-gitgutter'
 Plugin 'ervandew/supertab'
+Plugin 'itchyny/lightline.vim'
 
 "workflow
 Plugin 'tomtom/tcomment_vim'
@@ -45,6 +48,7 @@ Plugin 'janko-m/vim-test'
 Plugin 'jgdavey/tslime.vim'
 
 "colors
+
 Plugin 'nanotech/jellybeans.vim'
 Plugin 'ChrisKempson/Vim-Tomorrow-Theme'
 Plugin 'morhetz/gruvbox'
@@ -52,10 +56,6 @@ Plugin 'Keithbsmiley/rspec.vim'
 Plugin 'sjl/badwolf'
 Plugin 'jpo/vim-railscasts-theme'
 Plugin 'chriskempson/base16-vim'
-
-Plugin 'itchyny/lightline.vim'
-
-Plugin 'kana/vim-textobj-user'
-Plugin 'nelstrom/vim-textobj-rubyblock'
+Plugin 'flazz/vim-colorschemes'
 
 filetype on

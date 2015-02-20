@@ -47,7 +47,7 @@ set shiftround " When at 3 spaces and I hit >>, go to 4, not 5.
 set gdefault " assume the /g flag on :s substitutions to replace all matches in a line
 
 "Color and UI
-colorscheme gruvbox
+colorscheme base16-railscast
 set background=dark
 set colorcolumn=80
 set cursorline
@@ -218,11 +218,9 @@ map <Leader>p  obinding.pry<C-c>
 map <Leader>q :bd<CR>
 map <Leader>rs :s/'/"<CR>
 map <Leader>ss :CtrlP old_spec/<CR>
-map <Leader>t  f f[a€kb.fetch(f]a€kb)<CR>
 map <Leader>vi :tabe ~/.nvimrc<CR>
 map <Leader>vs :source ~/.nvimrc<CR>
 map <Leader>w  :w!<CR>
-map <Leader>1 0f{w"_dw0f{a expect(committer.pa)f}i <C-c>
 map <Leader>hs :s/:\([^ ]*\)\(\s*\)=>/\1:/g<CR>
 map <Leader>mi 0f:wywOit "pA" doj==oendkf{edi}Op==j0ftlvt.c(response)<CR>
 nnoremap <Leader>= gg=G<CR>
@@ -236,7 +234,7 @@ au FileType go nmap <Leader>i <Plug>(go-info)
 
 "OTHER
 function! MapCR()
-    nnoremap <CR> :nohlsearch<CR>
+  nnoremap <CR> :nohlsearch<CR>
 endfunction
 call MapCR()
 
