@@ -26,11 +26,11 @@ set relativenumber
 set wildmenu
 set backspace=indent,eol,start
 
-" set tabstop=2
-" set shiftwidth=2
-" set expandtab
-" set smarttab
-" set autoindent
+set tabstop=2
+set shiftwidth=2
+set expandtab
+set smarttab
+set autoindent
 
 set splitbelow
 set splitright
@@ -53,15 +53,6 @@ set colorcolumn=80
 set cursorline
 set ruler
 set synmaxcol=250
-
-" " Make the gutters darker than the background.
-" let g:badwolf_darkgutter = 1
-" " Make the tab line darker than the background.
-" let g:badwolf_tabline = 0
-" " Turn off HTML link underlining
-" let g:badwolf_html_link_underline = 0
-" " Turn on CSS properties highlighting
-" let g:badwolf_css_props_highlight = 1
 
 "SPEEEEEEEEEEEEEED
 set re=1
@@ -108,6 +99,8 @@ let g:ctrlp_match_window = 'bottom,order:btt,min:1,max:20'
 " Set no file limit, we are building a big project
 let g:ctrlp_max_files = 0
 
+let g:neocomplcache_enable_at_startup = 1
+
 "==================
 "SETTINGS BY OTHERS
 "==================
@@ -144,7 +137,7 @@ endfunction
 map <Leader>n :call RenameFile()<cr>
 
 " Display extra whitespace
-" set list listchars=tab:»·,trail:·
+set list listchars=tab:»·,trail:·
 
 " Make it more obvious which paren I'm on
 hi MatchParen cterm=none ctermbg=black ctermfg=red
@@ -252,4 +245,3 @@ map <Left> :bp<CR>
 " Emacs-like beginning and end of line.
 imap <c-e> <c-o>$
 imap <c-a> <c-o>^
-

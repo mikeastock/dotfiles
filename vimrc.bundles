@@ -27,12 +27,13 @@ Plugin 'junegunn/vim-easy-align'
 Plugin 'rking/ag.vim'
 Plugin 'tmhedberg/matchit'
 Plugin 'ngmy/vim-rubocop'
-Plugin 'Valloric/YouCompleteMe'
+Plugin 'Shougo/neocomplcache.vim'
 
 "langauge specific
 Plugin 'suan/vim-instant-markdown'
 Plugin 'fatih/vim-go'
 Plugin 'derekwyatt/vim-scala'
+Plugin 'pangloss/vim-javascript'
 
 "tpope
 Plugin 'tpope/vim-endwise'
@@ -40,7 +41,7 @@ Plugin 'tpope/vim-rails'
 Plugin 'tpope/vim-dispatch'
 Plugin 'tpope/vim-fugitive'
 Plugin 'tpope/vim-surround'
-Plugin 'tpope/vim-sleuth'
+" Plugin 'tpope/vim-sleuth'
 
 "testing
 Plugin 'janko-m/vim-test'
