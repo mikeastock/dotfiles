@@ -63,13 +63,17 @@ let mapleader = " "
 "PLUGIN SETTINGS
 "===============
 
-map <Leader>t :TestLast<CR>
-map <Leader>s :TestNearest<CR>
-map <Leader>r :TestFile<CR>
-map <Leader>a :TestSuite<CR>
+" map <Leader>t :TestLast<CR>
+" map <Leader>s :TestNearest<CR>
+" map <Leader>r :TestFile<CR>
+" map <Leader>a :TestSuite<CR>
+" RSpec.vim mappings
+map <Leader>r :call RunCurrentSpecFile()<CR>
+map <Leader>s :call RunNearestSpec()<CR>
+map <Leader>l :call RunLastSpec()<CR>
 
-let g:rspec_command = "!bin/rspec {spec}"
-" let g:rspec_command = 'call Send_to_Tmux("bin/rspec {spec}\n")'
+" let g:rspec_command = "!bin/rspec {spec}"
+let g:rspec_command = 'call Send_to_Tmux("bin/rspec {spec}\n")'
 
 
 if executable("ag")
@@ -216,6 +220,7 @@ map <Leader>vs :source ~/.nvimrc<CR>
 map <Leader>w  :w!<CR>
 map <Leader>hs :s/:\([^ ]*\)\(\s*\)=>/\1:/g<CR>
 map <Leader>mi 0f:wywOit "pA" doj==oendkf{edi}Op==j0ftlvt.c(response)<CR>
+nmap <Leader>gb :Gblame<CR>
 nnoremap <Leader>= gg=G<CR>
 
 au FileType go nmap <leader>r <Plug>(go-run)

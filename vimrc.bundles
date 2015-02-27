@@ -44,8 +44,8 @@ Plugin 'tpope/vim-surround'
 " Plugin 'tpope/vim-sleuth'
 
 "testing
-Plugin 'janko-m/vim-test'
-" Plugin 'thoughtbot/vim-rspec'
+" Plugin 'janko-m/vim-test'
+Plugin 'thoughtbot/vim-rspec'
 Plugin 'jgdavey/tslime.vim'
 
 "colors
