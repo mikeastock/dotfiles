@@ -193,7 +193,7 @@ map <Leader>af :CtrlPFunky<CR>
 map <Leader>ag :topleft 20 :split Gemfile<CR>
 map <Leader>ah :CtrlP app/helpers<CR>
 map <Leader>ai :CtrlP app/services<CR>
-map <Leader>aj :CtrlP app/jobs<CR>
+map <Leader>aj :CtrlP app/assets/javascripts<CR>
 map <Leader>al :CtrlP lib<CR>
 map <Leader>at :CtrlP test<CR>
 map <Leader>am :CtrlP app/models<CR>

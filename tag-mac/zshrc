@@ -15,6 +15,12 @@ source $ZSH/oh-my-zsh.sh
 # custom zsh configs #
 ######################
 
+# http://superuser.com/questions/544989/does-tmux-sort-the-path-variable/583502#583502
+if [ -f /etc/profile ]; then
+  PATH=""
+  source /etc/profile
+fi
+
 # Allow [ or ] whereever you want
 unsetopt nomatch
 
@@ -44,6 +50,4 @@ export NVM_DIR="/Users/mikeastock/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
 
 ### Added by the Heroku Toolbelt
-export PATH="/usr/local/heroku/bin:$PATH"
-export GVM_ROOT=/Users/mikeastock/.gvm
-. $GVM_ROOT/scripts/gvm-default
+export PATH="$PATH:/usr/local/heroku/bin"
