@@ -51,3 +51,7 @@
 
 [url "ssh://git@heroku.com/"]
 	insteadOf = https://git.heroku.com/
+[diff]
+	tool = vimdiff
+[difftool]
+	prompt = false

@@ -35,6 +35,7 @@ source ~/.vim/bundle/gruvbox/gruvbox_256palette_osx.sh
 
 # fuctions
 zstyle ':completion:*:*:git:*' script ~/.zsh/git-completion.zsh
+zstyle ':completion:*:*:git:*' user-commands ${${(M)${(k)commands}:#git-*}/git-/}
 
 # paths
 export PATH=/usr/local/rbenv/shims:/usr/local/rbenv/bin:/usr/local/redis/bin:/usr/local/pgsql/bin:./bin:/usr/local/ABBYYOCR11:$PATH
@@ -44,13 +45,9 @@ eval "$(rbenv init - --no-rehash)"
 export LD_LIBRARY_PATH=/usr/local/ABBYYOCR11
 
 function git_prompt_info() {
-ref=$(git symbolic-ref HEAD 2> /dev/null) || return
-echo "$ZSH_THEME_GIT_PROMPT_PREFIX${ref#refs/heads/}$ZSH_THEME_GIT_PROMPT_SUFFIX"
+  ref=$(git symbolic-ref HEAD 2> /dev/null) || return
+  echo "$ZSH_THEME_GIT_PROMPT_PREFIX${ref#refs/heads/}$ZSH_THEME_GIT_PROMPT_SUFFIX"
 }
-
-# function tmuxsucks() {
-#   export SSH_AUTH_SOCK=$(find /tmp/ssh-* -name agent.\* -uid $(id -u) | head -n 1)
-# }
 
 ### Added by the Heroku Toolbelt
 export PATH="/usr/local/heroku/bin:$PATH"
