@@ -72,8 +72,8 @@ map <Leader>r :call RunCurrentSpecFile()<CR>
 map <Leader>s :call RunNearestSpec()<CR>
 map <Leader>l :call RunLastSpec()<CR>
 
-" let g:rspec_command = "!bin/rspec {spec}"
-let g:rspec_command = 'call Send_to_Tmux("bin/rspec {spec}\n")'
+let g:rspec_command = "!bin/rspec {spec}"
+" let g:rspec_command = 'call Send_to_Tmux("bin/rspec {spec}\n")'
 
 
 if executable("ag")
