@@ -28,6 +28,7 @@ Plugin 'rking/ag.vim'
 Plugin 'tmhedberg/matchit'
 Plugin 'ngmy/vim-rubocop'
 Plugin 'Shougo/neocomplcache.vim'
+Plugin 'pbrisbin/vim-mkdir'
 
 "langauge specific
 Plugin 'suan/vim-instant-markdown'

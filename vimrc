@@ -147,6 +147,31 @@ set list listchars=tab:»·,trail:·
 hi MatchParen cterm=none ctermbg=black ctermfg=red
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" DEBUGGING
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+function! Debugging(direction)
+  let file_name = expand('%')
+  let extension = split(file_name, "/")[-1]
+  let html = matchstr(extension, "html")
+  let json = matchstr(extension, "json")
+  let js = matchstr(extension, "js")
+
+  let @g = a:direction
+
+  if html == "html"
+    normal! @g <% binding.pry %>
+  elseif json == "json"
+    normal! @g binding.pry
+  elseif js == "js"
+    normal! @g debugger;
+  else
+    normal! @g binding.pry
+  endif
+endfunction
+map <Leader>P :call Debugging("O")<cr>
+map <Leader>p :call Debugging("o")<cr>
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " PROMOTE VARIABLE TO RSPEC LET
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " map <Leader>sl 0wilet(:ea)f=r{A }<CR>
@@ -189,7 +214,6 @@ autocmd BufRead,BufNewFile *.es6 setfiletype javascript
 "===================
 
 "LEADER
-map <Leader>P  Obinding.pry<C-c>
 map <Leader>aa :CtrlP app/assets<CR>
 map <Leader>ac :CtrlP app/controllers<CR>
 map <Leader>ad :CtrlP db<CR>
@@ -211,7 +235,6 @@ map <Leader>c  ::bp\|bd #<CR>
 map <Leader>e  :RuboCop<CR>
 map <Leader>f  :CtrlPRoot<CR>
 map <Leader>kw :%s/\s\+$//<CR>
-map <Leader>p  obinding.pry<C-c>
 map <Leader>q :bd<CR>
 map <Leader>rs :s/'/"<CR>
 map <Leader>ss :CtrlP old_spec/<CR>
