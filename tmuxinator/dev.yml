@@ -1,6 +1,6 @@
 # ~/.tmuxinator/contractor.yml
 
-name: temp
+name: dev
 root: ./
 
 # Optional tmux socket
@@ -25,5 +25,4 @@ windows:
       panes:
         - #
         - gitsh
-  - server: bin/rails server
-  - sidekiq: bin/sidekiq -C config/sidekiq.yml
+  - server: bin/rails server -b 0.0.0.0

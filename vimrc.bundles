@@ -29,6 +29,7 @@ Plugin 'tmhedberg/matchit'
 Plugin 'ngmy/vim-rubocop'
 Plugin 'Shougo/neocomplcache.vim'
 Plugin 'pbrisbin/vim-mkdir'
+Plugin 'cespare/vim-sbd'
 
 "langauge specific
 Plugin 'suan/vim-instant-markdown'
@@ -45,7 +46,7 @@ Plugin 'tpope/vim-surround'
 " Plugin 'tpope/vim-sleuth'
 
 "testing
-" Plugin 'janko-m/vim-test'
+Plugin 'janko-m/vim-test'
 Plugin 'thoughtbot/vim-rspec'
 Plugin 'jgdavey/tslime.vim'
 

@@ -38,7 +38,7 @@ zstyle ':completion:*:*:git:*' script ~/.zsh/git-completion.zsh
 zstyle ':completion:*:*:git:*' user-commands ${${(M)${(k)commands}:#git-*}/git-/}
 
 # paths
-export PATH=/usr/local/rbenv/shims:/usr/local/rbenv/bin:/usr/local/redis/bin:/usr/local/pgsql/bin:./bin:/usr/local/ABBYYOCR11:$PATH
+export PATH=/usr/local/rbenv/shims:/usr/local/rbenv/bin:/usr/local/redis/bin:/usr/local/pgsql/bin:./bin:/usr/local/ABBYYOCR11:/home/mikeastock/.linuxbrew/bin:$PATH
 export RBENV_ROOT="/usr/local/rbenv"
 eval "$(rbenv init - --no-rehash)"
 

@@ -63,17 +63,16 @@ let mapleader = " "
 "PLUGIN SETTINGS
 "===============
 
-" map <Leader>t :TestLast<CR>
-" map <Leader>s :TestNearest<CR>
-" map <Leader>r :TestFile<CR>
-" map <Leader>a :TestSuite<CR>
+map <Leader>s :TestNearest<CR>
+map <Leader>r :TestFile<CR>
+map <Leader>a :TestLast<CR>
 " RSpec.vim mappings
-map <Leader>r :call RunCurrentSpecFile()<CR>
-map <Leader>s :call RunNearestSpec()<CR>
-map <Leader>l :call RunLastSpec()<CR>
+" map <Leader>r :call RunCurrentSpecFile()<CR>
+" map <Leader>s :call RunNearestSpec()<CR>
+" map <Leader>l :call RunLastSpec()<CR>
 
 " let g:rspec_command = "!bin/rspec {spec}"
-let g:rspec_command = 'call Send_to_Tmux("bin/rspec {spec}\n")'
+" let g:rspec_command = 'call Send_to_Tmux("bin/rspec {spec}\n")'
 
 
 if executable("ag")
@@ -153,19 +152,16 @@ function! Debugging(direction)
   let file_name = expand('%')
   let extension = split(file_name, "/")[-1]
   let html = matchstr(extension, "html")
-  let json = matchstr(extension, "json")
   let js = matchstr(extension, "js")
 
   let @g = a:direction
 
   if html == "html"
-    normal! @g <% binding.pry %>
-  elseif json == "json"
-    normal! @g binding.pry
+    normal! @g <% require "pry"; binding.pry %>
   elseif js == "js"
     normal! @g debugger;
   else
-    normal! @g binding.pry
+    normal! @g require "pry"; binding.pry
   endif
 endfunction
 map <Leader>P :call Debugging("O")<cr>
@@ -229,23 +225,25 @@ map <Leader>ap :CtrlP config<CR>
 map <Leader>ar :topleft :split config/routes.rb<CR>
 map <Leader>as :CtrlP spec/<CR>
 map <Leader>av :CtrlP app/views<CR>
-map <Leader>b  :CtrlPBuffer<CR>
+map <Leader>b :CtrlPBuffer<CR>
 map <Leader>bi :!bundle install<cr>
-map <Leader>c  ::bp\|bd #<CR>
-map <Leader>e  :RuboCop<CR>
-map <Leader>f  :CtrlPRoot<CR>
+map <Leader>c ::bp\|bd #<CR>
+map <Leader>e :RuboCop<CR>
+map <Leader>f :CtrlPRoot<CR>
+map <Leader>i :mmgg=G`m<CR>
 map <Leader>kw :%s/\s\+$//<CR>
 map <Leader>q :bd<CR>
+map <Leader>t :terminal<CR>
 map <Leader>rs :s/'/"<CR>
 map <Leader>ss :CtrlP old_spec/<CR>
 map <Leader>vi :tabe ~/.nvimrc<CR>
 map <Leader>vs :source ~/.nvimrc<CR>
-map <Leader>w  :w!<CR>
+map <Leader>w :w!<CR>
 map <Leader>hs :s/:\([^ ]*\)\(\s*\)=>/\1:/g<CR>
 map <Leader>mi 0f:wywOit "pA" doj==oendkf{edi}Op==j0ftlvt.c(response)<CR>
 nmap <Leader>gb :Gblame<CR>
-nnoremap <Leader>= gg=G<CR>
 
+" go specific leader mappings
 au FileType go nmap <leader>r <Plug>(go-run)
 au FileType go nmap <leader>b <Plug>(go-build)
 au FileType go nmap <leader>t <Plug>(go-test)

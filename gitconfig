@@ -23,12 +23,12 @@
   su = submodule update --init --recursive
   pim = pull origin master
   rbm = pull --rebase origin master
+  d = difftool
 [push]
   default = current
 [core]
   editor = nvim
-  autocrlf = input
-	excludesfile = /Users/mikeastock/.gitignore
+  excludesfile = /Users/mikeastock/.gitignore
 [color]
   ui = auto
 [color "diff"]
@@ -50,8 +50,8 @@
   merge = refs/heads/master
 
 [url "ssh://git@heroku.com/"]
-	insteadOf = https://git.heroku.com/
+  insteadOf = https://git.heroku.com/
 [diff]
-	tool = vimdiff
+  tool = vimdiff
 [difftool]
-	prompt = false
+  prompt = false
