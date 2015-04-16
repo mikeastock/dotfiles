@@ -74,6 +74,24 @@ map <Leader>a :TestLast<CR>
 " let g:rspec_command = "!bin/rspec {spec}"
 " let g:rspec_command = 'call Send_to_Tmux("bin/rspec {spec}\n")'
 
+" List of buffers
+function! s:buflist()
+  redir => ls
+  silent ls
+  redir END
+  return split(ls, '\n')
+endfunction
+
+function! s:bufopen(e)
+  execute 'buffer' matchstr(a:e, '^[ 0-9]*')
+endfunction
+
+nnoremap <silent> <Leader><Enter> :call fzf#run({
+\   'source':  reverse(<sid>buflist()),
+\   'sink':    function('<sid>bufopen'),
+\   'options': '+m',
+\   'down':    len(<sid>buflist()) + 2
+\ })<CR>
 
 if executable("ag")
   set grepprg=ag\ --nogroup\ --nocolor
@@ -210,32 +228,17 @@ autocmd BufRead,BufNewFile *.es6 setfiletype javascript
 "===================
 
 "LEADER
-map <Leader>aa :CtrlP app/assets<CR>
-map <Leader>ac :CtrlP app/controllers<CR>
-map <Leader>ad :CtrlP db<CR>
-map <Leader>af :CtrlPFunky<CR>
 map <Leader>ag :topleft 20 :split Gemfile<CR>
-map <Leader>ah :CtrlP app/helpers<CR>
-map <Leader>ai :CtrlP app/services<CR>
-map <Leader>aj :CtrlP app/assets/javascripts<CR>
-map <Leader>al :CtrlP lib<CR>
-map <Leader>at :CtrlP test<CR>
-map <Leader>am :CtrlP app/models<CR>
-map <Leader>ap :CtrlP config<CR>
 map <Leader>ar :topleft :split config/routes.rb<CR>
-map <Leader>as :CtrlP spec/<CR>
-map <Leader>av :CtrlP app/views<CR>
-map <Leader>b :CtrlPBuffer<CR>
 map <Leader>bi :!bundle install<cr>
 map <Leader>c ::bp\|bd #<CR>
 map <Leader>e :RuboCop<CR>
-map <Leader>f :CtrlPRoot<CR>
+map <Leader>f :FZF<CR>
 map <Leader>i :mmgg=G`m<CR>
 map <Leader>kw :%s/\s\+$//<CR>
 map <Leader>q :bd<CR>
 map <Leader>t :terminal<CR>
 map <Leader>rs :s/'/"<CR>
-map <Leader>ss :CtrlP old_spec/<CR>
 map <Leader>vi :tabe ~/.nvimrc<CR>
 map <Leader>vs :source ~/.nvimrc<CR>
 map <Leader>w :w!<CR>
