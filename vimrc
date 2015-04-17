@@ -66,6 +66,7 @@ let mapleader = " "
 map <Leader>s :TestNearest<CR>
 map <Leader>r :TestFile<CR>
 map <Leader>a :TestLast<CR>
+
 " RSpec.vim mappings
 " map <Leader>r :call RunCurrentSpecFile()<CR>
 " map <Leader>s :call RunNearestSpec()<CR>
