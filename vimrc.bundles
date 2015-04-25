@@ -32,6 +32,7 @@ Plugin 'ngmy/vim-rubocop'
 Plugin 'Shougo/neocomplcache.vim'
 Plugin 'pbrisbin/vim-mkdir'
 Plugin 'cespare/vim-sbd'
+Plugin 'justinmk/vim-sneak'
 
 "langauge specific
 Plugin 'suan/vim-instant-markdown'

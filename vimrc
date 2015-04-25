@@ -63,55 +63,12 @@ let mapleader = " "
 "PLUGIN SETTINGS
 "===============
 
+" Testing settings
 map <Leader>s :TestNearest<CR>
 map <Leader>r :TestFile<CR>
 map <Leader>a :TestLast<CR>
 
-" List of buffers
-function! s:buflist()
-  redir => ls
-  silent ls
-  redir END
-  return split(ls, '\n')
-endfunction
-
-function! s:bufopen(e)
-  execute 'buffer' matchstr(a:e, '^[ 0-9]*')
-endfunction
-
-nnoremap <silent> <Leader><Enter> :call fzf#run({
-\   'source':  reverse(<sid>buflist()),
-\   'sink':    function('<sid>bufopen'),
-\   'options': '+m',
-\   'down':    len(<sid>buflist()) + 2
-\ })<CR>
-
-if executable("ag")
-  set grepprg=ag\ --nogroup\ --nocolor
-  let g:ctrlp_user_command = 'ag %s -i --nocolor --nogroup --hidden
-        \ --ignore .git
-        \ --ignore .svn
-        \ --ignore .hg
-        \ --ignore .DS_Store
-        \ --ignore node_modules
-        \ -g ""'
-endif
-
-" PyMatcher for CtrlP
-if !has('python')
-  echo 'In order to use pymatcher plugin, you need +python compiled vim'
-else
-  let g:ctrlp_match_func = { 'match': 'pymatcher#PyMatch' }
-endif
-
-let g:ctrlp_match_window = 'bottom,order:btt,min:1,max:20'
-
-" Do not clear filenames cache, to improve CtrlP startup
-" You can manualy clear it by <F5>
-" let g:ctrlp_clear_cache_on_exit = 0
-
-" Set no file limit, we are building a big project
-let g:ctrlp_max_files = 0
+let test#strategy = "neovim"
 
 let g:neocomplcache_enable_at_startup = 1
 
