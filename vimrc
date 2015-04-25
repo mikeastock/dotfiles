@@ -66,13 +66,6 @@ let mapleader = " "
 map <Leader>s :TestNearest<CR>
 map <Leader>r :TestFile<CR>
 map <Leader>a :TestLast<CR>
-" RSpec.vim mappings
-" map <Leader>r :call RunCurrentSpecFile()<CR>
-" map <Leader>s :call RunNearestSpec()<CR>
-" map <Leader>l :call RunLastSpec()<CR>
-
-" let g:rspec_command = "!bin/rspec {spec}"
-" let g:rspec_command = 'call Send_to_Tmux("bin/rspec {spec}\n")'
 
 " List of buffers
 function! s:buflist()
@@ -232,7 +225,7 @@ map <Leader>ag :topleft 20 :split Gemfile<CR>
 map <Leader>ar :topleft :split config/routes.rb<CR>
 map <Leader>bi :!bundle install<cr>
 map <Leader>c ::bp\|bd #<CR>
-map <Leader>e :RuboCop<CR>
+" map <Leader>e :RuboCop<CR>
 map <Leader>f :FZF<CR>
 map <Leader>i :mmgg=G`m<CR>
 map <Leader>kw :%s/\s\+$//<CR>
@@ -245,6 +238,7 @@ map <Leader>w :w!<CR>
 map <Leader>hs :s/:\([^ ]*\)\(\s*\)=>/\1:/g<CR>
 map <Leader>mi 0f:wywOit "pA" doj==oendkf{edi}Op==j0ftlvt.c(response)<CR>
 nmap <Leader>gb :Gblame<CR>
+map <Leader>e :RExtractMethod<CR>
 
 " go specific leader mappings
 au FileType go nmap <leader>r <Plug>(go-run)
