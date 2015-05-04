@@ -13,9 +13,6 @@ Plugin 'nelstrom/vim-textobj-rubyblock'
 Plugin 'ecomba/vim-ruby-refactoring'
 
 "fuzzy finding
-Plugin 'ctrlpvim/ctrlp.vim'
-Plugin 'tacahiroy/ctrlp-funky'
-Plugin 'FelikZ/ctrlp-py-matcher'
 Plugin 'junegunn/fzf'
 
 "looks
@@ -26,13 +23,14 @@ Plugin 'itchyny/lightline.vim'
 "workflow
 Plugin 'tomtom/tcomment_vim'
 Plugin 'junegunn/vim-easy-align'
-Plugin 'rking/ag.vim'
 Plugin 'tmhedberg/matchit'
-Plugin 'ngmy/vim-rubocop'
 Plugin 'Shougo/neocomplcache.vim'
 Plugin 'pbrisbin/vim-mkdir'
-Plugin 'cespare/vim-sbd'
 Plugin 'justinmk/vim-sneak'
+Plugin 'kassio/neoterm'
+" Plugin 'ngmy/vim-rubocop'
+" Plugin 'cespare/vim-sbd'
+" Plugin 'rking/ag.vim'
 
 "langauge specific
 Plugin 'suan/vim-instant-markdown'
@@ -50,7 +48,7 @@ Plugin 'tpope/vim-surround'
 
 "testing
 Plugin 'janko-m/vim-test'
-Plugin 'jgdavey/tslime.vim'
+" Plugin 'jgdavey/tslime.vim'
 
 "colors
 Plugin 'ajh17/Spacegray.vim'
