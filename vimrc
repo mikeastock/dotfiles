@@ -226,3 +226,6 @@ map <Left> :bp<CR>
 " Emacs-like beginning and end of line.
 imap <c-e> <c-o>$
 imap <c-a> <c-o>^
+
+nnoremap <C-N> :bnext<CR>
+nnoremap <C-P> :bprev<CR>
