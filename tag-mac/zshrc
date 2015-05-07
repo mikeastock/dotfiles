@@ -25,7 +25,7 @@ fi
 unsetopt nomatch
 
 # use vim as the visual editor
-export VISUAL=vim
+export VISUAL=nvim
 export EDITOR=$VISUAL
 export DISABLE_AUTO_TITLE=true
 export PYTHONPATH=/usr/local/lib/python2.7/site-packages
