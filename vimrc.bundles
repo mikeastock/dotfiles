@@ -39,6 +39,7 @@ Plugin 'suan/vim-instant-markdown'
 Plugin 'fatih/vim-go'
 Plugin 'derekwyatt/vim-scala'
 Plugin 'pangloss/vim-javascript'
+Plugin 'elixir-lang/vim-elixir'
 
 "tpope
 Plugin 'tpope/vim-endwise'
