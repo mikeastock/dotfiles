@@ -196,6 +196,7 @@ map <Leader>hs :s/:\([^ ]*\)\(\s*\)=>/\1:/g<CR>
 map <Leader>mi 0f:wywOit "pA" doj==oendkf{edi}Op==j0ftlvt.c(response)<CR>
 nmap <Leader>gb :Gblame<CR>
 map <Leader>e :RExtractMethod<CR>
+map <Leader>d :tabe config/database.yml<CR>
 
 " go specific leader mappings
 au FileType go nmap <leader>r <Plug>(go-run)
@@ -225,3 +226,6 @@ map <Left> :bp<CR>
 " Emacs-like beginning and end of line.
 imap <c-e> <c-o>$
 imap <c-a> <c-o>^
+
+nnoremap <C-N> :bnext<CR>
+nnoremap <C-P> :bprev<CR>
