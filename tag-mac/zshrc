@@ -25,7 +25,7 @@ fi
 unsetopt nomatch
 
 # use vim as the visual editor
-export VISUAL=vim
+export VISUAL=nvim
 export EDITOR=$VISUAL
 export DISABLE_AUTO_TITLE=true
 export PYTHONPATH=/usr/local/lib/python2.7/site-packages
@@ -51,4 +51,7 @@ export NVM_DIR="/Users/mikeastock/.nvm"
 
 ### Added by the Heroku Toolbelt
 export PATH="$PATH:/usr/local/heroku/bin"
+
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+
+export PATH="$PATH:/Applications/Postgres.app/Contents/Versions/9.4/bin"
