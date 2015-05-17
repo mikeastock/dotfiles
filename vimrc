@@ -183,7 +183,7 @@ map <Leader>ar :topleft :split config/routes.rb<CR>
 map <Leader>bi :!bundle install<cr>
 map <Leader>c ::bp\|bd #<CR>
 " map <Leader>e :RuboCop<CR>
-map <Leader>f :FZF<CR>
+map <Leader>f :FZF -m<CR>
 map <Leader>i :mmgg=G`m<CR>
 map <Leader>kw :%s/\s\+$//<CR>
 map <Leader>q :bd<CR>
