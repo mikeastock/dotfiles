@@ -30,6 +30,10 @@ export EDITOR=$VISUAL
 export DISABLE_AUTO_TITLE=true
 export PYTHONPATH=/usr/local/lib/python2.7/site-packages
 
+# go
+export GOPATH=$HOME/gocode
+export PATH="$GOPATH/bin:$PATH"
+
 # vim colors
 source ~/.vim/bundle/gruvbox/gruvbox_256palette_osx.sh
 # export VIMRUNTIME=/usr/local/share/vim/vim74
