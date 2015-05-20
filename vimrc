@@ -227,5 +227,7 @@ map <Left> :bp<CR>
 imap <c-e> <c-o>$
 imap <c-a> <c-o>^
 
+cabbrev Wq wq
+
 nnoremap <C-N> :bnext<CR>
 nnoremap <C-P> :bprev<CR>
