@@ -49,6 +49,7 @@ set gdefault " assume the /g flag on :s substitutions to replace all matches in 
 "Color and UI
 colorscheme hybrid
 " set background=dark
+
 set colorcolumn=80
 set cursorline
 set ruler
@@ -62,6 +63,22 @@ let mapleader = " "
 "===============
 "PLUGIN SETTINGS
 "===============
+
+"replace 'f' with 1-char Sneak
+nmap f <Plug>Sneak_s
+nmap F <Plug>Sneak_S
+xmap f <Plug>Sneak_s
+xmap F <Plug>Sneak_S
+omap f <Plug>Sneak_s
+omap F <Plug>Sneak_S
+
+"replace 't' with 1-char Sneak
+nmap t <Plug>Sneak_s
+nmap T <Plug>Sneak_S
+xmap t <Plug>Sneak_s
+xmap T <Plug>Sneak_S
+omap t <Plug>Sneak_s
+omap T <Plug>Sneak_S
 
 " Testing settings
 map <Leader>s :TestNearest<CR>
