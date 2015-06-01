@@ -65,12 +65,12 @@ let mapleader = " "
 "===============
 
 "replace 'f' with 1-char Sneak
-nmap f <Plug>Sneak_s
-nmap F <Plug>Sneak_S
-xmap f <Plug>Sneak_s
-xmap F <Plug>Sneak_S
-omap f <Plug>Sneak_s
-omap F <Plug>Sneak_S
+nmap f <Plug>Sneak_f
+nmap F <Plug>Sneak_F
+xmap f <Plug>Sneak_f
+xmap F <Plug>Sneak_F
+omap f <Plug>Sneak_f
+omap F <Plug>Sneak_F
 
 "replace 't' with 1-char Sneak
 nmap t <Plug>Sneak_s
@@ -211,7 +211,10 @@ map <Leader>vs :source ~/.nvimrc<CR>
 map <Leader>w :w!<CR>
 map <Leader>hs :s/:\([^ ]*\)\(\s*\)=>/\1:/g<CR>
 map <Leader>mi 0f:wywOit "pA" doj==oendkf{edi}Op==j0ftlvt.c(response)<CR>
-nmap <Leader>gb :Gblame<CR>
+map <Leader>gs :Gstatus<CR>
+map <Leader>gb :Gblame<CR>
+map <Leader>gc :Gcommit<CR>
+map <Leader>gp :Gpush<CR>
 map <Leader>e :RExtractMethod<CR>
 map <Leader>d :e config/database.yml<CR>
 
