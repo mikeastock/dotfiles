@@ -8,12 +8,11 @@
 let g:gruvbox_italic=0
 
 "==============
-" Vundle setup
+" Plug setup
 "==============
-if filereadable(expand("~/.vimrc.bundles"))
-  source ~/.vimrc.bundles
+if filereadable(expand("~/.vimrc.plugins"))
+  source ~/.vimrc.plugins
 endif
-
 
 "============================
 " BASIC EDITING CONFIGURATION
@@ -73,12 +72,12 @@ omap f <Plug>Sneak_f
 omap F <Plug>Sneak_F
 
 "replace 't' with 1-char Sneak
-nmap t <Plug>Sneak_s
-nmap T <Plug>Sneak_S
-xmap t <Plug>Sneak_s
-xmap T <Plug>Sneak_S
-omap t <Plug>Sneak_s
-omap T <Plug>Sneak_S
+nmap t <Plug>Sneak_t
+nmap T <Plug>Sneak_T
+xmap t <Plug>Sneak_t
+xmap T <Plug>Sneak_T
+omap t <Plug>Sneak_t
+omap T <Plug>Sneak_T
 
 " Testing settings
 map <Leader>s :TestNearest<CR>
@@ -88,6 +87,47 @@ map <Leader>a :TestLast<CR>
 let test#strategy = "neovim"
 
 let g:neocomplcache_enable_at_startup = 1
+
+let g:neoterm_clear_cmd = "clear; printf '=%.0s' {1..80}; clear"
+let g:neoterm_position = 'vertical'
+let g:neoterm_automap_keys = ',tt'
+
+nnoremap <silent> <f9> :call neoterm#repl#line()<cr>
+vnoremap <silent> <f9> :call neoterm#repl#selection()<cr>
+
+" run set test lib
+nnoremap <silent> ,rt :call neoterm#test#run('all')<cr>
+nnoremap <silent> ,rf :call neoterm#test#run('file')<cr>
+nnoremap <silent> ,rn :call neoterm#test#run('current')<cr>
+nnoremap <silent> ,rr :call neoterm#test#rerun()<cr>
+
+" Useful maps
+" closes the all terminal buffers
+nnoremap <silent> ,tc :call neoterm#close_all()<cr>
+" clear terminal
+nnoremap <silent> ,tl :call neoterm#clear()<cr>
+
+function! s:line_handler(l)
+  let keys = split(a:l, ':\t')
+  exec 'buf' keys[0]
+  exec keys[1]
+  normal! ^zz
+endfunction
+
+function! s:buffer_lines()
+  let res = []
+  for b in filter(range(1, bufnr('$')), 'buflisted(v:val)')
+    call extend(res, map(getbufline(b,0,"$"), 'b . ":\t" . (v:key + 1) . ":\t" . v:val '))
+  endfor
+  return res
+endfunction
+
+command! FZFLines call fzf#run({
+\   'source':  <sid>buffer_lines(),
+\   'sink':    function('<sid>line_handler'),
+\   'options': '--extended --nth=3..',
+\   'down':    '60%'
+\})
 
 "==================
 "SETTINGS BY OTHERS
@@ -198,9 +238,11 @@ autocmd BufRead,BufNewFile *.es6 setfiletype javascript
 map <Leader>ag :topleft 20 :split Gemfile<CR>
 map <Leader>ar :topleft :split config/routes.rb<CR>
 map <Leader>bi :!bundle install<cr>
+map <Leader>tp :terminal bundle exec rake db:test:prepare<cr>
 map <Leader>c ::bp\|bd #<CR>
 " map <Leader>e :RuboCop<CR>
 map <Leader>f :FZF -m<CR>
+map <Leader>g :FZFLines<CR>
 map <Leader>i :mmgg=G`m<CR>
 map <Leader>kw :%s/\s\+$//<CR>
 map <Leader>q :bd<CR>
@@ -215,6 +257,7 @@ map <Leader>gs :Gstatus<CR>
 map <Leader>gb :Gblame<CR>
 map <Leader>gc :Gcommit<CR>
 map <Leader>gp :Gpush<CR>
+map <Leader>ga :Gwrite<CR>
 map <Leader>e :RExtractMethod<CR>
 map <Leader>d :e config/database.yml<CR>
 
@@ -232,13 +275,13 @@ function! MapCR()
 endfunction
 call MapCR()
 
-map <C-\> :tab split<CR>:exec("tag ".expand("<cword>"))<CR>
+map <C-\> :e <CR>:exec("tag ".expand("<cword>"))<CR>
 vmap <Enter> <Plug>(EasyAlign)
 nmap k gk
 nmap j gj
 map <C-j> <C-W>j
 map <C-k> <C-W>k
-map <BS> <C-W>h
+map <C-h> <C-W>h
 map <C-l> <C-W>l
 map <Right> :bn<CR>
 map <Left> :bp<CR>
