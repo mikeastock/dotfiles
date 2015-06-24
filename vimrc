@@ -44,6 +44,7 @@ set hidden
 
 set shiftround " When at 3 spaces and I hit >>, go to 4, not 5.
 set gdefault " assume the /g flag on :s substitutions to replace all matches in a line
+set mouse=""
 
 "Color and UI
 colorscheme hybrid
@@ -285,6 +286,7 @@ map <C-h> <C-W>h
 map <C-l> <C-W>l
 map <Right> :bn<CR>
 map <Left> :bp<CR>
+noremap Y y$
 
 " Emacs-like beginning and end of line.
 imap <c-e> <c-o>$
