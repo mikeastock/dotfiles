@@ -85,7 +85,7 @@ map <Leader>s :TestNearest<CR>
 map <Leader>r :TestFile<CR>
 map <Leader>a :TestLast<CR>
 
-let test#strategy = "neovim"
+let test#strategy = "neoterm"
 
 let g:neocomplcache_enable_at_startup = 1
 
@@ -93,20 +93,11 @@ let g:neoterm_clear_cmd = "clear; printf '=%.0s' {1..80}; clear"
 let g:neoterm_position = 'vertical'
 let g:neoterm_automap_keys = ',tt'
 
-nnoremap <silent> <f9> :call neoterm#repl#line()<cr>
-vnoremap <silent> <f9> :call neoterm#repl#selection()<cr>
-
-" run set test lib
-nnoremap <silent> ,rt :call neoterm#test#run('all')<cr>
-nnoremap <silent> ,rf :call neoterm#test#run('file')<cr>
-nnoremap <silent> ,rn :call neoterm#test#run('current')<cr>
-nnoremap <silent> ,rr :call neoterm#test#rerun()<cr>
-
 " Useful maps
 " closes the all terminal buffers
-nnoremap <silent> ,tc :call neoterm#close_all()<cr>
+nnoremap <silent> <leader>tc :call neoterm#close_all()<cr>
 " clear terminal
-nnoremap <silent> ,tl :call neoterm#clear()<cr>
+nnoremap <silent> <leader>tl :call neoterm#clear()<cr>
 
 function! s:line_handler(l)
   let keys = split(a:l, ':\t')
@@ -247,7 +238,7 @@ map <Leader>g :FZFLines<CR>
 map <Leader>i :mmgg=G`m<CR>
 map <Leader>kw :%s/\s\+$//<CR>
 map <Leader>q :bd<CR>
-map <Leader>t :terminal<CR>
+" map <Leader>t :terminal<CR>
 map <Leader>rs :s/'/"<CR>
 map <Leader>vi :tabe ~/.nvimrc<CR>
 map <Leader>vs :source ~/.nvimrc<CR>
@@ -282,11 +273,13 @@ nmap k gk
 nmap j gj
 map <C-j> <C-W>j
 map <C-k> <C-W>k
-map <C-h> <C-W>h
+map <BS> <C-W>h
 map <C-l> <C-W>l
 map <Right> :bn<CR>
 map <Left> :bp<CR>
 noremap Y y$
+vnoremap <silent> <f9> :call neoterm#repl#selection()<cr>
+nnoremap <silent> <f9> :call neoterm#repl#line()<cr>
 
 " Emacs-like beginning and end of line.
 imap <c-e> <c-o>$
