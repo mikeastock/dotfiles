@@ -287,6 +287,7 @@ map <C-l> <C-W>l
 map <Right> :bn<CR>
 map <Left> :bp<CR>
 noremap Y y$
+noremap 0 ^
 
 " Emacs-like beginning and end of line.
 imap <c-e> <c-o>$
