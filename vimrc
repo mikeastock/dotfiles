@@ -180,7 +180,7 @@ autocmd BufRead,BufNewFile *.es6 setfiletype javascript
 "LEADER
 map <Leader>ag :topleft 20 :split Gemfile<CR>
 map <Leader>ar :topleft :split config/routes.rb<CR>
-map <Leader>bi :!bundle install<cr>
+map <Leader>bi :terminal bundle install<cr>
 map <Leader>c ::bp\|bd #<CR>
 " map <Leader>e :RuboCop<CR>
 map <Leader>f :FZF -m<CR>
