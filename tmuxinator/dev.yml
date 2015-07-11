@@ -20,7 +20,7 @@ root: ./
 
 windows:
   - nvim: nvim
-  - console:
+  - git:
       layout: even-horizontal
       panes:
         - #

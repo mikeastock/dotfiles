@@ -8,12 +8,11 @@
 let g:gruvbox_italic=0
 
 "==============
-" Vundle setup
+" Plug setup
 "==============
-if filereadable(expand("~/.vimrc.bundles"))
-  source ~/.vimrc.bundles
+if filereadable(expand("~/.vimrc.plugins"))
+  source ~/.vimrc.plugins
 endif
-
 
 "============================
 " BASIC EDITING CONFIGURATION
@@ -45,10 +44,12 @@ set hidden
 
 set shiftround " When at 3 spaces and I hit >>, go to 4, not 5.
 set gdefault " assume the /g flag on :s substitutions to replace all matches in a line
+set mouse=""
 
 "Color and UI
 colorscheme hybrid
 " set background=dark
+
 set colorcolumn=80
 set cursorline
 set ruler
@@ -63,14 +64,62 @@ let mapleader = " "
 "PLUGIN SETTINGS
 "===============
 
+"replace 'f' with 1-char Sneak
+nmap f <Plug>Sneak_f
+nmap F <Plug>Sneak_F
+xmap f <Plug>Sneak_f
+xmap F <Plug>Sneak_F
+omap f <Plug>Sneak_f
+omap F <Plug>Sneak_F
+
+"replace 't' with 1-char Sneak
+nmap t <Plug>Sneak_t
+nmap T <Plug>Sneak_T
+xmap t <Plug>Sneak_t
+xmap T <Plug>Sneak_T
+omap t <Plug>Sneak_t
+omap T <Plug>Sneak_T
+
 " Testing settings
 map <Leader>s :TestNearest<CR>
 map <Leader>r :TestFile<CR>
 map <Leader>a :TestLast<CR>
 
-let test#strategy = "neovim"
+let test#strategy = "neoterm"
 
 let g:neocomplcache_enable_at_startup = 1
+
+let g:neoterm_clear_cmd = "clear; printf '=%.0s' {1..80}; clear"
+let g:neoterm_position = 'vertical'
+let g:neoterm_automap_keys = ',tt'
+
+" Useful maps
+" closes the all terminal buffers
+nnoremap <silent> <leader>tc :call neoterm#close_all()<cr>
+" clear terminal
+nnoremap <silent> <leader>tl :call neoterm#clear()<cr>
+
+function! s:line_handler(l)
+  let keys = split(a:l, ':\t')
+  exec 'buf' keys[0]
+  exec keys[1]
+  normal! ^zz
+endfunction
+
+function! s:buffer_lines()
+  let res = []
+  for b in filter(range(1, bufnr('$')), 'buflisted(v:val)')
+    call extend(res, map(getbufline(b,0,"$"), 'b . ":\t" . (v:key + 1) . ":\t" . v:val '))
+  endfor
+  return res
+endfunction
+
+command! FZFLines call fzf#run({
+\   'source':  <sid>buffer_lines(),
+\   'sink':    function('<sid>line_handler'),
+\   'options': '--extended --nth=3..',
+\   'down':    '60%'
+\})
 
 "==================
 "SETTINGS BY OTHERS
@@ -181,22 +230,28 @@ autocmd BufRead,BufNewFile *.es6 setfiletype javascript
 map <Leader>ag :topleft 20 :split Gemfile<CR>
 map <Leader>ar :topleft :split config/routes.rb<CR>
 map <Leader>bi :terminal bundle install<cr>
+map <Leader>tp :terminal bundle exec rake db:test:prepare<cr>
 map <Leader>c ::bp\|bd #<CR>
 " map <Leader>e :RuboCop<CR>
 map <Leader>f :FZF -m<CR>
+map <Leader>g :FZFLines<CR>
 map <Leader>i :mmgg=G`m<CR>
 map <Leader>kw :%s/\s\+$//<CR>
 map <Leader>q :bd<CR>
-map <Leader>t :terminal<CR>
+" map <Leader>t :terminal<CR>
 map <Leader>rs :s/'/"<CR>
 map <Leader>vi :tabe ~/.nvimrc<CR>
 map <Leader>vs :source ~/.nvimrc<CR>
 map <Leader>w :w!<CR>
 map <Leader>hs :s/:\([^ ]*\)\(\s*\)=>/\1:/g<CR>
 map <Leader>mi 0f:wywOit "pA" doj==oendkf{edi}Op==j0ftlvt.c(response)<CR>
-nmap <Leader>gb :Gblame<CR>
+map <Leader>gs :Gstatus<CR>
+map <Leader>gb :Gblame<CR>
+map <Leader>gc :Gcommit<CR>
+map <Leader>gp :Gpush<CR>
+map <Leader>ga :Gwrite<CR>
 map <Leader>e :RExtractMethod<CR>
-map <Leader>d :tabe config/database.yml<CR>
+map <Leader>d :e config/database.yml<CR>
 
 " go specific leader mappings
 au FileType go nmap <leader>r <Plug>(go-run)
@@ -212,7 +267,7 @@ function! MapCR()
 endfunction
 call MapCR()
 
-map <C-\> :tab split<CR>:exec("tag ".expand("<cword>"))<CR>
+map <C-\> :e <CR>:exec("tag ".expand("<cword>"))<CR>
 vmap <Enter> <Plug>(EasyAlign)
 nmap k gk
 nmap j gj
@@ -222,6 +277,10 @@ map <BS> <C-W>h
 map <C-l> <C-W>l
 map <Right> :bn<CR>
 map <Left> :bp<CR>
+noremap Y y$
+noremap 0 ^
+vnoremap <silent> <f9> :call neoterm#repl#selection()<cr>
+nnoremap <silent> <f9> :call neoterm#repl#line()<cr>
 
 " Emacs-like beginning and end of line.
 imap <c-e> <c-o>$

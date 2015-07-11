@@ -1,0 +1,59 @@
+call plug#begin('~/.vim/plugged')
+
+Plug 'kana/vim-textobj-user'
+Plug 'nelstrom/vim-textobj-rubyblock'
+Plug 'ecomba/vim-ruby-refactoring'
+
+"fuzzy finding
+Plug 'junegunn/fzf'
+
+"looks
+Plug 'airblade/vim-gitgutter'
+Plug 'ervandew/supertab'
+Plug 'itchyny/lightline.vim'
+
+"workflow
+Plug 'tomtom/tcomment_vim'
+Plug 'junegunn/vim-easy-align'
+Plug 'tmhedberg/matchit'
+Plug 'Shougo/neocomplcache.vim'
+Plug 'pbrisbin/vim-mkdir'
+Plug 'justinmk/vim-sneak'
+Plug 'kassio/neoterm'
+Plug 'ap/vim-buftabline'
+" Plug 'ngmy/vim-rubocop'
+" Plug 'cespare/vim-sbd'
+" Plug 'rking/ag.vim'
+
+"langauge specific
+Plug 'suan/vim-instant-markdown'
+Plug 'fatih/vim-go'
+Plug 'derekwyatt/vim-scala'
+Plug 'pangloss/vim-javascript'
+Plug 'elixir-lang/vim-elixir'
+
+"tpope
+Plug 'tpope/vim-endwise'
+Plug 'tpope/vim-rails'
+Plug 'tpope/vim-dispatch'
+Plug 'tpope/vim-fugitive'
+Plug 'tpope/vim-surround'
+" Plug 'tpope/vim-sleuth'
+Plug 'tpope/vim-fireplace', { 'for': 'clojure' }
+
+"testing
+Plug 'janko-m/vim-test'
+" Plug 'jgdavey/tslime.vim'
+
+"colors
+Plug 'ajh17/Spacegray.vim'
+Plug 'nanotech/jellybeans.vim'
+Plug 'ChrisKempson/Vim-Tomorrow-Theme'
+Plug 'morhetz/gruvbox'
+Plug 'Keithbsmiley/rspec.vim'
+Plug 'sjl/badwolf'
+Plug 'jpo/vim-railscasts-theme'
+Plug 'chriskempson/base16-vim'
+Plug 'flazz/vim-colorschemes'
+
+call plug#end()

@@ -28,9 +28,6 @@ export GOPATH=$HOME/gocode
 # tmuxinator
 source ~/.bin/tmuxinator.zsh
 
-# vim colors
-source ~/.vim/bundle/gruvbox/gruvbox_256palette_osx.sh
-
 # aliases
 [[ -f ~/.aliases ]] && source ~/.aliases
 
