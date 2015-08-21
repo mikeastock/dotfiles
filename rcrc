@@ -1,2 +1,0 @@
-EXCLUDES="README.md : xorg.conf"
-TAGS="linux mac"

@@ -45,10 +45,13 @@ alias sc="spring cucumber"
 alias sr="spring rspec spec/"
 
 # Git
+eval "$(hub alias -s)"
 alias g="git"
+alias gs="git status"
 alias gcm="git checkout master"
 alias gce="git checkout dev/eg_markup_elements"
 alias s="git status"
+alias circle="open $(g ci-status -v | awk '{ print $2 }')"
 
 # Procore for Bash
 alias ui="cd ./lib/assets/procore_ui"
