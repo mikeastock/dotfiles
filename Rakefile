@@ -106,7 +106,7 @@ task default: :update_and_force
 
 desc "Same as links, but overwrites any existing files."
 task :force do
-  @force = true
+  ENV["FORCE"] = "yes"
   Rake::Task[:links].invoke
 end
 
