@@ -9,11 +9,6 @@ COLORS = {
   yellow: "1;33",
 }
 
-INSTALL_TASKS = %w[
-  links
-  shell
-]
-
 ##
 # Each key corresponds to a file in the +files+ directory, and each value is the
 # destination of the symlink.
@@ -112,11 +107,8 @@ task default: :update_and_force
 desc "Same as install, but overwrites any existing files."
 task :force do
   ENV["FORCE"] = "yes"
-  Rake::Task[:install].invoke
+  Rake::Task[:links].invoke
 end
-
-desc "Run these tasks in order: #{INSTALL_TASKS.join(' ')}"
-task install: INSTALL_TASKS
 
 desc "Symlink config files to appropriate locations. (force=yes to overwrite)"
 task :links do
@@ -131,11 +123,6 @@ task :links do
   end
 end
 
-desc "Set preferred shell"
-task shell: :packages do
-  `sudo chsh -s $(which #{PREFERRED_SHELL}) $(whoami)`
-end
-
 # Because this may update the Rakefile, we depend on the update task, then we
 # actually exec a call to rake in the shell.
 desc "[Default] Update repository and run force task"
@@ -146,5 +133,5 @@ end
 desc "Update repository"
 task :update do
   `git fetch --prune`
-  `git pull --rebase origin master`
+  `git pull --rebase origin HEAD`
 end
