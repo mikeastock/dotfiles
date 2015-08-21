@@ -70,14 +70,18 @@ end
 # Symlinks +src+ file or directory to +target+
 #
 def link_file(source, target)
-  source = "#{pwd}/files/#{source}"
+  mapping_source = "#{FileUtils.pwd}/files/#{source}"
   target = File.expand_path target
-  rm_rf target if File.exists?(target) and force?
-  if File.directory? target
+
+  if File.exists?(target) && force?
+    FileUtils.rm_rf(target)
+  end
+
+  if File.directory?(target)
     warn "#{target} is a directory. I'm not symlinking that unless you use force=yes", :yellow
   else
-    FileUtils.mkdir_p File.dirname(target)
-    FileUtils.ln_s(source, target, force: force?)
+    FileUtils.mkdir_p(File.dirname(target))
+    FileUtils.ln_s(mapping_source, target, force: force?)
   end
 rescue
   warn "Couldn't create #{target} because it exists. Use `force=yes` to overwrite."
