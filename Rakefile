@@ -126,7 +126,7 @@ end
 # Because this may update the Rakefile, we depend on the update task, then we
 # actually exec a call to rake in the shell.
 desc "[Default] Update repository and run force task"
-task update_and_force: do
+task :update_and_force do
   Rake::Task[:update].invoke
   exec "rake force" if $? == 0
 end
