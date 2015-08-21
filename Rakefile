@@ -128,7 +128,7 @@ end
 desc "[Default] Update repository and run force task"
 task :update_and_force do
   Rake::Task[:update].invoke
-  exec "rake force" if $? == 0
+  Rake::Task[:force].invoke
 end
 
 desc "Update repository"
