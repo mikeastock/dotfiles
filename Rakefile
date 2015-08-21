@@ -65,8 +65,7 @@ end
 # Symlinks +src+ file or directory to +target+
 #
 def link_file(source, target)
-  mapping_source = "../files/#{source}"
-  target = File.expand_path target
+  mapping_source = "~/.dotfiles/files/#{source}"
 
   if File.exists?(target) && force?
     FileUtils.rm_rf(target)
@@ -113,7 +112,7 @@ end
 desc "Symlink config files to appropriate locations. (FORCE=yes to overwrite)"
 task :links do
   all_mappings.each do |source, target|
-    if target.is_a? Array
+    if target.is_a?(Array)
       target.each do |targetlet|
         link_file(source, targetlet)
       end
