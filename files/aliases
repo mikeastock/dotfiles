@@ -51,7 +51,7 @@ alias gs="git status"
 alias gcm="git checkout master"
 alias gce="git checkout dev/eg_markup_elements"
 alias s="git status"
-alias circle="open $(g ci-status -v | awk '{ print $2 }')"
+alias circle="~/bin/circle"
 
 # Procore for Bash
 alias ui="cd ./lib/assets/procore_ui"

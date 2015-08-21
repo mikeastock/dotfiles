@@ -1,0 +1,3 @@
+#!/bin/bash
+
+open $(hub ci-status -v | awk '{ print $2 }')
