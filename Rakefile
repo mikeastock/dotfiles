@@ -65,7 +65,7 @@ end
 # Symlinks +src+ file or directory to +target+
 #
 def link_file(source, target)
-  mapping_source = "~/.dotfiles/files/#{source}"
+  mapping_source = "./.dotfiles/files/#{source}"
 
   if File.exists?(target) && force?
     FileUtils.rm_rf(target)
