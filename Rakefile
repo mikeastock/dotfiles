@@ -109,7 +109,7 @@ end
 # Tasks
 ################################################################################
 
-task default: :update_and_force
+task default: :links
 
 desc "Same as links, but overwrites any existing files."
 task :force do
