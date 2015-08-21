@@ -111,7 +111,7 @@ task default: :update_and_force
 
 desc "Same as install, but overwrites any existing files."
 task :force do
-  ENV["force"] = "yes"
+  ENV["FORCE"] = "yes"
   Rake::Task[:install].invoke
 end
 
