@@ -73,13 +73,13 @@ def link_file(source, target)
   end
 
   if File.directory?(target)
-    warn "#{target} is a directory. I'm not symlinking that unless you use force=yes", :yellow
+    warn "#{target} is a directory. I'm not symlinking that unless you use FORCE=yes", :yellow
   else
     FileUtils.mkdir_p(File.dirname(target))
     FileUtils.ln_s(mapping_source, target, force: force?)
   end
 rescue
-  warn "Couldn't create #{target} because it exists. Use `force=yes` to overwrite."
+  warn "Couldn't create #{target} because it exists. Use `FORCE=yes` to overwrite."
 end
 
 def all_mappings
@@ -104,13 +104,14 @@ end
 
 task default: :update_and_force
 
-desc "Same as install, but overwrites any existing files."
+desc "Same as links, but overwrites any existing files."
 task :force do
   ENV["FORCE"] = "yes"
+  puts "hi mom\n\n\n"
   Rake::Task[:links].invoke
 end
 
-desc "Symlink config files to appropriate locations. (force=yes to overwrite)"
+desc "Symlink config files to appropriate locations. (FORCE=yes to overwrite)"
 task :links do
   all_mappings.each do |source, target|
     if target.is_a? Array
