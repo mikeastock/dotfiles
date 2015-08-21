@@ -34,13 +34,13 @@ MAPPINGS = {
 }
 
 PROCORE_MAPPINGS = {
-  "tag-linux/zsh/"     => "../.zsh",
-  "tag-linux/zshrc"    => "../.zshrc",
+  "procore/zsh/"     => "../.zsh",
+  "procore/zshrc"    => "../.zshrc",
 }
 
 MAC_MAPPINGS = {
-  "tag-mac/zprofile"   => "../.zprofile",
-  "tag-mac/zshrc"      => "../.zshrc",
+  "mac/zprofile"   => "../.zprofile",
+  "mac/zshrc"      => "../.zshrc",
 }
 
 PREFERRED_SHELL = "zsh"
