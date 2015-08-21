@@ -59,7 +59,11 @@ def warn(msg, color=:red)
 end
 
 def force?
-  @force ||= ENV["force"] =~ /y/i
+  @force ||= build_force
+end
+
+def build_force
+  ENV["FORCE"] == "yes"
 end
 
 ##
@@ -73,17 +77,17 @@ def link_file(source, target)
     warn "#{target} is a directory. I'm not symlinking that unless you use force=yes", :yellow
   else
     FileUtils.mkdir_p File.dirname(target)
-    ln_s source, target
+    FileUtils.ln_s(source, target, force: force?)
   end
 rescue
   warn "Couldn't create #{target} because it exists. Use `force=yes` to overwrite."
 end
 
 def all_mappings
-  if linux
-    MAPPINGS + LINUX_MAPPINGS
+  if linux?
+    MAPPINGS.merge(LINUX_MAPPINGS)
   elsif mac?
-    MAPPINGS + MAC_MAPPINGS
+    MAPPINGS.merge(MAC_MAPPINGS)
   end
 end
 
