@@ -33,7 +33,7 @@ MAPPINGS = {
   "zsh"                => "../.zsh",
 }
 
-LINUX_MAPPINGS = {
+PROCORE_MAPPINGS = {
   "tag-linux/zsh/"     => "../.zsh",
   "tag-linux/zshrc"    => "../.zshrc",
 }
@@ -82,15 +82,17 @@ rescue
 end
 
 def all_mappings
-  if linux?
-    MAPPINGS.merge(LINUX_MAPPINGS)
+  if procore?
+    MAPPINGS.merge(PROCORE_MAPPINGS)
   elsif mac?
     MAPPINGS.merge(MAC_MAPPINGS)
+  else
+    MAPPINGS
   end
 end
 
-def linux?
-  Gem::Platform.local.os == "linux"
+def procore?
+  ENV["PROCORE"] == "yes"
 end
 
 def mac?
