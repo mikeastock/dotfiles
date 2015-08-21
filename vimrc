@@ -41,6 +41,7 @@ set tags=./tags;
 set hlsearch
 set ignorecase smartcase
 set hidden
+" set clipboard+=unnamedplus
 
 set shiftround " When at 3 spaces and I hit >>, go to 4, not 5.
 set gdefault " assume the /g flag on :s substitutions to replace all matches in a line
@@ -83,9 +84,9 @@ omap T <Plug>Sneak_T
 " Testing settings
 map <Leader>s :TestNearest<CR>
 map <Leader>r :TestFile<CR>
-map <Leader>a :TestLast<CR>
+" map <Leader>a :TestLast<CR>
 
-let test#strategy = "neoterm"
+let test#strategy = "neovim"
 
 let g:neocomplcache_enable_at_startup = 1
 
@@ -252,6 +253,7 @@ map <Leader>gp :Gpush<CR>
 map <Leader>ga :Gwrite<CR>
 map <Leader>e :RExtractMethod<CR>
 map <Leader>d :e config/database.yml<CR>
+map <Leader>a :A<CR>
 
 " go specific leader mappings
 au FileType go nmap <leader>r <Plug>(go-run)
