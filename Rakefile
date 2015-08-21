@@ -14,33 +14,33 @@ COLORS = {
 # destination of the symlink.
 #
 MAPPINGS = {
-  "Xresources"         => "~/.Xresources",
-  "aliases"            => "~/.aliases",
-  "bash_aliases"       => "~/.bash_aliases",
-  "bashrc"             => "~/.bashrc",
-  "bin"                => "~/bin",
-  "gemrc"              => "~/.gemrc",
-  "gitconfig"          => "~/.gitconfig",
-  "gitignore_global"   => "~/.gitignore_global",
-  "itermcolors"        => "~/.itermcolors",
-  "rspec"              => "~/.rspec",
-  "tmux.conf"          => "~/.tmux.conf",
-  "tmuxinator"         => "~/.tmuxinator",
-  "vim"                => %w[~/.vim ~/.nvim],
-  "vimrc"              => %w[~/.vimrc ~/.nvimrc],
-  "vimrc.plugins"      => "~/.vimrc.plugins",
-  "xinitrc"            => "~/.xinitrc",
-  "zsh"                => "~/.zsh",
+  "Xresources"         => "../.Xresources",
+  "aliases"            => "../.aliases",
+  "bash_aliases"       => "../.bash_aliases",
+  "bashrc"             => "../.bashrc",
+  "bin"                => "../bin",
+  "gemrc"              => "../.gemrc",
+  "gitconfig"          => "../.gitconfig",
+  "gitignore_global"   => "../.gitignore_global",
+  "itermcolors"        => "../.itermcolors",
+  "rspec"              => "../.rspec",
+  "tmux.conf"          => "../.tmux.conf",
+  "tmuxinator"         => "../.tmuxinator",
+  "vim"                => %w[../.vim ../.nvim],
+  "vimrc"              => %w[../.vimrc ../.nvimrc],
+  "vimrc.plugins"      => "../.vimrc.plugins",
+  "xinitrc"            => "../.xinitrc",
+  "zsh"                => "../.zsh",
 }
 
 LINUX_MAPPINGS = {
-  "tag-linux/zsh/"     => "~/.zsh",
-  "tag-linux/zshrc"    => "~/.zshrc",
+  "tag-linux/zsh/"     => "../.zsh",
+  "tag-linux/zshrc"    => "../.zshrc",
 }
 
 MAC_MAPPINGS = {
-  "tag-mac/zprofile"   => "~/.zprofile",
-  "tag-mac/zshrc"      => "~/.zshrc",
+  "tag-mac/zprofile"   => "../.zprofile",
+  "tag-mac/zshrc"      => "../.zshrc",
 }
 
 PREFERRED_SHELL = "zsh"
@@ -65,7 +65,7 @@ end
 # Symlinks +src+ file or directory to +target+
 #
 def link_file(source, target)
-  mapping_source = "#{FileUtils.pwd}/files/#{source}"
+  mapping_source = "../files/#{source}"
   target = File.expand_path target
 
   if File.exists?(target) && force?
