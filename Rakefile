@@ -1,4 +1,5 @@
 require "tmpdir"
+require "colorize"
 
 ################################################################################
 # Constants and helpers
@@ -54,10 +55,6 @@ def warn(msg, color=:red)
   kernel_warn "\e[#{COLORS[color]}m#{msg}\e[m"
 end
 
-def log(msg, color=:green)
-  puts "\e[#{COLORS[color]}m#{msg}\e[m"
-end
-
 def force?
   @force ||= build_force
 end
@@ -80,7 +77,7 @@ def link_file(source, target)
     warn "#{target} is a directory. I'm not symlinking that unless you use FORCE=yes", :yellow
   else
     FileUtils.mkdir_p(File.dirname(target))
-    log "Symlinking #{source} to #{target}"
+    puts "Symlinking #{source} to #{target}".green
     FileUtils.ln_s(mapping_source, target, force: force?)
   end
 rescue
