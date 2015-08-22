@@ -35,13 +35,6 @@ task :install do
   system %Q{mkdir ~/.tmp}
 end
 
-task :uninstall do
-  Dir.entries("files/").each do |file|
-    next if [".", ".."].include?(file)
-    system %Q{rm -rf "$HOME/.#{file}"}
-  end
-end
-
 def replace_file(file)
   system %Q{rm "$HOME/.#{file}"}
   link_file(file)
@@ -49,9 +42,21 @@ end
 
 def link_file(file)
   puts "linking ~/.#{file}".green
-  if ENV["RELATIVE"]
+  system %Q{ln -s "$PWD/files/#{file}" "$HOME/.#{file}"}
+end
+
+task :install_relative do
+  Dir.entries("files/").each do |file|
+    next if [".", ".."].include?(file)
+
+    puts "linking ~/.#{file}".green
     system %Q{ln -s "./.dotfiles/files/#{file}" "../.#{file}"}
-  else
-    system %Q{ln -s "$PWD/files/#{file}" "$HOME/.#{file}"}
+  end
+end
+
+task :uninstall do
+  Dir.entries("files/").each do |file|
+    next if [".", ".."].include?(file)
+    system %Q{rm -rf "$HOME/.#{file}"}
   end
 end
