@@ -1,31 +1,46 @@
 # Allow completing of the remainder of a command
 bindkey "^N" insert-last-word
 
-# Show contents of directory after cd-ing into it
-chpwd() {
-  ls -lrthG
-}
-
 # Save a ton of history
 HISTSIZE=20000
 HISTFILE=~/.zsh_history
 SAVEHIST=20000
 
+# Handle dup path in tmux
+# http://superuser.com/questions/544989/does-tmux-sort-the-path-variable/583502#583502
+if [ -f /etc/profile ]; then
+  PATH=""
+  source /etc/profile
+fi
+
 # Enable completion
 autoload -U compinit
 compinit
+
+# CTRL-A and CTRL-E
+bindkey -e
+
+# Allow [ or ] whereever you want
+unsetopt nomatch
 
 # Disable flow control commands (keeps C-s from freezing everything)
 stty start undef
 stty stop undef
 
-# Sourcing of other files
+# Sourcing of other zsh files
 source $HOME/.dotfiles/files/zsh/aliases
 source $HOME/.dotfiles/files/zsh/functions
 source $HOME/.dotfiles/files/zsh/prompt
 source $HOME/.dotfiles/files/zsh/z
 
-# Add cabal bin
-export PATH=$PATH:~/.cabal/bin
+# PATH setup
+export PATH="/usr/local/rbenv/bin:$PATH"
+export PATH="$GOPATH/bin:$PATH"
+export PATH="$PATH:/usr/local/heroku/bin"
+export PATH="$PATH:/Applications/Postgres.app/Contents/Versions/9.4/bin"
 
-export PATH=$PATH:bin:~/bin:/usr/local/bin:/usr/local/sbin:/usr/local/mysql/bin:/usr/local/git/bin:/usr/bin:/bin:/usr/sbin:/sbin:$HOME/.rvm/bin
+# Load rbenv
+eval "$(rbenv init - )"
+
+# Load FZF
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
