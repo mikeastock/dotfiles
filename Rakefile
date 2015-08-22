@@ -1,13 +1,16 @@
 require "colorize"
 require "rake"
 
+task default: :install
+
 desc "install the dot files into user's home directory"
 task :install do
   replace_all = false
-  Dir["*"].each do |file|
-    next if %w(Rakefile README.md Gemfile Gemfile.lock).include?(file)
+  Dir.entries("files/").each do |file|
+    next if [".", ".."].include?(file)
 
-    if File.exist?(File.join(ENV["HOME"], ".#{file}"))
+    path = File.join(ENV["HOME"], ".#{file}")
+    if File.exist?(path) || File.symlink?(path)
       if replace_all
         replace_file(file)
       else
@@ -39,5 +42,5 @@ end
 
 def link_file(file)
   puts "linking ~/.#{file}"
-  system %Q{ln -s "$PWD/#{file}" "$HOME/.#{file}"}
+  system %Q{ln -s "$PWD/files/#{file}" "$HOME/.#{file}"}
 end
