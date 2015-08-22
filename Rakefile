@@ -41,6 +41,6 @@ def replace_file(file)
 end
 
 def link_file(file)
-  puts "linking ~/.#{file}"
+  puts "linking ~/.#{file}".green
   system %Q{ln -s "$PWD/files/#{file}" "$HOME/.#{file}"}
 end
