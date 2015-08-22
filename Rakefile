@@ -42,5 +42,9 @@ end
 
 def link_file(file)
   puts "linking ~/.#{file}".green
-  system %Q{ln -s "$PWD/files/#{file}" "$HOME/.#{file}"}
+  if ENV["RELATIVE"]
+    system %Q{ln -s "./files/#{file}" "../.#{file}"}
+  else
+    system %Q{ln -s "$PWD/files/#{file}" "$HOME/.#{file}"}
+  end
 end
