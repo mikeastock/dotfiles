@@ -4,7 +4,9 @@ require "rake"
 desc "install the dot files into user's home directory"
 task :install do
   replace_all = false
-  Dir["files/*"].each do |file|
+  Dir["*"].each do |file|
+    next if %w(Rakefile README.md Gemfile Gemfile.lock).include?(file)
+
     if File.exist?(File.join(ENV["HOME"], ".#{file}"))
       if replace_all
         replace_file(file)
