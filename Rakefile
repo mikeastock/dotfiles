@@ -45,6 +45,7 @@ def link_file(file)
   system %Q{ln -s "$PWD/files/#{file}" "$HOME/.#{file}"}
 end
 
+desc "Install dotfiles with relative paths"
 task :install_relative do
   Dir.entries("files/").each do |file|
     next if [".", ".."].include?(file)
