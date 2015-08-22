@@ -1,8 +1,5 @@
-###########
-# aliases #
-###########
-
 # Unix
+alias ls='ls --color=auto'
 alias tlf="tail -f"
 alias ln='ln -v'
 alias mkdir='mkdir -p'
