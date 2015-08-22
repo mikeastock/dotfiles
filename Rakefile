@@ -35,6 +35,13 @@ task :install do
   system %Q{mkdir ~/.tmp}
 end
 
+task :uninstall do
+  Dir.entries("files/").each do |file|
+    next if [".", ".."].include?(file)
+    system %Q{rm -rf "$HOME/.#{file}"}
+  end
+end
+
 def replace_file(file)
   system %Q{rm "$HOME/.#{file}"}
   link_file(file)
