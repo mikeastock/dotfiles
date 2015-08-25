@@ -6,6 +6,8 @@ export EDITOR=$VISUAL
 export DISABLE_AUTO_TITLE=true
 export PYTHONPATH=/usr/local/lib/python2.7/site-packages
 
+export FZF_DEFAULT_COMMAND='ag -l -g ""'
+
 # go
 if [ -d $HOME/gocode ] ; then
   export GOPATH=$HOME/gocode

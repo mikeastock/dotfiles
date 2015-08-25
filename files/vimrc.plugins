@@ -29,7 +29,7 @@ Plug 'ap/vim-buftabline'
 Plug 'suan/vim-instant-markdown'
 Plug 'fatih/vim-go'
 Plug 'derekwyatt/vim-scala'
-Plug 'pangloss/vim-javascript'
+Plug 'pangloss/vim-javascript', { 'branch': 'develop' }
 Plug 'elixir-lang/vim-elixir'
 
 "tpope
