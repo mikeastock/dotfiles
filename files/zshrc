@@ -6,11 +6,13 @@ HISTSIZE=20000
 HISTFILE=~/.zsh_history
 SAVEHIST=20000
 
-# Handle dup path in tmux
+# Handle dup path in tmux for Mac OS X
 # http://superuser.com/questions/544989/does-tmux-sort-the-path-variable/583502#583502
-if [ -f /etc/profile ]; then
-  PATH=""
-  source /etc/profile
+if [[ `uname` == "Darwin" ]]; then
+  if [ -f /etc/profile ]; then
+    PATH=""
+    source /etc/profile
+  fi
 fi
 
 # Enable completion
@@ -44,3 +46,8 @@ eval "$(rbenv init - )"
 
 # Load FZF
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+
+if [[ -f $HOME/.nvm ]]; then
+  export NVM_DIR="$HOME/.nvm"
+  [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
+fi
