@@ -16,8 +16,13 @@ if [[ `uname` == "Darwin" ]]; then
 fi
 
 # Enable completion
-autoload -U compinit
+zstyle ':completion:*' list-colors "${(@s.:.)LS_COLORS}"
+autoload -Uz compinit
 compinit
+
+# Search history by first word
+bindkey '\e[A' history-search-backward
+bindkey '\e[B' history-search-forward
 
 # CTRL-A and CTRL-E
 bindkey -e
@@ -34,6 +39,7 @@ source $HOME/.dotfiles/files/zsh/aliases
 source $HOME/.dotfiles/files/zsh/functions
 source $HOME/.dotfiles/files/zsh/prompt
 source $HOME/.dotfiles/files/zsh/z
+source $HOME/.dotfiles/files/zsh/antigen.zsh
 
 # PATH setup
 export PATH="/usr/local/rbenv/bin:$PATH"
