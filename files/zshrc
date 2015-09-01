@@ -16,7 +16,8 @@ if [[ `uname` == "Darwin" ]]; then
 fi
 
 # Enable completion
-autoload -U compinit
+zstyle ':completion:*' list-colors "${(@s.:.)LS_COLORS}"
+autoload -Uz compinit
 compinit
 
 # CTRL-A and CTRL-E
