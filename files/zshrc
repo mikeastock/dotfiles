@@ -26,7 +26,7 @@ source $HOME/.dotfiles/files/zsh/aliases
 source $HOME/.dotfiles/files/zsh/functions
 source $HOME/.dotfiles/files/zsh/prompt
 
-export PATH="/usr/local/rbenv/bin:$PATH"
+export PATH="/usr/local/rbenv/bin:/usr/local/rbenv/shims:/usr/local/bin:$PATH"
 
 # Load rbenv
 eval "$(rbenv init - )"
