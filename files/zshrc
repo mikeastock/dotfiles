@@ -6,15 +6,6 @@ HISTSIZE=20000
 HISTFILE=~/.zsh_history
 SAVEHIST=20000
 
-# Handle dup path in tmux for Mac OS X
-# http://superuser.com/questions/544989/does-tmux-sort-the-path-variable/583502#583502
-if [[ `uname` == "Darwin" ]]; then
-  if [ -f /etc/profile ]; then
-    PATH=""
-    source /etc/profile
-  fi
-fi
-
 # Enable completion
 zstyle ':completion:*' list-colors "${(@s.:.)LS_COLORS}"
 autoload -Uz compinit
@@ -34,21 +25,8 @@ stty stop undef
 source $HOME/.dotfiles/files/zsh/aliases
 source $HOME/.dotfiles/files/zsh/functions
 source $HOME/.dotfiles/files/zsh/prompt
-source $HOME/.dotfiles/files/zsh/z
 
-# PATH setup
 export PATH="/usr/local/rbenv/bin:$PATH"
-export PATH="$GOPATH/bin:$PATH"
-export PATH="$PATH:/usr/local/heroku/bin"
-export PATH="$PATH:/Applications/Postgres.app/Contents/Versions/9.4/bin"
 
 # Load rbenv
 eval "$(rbenv init - )"
-
-# Load FZF
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
-
-if [[ -f $HOME/.nvm ]]; then
-  export NVM_DIR="$HOME/.nvm"
-  [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
-fi
