@@ -86,7 +86,11 @@ map <Leader>s :TestNearest<CR>
 map <Leader>r :TestFile<CR>
 " map <Leader>a :TestLast<CR>
 
-let test#strategy = "neovim"
+function! SplitStrategy(cmd)
+  botright new | call termopen(a:cmd) | startinsert
+endfunction
+let g:test#custom_strategies = {'terminal_split': function('SplitStrategy')}
+let g:test#strategy = 'terminal_split'
 
 let g:neocomplcache_enable_at_startup = 1
 

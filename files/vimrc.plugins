@@ -6,6 +6,7 @@ Plug 'ecomba/vim-ruby-refactoring'
 
 "fuzzy finding
 Plug 'junegunn/fzf'
+Plug 'rking/ag.vim'
 
 "looks
 Plug 'airblade/vim-gitgutter'
