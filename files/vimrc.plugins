@@ -6,6 +6,8 @@ Plug 'ecomba/vim-ruby-refactoring'
 
 "fuzzy finding
 Plug 'junegunn/fzf'
+Plug 'rking/ag.vim'
+Plug 'skwp/greplace.vim'
 
 "looks
 Plug 'airblade/vim-gitgutter'
@@ -35,7 +37,6 @@ Plug 'elixir-lang/vim-elixir'
 "tpope
 Plug 'tpope/vim-endwise'
 Plug 'tpope/vim-rails'
-Plug 'tpope/vim-dispatch'
 Plug 'tpope/vim-fugitive'
 Plug 'tpope/vim-surround'
 " Plug 'tpope/vim-sleuth'
@@ -44,6 +45,8 @@ Plug 'tpope/vim-fireplace', { 'for': 'clojure' }
 "testing
 Plug 'janko-m/vim-test'
 " Plug 'jgdavey/tslime.vim'
+Plug 'benmills/vimux'
+Plug 'tpope/vim-dispatch'
 
 "colors
 Plug 'ajh17/Spacegray.vim'

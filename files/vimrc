@@ -48,8 +48,8 @@ set gdefault " assume the /g flag on :s substitutions to replace all matches in 
 set mouse=""
 
 "Color and UI
-colorscheme hybrid
-" set background=dark
+colorscheme gruvbox
+set background=dark
 
 set colorcolumn=80
 set cursorline
@@ -81,12 +81,20 @@ xmap T <Plug>Sneak_T
 omap t <Plug>Sneak_t
 omap T <Plug>Sneak_T
 
+" Grep
+set grepprg=ag
+let g:grep_cmd_opts = '--line-numbers --noheading'
+
 " Testing settings
 map <Leader>s :TestNearest<CR>
 map <Leader>r :TestFile<CR>
 " map <Leader>a :TestLast<CR>
 
-let test#strategy = "neovim"
+function! SplitStrategy(cmd)
+  botright new | call termopen(a:cmd) | startinsert
+endfunction
+let g:test#custom_strategies = {'terminal_split': function('SplitStrategy')}
+let g:test#strategy = 'dispatch'
 
 let g:neocomplcache_enable_at_startup = 1
 
