@@ -35,6 +35,7 @@ Plug 'derekwyatt/vim-scala'
 Plug 'pangloss/vim-javascript'
 Plug 'mxw/vim-jsx'
 Plug 'elixir-lang/vim-elixir'
+Plug 'othree/javascript-libraries-syntax.vim'
 
 "tpope
 Plug 'tpope/vim-endwise'
