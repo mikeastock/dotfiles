@@ -5,7 +5,9 @@ Plug 'nelstrom/vim-textobj-rubyblock'
 Plug 'ecomba/vim-ruby-refactoring'
 
 "fuzzy finding
-Plug 'junegunn/fzf'
+Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': 'yes \| ./install' }
+Plug 'junegunn/fzf.vim'
+
 Plug 'rking/ag.vim'
 Plug 'skwp/greplace.vim'
 
@@ -26,7 +28,8 @@ Plug 'ap/vim-buftabline'
 " Plug 'ngmy/vim-rubocop'
 " Plug 'cespare/vim-sbd'
 " Plug 'rking/ag.vim'
-Plug 'Raimondi/delimitMate'
+" Plug 'Raimondi/delimitMate'
+Plug 'jiangmiao/auto-pairs'
 
 "langauge specific
 Plug 'suan/vim-instant-markdown'

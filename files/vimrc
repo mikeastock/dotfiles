@@ -96,7 +96,7 @@ function! SplitStrategy(cmd)
   botright new | call termopen(a:cmd) | startinsert
 endfunction
 let g:test#custom_strategies = {'terminal_split': function('SplitStrategy')}
-let g:test#strategy = 'dispatch'
+let g:test#strategy = 'vimux'
 
 let g:neocomplcache_enable_at_startup = 1
 
@@ -127,13 +127,6 @@ function! s:buffer_lines()
   endfor
   return res
 endfunction
-
-command! FZFLines call fzf#run({
-\   'source':  <sid>buffer_lines(),
-\   'sink':    function('<sid>line_handler'),
-\   'options': '--extended --nth=3..',
-\   'down':    '60%'
-\})
 
 "==================
 "SETTINGS BY OTHERS
@@ -247,8 +240,7 @@ map <Leader>bi :terminal bundle install<cr>
 map <Leader>tp :terminal bundle exec rake db:test:prepare<cr>
 map <Leader>c ::bp\|bd #<CR>
 " map <Leader>e :RuboCop<CR>
-map <Leader>f :FZF -m<CR>
-map <Leader>g :FZFLines<CR>
+map <Leader>f :Files<CR>
 map <Leader>i :mmgg=G`m<CR>
 map <Leader>kw :%s/\s\+$//<CR>
 map <Leader>q :bd<CR>
@@ -267,6 +259,7 @@ map <Leader>ga :Gwrite<CR>
 map <Leader>e :RExtractMethod<CR>
 map <Leader>d :e config/database.yml<CR>
 map <Leader>a :A<CR>
+map <Leader>b :Buffer<CR>
 
 " go specific leader mappings
 au FileType go nmap <leader>r <Plug>(go-run)
