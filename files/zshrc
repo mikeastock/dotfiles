@@ -77,7 +77,7 @@ source $HOME/.dotfiles/files/zsh/z
 
 # PATH setup
 export PATH="/usr/local/rbenv/bin:$PATH"
-export PATH="$PATH:/usr/local/heroku/bin:$GOPATH/bin:/Applications/Postgres.app/Contents/Versions/9.4/bin:$HOME/bin"
+export PATH="$PATH:/usr/local/heroku/bin:$GOPATH/bin:/Applications/Postgres.app/Contents/Versions/9.4/bin:$HOME/bin:$HOME/.fzf/bin"
 
 # Load rbenv
 eval "$(rbenv init - )"
