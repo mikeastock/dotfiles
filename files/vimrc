@@ -227,7 +227,7 @@ augroup vimrcEx
 augroup END
 
 autocmd FileType gitcommit setlocal spell textwidth=72
-autocmd BufRead,BufNewFile *.es6 setfiletype javascript
+autocmd FileType rust map <Leader>r :CargoRun<CR>
 
 "===================
 "KEY BINDINGS
@@ -246,8 +246,7 @@ map <Leader>kw :%s/\s\+$//<CR>
 map <Leader>q :bd<CR>
 " map <Leader>t :terminal<CR>
 map <Leader>rs :s/'/"<CR>
-map <Leader>vi :tabe ~/.nvimrc<CR>
-map <Leader>vs :source ~/.nvimrc<CR>
+map <Leader>vi :tabe ~/.config/nvim/init.vim<CR>
 map <Leader>w :w!<CR>
 map <Leader>hs :s/:\([^ ]*\)\(\s*\)=>/\1:/g<CR>
 map <Leader>mi 0f:wywOit "pA" doj==oendkf{edi}Op==j0ftlvt.c(response)<CR>
@@ -259,7 +258,6 @@ map <Leader>ga :Gwrite<CR>
 map <Leader>e :RExtractMethod<CR>
 map <Leader>d :e config/database.yml<CR>
 map <Leader>a :A<CR>
-map <Leader>b :Buffer<CR>
 
 " go specific leader mappings
 au FileType go nmap <leader>r <Plug>(go-run)

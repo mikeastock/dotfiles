@@ -1,6 +1,8 @@
 name: js
 root: ./
 
+pre_window: nvm use stable
+
 windows:
   - nvim: nvim
   - git:

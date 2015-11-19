@@ -12,7 +12,7 @@ Plug 'rking/ag.vim'
 Plug 'skwp/greplace.vim'
 
 "looks
-Plug 'airblade/vim-gitgutter'
+" Plug 'airblade/vim-gitgutter'
 Plug 'ervandew/supertab'
 Plug 'itchyny/lightline.vim'
 
@@ -27,9 +27,9 @@ Plug 'kassio/neoterm'
 Plug 'ap/vim-buftabline'
 " Plug 'ngmy/vim-rubocop'
 " Plug 'cespare/vim-sbd'
-" Plug 'rking/ag.vim'
 " Plug 'Raimondi/delimitMate'
 Plug 'jiangmiao/auto-pairs'
+Plug 'AndrewRadev/splitjoin.vim'
 
 "langauge specific
 Plug 'suan/vim-instant-markdown'
@@ -39,6 +39,8 @@ Plug 'pangloss/vim-javascript'
 Plug 'mxw/vim-jsx'
 Plug 'elixir-lang/vim-elixir'
 Plug 'othree/javascript-libraries-syntax.vim'
+Plug 'rust-lang/rust.vim'
+Plug 'jtdowney/vimux-cargo'
 
 "tpope
 Plug 'tpope/vim-endwise'
@@ -53,6 +55,7 @@ Plug 'janko-m/vim-test'
 " Plug 'jgdavey/tslime.vim'
 Plug 'benmills/vimux'
 Plug 'tpope/vim-dispatch'
+Plug 'christoomey/vim-tmux-runner'
 
 "colors
 Plug 'ajh17/Spacegray.vim'

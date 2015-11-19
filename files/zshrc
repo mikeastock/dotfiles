@@ -74,18 +74,26 @@ unsetopt nomatch
 # Sourcing of other zsh files
 source $HOME/.dotfiles/files/zsh/aliases
 source $HOME/.dotfiles/files/zsh/z
+source /usr/local/share/zsh/site-functions
 
 # PATH setup
-export PATH="/usr/local/rbenv/bin:$PATH"
+export PATH="$HOME/.rbenv/bin:$PATH"
 export PATH="$PATH:/usr/local/heroku/bin:$GOPATH/bin:/Applications/Postgres.app/Contents/Versions/9.4/bin:$HOME/bin:$HOME/.fzf/bin"
 
 # Load rbenv
 eval "$(rbenv init - )"
 
 # Load FZF
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+[ -f ~/.fzf/shell/key-bindings.zsh ] && source ~/.fzf/shell/key-bindings.zsh
 
 if [[ -f $HOME/.nvm ]]; then
   export NVM_DIR="$HOME/.nvm"
   [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
 fi
+
+LUNCHY_DIR=$(dirname `gem which lunchy`)/../extras
+if [ -f $LUNCHY_DIR/lunchy-completion.zsh ]; then
+  . $LUNCHY_DIR/lunchy-completion.zsh
+fi
+
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh

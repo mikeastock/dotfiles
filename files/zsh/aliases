@@ -62,7 +62,7 @@ alias vup="cd $HOME/procore/ude && vagrant up"
 alias vsuspend="cd $HOME/procore/ude && vagrant suspend"
 alias vstatus="cd $HOME/procore/ude && vagrant status"
 
-alias reset_db="bin/rake db:drop db:create db:structure:load db:migrate db:seed && bin/rails runner db/budgeting_seeds.rb"
+alias reset_db="bin/rake db:drop db:create db:structure:load db:migrate db:seed && bin/rake dev_setup:seed"
 
 #############
 # functions #
