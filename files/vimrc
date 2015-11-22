@@ -228,6 +228,7 @@ augroup END
 
 autocmd FileType gitcommit setlocal spell textwidth=72
 autocmd FileType rust map <Leader>r :CargoRun<CR>
+autocmd BufWrite *.rs :Autoformat
 
 "===================
 "KEY BINDINGS

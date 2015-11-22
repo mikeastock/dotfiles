@@ -39,8 +39,11 @@ Plug 'pangloss/vim-javascript'
 Plug 'mxw/vim-jsx'
 Plug 'elixir-lang/vim-elixir'
 Plug 'othree/javascript-libraries-syntax.vim'
+
+"Rust
 Plug 'rust-lang/rust.vim'
 Plug 'jtdowney/vimux-cargo'
+Plug 'Chiel92/vim-autoformat'
 
 "tpope
 Plug 'tpope/vim-endwise'
