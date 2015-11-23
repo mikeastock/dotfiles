@@ -12,8 +12,8 @@ let $NVIM_TUI_ENABLE_TRUE_COLOR=1
 "==============
 " Plug setup
 "==============
-if filereadable(expand("~/.vimrc.plugins"))
-  source ~/.vimrc.plugins
+if filereadable(expand("~/.config/nvim/plugins.vim"))
+  source ~/.config/nvim/plugins.vim
 endif
 
 "============================
