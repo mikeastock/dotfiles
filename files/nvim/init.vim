@@ -43,7 +43,6 @@ set tags=./tags;
 set hlsearch
 set ignorecase smartcase
 set hidden
-" set clipboard+=unnamedplus
 
 set shiftround " When at 3 spaces and I hit >>, go to 4, not 5.
 set gdefault " assume the /g flag on :s substitutions to replace all matches in a line

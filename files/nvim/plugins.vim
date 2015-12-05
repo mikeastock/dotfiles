@@ -1,20 +1,20 @@
 call plug#begin('~/.vim/plugged')
 
-Plug 'kana/vim-textobj-user'
-Plug 'nelstrom/vim-textobj-rubyblock'
-Plug 'ecomba/vim-ruby-refactoring'
+" Plug 'kana/vim-textobj-user'
+" Plug 'nelstrom/vim-textobj-rubyblock'
+" Plug 'ecomba/vim-ruby-refactoring'
 
 "fuzzy finding
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': 'yes \| ./install' }
 Plug 'junegunn/fzf.vim'
 
 Plug 'rking/ag.vim'
-Plug 'skwp/greplace.vim'
+" Plug 'skwp/greplace.vim'
 
 "looks
-" Plug 'airblade/vim-gitgutter'
 Plug 'ervandew/supertab'
-Plug 'itchyny/lightline.vim'
+" Plug 'airblade/vim-gitgutter'
+" Plug 'itchyny/lightline.vim'
 
 "workflow
 Plug 'tomtom/tcomment_vim'
@@ -23,16 +23,15 @@ Plug 'tmhedberg/matchit'
 Plug 'Shougo/neocomplcache.vim'
 Plug 'pbrisbin/vim-mkdir'
 Plug 'justinmk/vim-sneak'
-Plug 'kassio/neoterm'
 Plug 'ap/vim-buftabline'
+Plug 'jiangmiao/auto-pairs'
+" Plug 'kassio/neoterm'
 " Plug 'ngmy/vim-rubocop'
 " Plug 'cespare/vim-sbd'
 " Plug 'Raimondi/delimitMate'
-Plug 'jiangmiao/auto-pairs'
-Plug 'AndrewRadev/splitjoin.vim'
+" Plug 'AndrewRadev/splitjoin.vim'
 
 "langauge specific
-Plug 'suan/vim-instant-markdown'
 Plug 'fatih/vim-go'
 Plug 'derekwyatt/vim-scala'
 Plug 'pangloss/vim-javascript'
@@ -50,15 +49,15 @@ Plug 'tpope/vim-endwise'
 Plug 'tpope/vim-rails'
 Plug 'tpope/vim-fugitive'
 Plug 'tpope/vim-surround'
-" Plug 'tpope/vim-sleuth'
 Plug 'tpope/vim-fireplace', { 'for': 'clojure' }
+" Plug 'tpope/vim-sleuth'
 
 "testing
 Plug 'janko-m/vim-test'
-" Plug 'jgdavey/tslime.vim'
 Plug 'benmills/vimux'
-Plug 'tpope/vim-dispatch'
-Plug 'christoomey/vim-tmux-runner'
+" Plug 'tpope/vim-dispatch'
+" Plug 'christoomey/vim-tmux-runner'
+" Plug 'jgdavey/tslime.vim'
 
 "colors
 Plug 'ajh17/Spacegray.vim'

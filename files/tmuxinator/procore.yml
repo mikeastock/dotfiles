@@ -8,8 +8,4 @@ windows:
       panes:
         - bin/rails console
         - #
-  - server: 
-      layout: even-horizontal
-      panes:
-        - puma -b tcp://0.0.0.0 -p 3000
-        - tail -f log/development.log
+  - server: bin/rails server Puma
