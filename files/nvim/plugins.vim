@@ -13,8 +13,7 @@ Plug 'rking/ag.vim'
 
 "looks
 Plug 'ervandew/supertab'
-" Plug 'airblade/vim-gitgutter'
-" Plug 'itchyny/lightline.vim'
+Plug 'itchyny/lightline.vim'
 
 "workflow
 Plug 'tomtom/tcomment_vim'
