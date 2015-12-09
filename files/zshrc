@@ -77,11 +77,14 @@ source $HOME/.dotfiles/files/zsh/z
 source /usr/local/share/zsh/site-functions
 
 # PATH setup
-export PATH="$HOME/.rbenv/bin:$PATH"
+export PATH="$HOME/.rbenv/bin:$HOME/.crenv/bin:$PATH"
 export PATH="$PATH:/usr/local/heroku/bin:$GOPATH/bin:/Applications/Postgres.app/Contents/Versions/9.4/bin:$HOME/bin:$HOME/.fzf/bin:$HOME/.multirust/toolchains/nightly/cargo/bin"
 
 # Load rbenv
 eval "$(rbenv init - )"
+
+# Load crenv
+eval "$(crenv init -)"
 
 # Load FZF
 [ -f ~/.fzf/shell/key-bindings.zsh ] && source ~/.fzf/shell/key-bindings.zsh
