@@ -6,6 +6,8 @@
 
 "Colorscheme settings
 let g:gruvbox_italic=0
+let g:gruvbox_contrast_dark='hard'
+let $NVIM_TUI_ENABLE_TRUE_COLOR=1
 
 "##############################################################################
 "# VIM PLUG SETUP
@@ -50,8 +52,6 @@ set mouse=""
 "Color and UI
 colorscheme gruvbox
 set background=dark
-let g:gruvbox_contrast_dark='hard'
-let $NVIM_TUI_ENABLE_TRUE_COLOR=1
 
 set colorcolumn=80
 set cursorline
