@@ -220,6 +220,15 @@ function! s:buffer_lines()
   return res
 endfunction
 
+command! FZFLines call fzf#run({
+      \   'source':  <sid>buffer_lines(),
+      \   'sink':    function('<sid>line_handler'),
+      \   'options': '--extended --nth=3..',
+      \   'down':    '60%'
+      \})
+map <Leader>F :FZFLines<CR>
+
+
 "##############################################################################
 "# STOLEN SETTINGS FROM THE INTERWEBS
 "##############################################################################
@@ -247,7 +256,7 @@ endfunction
 map <Leader>n :call RenameFile()<cr>
 
 " Display extra whitespace
-set list listchars=tab:»·,trail:·
+set list listchars=tab:Â»Â·,trail:Â·
 
 " Make it more obvious which paren I'm on
 hi MatchParen cterm=none ctermbg=black ctermfg=red
