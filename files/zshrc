@@ -86,14 +86,21 @@ eval "$(rbenv init - )"
 # Load FZF
 [ -f ~/.fzf/shell/key-bindings.zsh ] && source ~/.fzf/shell/key-bindings.zsh
 
+# Load nvm
 if [[ -f $HOME/.nvm ]]; then
   export NVM_DIR="$HOME/.nvm"
   [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
 fi
 
+# Load lunchy
 LUNCHY_DIR=$(dirname `gem which lunchy`)/../extras
 if [ -f $LUNCHY_DIR/lunchy-completion.zsh ]; then
   . $LUNCHY_DIR/lunchy-completion.zsh
 fi
 
+# Load fzf
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+
+export RUST_SRC_PATH="/usr/local/src/rust/src"
+# Docker eval
+# eval "$(docker-machine env dev)"

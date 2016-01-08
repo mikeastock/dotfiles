@@ -149,11 +149,11 @@ augroup END
 
 "" Remove trailing whitespace on save for ruby files.
 autocmd BufWritePre *.rb :%s/\s\+$//e
+autocmd BufWritePre *.js :%s/\s\+$//e
 
 autocmd FileType gitcommit setlocal spell textwidth=72
 autocmd FileType rust map <Leader>r :CargoRun<CR>
-autocmd BufWrite *.rs :Autoformat
-
+" autocmd BufWrite *.rs :Autoformat
 
 "##############################################################################
 "# PLUGIN SETTINGS
