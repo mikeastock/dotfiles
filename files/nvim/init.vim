@@ -76,7 +76,7 @@ map <Leader>tp :terminal bundle exec rake db:test:prepare<cr>
 map <Leader>c ::bp\|bd #<CR>
 " map <Leader>e :RuboCop<CR>
 map <Leader>f :Files<CR>
-map <Leader>i :mmgg=G`m<CR>
+map <Leader>i mmgg=G`m<CR>
 map <Leader>kw :%s/\s\+$//<CR>
 map <Leader>q :bd<CR>
 " map <Leader>t :terminal<CR>
@@ -247,7 +247,7 @@ endfunction
 map <Leader>n :call RenameFile()<cr>
 
 " Display extra whitespace
-set list listchars=tab:»·,trail:·
+set list listchars=tab:Â»Â·,trail:Â·
 
 " Make it more obvious which paren I'm on
 hi MatchParen cterm=none ctermbg=black ctermfg=red
