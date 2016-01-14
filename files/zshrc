@@ -53,6 +53,16 @@ plugins=(git)
 
 source $ZSH/oh-my-zsh.sh
 
+# Handle dup path in tmux for Mac OS X
+# http://superuser.com/questions/544989/does-tmux-sort-the-path-variable/583502#583502
+if [[ `uname` == "Darwin" ]]; then
+  if [ -f /etc/profile ]; then
+    PATH=""
+    source /etc/profile
+  fi
+fi
+
+
 if [[ -n $SSH_CONNECTION ]]; then
   export EDITOR='vim'
 else
@@ -84,4 +94,6 @@ if [[ -f $HOME/.nvm ]]; then
   [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
 fi
 
-[ -f ~/.zshrc.$HOST ] && source ~/.zshrc.$HOST
+if [[ `uname` == "Darwin" ]]; then
+  source ~/.zshrc.mac
+fi
