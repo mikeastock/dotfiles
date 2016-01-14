@@ -59,15 +59,6 @@ else
   export EDITOR='nvim'
 fi
 
-# Handle dup path in tmux for Mac OS X
-# http://superuser.com/questions/544989/does-tmux-sort-the-path-variable/583502#583502
-if [[ `uname` == "Darwin" ]]; then
-  if [ -f /etc/profile ]; then
-    PATH=""
-    source /etc/profile
-  fi
-fi
-
 # Allow [ or ] whereever you want
 unsetopt nomatch
 
@@ -78,13 +69,14 @@ source /usr/local/share/zsh/site-functions
 
 # PATH setup
 export PATH="$HOME/.rbenv/bin:$PATH"
-export PATH="$PATH:/usr/local/heroku/bin:$GOPATH/bin:/Applications/Postgres.app/Contents/Versions/9.4/bin:$HOME/bin:$HOME/.fzf/bin:$HOME/.multirust/toolchains/nightly/cargo/bin"
+export PATH="$PATH:$HOME/bin:$HOME/.fzf/bin:$HOME/.multirust/toolchains/nightly/cargo/bin"
 
 # Load rbenv
 eval "$(rbenv init - )"
 
 # Load FZF
 [ -f ~/.fzf/shell/key-bindings.zsh ] && source ~/.fzf/shell/key-bindings.zsh
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
 # Load nvm
 if [[ -f $HOME/.nvm ]]; then
@@ -92,15 +84,4 @@ if [[ -f $HOME/.nvm ]]; then
   [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
 fi
 
-# Load lunchy
-LUNCHY_DIR=$(dirname `gem which lunchy`)/../extras
-if [ -f $LUNCHY_DIR/lunchy-completion.zsh ]; then
-  . $LUNCHY_DIR/lunchy-completion.zsh
-fi
-
-# Load fzf
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
-
-export RUST_SRC_PATH="/usr/local/src/rust/src"
-# Docker eval
-# eval "$(docker-machine env dev)"
+[ -f ~/.zshrc.$HOST ] && source ~/.zshrc.$HOST
