@@ -19,14 +19,13 @@ Plug 'itchyny/lightline.vim'
 Plug 'tomtom/tcomment_vim'
 Plug 'junegunn/vim-easy-align'
 Plug 'tmhedberg/matchit'
-Plug 'Shougo/neocomplcache.vim'
 Plug 'pbrisbin/vim-mkdir'
 Plug 'justinmk/vim-sneak'
 Plug 'ap/vim-buftabline'
+Plug 'Valloric/YouCompleteMe', { 'do': './install.py --tern-completer --racer-completer' }
 " Plug 'jiangmiao/auto-pairs'
 " Plug 'kassio/neoterm'
 " Plug 'ngmy/vim-rubocop'
-" Plug 'cespare/vim-sbd'
 " Plug 'Raimondi/delimitMate'
 " Plug 'AndrewRadev/splitjoin.vim'
 
@@ -37,12 +36,12 @@ Plug 'pangloss/vim-javascript'
 Plug 'mxw/vim-jsx'
 Plug 'elixir-lang/vim-elixir'
 Plug 'othree/javascript-libraries-syntax.vim'
-Plug 'racer-rust/vim-racer'
 
 "Rust
 Plug 'rust-lang/rust.vim'
 Plug 'jtdowney/vimux-cargo'
 Plug 'Chiel92/vim-autoformat'
+" Plug 'racer-rust/vim-racer'
 
 "tpope
 Plug 'tpope/vim-endwise'

@@ -159,6 +159,9 @@ autocmd FileType rust map <Leader>r :CargoRun<CR>
 "# PLUGIN SETTINGS
 "##############################################################################
 
+" YCM
+let g:ycm_collect_identifiers_from_tags_files = 1
+
 "replace 'f' with 1-char Sneak
 nmap f <Plug>Sneak_f
 nmap F <Plug>Sneak_F
@@ -189,8 +192,6 @@ function! SplitStrategy(cmd)
 endfunction
 let g:test#custom_strategies = {'terminal_split': function('SplitStrategy')}
 let g:test#strategy = 'vimux'
-
-let g:neocomplcache_enable_at_startup = 1
 
 let g:neoterm_clear_cmd = "clear; printf '=%.0s' {1..80}; clear"
 let g:neoterm_position = 'vertical'
