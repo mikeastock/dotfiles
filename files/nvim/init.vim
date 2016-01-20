@@ -191,20 +191,15 @@ function! SplitStrategy(cmd)
   botright new | call termopen(a:cmd) | startinsert
 endfunction
 let g:test#custom_strategies = {'terminal_split': function('SplitStrategy')}
-let g:test#strategy = 'vimux'
+let g:test#strategy = 'neoterm'
 
 let g:neoterm_clear_cmd = "clear; printf '=%.0s' {1..80}; clear"
-let g:neoterm_position = 'vertical'
-let g:neoterm_automap_keys = ',tt'
+let g:neoterm_position = "horizontal"
+let g:neoterm_automap_keys = ",tt"
+let g:neoterm_split_on_tnew = 1
 
 let g:jsx_ext_required = 0
 let g:used_javascript_libs = 'react,flux,chai'
-
-" Useful maps
-" closes the all terminal buffers
-nnoremap <silent> <leader>tc :call neoterm#close_all()<cr>
-" clear terminal
-nnoremap <silent> <leader>tl :call neoterm#clear()<cr>
 
 function! s:line_handler(l)
   let keys = split(a:l, ':\t')
