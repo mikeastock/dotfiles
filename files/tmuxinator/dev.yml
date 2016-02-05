@@ -8,8 +8,4 @@ windows:
       panes:
         - bin/rails console
         - #
-  - server: 
-      layout: even-horizontal
-      panes:
-        - bin/rails server -b 0.0.0.0
-        - cd frontend/ && npm start
+  - server: bin/rails server -b 0.0.0.0
