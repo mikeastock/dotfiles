@@ -7,7 +7,7 @@
 "Colorscheme settings
 let g:gruvbox_italic=0
 let g:gruvbox_contrast_dark='hard'
-let $NVIM_TUI_ENABLE_TRUE_COLOR=1
+" let $NVIM_TUI_ENABLE_TRUE_COLOR=1
 
 "##############################################################################
 "# VIM PLUG SETUP
@@ -161,6 +161,7 @@ autocmd FileType rust map <Leader>r :CargoRun<CR>
 
 " YCM
 let g:ycm_collect_identifiers_from_tags_files = 1
+let g:ycm_collect_identifiers_from_comments_and_strings = 1
 
 "replace 'f' with 1-char Sneak
 nmap f <Plug>Sneak_f
@@ -197,6 +198,7 @@ let g:neoterm_clear_cmd = "clear; printf '=%.0s' {1..80}; clear"
 let g:neoterm_position = "horizontal"
 let g:neoterm_automap_keys = ",tt"
 let g:neoterm_split_on_tnew = 1
+let g:neoterm_size = 25
 
 let g:jsx_ext_required = 0
 let g:used_javascript_libs = 'react,flux,chai'
