@@ -4,3 +4,6 @@ export RUST_SRC_PATH="/usr/local/src/rust/src"
 
 # Docker eval
 # eval "$(docker-machine env dev)"
+
+# Load kiex for Elixir
+test -s "$HOME/.kiex/scripts/kiex" && source "$HOME/.kiex/scripts/kiex"
