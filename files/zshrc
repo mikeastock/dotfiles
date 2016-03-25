@@ -101,3 +101,5 @@ fi
 source $HOME/.dotfiles/files/zsh/aliases
 source $HOME/.dotfiles/files/zsh/z
 source /usr/local/share/zsh/site-functions
+
+test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
