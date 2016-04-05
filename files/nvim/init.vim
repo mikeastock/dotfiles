@@ -158,10 +158,8 @@ autocmd FileType rust map <Leader>r :CargoRun<CR>
 "# PLUGIN SETTINGS
 "##############################################################################
 
-" YCM
-let g:ycm_collect_identifiers_from_comments_and_strings = 1
-let g:ycm_collect_identifiers_from_tags_files = 1
-let g:ycm_complete_in_comments = 1
+" Deoplete
+let g:deoplete#enable_at_startup = 1
 
 "replace 'f' with 1-char Sneak
 nmap f <Plug>Sneak_f

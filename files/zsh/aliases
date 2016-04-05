@@ -48,6 +48,8 @@ fi
 alias g="git"
 alias gs="git status"
 alias gcm="git checkout master"
+alias gcd="git checkout develop"
+alias gf="git-flow"
 alias s="git status"
 alias gpr="git pull-request"
 alias circle="~/.bin/circle"

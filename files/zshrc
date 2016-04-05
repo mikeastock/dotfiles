@@ -49,7 +49,7 @@ ZSH_THEME="clean"
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git)
+plugins=(git zsh-completions)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -100,4 +100,7 @@ fi
 # Sourcing of other zsh files
 source $HOME/.dotfiles/files/zsh/aliases
 source $HOME/.dotfiles/files/zsh/z
-source /usr/local/share/zsh/site-functions
+
+export PYTHONPATH="/usr/local/lib/python3.5/site-packages"
+
+autoload -U compinit && compinit
