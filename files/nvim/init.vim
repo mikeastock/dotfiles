@@ -203,6 +203,9 @@ let g:neoterm_size = 25
 let g:jsx_ext_required = 0
 let g:used_javascript_libs = 'react,flux,chai'
 
+" Use deoplete.
+let g:deoplete#enable_at_startup = 1
+
 function! s:line_handler(l)
   let keys = split(a:l, ':\t')
   exec 'buf' keys[0]

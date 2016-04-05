@@ -22,7 +22,8 @@ Plug 'tmhedberg/matchit'
 Plug 'pbrisbin/vim-mkdir'
 Plug 'justinmk/vim-sneak'
 Plug 'ap/vim-buftabline'
-Plug 'Valloric/YouCompleteMe', { 'do': './install.py --tern-completer --racer-completer' }
+Plug 'Shougo/deoplete.nvim'
+" Plug 'Valloric/YouCompleteMe', { 'do': './install.py --tern-completer --racer-completer' }
 Plug 'kassio/neoterm'
 " Plug 'jiangmiao/auto-pairs'
 " Plug 'ngmy/vim-rubocop'
