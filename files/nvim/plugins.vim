@@ -70,5 +70,6 @@ Plug 'jpo/vim-railscasts-theme'
 Plug 'chriskempson/base16-vim'
 Plug 'flazz/vim-colorschemes'
 Plug 'gilgigilgil/anderson.vim'
+Plug 'junegunn/seoul256.vim'
 
 call plug#end()

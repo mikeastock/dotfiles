@@ -49,8 +49,9 @@ set gdefault " assume the /g flag on :s substitutions to replace all matches in 
 set mouse=""
 
 "Color and UI
-colorscheme gruvbox
-set background=dark
+let g:seoul256_background = 233
+colorscheme seoul256
+" set background=dark
 
 set colorcolumn=80
 set cursorline
