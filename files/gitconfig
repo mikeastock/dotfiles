@@ -13,9 +13,7 @@
   df = diff --color
   dfom = diff master --color
   pl = pull
-  ps = push
   p = push
-  aa = add --all --intent-to-add
   ad = add --patch
   rb = rebase origin/master
   hist = log --pretty=format:'%h %ad | %s%d [%an]' --graph --date=short
@@ -24,6 +22,7 @@
   pim = pull origin master
   rbm = pull --rebase origin master
   d = difftool
+  lc = log -n 1
 [push]
   default = current
 [core]

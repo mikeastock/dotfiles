@@ -152,6 +152,7 @@ autocmd BufWritePre *.rb :%s/\s\+$//e
 autocmd BufWritePre *.js :%s/\s\+$//e
 
 autocmd FileType gitcommit setlocal spell textwidth=72
+autocmd FileType *.md setlocal spell textwidth=80
 autocmd FileType rust map <Leader>r :CargoRun<CR>
 " autocmd BufWrite *.rs :Autoformat
 

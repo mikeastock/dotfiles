@@ -72,9 +72,12 @@ fi
 # Allow [ or ] whereever you want
 unsetopt nomatch
 
+# Go
+export GOPATH="$HOME/code/go"
+
 # PATH setup
 export PATH="$HOME/.rbenv/bin:$HOME/.nvm/versions/node/v5.2.0/bin:$PATH"
-export PATH="$PATH:$HOME/bin:$HOME/.fzf/bin:$HOME/.multirust/toolchains/nightly/cargo/bin"
+export PATH="$PATH:$HOME/bin:$HOME/.fzf/bin:$HOME/.multirust/toolchains/stable/cargo/bin:/usr/local/opt/go/libexec/bin:$GOPATH/bin"
 
 # Load rbenv
 eval "$(rbenv init - )"
@@ -111,3 +114,9 @@ test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell
 export PYTHONPATH="$(brew --prefix)/lib/python3.5/site-packages"
 
 autoload -U compinit && compinit
+
+# For dlite
+unset DOCKER_HOST
+unset DOCKER_CERT_PATH
+unset DOCKER_TLS_VERIFY
+unset DOCKER_MACHINE_NAME
