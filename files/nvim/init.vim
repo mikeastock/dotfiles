@@ -79,6 +79,7 @@ map <Leader>f :Files<CR>
 map <Leader>i mmgg=G`m<CR>
 map <Leader>kw :%s/\s\+$//<CR>
 map <Leader>q :bd<CR>
+map <Leader>bq :bd!<CR>
 " map <Leader>t :terminal<CR>
 map <Leader>rs :s/'/"<CR>
 map <Leader>vi :e ~/.config/nvim/init.vim<CR>
@@ -159,6 +160,13 @@ autocmd FileType rust map <Leader>r :CargoRun<CR>
 "##############################################################################
 "# PLUGIN SETTINGS
 "##############################################################################
+
+"FZF
+let $FZF_DEFAULT_COMMAND = 'ag --hidden --ignore .git -g ""'
+
+"Goyo/Limelight
+autocmd! User GoyoEnter Limelight
+autocmd! User GoyoLeave Limelight!
 
 " Deoplete
 let g:deoplete#enable_at_startup = 1

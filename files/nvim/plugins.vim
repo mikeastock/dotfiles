@@ -9,11 +9,14 @@ Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': 'yes \| ./install' }
 Plug 'junegunn/fzf.vim'
 
 Plug 'rking/ag.vim'
-" Plug 'skwp/greplace.vim'
 
 "looks
 Plug 'ervandew/supertab'
 Plug 'itchyny/lightline.vim'
+
+"Writing
+Plug 'junegunn/goyo.vim'
+Plug 'junegunn/limelight.vim'
 
 "workflow
 Plug 'tomtom/tcomment_vim'
@@ -57,9 +60,6 @@ Plug 'tpope/vim-fireplace', { 'for': 'clojure' }
 "testing
 Plug 'janko-m/vim-test'
 Plug 'benmills/vimux'
-" Plug 'tpope/vim-dispatch'
-" Plug 'christoomey/vim-tmux-runner'
-" Plug 'jgdavey/tslime.vim'
 
 "colors
 Plug 'ajh17/Spacegray.vim'
