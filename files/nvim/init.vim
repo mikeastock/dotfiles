@@ -74,7 +74,7 @@ map <Leader>f :Files<CR>
 map <Leader>b :Buffers<CR>
 map <Leader>i mmgg=G`m<CR>
 map <Leader>kw :%s/\s\+$//<CR>
-map <Leader>q :bd<CR>
+map <Leader>q :call CloseBuffer()<CR>
 map <Leader>bq :bd!<CR>
 " map <Leader>t :terminal<CR>
 map <Leader>rs :s/'/"<CR>
@@ -91,6 +91,14 @@ map <Leader>d :e config/database.yml<CR>
 map <Leader>a :A<CR>
 nmap <Leader>P :call AddDebugger("O")<CR>
 nmap <Leader>p :call AddDebugger("o")<CR>
+
+function! CloseBuffer()
+  if &buftype ==# 'terminal'
+    :bd!
+  else
+    :bd
+  endif
+endfunction
 
 "Remove search highlight
 function! MapCR()
