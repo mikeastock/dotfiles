@@ -4,10 +4,6 @@
 " github.com/mikeastock/dotfiles
 "
 
-"Colorscheme settings
-let g:gruvbox_italic=0
-let g:gruvbox_contrast_dark='hard'
-
 "##############################################################################
 "# VIM PLUG SETUP
 "##############################################################################
@@ -49,9 +45,8 @@ set gdefault " assume the /g flag on :s substitutions to replace all matches in 
 set mouse=""
 
 "Color and UI
-let g:seoul256_background = 233
-colorscheme seoul256
-" set background=dark
+let NVIM_TUI_ENABLE_TRUE_COLOR=1
+colorscheme jellybeans
 
 set colorcolumn=80
 set cursorline
@@ -76,6 +71,7 @@ map <Leader>tp :terminal bundle exec rake db:test:prepare<cr>
 map <Leader>c ::bp\|bd #<CR>
 " map <Leader>e :RuboCop<CR>
 map <Leader>f :Files<CR>
+map <Leader>b :Buffers<CR>
 map <Leader>i mmgg=G`m<CR>
 map <Leader>kw :%s/\s\+$//<CR>
 map <Leader>q :bd<CR>
@@ -93,6 +89,8 @@ map <Leader>gp :Gpush<CR>
 map <Leader>ga :Gwrite<CR>
 map <Leader>d :e config/database.yml<CR>
 map <Leader>a :A<CR>
+nmap <Leader>P :call AddDebugger("O")<CR>
+nmap <Leader>p :call AddDebugger("o")<CR>
 
 "Remove search highlight
 function! MapCR()
@@ -170,6 +168,9 @@ autocmd! User GoyoLeave Limelight!
 
 " Deoplete
 let g:deoplete#enable_at_startup = 1
+
+"Elixir
+let g:elixir_showerror=1
 
 "replace 'f' with 1-char Sneak
 nmap f <Plug>Sneak_f
@@ -260,28 +261,6 @@ set list listchars=tab:»·,trail:·
 
 " Make it more obvious which paren I'm on
 hi MatchParen cterm=none ctermbg=black ctermfg=red
-
-"##############################################################################
-"# DEBUGGER HELPER
-"##############################################################################
-function! Debugging(direction)
-  let file_name = expand('%')
-  let extension = split(file_name, "/")[-1]
-  let html = matchstr(extension, "html")
-  let js = matchstr(extension, "js")
-
-  let @g = a:direction
-
-  if html == "html"
-    normal! @g <% require "pry"; binding.pry %>
-  elseif js == "js"
-    normal! @g debugger;
-  else
-    normal! @g require "pry"; binding.pry
-  endif
-endfunction
-map <Leader>P :call Debugging("O")<cr>
-map <Leader>p :call Debugging("o")<cr>
 
 "##############################################################################
 "# PROMOTE VARIABLE TO RSPEC LET

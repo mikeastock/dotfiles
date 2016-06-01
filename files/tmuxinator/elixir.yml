@@ -1,0 +1,11 @@
+name: elixir
+root: ./
+
+windows:
+  - nvim: nvim
+  - git:
+      layout: even-vertical
+      panes:
+        - #
+        - #
+  - server: mix phoenix.server

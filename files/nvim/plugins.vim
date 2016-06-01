@@ -26,6 +26,7 @@ Plug 'pbrisbin/vim-mkdir'
 Plug 'justinmk/vim-sneak'
 Plug 'ap/vim-buftabline'
 Plug 'kassio/neoterm'
+Plug 'mcasper/vim-infer-debugger'
 " Plug 'jiangmiao/auto-pairs'
 " Plug 'ngmy/vim-rubocop'
 " Plug 'Raimondi/delimitMate'
@@ -40,8 +41,9 @@ Plug 'fatih/vim-go'
 Plug 'derekwyatt/vim-scala'
 Plug 'pangloss/vim-javascript'
 Plug 'mxw/vim-jsx'
-Plug 'elixir-lang/vim-elixir'
 Plug 'othree/javascript-libraries-syntax.vim'
+Plug 'elixir-lang/vim-elixir'
+Plug 'awetzel/elixir.nvim', { 'do': 'yes \| ./install.sh' }
 
 "Rust
 Plug 'rust-lang/rust.vim'
@@ -59,7 +61,6 @@ Plug 'tpope/vim-fireplace', { 'for': 'clojure' }
 
 "testing
 Plug 'janko-m/vim-test'
-Plug 'benmills/vimux'
 
 "colors
 Plug 'ajh17/Spacegray.vim'
