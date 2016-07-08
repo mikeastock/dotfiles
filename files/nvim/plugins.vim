@@ -1,4 +1,4 @@
-call plug#begin('~/.vim/plugged')
+call plug#begin('~/.config/nvim/plugged')
 
 " Plug 'kana/vim-textobj-user'
 " Plug 'nelstrom/vim-textobj-rubyblock'
@@ -8,7 +8,7 @@ call plug#begin('~/.vim/plugged')
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': 'yes \| ./install' }
 Plug 'junegunn/fzf.vim'
 
-Plug 'rking/ag.vim'
+" Plug 'rking/ag.vim'
 
 "looks
 Plug 'ervandew/supertab'
@@ -48,7 +48,7 @@ Plug 'awetzel/elixir.nvim', { 'do': 'yes \| ./install.sh' }
 "Rust
 Plug 'rust-lang/rust.vim'
 Plug 'jtdowney/vimux-cargo'
-Plug 'Chiel92/vim-autoformat'
+" Plug 'Chiel92/vim-autoformat'
 " Plug 'racer-rust/vim-racer'
 
 "tpope

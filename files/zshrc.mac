@@ -21,3 +21,6 @@ source '/Users/mikeastock/Downloads/google-cloud-sdk/path.zsh.inc'
 source '/Users/mikeastock/Downloads/google-cloud-sdk/completion.zsh.inc'
 
 source "$HOME/.nix-profile/etc/profile.d/nix.sh"
+
+BASE16_SHELL="$HOME/.config/base16-shell/base16-default.dark.sh"
+[[ -s $BASE16_SHELL ]] && source $BASE16_SHELL

@@ -46,7 +46,9 @@ set mouse=""
 
 "Color and UI
 let NVIM_TUI_ENABLE_TRUE_COLOR=1
-colorscheme jellybeans
+let base16colorspace=256
+colorscheme base16-default-dark
+set background=dark
 
 set colorcolumn=80
 set cursorline
@@ -89,6 +91,7 @@ map <Leader>gp :Gpush<CR>
 map <Leader>ga :Gwrite<CR>
 map <Leader>d :e config/database.yml<CR>
 map <Leader>a :A<CR>
+map <Leader>l :Lines<CR>
 nmap <Leader>P :call AddDebugger("O")<CR>
 nmap <Leader>p :call AddDebugger("o")<CR>
 
@@ -154,8 +157,10 @@ augroup vimrcEx
   autocmd Filetype markdown setlocal spell
 augroup END
 
-"" Remove trailing whitespace on save for ruby files.
+"" Remove trailing whitespace on save
 autocmd BufWritePre *.rb :%s/\s\+$//e
+autocmd BufWritePre *.ex :%s/\s\+$//e
+autocmd BufWritePre *.exs :%s/\s\+$//e
 autocmd BufWritePre *.js :%s/\s\+$//e
 
 autocmd FileType gitcommit setlocal spell textwidth=72
