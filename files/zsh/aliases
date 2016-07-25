@@ -52,7 +52,7 @@ alias gcd="git checkout develop"
 alias gf="git-flow"
 alias s="git status"
 alias gpr="git pull-request"
-alias circle="~/.bin/circle"
+# alias circle="~/.bin/circle"
 
 # Procore for Bash
 alias ui="cd ./lib/assets/procore_ui"

@@ -92,6 +92,7 @@ map <Leader>ga :Gwrite<CR>
 map <Leader>d :e config/database.yml<CR>
 map <Leader>a :A<CR>
 map <Leader>l :Lines<CR>
+map <Leader>t :Tags<CR>
 nmap <Leader>P :call AddDebugger("O")<CR>
 nmap <Leader>p :call AddDebugger("o")<CR>
 
@@ -116,6 +117,8 @@ nmap j gj
 
 map <C-j> <C-W>j
 map <C-k> <C-W>k
+
+nnoremap K :Ag <C-R><C-W><CR>
 
 map <BS> <C-W>h
 map <C-l> <C-W>l
@@ -224,9 +227,6 @@ let g:neoterm_size = 25
 
 let g:jsx_ext_required = 0
 let g:used_javascript_libs = 'react,flux,chai'
-
-" Use deoplete.
-let g:deoplete#enable_at_startup = 1
 
 function! s:line_handler(l)
   let keys = split(a:l, ':\t')
