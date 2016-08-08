@@ -93,6 +93,7 @@ map <Leader>d :e config/database.yml<CR>
 map <Leader>a :A<CR>
 map <Leader>l :Lines<CR>
 map <Leader>t :Tags<CR>
+map <Leader>h :History<CR>
 nmap <Leader>P :call AddDebugger("O")<CR>
 nmap <Leader>p :call AddDebugger("o")<CR>
 
@@ -178,6 +179,24 @@ autocmd FileType rust map <Leader>r :CargoRun<CR>
 "FZF
 let $FZF_DEFAULT_COMMAND = 'ag --hidden --ignore .git -g ""'
 
+let g:fzf_layout = { 'window': '-tabnew' }
+
+" [Files] Extra options for fzf
+"         e.g. File preview using CodeRay (http://coderay.rubychan.de/)
+let g:fzf_files_options =
+  \ '--preview "(coderay {} || cat {}) 2> /dev/null | head -'.&lines.'"'
+
+" Mapping selecting mappings
+nmap <leader><tab> <plug>(fzf-maps-n)
+xmap <leader><tab> <plug>(fzf-maps-x)
+omap <leader><tab> <plug>(fzf-maps-o)
+
+" Insert mode completion
+imap <c-x><c-k> <plug>(fzf-complete-word)
+imap <c-x><c-f> <plug>(fzf-complete-path)
+imap <c-x><c-j> <plug>(fzf-complete-file-ag)
+imap <c-x><c-l> <plug>(fzf-complete-line)
+
 "Goyo/Limelight
 autocmd! User GoyoEnter Limelight
 autocmd! User GoyoLeave Limelight!
@@ -223,7 +242,7 @@ let g:neoterm_clear_cmd = "clear; printf '=%.0s' {1..80}; clear"
 let g:neoterm_position = "horizontal"
 let g:neoterm_automap_keys = ",tt"
 let g:neoterm_split_on_tnew = 1
-let g:neoterm_size = 25
+let g:neoterm_size = 20
 
 let g:jsx_ext_required = 0
 let g:used_javascript_libs = 'react,flux,chai'
