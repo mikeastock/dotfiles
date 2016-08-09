@@ -1,0 +1,68 @@
+#gem install "pry-byebug"
+#gem install "pry-inline"
+#gem install "pry-macro"
+#gem install "awesome_print"
+#gem install "pry-clipboard"
+
+if defined?(PryByebug)
+  Pry.commands.alias_command 'c', 'continue'
+  Pry.commands.alias_command 's', 'step'
+  Pry.commands.alias_command 'n', 'next'
+  Pry.commands.alias_command 'f', 'finish'
+end
+Pry.commands.alias_command 'r!', 'reload!' rescue nil
+Pry.commands.alias_command 'q', 'disable-pry' rescue nil
+Pry.commands.alias_command "h", "hist -T 20", desc: "Last 20 commands"
+Pry.commands.alias_command "hg", "hist -T 20 -G", desc: "Up to 20 commands matching expression"
+Pry.commands.alias_command "hG", "hist -G", desc: "Commands matching expression ever used"
+Pry.commands.alias_command "hr", "hist -r", desc: "hist -r <command number> to run a command"
+
+Pry::Commands.command /^$/, "repeat last command" do
+  _pry_.run_command Pry.history.to_a.last
+end
+
+Pry.config.prompt = Pry::NAV_PROMPT
+
+# gem install pry-theme
+# pry-theme install xoria256 #from inside pry
+Pry.config.theme = "xoria256"
+
+begin
+  require 'awesome_print'
+  Pry.config.print = proc {|output, value| Pry::Helpers::BaseHelpers.stagger_output("=> #{value.ai}", output)}
+  # If you want awesome_print without automatic pagination, use the line below
+  # Pry.config.print = proc { |output, value| output.puts value.ai }
+rescue LoadError => err
+  warn "Please run gem install awesome_print"
+end
+
+begin
+  require 'pry-clipboard'
+  Pry.config.commands.alias_command 'ch', 'copy-history'
+  Pry.config.commands.alias_command 'cr', 'copy-result'
+rescue LoadError => e
+    warn "Please run gem install pry-clipboard"
+end
+
+def time(repetitions = 100, &block)
+  require 'benchmark'
+  Benchmark.bm{|b| b.report{repetitions.times(&block)}}
+end
+
+Pry::Commands.command "sql", "Send sql over AR." do |query|
+  if ENV['RAILS_ENV'] || defined?(Rails)
+    ActiveRecord::Base.connection.select_all(query)
+  else
+    "No rails env defined"
+  end
+end
+
+Pry::Commands::command "caller_method" do |depth|
+  depth = depth.to_i || 1
+  if /^(.+?):(\d+)(?::in `(.*)')?/ =~ caller(depth+1).first
+    file   = Regexp.last_match[1]
+    line   = Regexp.last_match[2].to_i
+    method = Regexp.last_match[3]
+    output.puts [file, line, method]
+  end
+end
