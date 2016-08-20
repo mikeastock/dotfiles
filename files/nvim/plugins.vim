@@ -42,7 +42,10 @@ Plug 'derekwyatt/vim-scala'
 Plug 'pangloss/vim-javascript'
 Plug 'mxw/vim-jsx'
 Plug 'othree/javascript-libraries-syntax.vim'
+
+" Elixir
 Plug 'elixir-lang/vim-elixir'
+Plug 'thinca/vim-ref'
 Plug 'awetzel/elixir.nvim', { 'do': 'yes \| ./install.sh' }
 
 "Rust
