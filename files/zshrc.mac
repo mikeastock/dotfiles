@@ -1,26 +1,22 @@
-export PATH="$PATH:/usr/local/heroku/bin:$GOPATH/bin:/Applications/Postgres.app/Contents/Versions/9.4/bin:$HOME/bin:$HOME/.fzf/bin:$HOME/.multirust/toolchains/nightly/cargo/bin"
+export PATH="$PATH:/usr/local/heroku/bin:$GOPATH/bin:/Applications/Postgres.app/Contents/Versions/9.4/bin:$HOME/bin:$HOME/.fzf/bin:$HOME/.multirust/toolchains/nightly/cargo/bin:$HOME/.mix"
 
 export RUST_SRC_PATH="/usr/local/src/rust/src"
 
-# Docker eval
-# eval "$(docker-machine env dev)"
+# Load iTerm2 integration
+test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
 
-# For dlite
-unset DOCKER_HOST
-unset DOCKER_CERT_PATH
-unset DOCKER_TLS_VERIFY
-unset DOCKER_MACHINE_NAME
+# Load nvm (for node)
+if [[ -f $HOME/.nvm ]]; then
+  export NVM_DIR="$HOME/.nvm"
+  [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
+fi
+
+# Python
+export PYTHONPATH="$(brew --prefix)/lib/python3.5/site-packages"
 
 # Load kiex for Elixir
 test -s "$HOME/.kiex/scripts/kiex" && source "$HOME/.kiex/scripts/kiex"
 
-# The next line updates PATH for the Google Cloud SDK.
+# Google Cloud SDK
 source '/Users/mikeastock/Downloads/google-cloud-sdk/path.zsh.inc'
-
-# The next line enables shell command completion for gcloud.
 source '/Users/mikeastock/Downloads/google-cloud-sdk/completion.zsh.inc'
-
-source "$HOME/.nix-profile/etc/profile.d/nix.sh"
-
-BASE16_SHELL="$HOME/.config/base16-shell/base16-default.dark.sh"
-[[ -s $BASE16_SHELL ]] && source $BASE16_SHELL

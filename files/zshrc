@@ -75,7 +75,7 @@ unsetopt nomatch
 export GOPATH="$HOME/code/go"
 
 # PATH setup
-export PATH="$HOME/.rbenv/bin:$HOME/.nvm/versions/node/v5.2.0/bin:$PATH"
+export PATH="$HOME/.rbenv/bin:/usr/local/sbin:$HOME/.nvm/versions/node/v5.2.0/bin:$PATH"
 export PATH="$PATH:$HOME/bin:$HOME/.fzf/bin:$HOME/.multirust/toolchains/stable/cargo/bin:/usr/local/opt/go/libexec/bin:$GOPATH/bin"
 
 # Load rbenv
@@ -84,15 +84,6 @@ eval "$(rbenv init - )"
 # Load FZF
 [ -f ~/.fzf/shell/key-bindings.zsh ] && source ~/.fzf/shell/key-bindings.zsh
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
-
-# Load nvm
-if [[ -f $HOME/.nvm ]]; then
-  export NVM_DIR="$HOME/.nvm"
-  [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
-fi
-
-# Load kiex
-test -s "$HOME/.kiex/scripts/kiex" && source "$HOME/.kiex/scripts/kiex"
 
 if [[ `uname` == "Darwin" ]]; then
   source ~/.zshrc.mac
@@ -106,10 +97,5 @@ fi
 source $HOME/.dotfiles/files/zsh/aliases
 source $HOME/.dotfiles/files/zsh/z
 source /usr/local/share/zsh/site-functions
-
-test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
-
-# Python
-export PYTHONPATH="$(brew --prefix)/lib/python3.5/site-packages"
 
 autoload -U compinit && compinit

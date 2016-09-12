@@ -48,6 +48,9 @@ Plug 'elixir-lang/vim-elixir'
 Plug 'thinca/vim-ref'
 Plug 'awetzel/elixir.nvim', { 'do': 'yes \| ./install.sh' }
 
+" Elm
+Plug 'lambdatoast/elm.vim', { 'for': 'elm' }
+
 "Rust
 Plug 'rust-lang/rust.vim'
 Plug 'jtdowney/vimux-cargo'

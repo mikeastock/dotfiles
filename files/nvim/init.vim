@@ -45,8 +45,7 @@ set gdefault " assume the /g flag on :s substitutions to replace all matches in 
 set mouse=""
 
 "Color and UI
-let NVIM_TUI_ENABLE_TRUE_COLOR=1
-let base16colorspace=256
+set termguicolors
 colorscheme base16-default-dark
 set background=dark
 
@@ -66,7 +65,6 @@ let mapleader = " "
 "##############################################################################
 
 "LEADER
-map <Leader>ag :topleft 20 :split Gemfile<CR>
 map <Leader>ar :topleft :split config/routes.rb<CR>
 map <Leader>bi :terminal bundle install<cr>
 map <Leader>tp :terminal bundle exec rake db:test:prepare<cr>
@@ -90,7 +88,6 @@ map <Leader>gc :Gcommit<CR>
 map <Leader>gp :Gpush<CR>
 map <Leader>ga :Gwrite<CR>
 map <Leader>d :e config/database.yml<CR>
-map <Leader>a :A<CR>
 map <Leader>l :Lines<CR>
 map <Leader>t :Tags<CR>
 map <Leader>h :History<CR>
@@ -170,6 +167,7 @@ autocmd BufWritePre *.js :%s/\s\+$//e
 autocmd FileType gitcommit setlocal spell textwidth=72
 autocmd FileType *.md setlocal spell textwidth=80
 autocmd FileType rust map <Leader>r :CargoRun<CR>
+autocmd FileType elm map <Leader>r :ElmMakeCurrentFile<CR>
 " autocmd BufWrite *.rs :Autoformat
 
 "##############################################################################
@@ -180,11 +178,6 @@ autocmd FileType rust map <Leader>r :CargoRun<CR>
 let $FZF_DEFAULT_COMMAND = 'ag --hidden --ignore .git -g ""'
 
 let g:fzf_layout = { 'window': '-tabnew' }
-
-" [Files] Extra options for fzf
-"         e.g. File preview using CodeRay (http://coderay.rubychan.de/)
-let g:fzf_files_options =
-  \ '--preview "(coderay {} || cat {}) 2> /dev/null | head -'.&lines.'"'
 
 " Mapping selecting mappings
 nmap <leader><tab> <plug>(fzf-maps-n)
