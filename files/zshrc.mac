@@ -17,6 +17,9 @@ export PYTHONPATH="$(brew --prefix)/lib/python3.5/site-packages"
 # Load kiex for Elixir
 test -s "$HOME/.kiex/scripts/kiex" && source "$HOME/.kiex/scripts/kiex"
 
-# Google Cloud SDK
-source '/Users/mikeastock/Downloads/google-cloud-sdk/path.zsh.inc'
-source '/Users/mikeastock/Downloads/google-cloud-sdk/completion.zsh.inc'
+# Temp for macOS and Tmux
+export EVENT_NOKQUEUE=1
+
+# For Google Cloud SDK
+source "/usr/local/var/google-cloud-sdk/completion.zsh.inc"
+source "/usr/local/var/google-cloud-sdk/path.zsh.inc"

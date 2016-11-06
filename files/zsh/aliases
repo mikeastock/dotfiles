@@ -20,6 +20,7 @@ alias tma='tmux att -t'
 alias tmls='tmux ls'
 alias grabssh="$HOME/bin/grabssh"
 alias updatessh="$HOME/bin/updatessh"
+alias mux="tmuxinator"
 
 # Bundler
 alias b="bundle"

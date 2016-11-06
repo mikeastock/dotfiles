@@ -1,57 +1,33 @@
-# Path to your oh-my-zsh installation.
-export ZSH=$HOME/.oh-my-zsh
+# load zgen
+source "${HOME}/.zgen/zgen.zsh"
 
-# Set name of the theme to load.
-# Look in ~/.oh-my-zsh/themes/
-# Optionally, if you set this to "random", it'll load a random theme each
-# time that oh-my-zsh is loaded.
-ZSH_THEME="clean"
+# if the init scipt doesn't exist
+if ! zgen saved; then
+  echo "Creating a zgen save"
 
-# Uncomment the following line to use case-sensitive completion.
-# CASE_SENSITIVE="true"
+  zgen oh-my-zsh
 
-# Uncomment the following line to use hyphen-insensitive completion. Case
-# sensitive completion must be off. _ and - will be interchangeable.
-# HYPHEN_INSENSITIVE="true"
+  # plugins
+  zgen oh-my-zsh plugins/git
+  zgen oh-my-zsh plugins/command-not-found
+  zgen oh-my-zsh plugins/history
+  zgen load zsh-users/zsh-syntax-highlighting
 
-# Uncomment the following line to disable bi-weekly auto-update checks.
-# DISABLE_AUTO_UPDATE="true"
+  # bulk load
+  zgen loadall <<EOPLUGINS
+  zsh-users/zsh-history-substring-search
+EOPLUGINS
+  # ^ can't indent this EOPLUGINS
 
-# Uncomment the following line to change how often to auto-update (in days).
-# export UPDATE_ZSH_DAYS=13
+  # completions
+  zgen load zsh-users/zsh-completions src
 
-# Uncomment the following line to disable colors in ls.
-# DISABLE_LS_COLORS="true"
+  # theme
+  zgen oh-my-zsh themes/clean
 
-# Uncomment the following line to disable auto-setting terminal title.
-# DISABLE_AUTO_TITLE="true"
-
-# Uncomment the following line to enable command auto-correction.
-# ENABLE_CORRECTION="true"
-
-# Uncomment the following line to display red dots whilst waiting for completion.
-# COMPLETION_WAITING_DOTS="true"
-
-# Uncomment the following line if you want to disable marking untracked files
-# under VCS as dirty. This makes repository status check for large repositories
-# much, much faster.
-# DISABLE_UNTRACKED_FILES_DIRTY="true"
-
-# Uncomment the following line if you want to change the command execution time
-# stamp shown in the history command output.
-# The optional three formats: "mm/dd/yyyy"|"dd.mm.yyyy"|"yyyy-mm-dd"
-# HIST_STAMPS="mm/dd/yyyy"
-
-# Would you like to use another custom folder than $ZSH/custom?
-# ZSH_CUSTOM=/path/to/new-custom-folder
-
-# Which plugins would you like to load? (plugins can be found in ~/.oh-my-zsh/plugins/*)
-# Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
-# Example format: plugins=(rails git textmate ruby lighthouse)
-# Add wisely, as too many plugins slow down shell startup.
-plugins=(git zsh-completions)
-
-source $ZSH/oh-my-zsh.sh
+  # save all to init script
+  zgen save
+fi
 
 # Handle dup path in tmux for Mac OS X
 # http://superuser.com/questions/544989/does-tmux-sort-the-path-variable/583502#583502
@@ -85,6 +61,13 @@ eval "$(rbenv init - )"
 [ -f ~/.fzf/shell/key-bindings.zsh ] && source ~/.fzf/shell/key-bindings.zsh
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
+# Sourcing of other zsh files
+source $HOME/.dotfiles/files/zsh/aliases
+source $HOME/.dotfiles/files/zsh/z
+source /usr/local/share/zsh/site-functions
+
+# autoload -U compinit && compinit
+
 if [[ `uname` == "Darwin" ]]; then
   source ~/.zshrc.mac
 fi
@@ -92,10 +75,3 @@ fi
 if [[ `uname` == "Linux" ]]; then
   source ~/.zshrc.linux
 fi
-
-# Sourcing of other zsh files
-source $HOME/.dotfiles/files/zsh/aliases
-source $HOME/.dotfiles/files/zsh/z
-source /usr/local/share/zsh/site-functions
-
-autoload -U compinit && compinit

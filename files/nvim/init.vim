@@ -15,7 +15,7 @@ endif
 "# BASIC EDITING CONFIGURATION
 "##############################################################################
 
-syntax on
+syntax enable
 filetype plugin indent on
 set nocompatible
 set relativenumber
@@ -45,7 +45,10 @@ set gdefault " assume the /g flag on :s substitutions to replace all matches in 
 set mouse=""
 
 "Color and UI
-set termguicolors
+if (has("termguicolors"))
+  set termguicolors
+endif
+
 colorscheme base16-default-dark
 set background=dark
 
@@ -89,7 +92,7 @@ map <Leader>gp :Gpush<CR>
 map <Leader>ga :Gwrite<CR>
 map <Leader>d :e config/database.yml<CR>
 map <Leader>l :Lines<CR>
-map <Leader>t :Tags<CR>
+" map <Leader>t :Tags<CR>
 map <Leader>h :History<CR>
 nmap <Leader>P :call AddDebugger("O")<CR>
 nmap <Leader>p :call AddDebugger("o")<CR>
@@ -142,7 +145,7 @@ nnoremap <C-P> :bprev<CR>
 "##############################################################################
 
 " Jump to last cursor position unless it's invalid or in an event handler
-augroup vimrcEx
+augroup other
   autocmd!
   autocmd BufReadPost *
         \ if line("'\"") > 0 && line("'\"") <= line("$") |
@@ -156,19 +159,27 @@ augroup vimrcEx
   autocmd Filetype yaml set nocursorline
   autocmd BufNewFile,BufRead *.sass setfiletype sass
   autocmd Filetype markdown setlocal spell
+
+  autocmd FileType swift set ai sw=4 sts=4 et
+
+  autocmd FileType rust map <Leader>r :CargoRun<CR>
+  autocmd FileType elm map <Leader>r :ElmMakeCurrentFile<CR>
+
+  autocmd! BufWritePost * Neomake
 augroup END
 
 "" Remove trailing whitespace on save
-autocmd BufWritePre *.rb :%s/\s\+$//e
-autocmd BufWritePre *.ex :%s/\s\+$//e
-autocmd BufWritePre *.exs :%s/\s\+$//e
-autocmd BufWritePre *.js :%s/\s\+$//e
+augroup trailingWhitespace
+  autocmd BufWritePre *.rb :%s/\s\+$//e
+  autocmd BufWritePre *.ex :%s/\s\+$//e
+  autocmd BufWritePre *.exs :%s/\s\+$//e
+  autocmd BufWritePre *.js :%s/\s\+$//e
+augroup END
 
-autocmd FileType gitcommit setlocal spell textwidth=72
-autocmd FileType *.md setlocal spell textwidth=80
-autocmd FileType rust map <Leader>r :CargoRun<CR>
-autocmd FileType elm map <Leader>r :ElmMakeCurrentFile<CR>
-" autocmd BufWrite *.rs :Autoformat
+augroup gitCommit
+  autocmd FileType gitcommit setlocal spell textwidth=72
+  autocmd FileType *.md setlocal spell textwidth=80
+augroup END
 
 "##############################################################################
 "# PLUGIN SETTINGS
@@ -176,6 +187,7 @@ autocmd FileType elm map <Leader>r :ElmMakeCurrentFile<CR>
 
 "FZF
 let $FZF_DEFAULT_COMMAND = 'ag --hidden --ignore .git -g ""'
+" let $FZF_DEFAULT_COMMAND='rg --files --no-ignore --hidden --follow --glob "!.git/*"'
 
 let g:fzf_layout = { 'window': '-tabnew' }
 
@@ -194,11 +206,20 @@ imap <c-x><c-l> <plug>(fzf-complete-line)
 autocmd! User GoyoEnter Limelight
 autocmd! User GoyoLeave Limelight!
 
-" Deoplete
-let g:deoplete#enable_at_startup = 1
+"Elixir alchemist
+let g:alchemist#elixir_erlang_src = "/usr/local/share/src"
 
-"Elixir
-let g:elixir_showerror=1
+"Elm
+let g:elm_format_autosave = 1
+
+"Neomake
+let g:neomake_ruby_rdirty_maker = {
+      \ 'exe': 'dirty',
+      \ 'args': ['--format', 'emacs'],
+      \ 'errorformat': '%f:%l:%c: %t: %m',
+      \ 'postprocess': function('neomake#makers#ft#ruby#RubocopEntryProcess')
+      \ }
+let g:neomake_ruby_enabled_makers = ['mri', 'rdirty', 'reek', 'rubylint']
 
 "replace 'f' with 1-char Sneak
 nmap f <Plug>Sneak_f
@@ -221,9 +242,19 @@ set grepprg=ag
 let g:grep_cmd_opts = '--line-numbers --noheading'
 
 " Testing settings
-map <Leader>s :TestNearest<CR>
-map <Leader>r :TestFile<CR>
+" map <Leader>s :TestNearest<CR>
+" map <Leader>r :TestFile<CR>
 " map <Leader>a :TestLast<CR>
+nnoremap <Leader>s :call neoterm#test#run('current')<CR>
+nnoremap <Leader>r :call neoterm#test#run('file')<CR>
+
+" Useful maps
+" hide/close terminal
+nnoremap <Leader>th :call neoterm#close()<CR>
+" clear terminal
+nnoremap <Leader>tl :call neoterm#clear()<CR>
+" kills the current job (send a <c-c>)
+nnoremap <Leader>tc :call neoterm#kill()<CR>
 
 function! SplitStrategy(cmd)
   botright new | call termopen(a:cmd) | startinsert
@@ -236,6 +267,7 @@ let g:neoterm_position = "horizontal"
 let g:neoterm_automap_keys = ",tt"
 let g:neoterm_split_on_tnew = 1
 let g:neoterm_size = 20
+let g:neoterm_rspec_lib_cmd = "bin/rspec"
 
 let g:jsx_ext_required = 0
 let g:used_javascript_libs = 'react,flux,chai'
