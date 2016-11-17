@@ -1,33 +1,25 @@
-# load zgen
-source "${HOME}/.zgen/zgen.zsh"
+export ZPLUG_HOME=/usr/local/opt/zplug
 
-# if the init scipt doesn't exist
-if ! zgen saved; then
-  echo "Creating a zgen save"
+source $ZPLUG_HOME/init.zsh
 
-  zgen oh-my-zsh
+zplug "robbyrussell/oh-my-zsh"
+zplug "zsh-users/zsh-history-substring-search"
+zplug "zsh-users/zsh-completions"
+zplug "plugins/git", from:oh-my-zsh
+zplug "plugins/history", from:oh-my-zsh
+zplug "themes/clean", from:oh-my-zsh
+zplug "zsh-users/zsh-syntax-highlighting", nice:10
 
-  # plugins
-  zgen oh-my-zsh plugins/git
-  zgen oh-my-zsh plugins/command-not-found
-  zgen oh-my-zsh plugins/history
-  zgen load zsh-users/zsh-syntax-highlighting
-
-  # bulk load
-  zgen loadall <<EOPLUGINS
-  zsh-users/zsh-history-substring-search
-EOPLUGINS
-  # ^ can't indent this EOPLUGINS
-
-  # completions
-  zgen load zsh-users/zsh-completions src
-
-  # theme
-  zgen oh-my-zsh themes/clean
-
-  # save all to init script
-  zgen save
+# Install plugins if there are plugins that have not been installed
+if ! zplug check --verbose; then
+    printf "Install? [y/N]: "
+    if read -q; then
+        echo; zplug install
+    fi
 fi
+
+# Then, source plugins and add commands to $PATH
+zplug load --verbose
 
 # Handle dup path in tmux for Mac OS X
 # http://superuser.com/questions/544989/does-tmux-sort-the-path-variable/583502#583502
@@ -51,19 +43,16 @@ unsetopt nomatch
 export GOPATH="$HOME/code/go"
 
 # PATH setup
-export PATH="$HOME/.rbenv/bin:/usr/local/sbin:$HOME/.nvm/versions/node/v5.2.0/bin:$PATH"
+export PATH="/usr/local/sbin:$HOME/.nvm/versions/node/v5.2.0/bin:$PATH"
 export PATH="$PATH:$HOME/bin:$HOME/.fzf/bin:$HOME/.multirust/toolchains/stable/cargo/bin:/usr/local/opt/go/libexec/bin:$GOPATH/bin"
-
-# Load rbenv
-eval "$(rbenv init - )"
 
 # Load FZF
 [ -f ~/.fzf/shell/key-bindings.zsh ] && source ~/.fzf/shell/key-bindings.zsh
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
 # Sourcing of other zsh files
-source $HOME/.dotfiles/files/zsh/aliases
-source $HOME/.dotfiles/files/zsh/z
+source $HOME/code/dotfiles/files/zsh/aliases
+source $HOME/code/dotfiles/files/zsh/z
 source /usr/local/share/zsh/site-functions
 
 # autoload -U compinit && compinit
