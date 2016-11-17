@@ -41,7 +41,7 @@ cp git/ctags_hook "$HOME/.git_template/hooks/post-merge"
 cp git/ctags_hook "$HOME/.git_template/hooks/post-checkout"
 
 # Dotfiles
-rcup -f -d "$HOME/code/dotfiles"
+rcup -f -d "$HOME/code/dotfiles/files"
 . "$HOME/.zshrc"
 
 SERVICES=("postgresql" "elasticsearch" "memcached" "redis")
