@@ -1,4 +1,4 @@
-export PATH="$PATH:/usr/local/heroku/bin:$GOPATH/bin:/Applications/Postgres.app/Contents/Versions/9.4/bin:$HOME/bin:$HOME/.fzf/bin:$HOME/.multirust/toolchains/nightly/cargo/bin:$HOME/.mix"
+export PATH="$PATH:/usr/local/heroku/bin:$GOPATH/bin:/Applications/Postgres.app/Contents/Versions/9.4/bin:$HOME/bin:$HOME/.fzf/bin:$HOME/.cargo/bin:$HOME/.mix"
 
 export RUST_SRC_PATH="/usr/local/src/rust/src"
 
@@ -23,3 +23,5 @@ export EVENT_NOKQUEUE=1
 # For Google Cloud SDK
 source "/usr/local/var/google-cloud-sdk/completion.zsh.inc"
 source "/usr/local/var/google-cloud-sdk/path.zsh.inc"
+
+eval "$(rbenv init -)"
