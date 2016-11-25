@@ -53,6 +53,7 @@ alias gcd="git checkout develop"
 alias gf="git-flow"
 alias s="git status"
 alias gpr="git pull-request"
+alias gprd="git pull-request -b develop"
 # alias circle="~/.bin/circle"
 
 # Procore for Bash

@@ -56,14 +56,16 @@ bindkey '^[[B' history-substring-search-down
 bindkey -M emacs '^P' history-substring-search-up
 bindkey -M emacs '^N' history-substring-search-down
 
-# Handle dup path in tmux for Mac OS X
-# http://superuser.com/questions/544989/does-tmux-sort-the-path-variable/583502#583502
-if [[ `uname` == "Darwin" ]]; then
-  if [ -f /etc/profile ]; then
-    PATH=""
-    source /etc/profile
-  fi
-fi
+zle && zle reset-prompt
+
+ # Handle dup path in tmux for Mac OS X
+ # http://superuser.com/questions/544989/does-tmux-sort-the-path-variable/583502#583502
+ if [[ `uname` == "Darwin" ]]; then
+   if [ -f /etc/profile ]; then
+     PATH=""
+     source /etc/profile
+   fi
+ fi
 
 if [[ -n $SSH_CONNECTION ]]; then
   export EDITOR='vim'
@@ -78,7 +80,6 @@ unsetopt nomatch
 export GOPATH="$HOME/code/go"
 
 # PATH setup
-export PATH="/usr/local/sbin:$HOME/.nvm/versions/node/v5.2.0/bin:$PATH"
 export PATH="$PATH:$HOME/bin:$HOME/.fzf/bin:$HOME/.multirust/toolchains/stable/cargo/bin:/usr/local/opt/go/libexec/bin:$GOPATH/bin"
 
 # Load FZF
