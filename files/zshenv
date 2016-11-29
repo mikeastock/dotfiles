@@ -1,22 +1,2 @@
-export CLICOLOR=1
-
-# use vim as the visual editor
-export VISUAL=nvim
-export EDITOR=$VISUAL
-export DISABLE_AUTO_TITLE=true
-export PYTHONPATH=/usr/local/lib/python2.7/site-packages
-
-export FZF_DEFAULT_COMMAND='ag -l -g ""'
-
-# go
-if [ -d $HOME/gocode ] ; then
-  export GOPATH=$HOME/gocode
-fi
-
-# node version manager
-if [ -d $HOME/.nvm ] ; then
-  export NVM_DIR=$HOME/.nvm
-  [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-fi
-
-source $HOME/code/dotfiles/files/zsh/functions
+fpath=($fpath $HOME/.zsh/func)
+typeset -U fpath

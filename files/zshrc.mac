@@ -1,27 +1,14 @@
-export PATH="$PATH:/usr/local/heroku/bin:$GOPATH/bin:/Applications/Postgres.app/Contents/Versions/9.4/bin:$HOME/bin:$HOME/.fzf/bin:$HOME/.cargo/bin:$HOME/.mix"
-
-export RUST_SRC_PATH="/usr/local/src/rust/src"
-
 # Load iTerm2 integration
 test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
-
-# Load nvm (for node)
-if [[ -f $HOME/.nvm ]]; then
-  export NVM_DIR="$HOME/.nvm"
-  [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
-fi
-
-# Python
-export PYTHONPATH="$(brew --prefix)/lib/python3.5/site-packages"
-
-# Load kiex for Elixir
-test -s "$HOME/.kiex/scripts/kiex" && source "$HOME/.kiex/scripts/kiex"
 
 # Temp for macOS and Tmux
 export EVENT_NOKQUEUE=1
 
-# For Google Cloud SDK
-source "/usr/local/var/google-cloud-sdk/completion.zsh.inc"
-source "/usr/local/var/google-cloud-sdk/path.zsh.inc"
+source $HOME/.asdf/asdf.sh
+source $HOME/.asdf/completions/asdf.bash
 
-eval "$(rbenv init -)"
+# For Google Cloud SDK
+if [[ -f /usr/local/var/google-cloud-sdk ]]; then
+  source "/usr/local/var/google-cloud-sdk/completion.zsh.inc"
+  source "/usr/local/var/google-cloud-sdk/path.zsh.inc"
+fi

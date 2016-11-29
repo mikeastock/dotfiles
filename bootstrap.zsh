@@ -41,8 +41,8 @@ cp git/ctags_hook "$HOME/.git_template/hooks/post-merge"
 cp git/ctags_hook "$HOME/.git_template/hooks/post-checkout"
 
 # Dotfiles
-rcup -f -d "$HOME/code/dotfiles/files"
-. "$HOME/.zshrc"
+# rcup -f -d "$HOME/code/dotfiles/files"
+# . "$HOME/.zshrc"
 
 SERVICES=("postgresql" "elasticsearch" "memcached" "redis")
 for service in "${SERVICES[@]}"; do brew services start "$service"; done
@@ -55,44 +55,50 @@ fi
 # Rehash so zsh can find all its commands
 rehash
 
-# Install vim-plug
-if ! [ -f "$HOME/.config/nvim/autoload/plug.vim" ]; then
-  curl -fLo "$HOME/.config/nvim/autoload/plug.vim" --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
-  nvim +PlugInstall +qall
-else
-  nvim +PlugUpdate +qall
-fi
+# Setup neovim
+mkdir -p $HOME/.config
+ln -sf ~/code/dotfiles/files/nvim ~/.config/
 
 ## Language specific installations
 
-# Elixir - kiex (version manager)
-if ! type kiex > /dev/null 2>&1; then
-  curl -sSL https://raw.githubusercontent.com/taylor/kiex/master/install | bash -s
-  . "$HOME/.zshrc"
+## Install asdf
+if [[ ! -x ~/.asdf ]]; then
+  echo "Installing asdf"
+  git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.2.0
 fi
 
-latest_elixir=$(kiex list known | tail -n 1 | xargs)
+function add_asdf_plugin() {
+  if ! [[ -n $(asdf plugin-list | grep $1) ]]; then
+    asdf plugin-add $1 $2
+  fi
+}
 
-if ! [[ -n $(kiex list | grep "$latest_elixir") ]]; then
-  kiex install "$latest_elixir"
-fi
+function install_latest_version() {
+  local latest_version=$(asdf list-all $1 | grep "\d+.\d+.\d+" | grep "rc\|beta\|preview" | tail -n 1 | xargs)
+  echo "Latest version of ${$1} is ${$latest_version}"
+  asdf install $1 $latest_version
+  asdf global $1 $latest_version
+}
 
-kiex use "$latest_elixir"
-kiex default "$latest_elixir"
+add_asdf_plugin erlang https://github.com/asdf-vm/asdf-erlang.git
+add_asdf_plugin elixir https://github.com/asdf-vm/asdf-elixir.git
+add_asdf_plugin ruby https://github.com/asdf-vm/asdf-ruby.git
+add_asdf_plugin rust https://github.com/code-lever/asdf-rust.git
+add_asdf_plugin golang https://github.com/kennyp/asdf-golang.git
+add_asdf_plugin elm https://github.com/vic/asdf-elm.git
+add_asdf_plugin python https://github.com/tuvistavie/asdf-python.git
+add_asdf_plugin nodejs https://github.com/asdf-vm/asdf-nodejs.git
+
+install_latest_version "erlang"
+install_latest_version "elixir"
+install_latest_version "rust"
+install_latest_version "ruby"
+install_latest_version "golang"
+install_latest_version "elm"
+install_latest_version "python"
+install_latest_version "nodejs"
+
 mix archive.install https://github.com/phoenixframework/archives/raw/master/phoenix_new.ez --force
-
-# Ruby - rbenv (version manager)
-latest_ruby=$(rbenv install --list | grep -E '^\s+[0-9]\.[0-9]\.[0-9]$' | tail -n 1 | xargs)
-
-if ! rbenv versions | grep -q "$latest_ruby"; then
-  rbenv install "$latest_ruby"
-  gem install bundler
-fi
-rbenv global "$latest_ruby"
-
-# Rust
-curl https://sh.rustup.rs -sSf | bash -s -- -y
-rustup update
 
 if ! [[ -n $(cargo install --list | grep ripgrep) ]]; then
   cargo install ripgrep
