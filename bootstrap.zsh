@@ -75,7 +75,7 @@ function add_asdf_plugin() {
 
 function install_latest_version() {
   local latest_version=$(asdf list-all $1 | ag "\d+.\d+.\d+" | ag -v "rc|beta|preview|bootstrap" | tail -n 1 | xargs)
-  echo "Latest version of ${$1} is ${$latest_version}"
+  echo "Installing latest version of $1 is $latest_version"
   asdf install $1 $latest_version
   asdf global $1 $latest_version
 }
