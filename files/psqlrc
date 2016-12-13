@@ -1,0 +1,11 @@
+\set QUIET 1
+--\pset pager always
+\pset null '\\N'
+-- Need a big history
+\set HISTSIZE 10000
+-- Get rid of duplicate sequences in the history
+\set HISTCONTROL ignoredups
+\timing
+\x auto
+\set G '\\x\\g\\x'
+\unset QUIET

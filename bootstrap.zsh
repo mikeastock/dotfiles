@@ -59,6 +59,9 @@ rehash
 mkdir -p $HOME/.config
 ln -sf ~/code/dotfiles/files/nvim ~/.config/
 
+# Setup GOPATH
+mkdir -p /usr/local/opt/gocode
+
 ## Language specific installations
 
 ## Install asdf

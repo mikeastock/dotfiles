@@ -7,6 +7,9 @@ export EVENT_NOKQUEUE=1
 source $HOME/.asdf/asdf.sh
 source $HOME/.asdf/completions/asdf.bash
 
+export GOPATH="/usr/local/opt/gocode"
+export PATH="$PATH:$GOPATH/bin"
+
 # For Google Cloud SDK
 if [[ -f /usr/local/var/google-cloud-sdk ]]; then
   source "/usr/local/var/google-cloud-sdk/completion.zsh.inc"
