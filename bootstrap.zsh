@@ -41,8 +41,8 @@ cp git/ctags_hook "$HOME/.git_template/hooks/post-merge"
 cp git/ctags_hook "$HOME/.git_template/hooks/post-checkout"
 
 # Dotfiles
-# rcup -f -d "$HOME/code/dotfiles/files"
-# . "$HOME/.zshrc"
+rcup -f -d "$HOME/code/dotfiles/files"
+. "$HOME/.zshrc"
 
 SERVICES=("postgresql" "elasticsearch" "memcached" "redis")
 for service in "${SERVICES[@]}"; do brew services start "$service"; done
@@ -77,7 +77,7 @@ function add_asdf_plugin() {
 }
 
 function install_latest_version() {
-  local latest_version=$(asdf list-all $1 | ag "\d+.\d+.\d+" | ag -v "rc|beta|preview|bootstrap" | tail -n 1 | xargs)
+  local latest_version=$(asdf list-all $1 | ag "^\d+.\d+.\d+" | ag -v "rc|beta|preview|bootstrap" | tail -n 1 | xargs)
   echo "Installing latest version of $1 is $latest_version"
   asdf install $1 $latest_version
   asdf global $1 $latest_version
