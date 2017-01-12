@@ -68,18 +68,12 @@ let mapleader = " "
 "##############################################################################
 
 "LEADER
-map <Leader>ar :topleft :split config/routes.rb<CR>
-map <Leader>bi :terminal bundle install<cr>
-map <Leader>tp :terminal bundle exec rake db:test:prepare<cr>
-map <Leader>c ::bp\|bd #<CR>
-" map <Leader>e :RuboCop<CR>
-map <Leader>f :Files<CR>
-map <Leader>b :Buffers<CR>
+map <Leader>tp :T bundle exec rake db:test:prepare<cr>
+map <Leader>f :FuzzyOpen<CR>
 map <Leader>i mmgg=G`m<CR>
 map <Leader>kw :%s/\s\+$//<CR>
 map <Leader>q :call CloseBuffer()<CR>
 map <Leader>bq :bd!<CR>
-" map <Leader>t :terminal<CR>
 map <Leader>rs :s/'/"<CR>
 map <Leader>vi :e ~/.config/nvim/init.vim<CR>
 map <Leader>w :w!<CR>
@@ -91,9 +85,6 @@ map <Leader>gc :Gcommit<CR>
 map <Leader>gp :Gpush<CR>
 map <Leader>ga :Gwrite<CR>
 map <Leader>d :e config/database.yml<CR>
-map <Leader>l :Lines<CR>
-" map <Leader>t :Tags<CR>
-map <Leader>h :History<CR>
 nmap <Leader>P :call AddDebugger("O")<CR>
 nmap <Leader>p :call AddDebugger("o")<CR>
 
@@ -119,7 +110,7 @@ nmap j gj
 map <C-j> <C-W>j
 map <C-k> <C-W>k
 
-nnoremap K :Ag <C-R><C-W><CR>
+nnoremap K :FuzzyGrep <C-R><C-W><CR>
 
 map <BS> <C-W>h
 map <C-l> <C-W>l
@@ -185,6 +176,9 @@ augroup END
 "# PLUGIN SETTINGS
 "##############################################################################
 
+"YCM
+let g:ycm_rust_src_path = '/usr/local/src/rust/src'
+
 "FZF
 let $FZF_DEFAULT_COMMAND = 'ag --hidden --ignore .git -g ""'
 " let $FZF_DEFAULT_COMMAND='rg --files --no-ignore --hidden --follow --glob "!.git/*"'
@@ -242,11 +236,9 @@ set grepprg=ag
 let g:grep_cmd_opts = '--line-numbers --noheading'
 
 " Testing settings
-" map <Leader>s :TestNearest<CR>
-" map <Leader>r :TestFile<CR>
-" map <Leader>a :TestLast<CR>
-nnoremap <Leader>s :call neoterm#test#run('current')<CR>
-nnoremap <Leader>r :call neoterm#test#run('file')<CR>
+nnoremap <Leader>s :TestNearest<CR>
+nnoremap <Leader>r :TestFile<CR>
+nnoremap <Leader>a :TestLast<CR>
 
 " Useful maps
 " hide/close terminal
@@ -256,10 +248,6 @@ nnoremap <Leader>tl :call neoterm#clear()<CR>
 " kills the current job (send a <c-c>)
 nnoremap <Leader>tc :call neoterm#kill()<CR>
 
-function! SplitStrategy(cmd)
-  botright new | call termopen(a:cmd) | startinsert
-endfunction
-let g:test#custom_strategies = {'terminal_split': function('SplitStrategy')}
 let g:test#strategy = 'neoterm'
 
 let g:neoterm_clear_cmd = "clear; printf '=%.0s' {1..80}; clear"
@@ -267,7 +255,6 @@ let g:neoterm_position = "horizontal"
 let g:neoterm_automap_keys = ",tt"
 let g:neoterm_split_on_tnew = 1
 let g:neoterm_size = 20
-let g:neoterm_rspec_lib_cmd = "bin/rspec"
 
 let g:jsx_ext_required = 0
 let g:used_javascript_libs = 'react,flux,chai'
