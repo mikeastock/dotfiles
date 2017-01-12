@@ -1,73 +1,90 @@
 "
-" Michael Stock's vimrc
-"
+" vimrc
 " github.com/mikeastock/dotfiles
 "
 
-"##############################################################################
-"# VIM PLUG SETUP
-"##############################################################################
+" PLugins
 if filereadable(expand("~/.config/nvim/plugins.vim"))
   source ~/.config/nvim/plugins.vim
 endif
 
-"##############################################################################
-"# BASIC EDITING CONFIGURATION
-"##############################################################################
-
-syntax enable
-filetype plugin indent on
-set nocompatible
-set relativenumber
-set wildmenu
-set backspace=indent,eol,start
-
+" Tabs and spaces
 set tabstop=2
 set shiftwidth=2
+set softtabstop=2
+set backspace=indent,eol,start
 set expandtab
-set smarttab
 set autoindent
+set smarttab
 
+" Misc
+set number
+set relativenumber
+set ruler
+set wildmenu
+set wildmode=longest,list,full
+set wrap
+set breakindent
+set hidden
+set hlsearch
+set autoread
+set ignorecase
+set smartcase
+set report=0
+set laststatus=2
+set cursorline
+set scrolloff=4
+set nofoldenable
+set timeoutlen=500
+set mouse="" " I HATE MICE
+set backup
+set backupdir=~/.vim-tmp,~/.tmp,~/tmp,/var/tmp,/tmp
+set directory=~/.vim-tmp,~/.tmp,~/tmp,/var/tmp,/tmp
+set updatetime=250
+set virtualedit=block
+set tags+=./tags
+set gdefault " Assume the /g flag on :s substitutions to replace all matches in a line
+set lazyredraw
 set splitbelow
 set splitright
-
-set history=500
-set autoread
-set laststatus=2
-set tags=./tags;
-set hlsearch
-set ignorecase smartcase
-set hidden
-
 set shiftround " When at 3 spaces and I hit >>, go to 4, not 5.
-set gdefault " assume the /g flag on :s substitutions to replace all matches in a line
-" I HATE MICE
-set mouse=""
-
-"Color and UI
-if (has("termguicolors"))
-  set termguicolors
-endif
-
-colorscheme base16-default-dark
-set background=dark
-
 set colorcolumn=80
-set cursorline
-set ruler
 set synmaxcol=250
+set list
+set listchars=tab:·\ ,trail:█
 
-"SPEEEEEEEEEEEEEED
-set re=1
-set updatetime=750
+" Color
+set termguicolors
+set background=dark
+colorscheme base16-default-dark
+syntax enable
+highlight MatchParen ctermbg=black
 
-let mapleader = " "
+let mapleader = "\<Space>"
 
-"##############################################################################
-"# KEY BINDINGS
-"##############################################################################
+let $NVIM_TUI_ENABLE_CURSOR_SHAPE=1
 
-"LEADER
+" Deoplete (autocomplete)
+let g:deoplete#enable_at_startup = 0
+let g:deoplete#disable_auto_complete = 1
+let g:deoplete#enable_smart_case = 1
+" let g:deoplete#sources = []
+
+let g:monster#completion#rcodetools#backend = "async_rct_complete"
+let g:deoplete#sources#omni#input_patterns = {
+\   "ruby" : '[^. *\t]\.\w*\|\h\w*::',
+\}
+
+inoremap <silent><expr> <TAB>
+  \ pumvisible() ? "\<C-n>" :
+  \ <SID>check_back_space() ? "\<TAB>" :
+  \ deoplete#mappings#manual_complete()
+function! s:check_back_space()
+  let col = col('.') - 1
+  return !col || getline('.')[col - 1]  =~ '\s'
+endfunction
+
+" Leader Mappings
 map <Leader>tp :T bundle exec rake db:test:prepare<cr>
 map <Leader>f :FuzzyOpen<CR>
 map <Leader>i mmgg=G`m<CR>
@@ -135,8 +152,9 @@ nnoremap <C-P> :bprev<CR>
 "# AUTOCMDS
 "##############################################################################
 
-" Jump to last cursor position unless it's invalid or in an event handler
-augroup other
+filetype plugin indent on
+
+augroup indentation
   autocmd!
   autocmd BufReadPost *
         \ if line("'\"") > 0 && line("'\"") <= line("$") |
@@ -159,12 +177,9 @@ augroup other
   autocmd! BufWritePost * Neomake
 augroup END
 
-"" Remove trailing whitespace on save
+" Remove trailing whitespace on save
 augroup trailingWhitespace
-  autocmd BufWritePre *.rb :%s/\s\+$//e
-  autocmd BufWritePre *.ex :%s/\s\+$//e
-  autocmd BufWritePre *.exs :%s/\s\+$//e
-  autocmd BufWritePre *.js :%s/\s\+$//e
+  autocmd BufWritePre * :%s/\s\+$//e
 augroup END
 
 augroup gitCommit
@@ -175,9 +190,6 @@ augroup END
 "##############################################################################
 "# PLUGIN SETTINGS
 "##############################################################################
-
-"YCM
-let g:ycm_rust_src_path = '/usr/local/src/rust/src'
 
 "FZF
 let $FZF_DEFAULT_COMMAND = 'ag --hidden --ignore .git -g ""'
@@ -231,10 +243,6 @@ xmap T <Plug>Sneak_T
 omap t <Plug>Sneak_t
 omap T <Plug>Sneak_T
 
-" Grep
-set grepprg=ag
-let g:grep_cmd_opts = '--line-numbers --noheading'
-
 " Testing settings
 nnoremap <Leader>s :TestNearest<CR>
 nnoremap <Leader>r :TestFile<CR>
@@ -259,35 +267,6 @@ let g:neoterm_size = 20
 let g:jsx_ext_required = 0
 let g:used_javascript_libs = 'react,flux,chai'
 
-function! s:line_handler(l)
-  let keys = split(a:l, ':\t')
-  exec 'buf' keys[0]
-  exec keys[1]
-  normal! ^zz
-endfunction
-
-function! s:buffer_lines()
-  let res = []
-  for b in filter(range(1, bufnr('$')), 'buflisted(v:val)')
-    call extend(res, map(getbufline(b,0,"$"), 'b . ":\t" . (v:key + 1) . ":\t" . v:val '))
-  endfor
-  return res
-endfunction
-
-"##############################################################################
-"# STOLEN SETTINGS FROM THE INTERWEBS
-"##############################################################################
-
-" Prevent Vim from clobbering the scrollback buffer. See
-" http://www.shallowsky.com/linux/noaltscreen.html
-set t_ti= t_te=
-" keep more context when scrolling off the end of a buffer
-set scrolloff=3
-" Store temporary files in a central spot
-set backup
-set backupdir=~/.vim-tmp,~/.tmp,~/tmp,/var/tmp,/tmp
-set directory=~/.vim-tmp,~/.tmp,~/tmp,/var/tmp,/tmp
-
 " Rename current file
 function! RenameFile()
   let old_name = expand('%')
@@ -300,21 +279,15 @@ function! RenameFile()
 endfunction
 map <Leader>n :call RenameFile()<cr>
 
-" Display extra whitespace
-set list listchars=tab:»·,trail:·
-
-" Make it more obvious which paren I'm on
-hi MatchParen cterm=none ctermbg=black ctermfg=red
-
 "##############################################################################
 "# PROMOTE VARIABLE TO RSPEC LET
 "##############################################################################
 function! PromoteToLet()
-  :normal! dd
-  " :exec '?^\s*it\>'
-  :normal! P
-  :.s/\(\w\+\) = \(.*\)$/let(:\1) { \2 }/
-  :normal ==
+  normal! dd
+  exec '?^\s*it\>'
+  normal! P
+  .s/\(\w\+\) = \(.*\)$/let(:\1) { \2 }/
+  normal ==
 endfunction
-:command! PromoteToLet :call PromoteToLet()
-:map <leader>sl :PromoteToLet<cr>
+command! PromoteToLet :call PromoteToLet()
+noremap <leader>sl :PromoteToLet<cr>

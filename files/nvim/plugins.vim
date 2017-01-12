@@ -20,7 +20,9 @@ Plug 'tpope/vim-surround'
 Plug 'tpope/vim-commentary'
 
 "Autocomplete
-Plug 'Valloric/YouCompleteMe'
+Plug 'Shougo/deoplete.nvim', { 'do': ':UpdateRemotePlugins' }
+Plug 'Shougo/neoinclude.vim'
+Plug 'osyo-manga/vim-monster', {'do': 'gem install rcodetools' }
 
 " Langauge specific
 Plug 'fatih/vim-go', { 'for': 'golang' }
