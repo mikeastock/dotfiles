@@ -68,7 +68,6 @@ let $NVIM_TUI_ENABLE_CURSOR_SHAPE=1
 let g:deoplete#enable_at_startup = 0
 let g:deoplete#disable_auto_complete = 1
 let g:deoplete#enable_smart_case = 1
-" let g:deoplete#sources = []
 
 let g:monster#completion#rcodetools#backend = "async_rct_complete"
 let g:deoplete#sources#omni#input_patterns = {
@@ -105,6 +104,7 @@ map <Leader>d :e config/database.yml<CR>
 nmap <Leader>P :call AddDebugger("O")<CR>
 nmap <Leader>p :call AddDebugger("o")<CR>
 
+" Force close current buffer
 function! CloseBuffer()
   if &buftype ==# 'terminal'
     :bd!
@@ -113,7 +113,7 @@ function! CloseBuffer()
   endif
 endfunction
 
-"Remove search highlight
+" Remove search highlight
 function! MapCR()
   nnoremap <CR> :nohlsearch<CR>
 endfunction
