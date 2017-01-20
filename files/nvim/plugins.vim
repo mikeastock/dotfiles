@@ -22,7 +22,6 @@ Plug 'tpope/vim-commentary'
 "Autocomplete
 Plug 'Shougo/deoplete.nvim', { 'do': ':UpdateRemotePlugins' }
 Plug 'Shougo/neoinclude.vim'
-Plug 'osyo-manga/vim-monster', {'do': 'gem install rcodetools' }
 
 " Langauge specific
 Plug 'fatih/vim-go', { 'for': 'golang' }
@@ -30,7 +29,7 @@ Plug 'pangloss/vim-javascript', { 'for': 'javascript' }
 Plug 'mxw/vim-jsx', { 'for': 'javascript' }
 Plug 'othree/javascript-libraries-syntax.vim', { 'for': 'javascript' }
 Plug 'keith/swift.vim', { 'for': 'swift' }
-Plug 'elixir-lang/vim-elixir', { 'for': 'elixir' }
+Plug 'elixir-lang/vim-elixir', { 'for': 'elixir,eelixir' }
 Plug 'slashmili/alchemist.vim', { 'for': 'elixir' }
 Plug 'vim-ruby/vim-ruby', { 'for': 'ruby' }
 Plug 'Keithbsmiley/rspec.vim', { 'for': 'ruby' }

@@ -168,11 +168,7 @@ augroup indentation
   autocmd Filetype yaml set nocursorline
   autocmd BufNewFile,BufRead *.sass setfiletype sass
   autocmd Filetype markdown setlocal spell
-
   autocmd FileType swift set ai sw=4 sts=4 et
-
-  autocmd FileType rust map <Leader>r :CargoRun<CR>
-  autocmd FileType elm map <Leader>r :ElmMakeCurrentFile<CR>
 
   autocmd! BufWritePost * Neomake
 augroup END
@@ -190,23 +186,6 @@ augroup END
 "##############################################################################
 "# PLUGIN SETTINGS
 "##############################################################################
-
-"FZF
-let $FZF_DEFAULT_COMMAND = 'ag --hidden --ignore .git -g ""'
-" let $FZF_DEFAULT_COMMAND='rg --files --no-ignore --hidden --follow --glob "!.git/*"'
-
-let g:fzf_layout = { 'window': '-tabnew' }
-
-" Mapping selecting mappings
-nmap <leader><tab> <plug>(fzf-maps-n)
-xmap <leader><tab> <plug>(fzf-maps-x)
-omap <leader><tab> <plug>(fzf-maps-o)
-
-" Insert mode completion
-imap <c-x><c-k> <plug>(fzf-complete-word)
-imap <c-x><c-f> <plug>(fzf-complete-path)
-imap <c-x><c-j> <plug>(fzf-complete-file-ag)
-imap <c-x><c-l> <plug>(fzf-complete-line)
 
 "Goyo/Limelight
 autocmd! User GoyoEnter Limelight
