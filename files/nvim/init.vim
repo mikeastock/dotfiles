@@ -85,7 +85,8 @@ endfunction
 
 " Leader Mappings
 map <Leader>tp :T bundle exec rake db:test:prepare<cr>
-map <Leader>f :FuzzyOpen<CR>
+map <Leader>f :Files<CR>
+map <Leader>a :Rg!<CR>
 map <Leader>i mmgg=G`m<CR>
 map <Leader>kw :%s/\s\+$//<CR>
 map <Leader>q :call CloseBuffer()<CR>
@@ -127,7 +128,7 @@ nmap j gj
 map <C-j> <C-W>j
 map <C-k> <C-W>k
 
-nnoremap K :FuzzyGrep <C-R><C-W><CR>
+nnoremap K :Rg <C-R><C-W><CR>
 
 map <BS> <C-W>h
 map <C-l> <C-W>l
@@ -187,6 +188,23 @@ augroup END
 "# PLUGIN SETTINGS
 "##############################################################################
 
+"FZF
+let $FZF_DEFAULT_COMMAND = 'ag --hidden --ignore .git -g ""'
+
+" Enable per-command history.
+" CTRL-N and CTRL-P will be automatically bound to next-history and
+" previous-history instead of down and up. If you don't like the change,
+" explicitly bind the keys to down and up in your $FZF_DEFAULT_OPTS.
+let g:fzf_history_dir = '~/.local/share/fzf-history'
+
+" Similarly, we can apply it to fzf#vim#grep. To use ripgrep instead of ag:
+command! -bang -nargs=* Rg
+  \ call fzf#vim#grep(
+  \   'rg --column --line-number --no-heading --color=always '.shellescape(<q-args>), 1,
+  \   <bang>0 ? fzf#vim#with_preview('up:60%')
+  \           : fzf#vim#with_preview('right:50%:hidden', '?'),
+  \   <bang>0)
+
 "Goyo/Limelight
 autocmd! User GoyoEnter Limelight
 autocmd! User GoyoLeave Limelight!
@@ -225,7 +243,6 @@ omap T <Plug>Sneak_T
 " Testing settings
 nnoremap <Leader>s :TestNearest<CR>
 nnoremap <Leader>r :TestFile<CR>
-nnoremap <Leader>a :TestLast<CR>
 
 " Useful maps
 " hide/close terminal

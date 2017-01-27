@@ -1,7 +1,8 @@
 call plug#begin('~/.config/nvim/plugged')
 
 "fuzzy finding
-Plug 'cloudhead/neovim-fuzzy'
+Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
+Plug 'junegunn/fzf.vim'
 
 "looks
 Plug 'itchyny/lightline.vim'
