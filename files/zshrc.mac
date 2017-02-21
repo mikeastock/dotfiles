@@ -17,3 +17,6 @@ if [[ -f /usr/local/var/google-cloud-sdk ]]; then
   source "/usr/local/var/google-cloud-sdk/completion.zsh.inc"
   source "/usr/local/var/google-cloud-sdk/path.zsh.inc"
 fi
+
+# added by travis gem
+[ -f /Users/mikeastock/.travis/travis.sh ] && source /Users/mikeastock/.travis/travis.sh

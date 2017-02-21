@@ -9,7 +9,7 @@
   t = status
   s = status
   st = status
-  br = branch
+  br = branch --sort=-committerdate
   df = diff --color
   dfom = diff master --color
   pl = pull

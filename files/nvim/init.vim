@@ -55,10 +55,22 @@ set listchars=tab:·\ ,trail:█
 
 " Color
 set termguicolors
-set background=dark
-colorscheme base16-default-dark
+
+if $LIGHT_SHELL
+  "Light
+  set background=light
+  colorscheme one
+  let g:airline_theme="one"
+else
+  " "Dark
+  set background=dark
+  colorscheme base16-default-dark
+endif
+
 syntax enable
 highlight MatchParen ctermbg=black
+
+runtime macros/matchit.vim " Enabled matchit for Ruby text objects
 
 let mapleader = "\<Space>"
 
@@ -84,17 +96,16 @@ function! s:check_back_space()
 endfunction
 
 " Leader Mappings
-map <Leader>tp :T bundle exec rake db:test:prepare<cr>
 map <Leader>f :Files<CR>
 map <Leader>a :Rg!<CR>
 map <Leader>i mmgg=G`m<CR>
 map <Leader>kw :%s/\s\+$//<CR>
 map <Leader>q :call CloseBuffer()<CR>
 map <Leader>bq :bd!<CR>
-map <Leader>rs :s/'/"<CR>
+map <Leader>rs :%s/'/"<CR>
 map <Leader>vi :e ~/.config/nvim/init.vim<CR>
 map <Leader>w :w!<CR>
-map <Leader>hs :s/:\([^ ]*\)\(\s*\)=>/\1:/g<CR>
+map <Leader>hs :%s/:\([^ ]*\)\(\s*\)=>/\1:/<CR>
 map <Leader>mi 0f:wywOit "pA" doj==oendkf{edi}Op==j0ftlvt.c(response)<CR>
 map <Leader>gs :Gstatus<CR>
 map <Leader>gb :Gblame<CR>
@@ -102,6 +113,8 @@ map <Leader>gc :Gcommit<CR>
 map <Leader>gp :Gpush<CR>
 map <Leader>ga :Gwrite<CR>
 map <Leader>d :e config/database.yml<CR>
+map <Leader>l :Lines<CR>
+map <Leader>t :Tags<CR>
 nmap <Leader>P :call AddDebugger("O")<CR>
 nmap <Leader>p :call AddDebugger("o")<CR>
 
@@ -170,8 +183,11 @@ augroup indentation
   autocmd BufNewFile,BufRead *.sass setfiletype sass
   autocmd Filetype markdown setlocal spell
   autocmd FileType swift set ai sw=4 sts=4 et
+augroup END
 
-  autocmd! BufWritePost * Neomake
+augroup neomake_cmds
+  autocmd BufWritePost * Neomake
+  autocmd BufWritePost *.rs Neomake! cargocheck
 augroup END
 
 " Remove trailing whitespace on save
@@ -187,6 +203,17 @@ augroup END
 "##############################################################################
 "# PLUGIN SETTINGS
 "##############################################################################
+
+"Racer
+let g:rustfmt_autosave = 0
+let g:racer_cmd = "~/.cargo/bin/racer"
+let g:racer_experimental_completer = 1
+let $RUST_SRC_PATH= "/usr/local/src/rust"
+
+au FileType rust nmap gd <Plug>(rust-def)
+au FileType rust nmap gs <Plug>(rust-def-split)
+au FileType rust nmap gx <Plug>(rust-def-vertical)
+au FileType rust nmap <leader>gd <Plug>(rust-doc)
 
 "FZF
 let $FZF_DEFAULT_COMMAND = 'ag --hidden --ignore .git -g ""'
@@ -223,6 +250,14 @@ let g:neomake_ruby_rdirty_maker = {
       \ 'postprocess': function('neomake#makers#ft#ruby#RubocopEntryProcess')
       \ }
 let g:neomake_ruby_enabled_makers = ['mri', 'rdirty', 'reek', 'rubylint']
+let g:neomake_rust_enabled_makers = []
+
+let g:neomake_cargocheck_maker = {
+      \ 'exe': 'cargo',
+      \ 'args': ['check'],
+      \ 'errorformat':
+      \ neomake#makers#ft#rust#rustc()['errorformat'],
+      \ }
 
 "replace 'f' with 1-char Sneak
 nmap f <Plug>Sneak_f
