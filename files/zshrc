@@ -73,3 +73,5 @@ fi
 if [[ `uname` == "Linux" ]]; then
   source ~/.zshrc.linux
 fi
+
+export PATH="$HOME/.yarn/bin:$PATH"

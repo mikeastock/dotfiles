@@ -249,7 +249,7 @@ let g:neomake_ruby_rdirty_maker = {
       \ 'errorformat': '%f:%l:%c: %t: %m',
       \ 'postprocess': function('neomake#makers#ft#ruby#RubocopEntryProcess')
       \ }
-let g:neomake_ruby_enabled_makers = ['mri', 'rdirty', 'reek', 'rubylint']
+let g:neomake_ruby_enabled_makers = ['mri', 'rdirty']
 let g:neomake_rust_enabled_makers = []
 
 let g:neomake_cargocheck_maker = {
