@@ -59,12 +59,11 @@ set termguicolors
 if $LIGHT_SHELL
   "Light
   set background=light
-  colorscheme one
-  let g:airline_theme="one"
+  colorscheme gruvbox
 else
   " "Dark
   set background=dark
-  colorscheme base16-default-dark
+  colorscheme gruvbox
 endif
 
 syntax enable
