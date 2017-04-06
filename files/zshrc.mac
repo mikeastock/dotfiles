@@ -4,19 +4,29 @@ test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell
 # Temp for macOS and Tmux
 export EVENT_NOKQUEUE=1
 
-source $HOME/.asdf/asdf.sh
-source $HOME/.asdf/completions/asdf.bash
-
 [ -f ~/.cargo/env ] && source ~/.cargo/env
+
+[ -f /usr/local/opt/chruby/share/chruby/chruby.sh ] && source /usr/local/opt/chruby/share/chruby/chruby.sh
+[ -f /usr/local/opt/chruby/share/chruby/auto.sh ] && source /usr/local/opt/chruby/share/chruby/auto.sh
+
+# if type chruby >/dev/null 2>&1; then
+#   chruby 2.4.1
+# fi
 
 export GOPATH="/usr/local/opt/gocode"
 export PATH="$PATH:$GOPATH/bin"
+
+PATH="/usr/local/opt/gnu-tar/libexec/gnubin:$PATH"
 
 # For Google Cloud SDK
 if [[ -f /usr/local/var/google-cloud-sdk ]]; then
   source "/usr/local/var/google-cloud-sdk/completion.zsh.inc"
   source "/usr/local/var/google-cloud-sdk/path.zsh.inc"
 fi
+
+# NVM
+export NVM_DIR="$HOME/.nvm"
+[ -f "/usr/local/opt/nvm/nvm.sh" ] && source "/usr/local/opt/nvm/nvm.sh"
 
 # added by travis gem
 [ -f /Users/mikeastock/.travis/travis.sh ] && source /Users/mikeastock/.travis/travis.sh

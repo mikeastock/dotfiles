@@ -75,25 +75,6 @@ let mapleader = "\<Space>"
 
 let $NVIM_TUI_ENABLE_CURSOR_SHAPE=1
 
-" Deoplete (autocomplete)
-let g:deoplete#enable_at_startup = 0
-let g:deoplete#disable_auto_complete = 1
-let g:deoplete#enable_smart_case = 1
-
-let g:monster#completion#rcodetools#backend = "async_rct_complete"
-let g:deoplete#sources#omni#input_patterns = {
-\   "ruby" : '[^. *\t]\.\w*\|\h\w*::',
-\}
-
-inoremap <silent><expr> <TAB>
-  \ pumvisible() ? "\<C-n>" :
-  \ <SID>check_back_space() ? "\<TAB>" :
-  \ deoplete#mappings#manual_complete()
-function! s:check_back_space()
-  let col = col('.') - 1
-  return !col || getline('.')[col - 1]  =~ '\s'
-endfunction
-
 " Leader Mappings
 map <Leader>f :Files<CR>
 map <Leader>a :Rg!<CR>
@@ -113,7 +94,7 @@ map <Leader>gp :Gpush<CR>
 map <Leader>ga :Gwrite<CR>
 map <Leader>d :e config/database.yml<CR>
 map <Leader>l :Lines<CR>
-map <Leader>t :Tags<CR>
+" map <Leader>t :Tags<CR>
 nmap <Leader>P :call AddDebugger("O")<CR>
 nmap <Leader>p :call AddDebugger("o")<CR>
 
@@ -276,6 +257,8 @@ omap T <Plug>Sneak_T
 
 " Testing settings
 nnoremap <Leader>s :TestNearest<CR>
+nnoremap <Leader>t :TestNearest<CR>
+nnoremap <Leader>T :TestFile<CR>
 nnoremap <Leader>r :TestFile<CR>
 
 " Useful maps
@@ -286,7 +269,7 @@ nnoremap <Leader>tl :call neoterm#clear()<CR>
 " kills the current job (send a <c-c>)
 nnoremap <Leader>tc :call neoterm#kill()<CR>
 
-let g:test#strategy = 'neoterm'
+let test#strategy = 'neoterm'
 
 let g:neoterm_clear_cmd = "clear; printf '=%.0s' {1..80}; clear"
 let g:neoterm_position = "horizontal"

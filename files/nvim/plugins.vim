@@ -8,25 +8,22 @@ Plug 'junegunn/fzf.vim'
 Plug 'itchyny/lightline.vim'
 
 "workflow
-Plug 'junegunn/vim-easy-align'
-Plug 'pbrisbin/vim-mkdir'
-Plug 'justinmk/vim-sneak'
-Plug 'ap/vim-buftabline'
-Plug 'mcasper/vim-infer-debugger'
+Plug 'AndrewRadev/splitjoin.vim'
 Plug 'airblade/vim-gitgutter'
+Plug 'ap/vim-buftabline'
+Plug 'junegunn/vim-easy-align'
+Plug 'justinmk/vim-sneak'
+Plug 'mcasper/vim-infer-debugger'
 Plug 'neomake/neomake'
+Plug 'pbrisbin/vim-mkdir'
+Plug 'tpope/vim-commentary'
 Plug 'tpope/vim-endwise'
 Plug 'tpope/vim-fugitive'
 Plug 'tpope/vim-surround'
-Plug 'tpope/vim-commentary'
 
 "Text objects
 Plug 'kana/vim-textobj-user', { 'for': 'ruby' }
 Plug 'nelstrom/vim-textobj-rubyblock', { 'for': 'ruby' }
-
-"Autocomplete
-Plug 'Shougo/deoplete.nvim', { 'do': ':UpdateRemotePlugins' }
-Plug 'Shougo/neoinclude.vim'
 
 " Langauge specific
 Plug 'fatih/vim-go', { 'for': 'golang' }
@@ -42,6 +39,9 @@ Plug 'tpope/vim-rails', { 'for': 'ruby' }
 Plug 'ElmCast/elm-vim', { 'for': 'elm' }
 Plug 'rust-lang/rust.vim', { 'for': 'rust' }
 Plug 'racer-rust/vim-racer', { 'for': 'rust' }
+
+"Autocomplete
+Plug 'Valloric/YouCompleteMe'
 
 "testing
 Plug 'janko-m/vim-test'
