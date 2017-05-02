@@ -72,6 +72,7 @@ highlight MatchParen ctermbg=black
 runtime macros/matchit.vim " Enabled matchit for Ruby text objects
 
 let mapleader = "\<Space>"
+nmap <Bslash> <Space>
 
 let $NVIM_TUI_ENABLE_CURSOR_SHAPE=1
 
@@ -165,6 +166,10 @@ augroup indentation
   autocmd FileType swift set ai sw=4 sts=4 et
 augroup END
 
+augroup elm
+  autocmd FileType elm map <Leader>t ElmTest<CR>
+augroup END
+
 augroup neomake_cmds
   autocmd BufWritePost * Neomake
   autocmd BufWritePost *.rs Neomake! cargocheck
@@ -215,9 +220,6 @@ command! -bang -nargs=* Rg
 "Goyo/Limelight
 autocmd! User GoyoEnter Limelight
 autocmd! User GoyoLeave Limelight!
-
-"Elixir alchemist
-let g:alchemist#elixir_erlang_src = "/usr/local/share/src"
 
 "Elm
 let g:elm_format_autosave = 1
@@ -279,6 +281,15 @@ let g:neoterm_size = 20
 
 let g:jsx_ext_required = 0
 let g:used_javascript_libs = 'react,flux,chai'
+
+let g:ycm_complete_in_comments = 1
+let g:ycm_collect_identifiers_from_comments_and_strings = 1
+let g:ycm_collect_identifiers_from_tags_files = 1
+
+" let g:ycm_semantic_triggers = {
+"      \ 'elm' : ['.'],
+"      \}
+let g:ycm_rust_src_path = '/usr/local/src/rust/src'
 
 " Rename current file
 function! RenameFile()

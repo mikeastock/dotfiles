@@ -38,7 +38,6 @@ Plug 'Keithbsmiley/rspec.vim', { 'for': 'ruby' }
 Plug 'tpope/vim-rails', { 'for': 'ruby' }
 Plug 'ElmCast/elm-vim', { 'for': 'elm' }
 Plug 'rust-lang/rust.vim', { 'for': 'rust' }
-Plug 'racer-rust/vim-racer', { 'for': 'rust' }
 
 "Autocomplete
 Plug 'Valloric/YouCompleteMe'
