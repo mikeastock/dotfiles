@@ -40,12 +40,6 @@ cp git/ctags_hook "$HOME/.git_template/hooks/post-commit"
 cp git/ctags_hook "$HOME/.git_template/hooks/post-merge"
 cp git/ctags_hook "$HOME/.git_template/hooks/post-checkout"
 
-## Install asdf
-if [[ ! -x ~/.asdf ]]; then
-  echo "Installing asdf"
-  git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.2.0
-fi
-
 # Dotfiles
 rcup -f -d "$HOME/code/dotfiles/files"
 . "$HOME/.zshrc"
