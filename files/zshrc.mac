@@ -9,20 +9,19 @@ export EVENT_NOKQUEUE=1
 [ -f /usr/local/opt/chruby/share/chruby/chruby.sh ] && source /usr/local/opt/chruby/share/chruby/chruby.sh
 [ -f /usr/local/opt/chruby/share/chruby/auto.sh ] && source /usr/local/opt/chruby/share/chruby/auto.sh
 
-# if type chruby >/dev/null 2>&1; then
-#   chruby 2.4.1
-# fi
+export PATH="$HOME/.rbenv/bin:$PATH"
+eval "$(rbenv init -)"
 
 export GOPATH="/usr/local/opt/gocode"
 export PATH="$PATH:$GOPATH/bin"
-
-PATH="/usr/local/opt/gnu-tar/libexec/gnubin:$PATH"
 
 # For Google Cloud SDK
 if [[ -f /usr/local/var/google-cloud-sdk ]]; then
   source "/usr/local/var/google-cloud-sdk/completion.zsh.inc"
   source "/usr/local/var/google-cloud-sdk/path.zsh.inc"
 fi
+
+test -s "$HOME/.kiex/scripts/kiex" && source "$HOME/.kiex/scripts/kiex"
 
 # NVM
 export NVM_DIR="$HOME/.nvm"
