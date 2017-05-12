@@ -75,3 +75,5 @@ if [[ `uname` == "Linux" ]]; then
 fi
 
 export PATH="$HOME/.yarn/bin:$PATH"
+
+eval $(thefuck --alias help)

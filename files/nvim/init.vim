@@ -60,6 +60,7 @@ if $LIGHT_SHELL
   "Light
   set background=light
   colorscheme gruvbox
+  let g:gruvbox_contrast_dark = 'hard'
 else
   " "Dark
   set background=dark
@@ -124,7 +125,7 @@ map <C-k> <C-W>k
 
 nnoremap K :Rg <C-R><C-W><CR>
 
-map <BS> <C-W>h
+map <C-h> <C-W>h
 map <C-l> <C-W>l
 map <Right> :bn<CR>
 map <Left> :bp<CR>
@@ -189,19 +190,12 @@ augroup END
 "# PLUGIN SETTINGS
 "##############################################################################
 
-"Racer
-let g:rustfmt_autosave = 0
-let g:racer_cmd = "~/.cargo/bin/racer"
-let g:racer_experimental_completer = 1
-let $RUST_SRC_PATH= "/usr/local/src/rust"
-
-au FileType rust nmap gd <Plug>(rust-def)
-au FileType rust nmap gs <Plug>(rust-def-split)
-au FileType rust nmap gx <Plug>(rust-def-vertical)
-au FileType rust nmap <leader>gd <Plug>(rust-doc)
-
 "FZF
 let $FZF_DEFAULT_COMMAND = 'ag --hidden --ignore .git -g ""'
+
+if $LIGHT_SHELL
+  let $FZF_DEFAULT_OPTS = '--color fg:-1,bg:-1,hl:33,fg+:235,bg+:254,hl+:33 --color info:136,prompt:136,pointer:234,marker:234,spinner:126'
+endif
 
 " Enable per-command history.
 " CTRL-N and CTRL-P will be automatically bound to next-history and

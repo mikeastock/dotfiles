@@ -20,6 +20,7 @@ Plug 'tpope/vim-commentary'
 Plug 'tpope/vim-endwise'
 Plug 'tpope/vim-fugitive'
 Plug 'tpope/vim-surround'
+Plug 'tpope/vim-abolish'
 
 "Text objects
 Plug 'kana/vim-textobj-user', { 'for': 'ruby' }
