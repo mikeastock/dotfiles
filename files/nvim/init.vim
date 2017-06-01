@@ -140,9 +140,10 @@ imap <c-a> <c-o>^
 " Because I can't spell
 cabbrev Wq wq
 cabbrev WQ wq
+cabbrev Qall qall
+cabbrev Wqall wqall
 
-nnoremap <C-N> :bnext<CR>
-nnoremap <C-P> :bprev<CR>
+nnoremap <C-P> :Files<CR>
 
 "##############################################################################
 "# AUTOCMDS
@@ -296,16 +297,3 @@ function! RenameFile()
   endif
 endfunction
 map <Leader>n :call RenameFile()<cr>
-
-"##############################################################################
-"# PROMOTE VARIABLE TO RSPEC LET
-"##############################################################################
-function! PromoteToLet()
-  normal! dd
-  exec '?^\s*it\>'
-  normal! P
-  .s/\(\w\+\) = \(.*\)$/let(:\1) { \2 }/
-  normal ==
-endfunction
-command! PromoteToLet :call PromoteToLet()
-noremap <leader>sl :PromoteToLet<cr>
