@@ -120,13 +120,13 @@ vmap <Enter> <Plug>(EasyAlign)
 nmap k gk
 nmap j gj
 
+map <C-h> <C-W>h
+map <C-l> <C-W>l
 map <C-j> <C-W>j
 map <C-k> <C-W>k
 
 nnoremap K :Rg <C-R><C-W><CR>
 
-map <C-h> <C-W>h
-map <C-l> <C-W>l
 map <Right> :bn<CR>
 map <Left> :bp<CR>
 
