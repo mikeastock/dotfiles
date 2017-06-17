@@ -60,11 +60,12 @@ if $LIGHT_SHELL
   "Light
   set background=light
   colorscheme gruvbox
-  let g:gruvbox_contrast_dark = 'hard'
+  let g:gruvbox_contrast_light = 'hard'
 else
   " "Dark
   set background=dark
   colorscheme gruvbox
+  let g:gruvbox_contrast_dark = 'hard'
 endif
 
 syntax enable
