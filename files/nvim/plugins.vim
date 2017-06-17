@@ -40,7 +40,7 @@ Plug 'tpope/vim-rails', { 'for': 'ruby' }
 Plug 'ElmCast/elm-vim', { 'for': 'elm' }
 Plug 'rust-lang/rust.vim', { 'for': 'rust' }
 Plug 'rodjek/vim-puppet', { 'for': 'puppet' }
-Plug 'hashivim/vim-terraform'
+Plug 'hashivim/vim-terraform', { 'for': 'terraform' }
 
 "Autocomplete
 Plug 'Valloric/YouCompleteMe'
