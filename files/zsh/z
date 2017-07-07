@@ -1,4 +1,11 @@
-. `brew --prefix`/etc/profile.d/z.sh
+if [[ `uname` == "Darwin" ]]; then
+  source `brew --prefix`/etc/profile.d/z.sh
+fi
+
+if [[ `uname` == "Linux" ]]; then
+  source /etc/profile.d/z.sh
+fi
+
 unalias z 2> /dev/null
 z() {
   if [[ -z "$*" ]]; then

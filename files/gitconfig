@@ -50,5 +50,3 @@
   tool = vimdiff
 [difftool]
   prompt = false
-[init]
-  templatedir = ~/.git_template

@@ -4,14 +4,6 @@ test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell
 # Temp for macOS and Tmux
 export EVENT_NOKQUEUE=1
 
-[ -f ~/.cargo/env ] && source ~/.cargo/env
-
-[ -f /usr/local/opt/chruby/share/chruby/chruby.sh ] && source /usr/local/opt/chruby/share/chruby/chruby.sh
-[ -f /usr/local/opt/chruby/share/chruby/auto.sh ] && source /usr/local/opt/chruby/share/chruby/auto.sh
-
-export PATH="$HOME/.rbenv/bin:$PATH"
-eval "$(rbenv init -)"
-
 export GOPATH="/usr/local/opt/gocode"
 export PATH="$PATH:$GOPATH/bin"
 
@@ -27,5 +19,3 @@ test -s "$HOME/.kiex/scripts/kiex" && source "$HOME/.kiex/scripts/kiex"
 [ -f /Users/mikeastock/.travis/travis.sh ] && source /Users/mikeastock/.travis/travis.sh
 
 export NVIM_LISTEN_ADDRESS=127.0.0.1:6666
-
-export PATH="./bin:$PATH"
