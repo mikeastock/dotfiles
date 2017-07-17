@@ -79,6 +79,8 @@ fi
 export PATH="$HOME/.rbenv/bin:$PATH"
 eval "$(rbenv init -)"
 
-export PATH="$./bin:HOME/.yarn/bin:$PATH"
+test -s "$HOME/.kiex/scripts/kiex" && source "$HOME/.kiex/scripts/kiex"
+
+export PATH="./bin:$HOME/.yarn/bin:$PATH"
 
 eval $(thefuck --alias help)
