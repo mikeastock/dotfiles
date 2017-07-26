@@ -55,11 +55,23 @@ else
 fi
 
 # PATH setup
-export PATH="$PATH:./bin:$HOME/.bin:$HOME/.fzf/bin:/usr/local/heroku/bin:$HOME/.cargo/bin:$HOME/.git-semantic-commits:$HOME/.yarn/bin"
+export PATH="$PATH:./bin:$HOME/.bin:$HOME/bin:$HOME/.fzf/bin:/usr/local/heroku/bin:$HOME/.cargo/bin:$HOME/.git-semantic-commits:$HOME/.yarn/bin"
 
 # Load FZF
 [ -f ~/.fzf/shell/key-bindings.zsh ] && source ~/.fzf/shell/key-bindings.zsh
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+
+# Setup Cargo (Rust)
+[ -f ~/.cargo/env ] && source ~/.cargo/env
+
+# Setup Rbenv (Ruby)
+export PATH="$HOME/.rbenv/bin:$PATH"
+eval "$(rbenv init -)"
+
+# Setup Kiex (Elixir)
+test -s "$HOME/.kiex/scripts/kiex" && source "$HOME/.kiex/scripts/kiex"
+
+eval $(thefuck --alias help)
 
 # Sourcing of other zsh files
 source $HOME/.zsh/aliases
@@ -73,15 +85,3 @@ fi
 if [[ `uname` == "Linux" ]]; then
   source ~/.zshrc.linux
 fi
-
-# Setup Cargo (Rust)
-[ -f ~/.cargo/env ] && source ~/.cargo/env
-
-# Setup Rbenv (Ruby)
-export PATH="$HOME/.rbenv/bin:$PATH"
-eval "$(rbenv init -)"
-
-# Setup Kiex (Elixir)
-test -s "$HOME/.kiex/scripts/kiex" && source "$HOME/.kiex/scripts/kiex"
-
-eval $(thefuck --alias help)

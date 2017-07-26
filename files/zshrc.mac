@@ -21,3 +21,5 @@ test -s "$HOME/.kiex/scripts/kiex" && source "$HOME/.kiex/scripts/kiex"
 [ -f /Users/mikeastock/.travis/travis.sh ] && source /Users/mikeastock/.travis/travis.sh
 
 export NVIM_LISTEN_ADDRESS=127.0.0.1:6666
+
+export PATH="/usr/local/opt/erlang@19/bin:$PATH"
