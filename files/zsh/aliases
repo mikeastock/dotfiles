@@ -1,3 +1,6 @@
+# Random
+alias aliases="nvim ~/.zsh/aliases"
+
 # Unix
 alias tlf="tail -f"
 alias ln='ln -v'
@@ -47,27 +50,26 @@ if [[ `uname` == "Darwin" ]]; then
   eval "$(hub alias -s)"
 fi
 
+alias co="git checkout"
 alias g="git"
-alias gs="git status"
-alias gst="git status"
-alias gp="git push"
-alias gcm="git checkout master"
+alias gap="git add -p"
+alias gc="git commit -v"
 alias gcd="git checkout develop"
+alias gcm="git checkout master"
 alias gf="git-flow"
-alias s="git status"
+alias gp="git push"
+alias gpl="git pull"
+alias gpoh="git push origin HEAD"
 alias gpr="git pull-request"
 alias gprd="git pull-request -b develop"
-alias gc="git commit -v"
-
-alias co="git checkout"
-alias gpush="git push"
 alias gpull="git pull"
-alias gpoh="git push origin HEAD"
-alias gsu="git submodule update"
-alias gap="git add -p"
+alias gpush="git push"
 alias grm="git pull --rebase origin master"
+alias gs="git status"
+alias gst="git status"
+alias gsu="git submodule update"
 alias gupdate="git pull && git-clean -y"
-# alias circle="~/.bin/circle"
+alias s="git status"
 
 # Procore for Bash
 alias ui="cd ./lib/assets/procore_ui"
@@ -79,14 +81,3 @@ alias vsuspend="cd $HOME/procore/ude && vagrant suspend"
 alias vstatus="cd $HOME/procore/ude && vagrant status"
 
 alias reset_db="bin/rake db:drop db:create db:structure:load db:migrate db:seed"
-
-#############
-# functions #
-#############
-
-# vimo($grepfile) { grep -Zril '$grepfile' app/ | xargs -0 sh -c 'vim -O "$@" < /dev/tty' vim }
-alias macgen="openssl rand -hex 6 | sed 's/\(..\)/\1:/g; s/.$//'"
-
-cd_engine() {
-  cd ~/procore/engines/$1
-}

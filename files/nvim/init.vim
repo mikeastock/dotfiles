@@ -267,6 +267,12 @@ nnoremap <Leader>tl :call neoterm#clear()<CR>
 " kills the current job (send a <c-c>)
 nnoremap <Leader>tc :call neoterm#kill()<CR>
 
+" Make escape work in the Neovim terminal.
+tnoremap <Esc> <C-\><C-n>
+
+" I like relative numbering when in normal mode.
+autocmd TermOpen * setlocal conceallevel=0 colorcolumn=0 relativenumber
+
 let test#strategy = 'neoterm'
 
 let g:neoterm_clear_cmd = "clear; printf '=%.0s' {1..80}; clear"

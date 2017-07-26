@@ -7,6 +7,8 @@ export EVENT_NOKQUEUE=1
 export GOPATH="/usr/local/opt/gocode"
 export PATH="$PATH:$GOPATH/bin"
 
+test -s "$HOME/.kiex/scripts/kiex" && source "$HOME/.kiex/scripts/kiex"
+
 # For Google Cloud SDK
 if [[ -f /usr/local/var/google-cloud-sdk ]]; then
   source "/usr/local/var/google-cloud-sdk/completion.zsh.inc"
