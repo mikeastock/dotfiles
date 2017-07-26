@@ -1,4 +1,4 @@
-export PATH="$HOME/.linuxbrew/bin:$HOME/.local/bin:/snap/bin:$PATH"
+export PATH="/home/linuxbrew/.linuxbrew/bin:$HOME/.local/bin:/snap/bin:$PATH"
 
 if [ ! -S ~/.ssh/ssh_auth_sock ]; then
   eval `ssh-agent`
