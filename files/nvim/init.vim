@@ -280,6 +280,7 @@ let g:neoterm_position = "horizontal"
 let g:neoterm_automap_keys = ",tt"
 let g:neoterm_split_on_tnew = 1
 let g:neoterm_size = 15
+let g:neoterm_autoscroll = 1
 
 let g:jsx_ext_required = 0
 let g:used_javascript_libs = 'react,flux,chai'
