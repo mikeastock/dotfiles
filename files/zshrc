@@ -85,3 +85,12 @@ fi
 if [[ `uname` == "Linux" ]]; then
   source ~/.zshrc.linux
 fi
+
+[ -f ~/.cargo/env ] && source ~/.cargo/env
+
+export PATH="$HOME/.rbenv/bin:$PATH"
+eval "$(rbenv init -)"
+
+export PATH="./bin:$HOME/.yarn/bin:$PATH"
+
+eval $(thefuck --alias help)
