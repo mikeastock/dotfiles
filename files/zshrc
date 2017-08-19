@@ -68,6 +68,10 @@ export PATH="$PATH:./bin:$HOME/.bin:$HOME/bin:$HOME/.fzf/bin:/usr/local/heroku/b
 export PATH="$HOME/.rbenv/bin:$PATH"
 eval "$(rbenv init -)"
 
+# Setup Nodenv (Node)
+export PATH="$HOME/.nodenv/bin:$PATH"
+eval "$(nodenv init -)"
+
 # Setup Kiex (Elixir)
 test -s "$HOME/.kiex/scripts/kiex" && source "$HOME/.kiex/scripts/kiex"
 
