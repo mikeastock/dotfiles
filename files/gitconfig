@@ -13,7 +13,7 @@
   df = diff --color
   dfom = diff master --color
   pl = pull
-  p = push
+  p = push -u
   ad = add --patch
   rb = rebase origin/master
   hist = log --pretty=format:'%h %ad | %s%d [%an]' --graph --date=short

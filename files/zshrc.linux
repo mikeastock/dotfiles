@@ -7,3 +7,5 @@ fi
 
 export SSH_AUTH_SOCK=~/.ssh/ssh_auth_sock
 ssh-add -l > /dev/null || ssh-add
+
+alias ls="ls --color"
