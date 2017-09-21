@@ -14,13 +14,13 @@ Plug 'ap/vim-buftabline'
 Plug 'junegunn/vim-easy-align'
 Plug 'justinmk/vim-sneak'
 Plug 'mcasper/vim-infer-debugger'
-Plug 'neomake/neomake'
 Plug 'pbrisbin/vim-mkdir'
 Plug 'tpope/vim-abolish'
 Plug 'tpope/vim-commentary'
 Plug 'tpope/vim-endwise'
 Plug 'tpope/vim-fugitive'
 Plug 'tpope/vim-surround'
+Plug 'w0rp/ale'
 
 "Text objects
 Plug 'kana/vim-textobj-user', { 'for': 'ruby' }

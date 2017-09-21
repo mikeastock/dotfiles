@@ -173,11 +173,6 @@ augroup elm
   autocmd FileType elm map <Leader>t ElmTest<CR>
 augroup END
 
-augroup neomake_cmds
-  autocmd BufWritePost * Neomake
-  autocmd BufWritePost *.rs Neomake! cargocheck
-augroup END
-
 " Remove trailing whitespace on save
 augroup trailingWhitespace
   autocmd BufWritePre * :%s/\s\+$//e
@@ -220,22 +215,8 @@ autocmd! User GoyoLeave Limelight!
 "Elm
 let g:elm_format_autosave = 1
 
-"Neomake
-let g:neomake_ruby_rdirty_maker = {
-      \ 'exe': 'dirty',
-      \ 'args': ['--format', 'emacs'],
-      \ 'errorformat': '%f:%l:%c: %t: %m',
-      \ 'postprocess': function('neomake#makers#ft#ruby#RubocopEntryProcess')
-      \ }
-let g:neomake_ruby_enabled_makers = ['mri', 'rdirty']
-let g:neomake_rust_enabled_makers = []
-
-let g:neomake_cargocheck_maker = {
-      \ 'exe': 'cargo',
-      \ 'args': ['check'],
-      \ 'errorformat':
-      \ neomake#makers#ft#rust#rustc()['errorformat'],
-      \ }
+"Ale
+let g:ale_lint_on_text_changed = 'never'
 
 "replace 'f' with 1-char Sneak
 nmap f <Plug>Sneak_f
