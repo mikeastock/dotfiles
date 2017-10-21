@@ -260,14 +260,9 @@ let g:neoterm_autoscroll = 1
 let g:jsx_ext_required = 0
 let g:used_javascript_libs = 'react,flux,chai'
 
-let g:ycm_complete_in_comments = 1
-let g:ycm_collect_identifiers_from_comments_and_strings = 1
-let g:ycm_collect_identifiers_from_tags_files = 1
-
-" let g:ycm_semantic_triggers = {
-"      \ 'elm' : ['.'],
-"      \}
-let g:ycm_rust_src_path = '/usr/local/src/rust/src'
+let g:deoplete#enable_at_startup = 1
+let g:racer_experimental_completer = 1
+let g:racer_cmd = "$HOME/.cargo/bin/racer"
 
 " Rename current file
 function! RenameFile()

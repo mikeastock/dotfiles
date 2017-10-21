@@ -41,9 +41,11 @@ Plug 'ElmCast/elm-vim', { 'for': 'elm' }
 Plug 'rust-lang/rust.vim', { 'for': 'rust' }
 Plug 'rodjek/vim-puppet', { 'for': 'puppet' }
 Plug 'hashivim/vim-terraform', { 'for': 'terraform' }
+Plug 'dag/vim-fish', { 'for': 'fish' }
 
 "Autocomplete
-Plug 'Valloric/YouCompleteMe'
+Plug 'Shougo/deoplete.nvim', { 'do': ':UpdateRemotePlugins' }
+Plug 'racer-rust/vim-racer'
 
 "testing
 Plug 'janko-m/vim-test'
