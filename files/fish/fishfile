@@ -1,0 +1,15 @@
+fisherman/anicode
+fisherman/await
+fisherman/choices
+fisherman/fzf
+fisherman/get
+fisherman/getopts
+fisherman/git_util
+fisherman/humanize_duration
+fisherman/last_job_id
+fisherman/pwd_info
+fisherman/pwd_is_home
+fisherman/ray
+oh-my-fish/plugin-rustup
+fisherman/spin
+fisherman/z
