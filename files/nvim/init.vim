@@ -210,6 +210,7 @@ let g:elm_format_autosave = 1
 
 "Ale
 let g:ale_lint_on_text_changed = 'never'
+let g:ale_linters = {'rust': ['rls']}
 
 "replace 'f' with 1-char Sneak
 nmap f <Plug>Sneak_f

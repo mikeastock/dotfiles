@@ -22,4 +22,4 @@ test -s "$HOME/.kiex/scripts/kiex" && source "$HOME/.kiex/scripts/kiex"
 
 export NVIM_LISTEN_ADDRESS=127.0.0.1:6666
 
-export PATH="/usr/local/opt/erlang@19/bin:$PATH"
+export PATH="/usr/local/opt/erlang@19/bin:/Users/mikeastock/Library/Application Support/ErlangInstaller/20.0/bin:$PATH"
