@@ -2,7 +2,9 @@
 setopt PROMPT_SUBST
 autoload -U promptinit
 promptinit
-prompt grb
+prompt pure
+prompt_newline='%666v'
+PROMPT=" $PROMPT"
 
 # Initialize completion
 autoload -U compinit
