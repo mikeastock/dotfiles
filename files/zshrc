@@ -55,7 +55,7 @@ else
 fi
 
 # PATH setup
-export PATH="$PATH:./bin:$HOME/.bin:$HOME/bin:$HOME/.fzf/bin:/usr/local/heroku/bin:$HOME/.cargo/bin:$HOME/.git-semantic-commits:$HOME/.yarn/bin"
+export PATH="$PATH:./bin:$HOME/.bin:$HOME/bin:$HOME/.fzf/bin:/usr/local/heroku/bin:$HOME/.git-semantic-commits:$HOME/.yarn/bin"
 
 # Load FZF
 [ -f ~/.fzf/shell/key-bindings.zsh ] && source ~/.fzf/shell/key-bindings.zsh
@@ -75,6 +75,11 @@ eval "$(nodenv init -)"
 # Setup Kiex (Elixir)
 test -s "$HOME/.kiex/scripts/kiex" && source "$HOME/.kiex/scripts/kiex"
 
+# Setup Pyenv (Python)
+export PYENV_ROOT="$HOME/.pyenv"
+export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init -)"
+
 eval $(thefuck --alias help)
 
 # Sourcing of other zsh files
@@ -93,15 +98,8 @@ fi
 [ -f ~/.cargo/env ] && source ~/.cargo/env
 export RUST_SRC_PATH="$(rustc --print sysroot)/lib/rustlib/src/rust/src"
 
-export PATH="$HOME/.rbenv/bin:$PATH"
-eval "$(rbenv init -)"
-
-export PATH="./bin:$HOME/.yarn/bin:$PATH"
-
-eval $(thefuck --alias help)
-
 BASE16_SHELL=$HOME/.config/base16-shell/
 [ -n "$PS1" ] && [ -s $BASE16_SHELL/profile_helper.sh ] && eval "$($BASE16_SHELL/profile_helper.sh)"
 
-# added by travis gem
-[ -f /Users/mikeastock/.travis/travis.sh ] && source /Users/mikeastock/.travis/travis.sh
+[ -f /usr/local/share/zsh-autosuggestions/zsh-autosuggestions.zsh ] && source /usr/local/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+[ -f /usr/local/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ] && source /usr/local/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh

@@ -210,7 +210,7 @@ let g:elm_format_autosave = 1
 
 "Ale
 let g:ale_lint_on_text_changed = 'never'
-let g:ale_linters = {'rust': ['rls']}
+let g:ale_linters = {'rust': ['rls'], 'ruby': ['rails_best_practices', 'reek', 'rubocop', 'ruby']}
 
 "replace 'f' with 1-char Sneak
 nmap f <Plug>Sneak_f
@@ -254,7 +254,7 @@ let g:neoterm_clear_cmd = "clear; printf '=%.0s' {1..80}; clear"
 let g:neoterm_position = "horizontal"
 let g:neoterm_automap_keys = ",tt"
 let g:neoterm_split_on_tnew = 1
-let g:neoterm_size = 15
+let g:neoterm_size = 25
 let g:neoterm_autoscroll = 1
 
 let g:jsx_ext_required = 0
