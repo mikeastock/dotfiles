@@ -5,7 +5,7 @@
   co = checkout
   com = checkout master
   ci = commit
-  cm = commit
+  cm = commit -v
   t = status
   s = status
   st = status

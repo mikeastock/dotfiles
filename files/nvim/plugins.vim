@@ -8,15 +8,16 @@ Plug 'junegunn/fzf.vim'
 Plug 'itchyny/lightline.vim'
 
 "workflow
-Plug 'AndrewRadev/splitjoin.vim'
 Plug 'airblade/vim-gitgutter'
 Plug 'ap/vim-buftabline'
+Plug 'foosoft/vim-argwrap'
 Plug 'junegunn/vim-easy-align'
 Plug 'justinmk/vim-sneak'
 Plug 'mcasper/vim-infer-debugger'
 Plug 'pbrisbin/vim-mkdir'
 Plug 'tpope/vim-abolish'
 Plug 'tpope/vim-commentary'
+Plug 'tpope/vim-dispatch'
 Plug 'tpope/vim-endwise'
 Plug 'tpope/vim-fugitive'
 Plug 'tpope/vim-surround'
@@ -42,6 +43,7 @@ Plug 'rust-lang/rust.vim', { 'for': 'rust' }
 Plug 'rodjek/vim-puppet', { 'for': 'puppet' }
 Plug 'hashivim/vim-terraform', { 'for': 'terraform' }
 Plug 'dag/vim-fish', { 'for': 'fish' }
+Plug 'mhinz/vim-mix-format', { 'for': 'elixir' }
 
 "Autocomplete
 Plug 'Shougo/deoplete.nvim', { 'do': ':UpdateRemotePlugins' }

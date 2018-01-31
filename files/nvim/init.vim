@@ -73,7 +73,6 @@ let $NVIM_TUI_ENABLE_CURSOR_SHAPE=1
 
 " Leader Mappings
 map <Leader>f :Files<CR>
-map <Leader>a :Rg!<CR>
 map <Leader>i mmgg=G`m<CR>
 map <Leader>kw :%s/\s\+$//<CR>
 map <Leader>q :call CloseBuffer()<CR>
@@ -201,9 +200,12 @@ command! -bang -nargs=* Rg
   \           : fzf#vim#with_preview('right:50%:hidden', '?'),
   \   <bang>0)
 
-"Goyo/Limelight
-autocmd! User GoyoEnter Limelight
-autocmd! User GoyoLeave Limelight!
+"ArgWrap
+nnoremap <silent> <Leader>a :ArgWrap<CR>
+let g:argwrap_tail_comma = 1
+
+"Elixir
+" let g:mix_format_on_save = 1
 
 "Elm
 let g:elm_format_autosave = 1
