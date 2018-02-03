@@ -204,10 +204,6 @@ command! -bang -nargs=* Rg
   \           : fzf#vim#with_preview('right:50%:hidden', '?'),
   \   <bang>0)
 
-"ArgWrap
-nnoremap <silent> <Leader>a :ArgWrap<CR>
-let g:argwrap_tail_comma = 1
-
 "Elixir
 " let g:mix_format_on_save = 1
 
