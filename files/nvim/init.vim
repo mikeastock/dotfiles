@@ -179,6 +179,10 @@ augroup END
 "# PLUGIN SETTINGS
 "##############################################################################
 
+"ArgWrap
+nnoremap <silent><Leader>a :ArgWrap<CR>
+let g:argwrap_tail_comma = 1
+
 "FZF
 let $FZF_DEFAULT_COMMAND = 'ag --hidden --ignore .git -g ""'
 

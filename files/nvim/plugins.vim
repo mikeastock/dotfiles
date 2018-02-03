@@ -8,6 +8,7 @@ Plug 'junegunn/fzf.vim'
 Plug 'itchyny/lightline.vim'
 
 "workflow
+Plug 'AndrewRadev/splitjoin.vim'
 Plug 'airblade/vim-gitgutter'
 Plug 'ap/vim-buftabline'
 Plug 'foosoft/vim-argwrap'
