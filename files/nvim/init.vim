@@ -263,6 +263,9 @@ let g:jsx_ext_required = 0
 let g:used_javascript_libs = 'react,flux,chai'
 
 let g:deoplete#enable_at_startup = 1
+inoremap <expr> <Tab> pumvisible() ? "\<C-n>" : "\<Tab>"
+inoremap <expr> <S-Tab> pumvisible() ? "\<C-p>" : "\<S-Tab>"
+
 let g:racer_experimental_completer = 1
 let g:racer_cmd = "$HOME/.cargo/bin/racer"
 
