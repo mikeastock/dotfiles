@@ -69,8 +69,6 @@ runtime macros/matchit.vim " Enabled matchit for Ruby text objects
 let mapleader = "\<Space>"
 nmap <Bslash> <Space>
 
-let $NVIM_TUI_ENABLE_CURSOR_SHAPE=1
-
 " Leader Mappings
 map <Leader>f :Files<CR>
 map <Leader>i mmgg=G`m<CR>
@@ -255,7 +253,6 @@ let test#strategy = 'neoterm'
 let g:neoterm_clear_cmd = "clear; printf '=%.0s' {1..80}; clear"
 let g:neoterm_position = "horizontal"
 let g:neoterm_automap_keys = ",tt"
-let g:neoterm_split_on_tnew = 1
 let g:neoterm_size = 25
 let g:neoterm_autoscroll = 1
 
