@@ -184,10 +184,6 @@ let g:argwrap_tail_comma = 1
 "FZF
 let $FZF_DEFAULT_COMMAND = 'ag --hidden --ignore .git -g ""'
 
-if $LIGHT_SHELL
-  let $FZF_DEFAULT_OPTS = '--color fg:-1,bg:-1,hl:33,fg+:235,bg+:254,hl+:33 --color info:136,prompt:136,pointer:234,marker:234,spinner:126'
-endif
-
 " Enable per-command history.
 " CTRL-N and CTRL-P will be automatically bound to next-history and
 " previous-history instead of down and up. If you don't like the change,
@@ -248,7 +244,7 @@ tnoremap <Esc> <C-\><C-n>
 " I like relative numbering when in normal mode.
 autocmd TermOpen * setlocal conceallevel=0 colorcolumn=0 relativenumber
 
-let test#strategy = 'neoterm'
+let test#strategy = 'basic'
 
 let g:neoterm_clear_cmd = "clear; printf '=%.0s' {1..80}; clear"
 let g:neoterm_position = "horizontal"

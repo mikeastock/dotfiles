@@ -18,6 +18,7 @@ alias -g ONE="| awk '{ print \$1}'"
 alias e="$EDITOR"
 alias v="$VISUAL"
 alias vim="nvim"
+alias view="nvim -R -"
 
 # tmux
 alias tma='tmux att -t'
@@ -70,14 +71,5 @@ alias gst="git status"
 alias gsu="git submodule update"
 alias gupdate="git pull && git-clean -y"
 alias s="git status"
-
-# Procore for Bash
-alias ui="cd ./lib/assets/procore_ui"
-alias pr="cd ~/procore"
-alias cu="cd ~/currentset"
-alias cde=cd_engine
-alias vup="cd $HOME/procore/ude && vagrant up"
-alias vsuspend="cd $HOME/procore/ude && vagrant suspend"
-alias vstatus="cd $HOME/procore/ude && vagrant status"
 
 alias reset_db="bin/rake db:drop db:create db:structure:load db:migrate db:seed"
