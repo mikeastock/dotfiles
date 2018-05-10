@@ -7,8 +7,12 @@ prompt_newline='%666v'
 PROMPT=" $PROMPT"
 
 # Initialize completion
-autoload -U compinit
-compinit
+autoload -Uz compinit
+if [ $(date +'%j') != $(stat -f '%Sm' -t '%j' ~/.zcompdump) ]; then
+  compinit
+else
+  compinit -C
+fi
 
 # GNU Screen sets -o vi if EDITOR=vi, so we have to force it back.
 set -o emacs

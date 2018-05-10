@@ -246,12 +246,6 @@ autocmd TermOpen * setlocal conceallevel=0 colorcolumn=0 relativenumber
 
 let test#strategy = 'basic'
 
-let g:neoterm_clear_cmd = "clear; printf '=%.0s' {1..80}; clear"
-let g:neoterm_position = "horizontal"
-let g:neoterm_automap_keys = ",tt"
-let g:neoterm_size = 25
-let g:neoterm_autoscroll = 1
-
 let g:jsx_ext_required = 0
 let g:used_javascript_libs = 'react,flux,chai'
 

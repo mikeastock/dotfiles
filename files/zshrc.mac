@@ -1,6 +1,3 @@
-# Load iTerm2 integration
-test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
-
 # Temp for macOS and Tmux
 export EVENT_NOKQUEUE=1
 
