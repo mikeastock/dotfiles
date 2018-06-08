@@ -1,45 +1,38 @@
 # Random
 alias aliases="nvim ~/.zsh/aliases"
+alias k="kubectl"
 
 # Unix
-alias tlf="tail -f"
-alias ln='ln -v'
-alias mkdir='mkdir -p'
-alias grep='grep --color=auto'
-alias cp='cp -r'
-alias ...='../..'
-alias l='ls -lah'
-alias ll='ls -lh'
-alias lh='ls -Alh'
-alias -g G='| grep'
-alias -g M='| less'
-alias -g L='| wc -l'
-alias -g ONE="| awk '{ print \$1}'"
+alias -g G="| grep"
+alias -g L="| wc -l"
+alias -g M="| less"
+alias -g ONE="| awk "{ print \$1}""
+alias ...="../.."
+alias cat="bat"
+alias cp="cp -r"
 alias e="$EDITOR"
+alias grep="grep --color=auto"
+alias h="heroku"
+alias l="ls -lah"
+alias lh="ls -Alh"
+alias ll="ls -lh"
+alias ln="ln -v"
+alias mkdir="mkdir -p"
+alias tlf="tail -f"
 alias v="$VISUAL"
-alias vim="nvim"
 alias view="nvim -R -"
+alias vim="nvim"
 
 # tmux
-alias tma='tmux att -t'
-alias tmls='tmux ls'
-alias grabssh="$HOME/bin/grabssh"
-alias updatessh="$HOME/bin/updatessh"
 alias mux="tmuxinator"
+alias tma="tmux att -t"
 
 # Bundler
 alias b="bundle"
 alias be="bundle exec"
 
-# Tests and Specs
-alias cuc="bundle exec cucumber"
-
-# Rubygems
-alias gi="gem install"
-alias giv="gem install -v"
-
 # Rails
-alias migrate="bin/rake db:migrate && db:test:prepare"
+alias migrate="bin/rails db:migrate"
 alias m="migrate"
 alias rk="rake"
 alias fdoc_scaf="FDOC_SCAFFOLD=true spring rspec spec/controllers/api/v1/"

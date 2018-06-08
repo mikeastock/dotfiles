@@ -81,11 +81,6 @@ eval "$(nodenv init -)"
 # Setup Kiex (Elixir)
 test -s "$HOME/.kiex/scripts/kiex" && source "$HOME/.kiex/scripts/kiex"
 
-# Setup Pyenv (Python)
-export PYENV_ROOT="$HOME/.pyenv"
-export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init -)"
-
 # Sourcing of other zsh files
 source $HOME/.zsh/aliases
 source $HOME/.zsh/z
