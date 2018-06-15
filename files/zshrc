@@ -103,5 +103,9 @@ BASE16_SHELL=$HOME/.config/base16-shell/
 [ -f /usr/local/share/zsh-autosuggestions/zsh-autosuggestions.zsh ] && source /usr/local/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 [ -f /usr/local/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ] && source /usr/local/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
+autoload -Uz pcurl
+
+[ -f $HOME/.env ] && source $HOME/.env
+
 # Add local bin to front of PATH
 export PATH="./bin:$PATH"
