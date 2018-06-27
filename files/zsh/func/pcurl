@@ -2,11 +2,11 @@ pcurl() {
   PROCORE_TOKEN_PATH=$HOME/.procore_token
 
   if [ ! -f $PROCORE_TOKEN_PATH ]; then
-    PROCORE_DEP_TOKEN=$(curl "https://sandbox.procore.com/vapid/token?login=$PROCORE_LOGIN&password=$PROCORE_PASSWORD" | jq .token)
+    PROCORE_DEP_TOKEN=$(curl "$PROCORE_HOST/vapid/token?login=$PROCORE_LOGIN&password=$PROCORE_PASSWORD" | jq .token)
     echo $PROCORE_DEP_TOKEN > $PROCORE_TOKEN_PATH
   else
     PROCORE_DEP_TOKEN=$(cat $PROCORE_TOKEN_PATH)
   fi
 
-  curl -H "Authorization: Token $PROCORE_DEP_TOKEN" "https://sandbox.procore.com/vapid/$1" "${@:2}"
+  curl -H "Authorization: Token $PROCORE_DEP_TOKEN" "$PROCORE_HOST/vapid/$1" "${@:2}"
 }
