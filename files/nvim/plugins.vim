@@ -48,7 +48,12 @@ Plug 'mhinz/vim-mix-format', { 'for': 'elixir' }
 
 "Autocomplete
 Plug 'Shougo/deoplete.nvim', { 'do': ':UpdateRemotePlugins' }
+Plug 'Shougo/echodoc.vim'
 Plug 'racer-rust/vim-racer'
+Plug 'autozimu/LanguageClient-neovim', {
+    \ 'branch': 'next',
+    \ 'do': 'bash install.sh',
+    \ }
 
 "testing
 Plug 'janko-m/vim-test'

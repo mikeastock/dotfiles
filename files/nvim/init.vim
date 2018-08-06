@@ -52,6 +52,7 @@ set colorcolumn=80
 set synmaxcol=250
 set list
 set listchars=tab:·\ ,trail:█
+set noshowmode " Hide -- INSERT -- in cmdline for echodoc
 
 " Color
 set termguicolors
@@ -199,7 +200,7 @@ command! -bang -nargs=* Rg
   \   <bang>0)
 
 "Elixir
-" let g:mix_format_on_save = 1
+let g:mix_format_on_save = 1
 
 "Elm
 let g:elm_format_autosave = 1
@@ -252,6 +253,15 @@ let g:used_javascript_libs = 'react,flux,chai'
 let g:deoplete#enable_at_startup = 1
 inoremap <expr> <Tab> pumvisible() ? "\<C-n>" : "\<Tab>"
 inoremap <expr> <S-Tab> pumvisible() ? "\<C-p>" : "\<S-Tab>"
+call deoplete#custom#source('LanguageClient',
+      \ 'min_pattern_length',
+      \ 2)
+
+" LC
+let g:LanguageClient_serverCommands = {
+    \ 'rust': ['~/.cargo/bin/rustup', 'run', 'stable', 'rls'],
+    \ 'ruby': ['solargraph', 'stdio'],
+    \ }
 
 let g:racer_experimental_completer = 1
 let g:racer_cmd = "$HOME/.cargo/bin/racer"
