@@ -35,7 +35,7 @@ Plug 'mxw/vim-jsx', { 'for': 'javascript' }
 Plug 'othree/javascript-libraries-syntax.vim', { 'for': 'javascript' }
 Plug 'keith/swift.vim', { 'for': 'swift' }
 Plug 'elixir-lang/vim-elixir', { 'for': 'elixir,eelixir' }
-Plug 'slashmili/alchemist.vim', { 'for': 'elixir' }
+Plug 'slashmili/alchemist.vim', { 'for': 'elixir,eelixir' }
 Plug 'vim-ruby/vim-ruby', { 'for': 'ruby' }
 Plug 'Keithbsmiley/rspec.vim', { 'for': 'ruby' }
 Plug 'tpope/vim-rails', { 'for': 'ruby' }
@@ -44,11 +44,10 @@ Plug 'rust-lang/rust.vim', { 'for': 'rust' }
 Plug 'rodjek/vim-puppet', { 'for': 'puppet' }
 Plug 'hashivim/vim-terraform', { 'for': 'terraform' }
 Plug 'dag/vim-fish', { 'for': 'fish' }
-Plug 'mhinz/vim-mix-format', { 'for': 'elixir' }
+Plug 'mhinz/vim-mix-format', { 'for': 'elixir,eelixir' }
 
 "Autocomplete
 Plug 'Shougo/deoplete.nvim', { 'do': ':UpdateRemotePlugins' }
-Plug 'Shougo/echodoc.vim'
 Plug 'racer-rust/vim-racer'
 Plug 'autozimu/LanguageClient-neovim', {
     \ 'branch': 'next',

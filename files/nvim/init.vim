@@ -260,7 +260,6 @@ call deoplete#custom#source('LanguageClient',
 " LC
 let g:LanguageClient_serverCommands = {
     \ 'rust': ['~/.cargo/bin/rustup', 'run', 'stable', 'rls'],
-    \ 'ruby': ['solargraph', 'stdio'],
     \ }
 
 let g:racer_experimental_completer = 1
