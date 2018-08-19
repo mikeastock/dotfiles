@@ -202,12 +202,19 @@ command! -bang -nargs=* Rg
 "Elixir
 let g:mix_format_on_save = 1
 
+" let g:alchemist_mappings_disable = 1
+let g:alchemist_keyword_map = '<leader>K'
+
 "Elm
 let g:elm_format_autosave = 1
 
 "Ale
 let g:ale_lint_on_text_changed = 'never'
-let g:ale_linters = {'rust': ['rls'], 'ruby': ['rails_best_practices', 'reek', 'rubocop', 'ruby']}
+let g:ale_linters = {
+      \ 'elixir': [],
+      \ 'rust': ['rls'],
+      \ 'ruby': ['rails_best_practices', 'reek', 'rubocop', 'ruby']
+      \}
 
 "replace 'f' with 1-char Sneak
 nmap f <Plug>Sneak_f
