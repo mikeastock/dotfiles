@@ -1,0 +1,17 @@
+"*":
+  "atom-ide-ui":
+    "atom-ide-diagnostics-ui":
+      autoVisibility: true
+  core:
+    telemetryConsent: "limited"
+  editor:
+    scrollPastEnd: true
+  elmjutsu: {}
+  "exception-reporting":
+    userId: "30c9e2e2-f67b-4c3c-aaa2-b07df96fc8b2"
+  "language-elm":
+    autocompleteEnabled: false
+  tabs:
+    enableMruTabSwitching: false
+  welcome:
+    showOnStartup: false
