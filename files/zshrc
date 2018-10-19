@@ -85,6 +85,8 @@ eval "$(pyenv init -)"
 # Setup Kiex (Elixir)
 test -s "$HOME/.kiex/scripts/kiex" && source "$HOME/.kiex/scripts/kiex"
 
+export ERL_AFLAGS="-kernel shell_history enabled"
+
 # Sourcing of other zsh files
 source $HOME/.zsh/aliases
 source $HOME/.zsh/z
