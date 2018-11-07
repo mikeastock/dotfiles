@@ -1,0 +1,18 @@
+packages: [
+  "atom-elixir"
+  "atom-elixir-formatter"
+  "atom-ide-ui"
+  "atom-pair"
+  "elixir-cmd"
+  "elm-format"
+  "elm-lens"
+  "elmjutsu"
+  "language-elixir"
+  "language-elm"
+  "linter"
+  "package-sync"
+  "prettier-atom"
+  "relative-numbers"
+  "vim-mode-plus"
+  "vim-mode-plus-keymaps-for-surround"
+]

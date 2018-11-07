@@ -32,3 +32,4 @@
 # http://flight-manual.atom.io/using-atom/sections/basic-customization/#configuring-with-cson
 "atom-text-editor[data-grammar='source elm']":
   'cmd-shift-m': 'elmjutsu:lift-to-top-level'
+  'cmd-shift-i': 'elmjutsu:add-import'

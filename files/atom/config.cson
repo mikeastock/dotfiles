@@ -3,14 +3,22 @@
     "atom-ide-diagnostics-ui":
       autoVisibility: true
   core:
+    packagesWithKeymapsDisabled: []
     telemetryConsent: "limited"
   editor:
+    fontSize: 15
     scrollPastEnd: true
-  elmjutsu: {}
+  "elm-lens":
+    "markup-opacity": 50
+  elmjutsu:
+    alwaysCompileMain: true
   "exception-reporting":
     userId: "30c9e2e2-f67b-4c3c-aaa2-b07df96fc8b2"
   "language-elm":
     autocompleteEnabled: false
+  "prettier-atom":
+    formatOnSaveOptions:
+      enabled: true
   tabs:
     enableMruTabSwitching: false
   welcome:
