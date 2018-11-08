@@ -3,10 +3,16 @@
     "atom-ide-diagnostics-ui":
       autoVisibility: true
   core:
+    disabledPackages: [
+      "linter"
+    ]
+    ignoredNames: [
+      ".git"
+      "node_modules"
+    ]
     packagesWithKeymapsDisabled: []
     telemetryConsent: "limited"
   editor:
-    fontSize: 15
     scrollPastEnd: true
   "elm-lens":
     "markup-opacity": 50
@@ -16,9 +22,14 @@
     userId: "30c9e2e2-f67b-4c3c-aaa2-b07df96fc8b2"
   "language-elm":
     autocompleteEnabled: false
+  "linter-ui-default": {}
   "prettier-atom":
     formatOnSaveOptions:
       enabled: true
+      excludedGlobs: [
+        ".babelrc"
+        "*.css"
+      ]
   tabs:
     enableMruTabSwitching: false
   welcome:
