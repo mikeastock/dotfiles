@@ -3,6 +3,7 @@
     "atom-ide-diagnostics-ui":
       autoVisibility: true
   core:
+    audioBeep: false
     disabledPackages: [
       "linter"
     ]
