@@ -210,10 +210,14 @@ let g:elm_format_autosave = 1
 
 "Ale
 let g:ale_lint_on_text_changed = 'never'
+let g:ale_fix_on_save = 1
 let g:ale_linters = {
       \ 'elixir': [],
       \ 'rust': ['rls'],
-      \ 'ruby': ['rails_best_practices', 'reek', 'rubocop', 'ruby']
+      \ 'ruby': ['standardrb']
+      \}
+let g:ale_fixers = {
+      \ 'ruby': ['standardrb']
       \}
 
 "replace 'f' with 1-char Sneak
