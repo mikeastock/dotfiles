@@ -9,6 +9,8 @@ packages: [
   "elm-format"
   "elm-lens"
   "elmjutsu"
+  "hyperclick"
+  "ide-ruby"
   "intentions"
   "language-elixir"
   "language-elm"
@@ -17,6 +19,8 @@ packages: [
   "package-sync"
   "prettier-atom"
   "relative-numbers"
+  "ruby-block"
+  "ruby-test"
   "vim-mode-plus"
   "vim-mode-plus-keymaps-for-surround"
 ]

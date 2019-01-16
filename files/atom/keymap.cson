@@ -33,3 +33,16 @@
 "atom-text-editor[data-grammar='source elm']":
   'cmd-shift-m': 'elmjutsu:lift-to-top-level'
   'cmd-shift-i': 'elmjutsu:add-import'
+
+'atom-text-editor.vim-mode-plus.normal-mode':
+  'ctrl-h': 'window:focus-pane-on-left'
+  'ctrl-j': 'window:focus-pane-below'
+  'ctrl-k': 'window:focus-pane-above'
+  'ctrl-l': 'window:focus-pane-on-right'
+  'space f': 'fuzzy-finder:toggle-file-finder'
+  'space w': 'core:save'
+  'space q': 'core:close'
+
+'.fuzzy-finder':
+  'ctrl-v': 'pane:split-right'
+  'ctrl-x': 'pane:split-bottom'
