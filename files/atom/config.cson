@@ -5,7 +5,7 @@
   core:
     audioBeep: false
     disabledPackages: [
-      "linter"
+      "atom-ide-ui"
     ]
     ignoredNames: [
       ".git"
