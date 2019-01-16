@@ -5,7 +5,6 @@ packages: [
   "atom-pair"
   "atom-typescript"
   "busy-signal"
-  "elixir-cmd"
   "elm-format"
   "elm-lens"
   "elmjutsu"
