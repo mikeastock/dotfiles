@@ -30,9 +30,6 @@
 # If you are unfamiliar with CSON, you can read more about it in the
 # Atom Flight Manual:
 # http://flight-manual.atom.io/using-atom/sections/basic-customization/#configuring-with-cson
-"atom-text-editor":
-  'space f': 'fuzzy-finder:toggle-file-finder'
-
 "atom-text-editor[data-grammar='source elm']":
   'cmd-shift-m': 'elmjutsu:lift-to-top-level'
   'cmd-shift-i': 'elmjutsu:add-import'
@@ -46,6 +43,7 @@
   'space q': 'core:close'
   'space r': 'ruby-test:test-file'
   'space s': 'ruby-test:test-single'
+  'space f': 'fuzzy-finder:toggle-file-finder'
 
 '.fuzzy-finder':
   'ctrl-v': 'pane:split-right'

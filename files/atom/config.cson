@@ -2,7 +2,8 @@
   "atom-ide-ui":
     "atom-ide-diagnostics-ui":
       autoVisibility: true
-  "autocomplete-plus": {}
+  "autocomplete-plus":
+    confirmCompletion: "tab always, enter when suggestion explicitly selected"
   core:
     audioBeep: false
     debugLSP: true
@@ -48,6 +49,7 @@
   "ruby-test":
     testAllCommand: "rails test"
     testFileCommand: "rails test {relative_path}"
+    testFramework: "test"
     testSingleCommand: "rails test {relative_path}:{line_number}"
   tabs:
     enableMruTabSwitching: false
