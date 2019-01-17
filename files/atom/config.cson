@@ -26,7 +26,7 @@
   "exception-reporting":
     userId: "30c9e2e2-f67b-4c3c-aaa2-b07df96fc8b2"
   "ide-ruby":
-    lintLevel: "2"
+    lintLevel: "0"
   "language-elm":
     autocompleteEnabled: false
   "linter-ui-default":
@@ -34,6 +34,10 @@
   "package-sync":
     createOnChange: true
     forceOverwrite: true
+  "platformio-ide-terminal":
+    style:
+      animationSpeed: 0
+      theme: "one-dark"
   "prettier-atom":
     formatOnSaveOptions:
       enabled: true
@@ -41,6 +45,10 @@
         ".babelrc"
         "*.css"
       ]
+  "ruby-test":
+    testAllCommand: "rails test"
+    testFileCommand: "rails test {relative_path}"
+    testSingleCommand: "rails test {relative_path}:{line_number}"
   tabs:
     enableMruTabSwitching: false
   welcome:
