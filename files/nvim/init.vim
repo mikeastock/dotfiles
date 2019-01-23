@@ -68,7 +68,6 @@ highlight MatchParen ctermbg=black
 runtime macros/matchit.vim " Enabled matchit for Ruby text objects
 
 let mapleader = "\<Space>"
-nmap <Bslash> <Space>
 
 " Leader Mappings
 map <Leader>f :Files<CR>
@@ -267,11 +266,6 @@ inoremap <expr> <S-Tab> pumvisible() ? "\<C-p>" : "\<S-Tab>"
 call deoplete#custom#source('LanguageClient',
       \ 'min_pattern_length',
       \ 2)
-
-" LC
-let g:LanguageClient_serverCommands = {
-    \ 'rust': ['~/.cargo/bin/rustup', 'run', 'stable', 'rls'],
-    \ }
 
 let g:racer_experimental_completer = 1
 let g:racer_cmd = "$HOME/.cargo/bin/racer"
