@@ -1,6 +1,4 @@
 packages: [
-  "atom-elixir"
-  "atom-elixir-formatter"
   "atom-ide-ui"
   "atom-pair"
   "atom-typescript"
@@ -9,7 +7,6 @@ packages: [
   "elm-lens"
   "elmjutsu"
   "hyperclick"
-  "ide-ruby"
   "intentions"
   "language-elixir"
   "language-elm"
