@@ -8,6 +8,7 @@ packages: [
   "elmjutsu"
   "hyperclick"
   "intentions"
+  "language-csv"
   "language-elixir"
   "language-elm"
   "linter"
