@@ -48,7 +48,7 @@ Plug 'mhinz/vim-mix-format', { 'for': 'elixir,eelixir' }
 
 "Autocomplete
 Plug 'Shougo/deoplete.nvim', { 'do': ':UpdateRemotePlugins' }
-Plug 'racer-rust/vim-racer'
+Plug 'tbodt/deoplete-tabnine', { 'do': './install.sh' }
 
 "testing
 Plug 'janko-m/vim-test'
