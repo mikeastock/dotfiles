@@ -9,7 +9,6 @@ packages: [
   "hyperclick"
   "intentions"
   "language-csv"
-  "language-elixir"
   "language-elm"
   "linter"
   "linter-ui-default"

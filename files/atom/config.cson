@@ -2,8 +2,7 @@
   "atom-ide-ui":
     "atom-ide-diagnostics-ui":
       autoVisibility: true
-  "autocomplete-plus":
-    confirmCompletion: "tab always, enter when suggestion explicitly selected"
+  "autocomplete-plus": {}
   core:
     audioBeep: false
     debugLSP: true
@@ -17,7 +16,6 @@
     packagesWithKeymapsDisabled: []
     telemetryConsent: "limited"
   editor:
-    fontSize: 15
     scrollPastEnd: true
   "elm-lens":
     "markup-opacity": 50
