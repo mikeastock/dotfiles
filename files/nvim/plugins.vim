@@ -29,22 +29,23 @@ Plug 'kana/vim-textobj-user', { 'for': 'ruby' }
 Plug 'nelstrom/vim-textobj-rubyblock', { 'for': 'ruby' }
 
 " Langauge specific
+Plug 'ElmCast/elm-vim', { 'for': 'elm' }
+Plug 'HerringtonDarkholme/yats.vim'
+Plug 'Keithbsmiley/rspec.vim', { 'for': 'ruby' }
+Plug 'dag/vim-fish', { 'for': 'fish' }
+Plug 'elixir-lang/vim-elixir', { 'for': 'elixir,eelixir' }
 Plug 'fatih/vim-go', { 'for': 'golang' }
-Plug 'pangloss/vim-javascript', { 'for': 'javascript' }
+Plug 'hashivim/vim-terraform', { 'for': 'terraform' }
+Plug 'keith/swift.vim', { 'for': 'swift' }
+Plug 'mhinz/vim-mix-format', { 'for': 'elixir,eelixir' }
 Plug 'mxw/vim-jsx', { 'for': 'javascript' }
 Plug 'othree/javascript-libraries-syntax.vim', { 'for': 'javascript' }
-Plug 'keith/swift.vim', { 'for': 'swift' }
-Plug 'elixir-lang/vim-elixir', { 'for': 'elixir,eelixir' }
-Plug 'slashmili/alchemist.vim', { 'for': 'elixir,eelixir' }
-Plug 'vim-ruby/vim-ruby', { 'for': 'ruby' }
-Plug 'Keithbsmiley/rspec.vim', { 'for': 'ruby' }
-Plug 'tpope/vim-rails', { 'for': 'ruby' }
-Plug 'ElmCast/elm-vim', { 'for': 'elm' }
-Plug 'rust-lang/rust.vim', { 'for': 'rust' }
+Plug 'pangloss/vim-javascript', { 'for': 'javascript' }
 Plug 'rodjek/vim-puppet', { 'for': 'puppet' }
-Plug 'hashivim/vim-terraform', { 'for': 'terraform' }
-Plug 'dag/vim-fish', { 'for': 'fish' }
-Plug 'mhinz/vim-mix-format', { 'for': 'elixir,eelixir' }
+Plug 'rust-lang/rust.vim', { 'for': 'rust' }
+Plug 'slashmili/alchemist.vim', { 'for': 'elixir,eelixir' }
+Plug 'tpope/vim-rails', { 'for': 'ruby' }
+Plug 'vim-ruby/vim-ruby', { 'for': 'ruby' }
 
 "Autocomplete
 Plug 'Shougo/deoplete.nvim', { 'do': ':UpdateRemotePlugins' }
