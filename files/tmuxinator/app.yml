@@ -1,0 +1,12 @@
+name: app
+root: ./
+
+windows:
+  - nvim: nvim
+  - git:
+  - server:
+      layout: main-horizontal
+      panes:
+        - DEMO_ENABLED=true rails server
+        - yarn serve
+  - sidekiq: DEMO_ENABLED=true be sidekiq

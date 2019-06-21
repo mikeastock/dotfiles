@@ -36,6 +36,7 @@ Plug 'dag/vim-fish', { 'for': 'fish' }
 Plug 'elixir-lang/vim-elixir', { 'for': 'elixir,eelixir' }
 Plug 'fatih/vim-go', { 'for': 'golang' }
 Plug 'hashivim/vim-terraform', { 'for': 'terraform' }
+Plug 'jparise/vim-graphql'
 Plug 'keith/swift.vim', { 'for': 'swift' }
 Plug 'mhinz/vim-mix-format', { 'for': 'elixir,eelixir' }
 Plug 'mxw/vim-jsx', { 'for': 'javascript' }

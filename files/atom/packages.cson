@@ -11,6 +11,7 @@ packages: [
   "language-csv"
   "language-elm"
   "linter"
+  "linter-rubocop"
   "linter-ui-default"
   "package-sync"
   "platformio-ide-terminal"

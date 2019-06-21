@@ -19,15 +19,21 @@
   "elm-lens":
     "markup-opacity": 50
   elmjutsu:
+    alwaysCompileMain: true
     compileWithDebugger: true
     logDebugMessages: true
     reportWarnings: true
   "exception-reporting":
     userId: "30c9e2e2-f67b-4c3c-aaa2-b07df96fc8b2"
+  "fuzzy-finder":
+    scoringSystem: "fast"
+    useRipGrep: true
   "ide-ruby":
     lintLevel: "0"
   "language-elm":
     autocompleteEnabled: false
+  "linter-rubocop":
+    command: "./bin/standardrb"
   "linter-ui-default":
     panelHeight: 300
   "package-sync":
