@@ -9,9 +9,10 @@ Plug 'itchyny/lightline.vim'
 
 "workflow
 Plug 'AndrewRadev/splitjoin.vim'
+Plug 'FooSoft/vim-argwrap'
 Plug 'airblade/vim-gitgutter'
 Plug 'ap/vim-buftabline'
-Plug 'FooSoft/vim-argwrap'
+Plug 'bkad/CamelCaseMotion'
 Plug 'junegunn/vim-easy-align'
 Plug 'justinmk/vim-sneak'
 Plug 'mcasper/vim-infer-debugger'

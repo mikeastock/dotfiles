@@ -10,6 +10,7 @@ packages: [
   "intentions"
   "language-csv"
   "language-elm"
+  "language-swift"
   "linter"
   "linter-rubocop"
   "linter-ui-default"
