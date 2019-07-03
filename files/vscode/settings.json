@@ -1,5 +1,6 @@
 {
     "workbench.startupEditor": "newUntitledFile",
+    "editor.lineNumbers": "relative",
     "editor.minimap.enabled": false,
     "vim.camelCaseMotion.enable": true,
     "vim.leader": " ",
@@ -20,6 +21,15 @@
             ],
             "commands": [
                 ":q"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "f"
+            ],
+            "commands": [
+                "workbench.files.action.focusOpenEditorsView"
             ]
         },
         {
