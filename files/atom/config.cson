@@ -15,6 +15,7 @@
     ]
     telemetryConsent: "limited"
   editor:
+    fontFamily: "Source Code Pro, Menlo, Consolas, DejaVu Sans Mono, monospace"
     scrollPastEnd: true
   "elm-lens":
     "markup-opacity": 50
