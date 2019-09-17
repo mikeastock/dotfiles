@@ -44,13 +44,11 @@ Plug 'othree/javascript-libraries-syntax.vim', { 'for': 'javascript' }
 Plug 'pangloss/vim-javascript', { 'for': 'javascript' }
 Plug 'rodjek/vim-puppet', { 'for': 'puppet' }
 Plug 'rust-lang/rust.vim', { 'for': 'rust' }
-Plug 'slashmili/alchemist.vim', { 'for': 'elixir,eelixir' }
 Plug 'tpope/vim-rails', { 'for': 'ruby' }
 Plug 'vim-ruby/vim-ruby', { 'for': 'ruby' }
 
 "Autocomplete
-Plug 'Shougo/deoplete.nvim', { 'do': ':UpdateRemotePlugins' }
-Plug 'tbodt/deoplete-tabnine', { 'do': './install.sh' }
+Plug 'neoclide/coc.nvim', {'branch': 'release'}
 
 "testing
 Plug 'janko-m/vim-test'

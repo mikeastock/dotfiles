@@ -202,9 +202,6 @@ command! -bang -nargs=* Rg
 "Elixir
 let g:mix_format_on_save = 1
 
-" let g:alchemist_mappings_disable = 1
-let g:alchemist_keyword_map = '<leader>K'
-
 "Elm
 let g:elm_format_autosave = 1
 
@@ -260,16 +257,6 @@ let test#strategy = 'basic'
 
 let g:jsx_ext_required = 0
 let g:used_javascript_libs = 'react,flux,chai'
-
-let g:deoplete#enable_at_startup = 1
-inoremap <expr> <Tab> pumvisible() ? "\<C-n>" : "\<Tab>"
-inoremap <expr> <S-Tab> pumvisible() ? "\<C-p>" : "\<S-Tab>"
-call deoplete#custom#source('LanguageClient',
-      \ 'min_pattern_length',
-      \ 2)
-
-let g:racer_experimental_completer = 1
-let g:racer_cmd = "$HOME/.cargo/bin/racer"
 
 " Rename current file
 function! RenameFile()
