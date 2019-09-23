@@ -178,6 +178,9 @@ augroup END
 "# PLUGIN SETTINGS
 "##############################################################################
 
+"COC
+inoremap <expr> <cr> pumvisible() ? "\<C-y>" : "\<C-g>u\<CR>"
+
 "ArgWrap
 nnoremap <silent><Leader>a :ArgWrap<CR>
 let g:argwrap_tail_comma = 1

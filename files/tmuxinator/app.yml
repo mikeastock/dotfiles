@@ -5,8 +5,10 @@ windows:
   - nvim: nvim
   - git:
   - server:
-      layout: main-horizontal
+      layout: 2311,208x101,0,0[208x55,0,0,2,208x33,0,56,3,208x11,0,90{104x11,0,90,4,103x11,105,90[103x7,105,90,5,103x3,105,98,6]}]
       panes:
         - DEMO_ENABLED=true rails server
+        - DEMO_ENABLED=true be sidekiq
         - yarn serve
-  - sidekiq: DEMO_ENABLED=true be sidekiq
+        - ngrok http 9000 -subdomain buildr-dev
+        - ngrok http 3000 -subdomain closeout
