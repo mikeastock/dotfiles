@@ -5,9 +5,9 @@ packages: [
   "busy-signal"
   "elm-format"
   "elm-lens"
+  "elmjutsu"
   "hyperclick"
   "intentions"
-  "language-csv"
   "language-elm"
   "language-swift"
   "linter"
@@ -20,5 +20,6 @@ packages: [
   "ruby-block"
   "ruby-test"
   "vim-mode-plus"
+  "vim-mode-plus-exchange"
   "vim-mode-plus-keymaps-for-surround"
 ]
