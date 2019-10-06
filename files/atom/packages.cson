@@ -5,7 +5,6 @@ packages: [
   "busy-signal"
   "elm-format"
   "elm-lens"
-  "elmjutsu"
   "hyperclick"
   "intentions"
   "language-csv"

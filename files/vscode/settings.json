@@ -48,5 +48,16 @@
                 "editor.action.outdentLines"
             ]
         },
-    ]
+        {
+            "before": [
+                "ctrl", "h"
+            ],
+            "commands": [
+                "ctrl"
+            ]
+        },
+    ],
+    "workbench.colorTheme": "BeardedTheme",
+    "editor.fontSize": 14,
+    "editor.fontFamily": "Source Code Pro, Menlo, Monaco, 'Courier New', monospace"
 }
