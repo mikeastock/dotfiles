@@ -83,9 +83,8 @@ packages=(
   ripgrep
   ruby-build
   the_silver_searcher
-  tree
+  tmux
   wget
-  yarn
   z
   zsh-autosuggestions
   zsh-syntax-highlighting
