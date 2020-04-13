@@ -9,6 +9,5 @@ windows:
       panes:
         - DEMO_ENABLED=true rails server
         - DEMO_ENABLED=true be sidekiq
-        - yarn serve
+        - npm start
         - ngrok http 9000 -subdomain buildr-dev
-        - ngrok http 3000 -subdomain closeout

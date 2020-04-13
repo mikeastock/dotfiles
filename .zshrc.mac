@@ -1,6 +1,9 @@
 # Temp for macOS and Tmux
 export EVENT_NOKQUEUE=1
 
+# Add postgresql 10 to path
+export PATH="/usr/local/opt/postgresql@10/bin:$PATH"
+
 export GOPATH="/usr/local/opt/gocode"
 export PATH="$PATH:$GOPATH/bin"
 

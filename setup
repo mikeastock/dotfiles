@@ -77,9 +77,10 @@ packages=(
   neovim
   node-build
   nodenv
-  postgresql@11
+  postgresql@10
   pyenv
   rbenv
+  redis
   ripgrep
   ruby-build
   the_silver_searcher
@@ -98,8 +99,9 @@ for pkg in ${packages[@]}; do
   fi
 done
 
-# Start postgres
-brew services start postgresql@11
+# Start services
+brew services start postgresql@10
+brew services start redis
 
 ## Set shell to zsh
 
