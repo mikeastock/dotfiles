@@ -74,6 +74,7 @@ packages=(
   hub
   jid
   jq
+  minio/stable/mc
   neovim
   node-build
   nodenv
@@ -96,6 +97,20 @@ for pkg in ${packages[@]}; do
     brew upgrade "$pkg" && brew cleanup "$pkg" || true
   else
     brew install "$pkg"
+  fi
+done
+
+# Brew casks
+casks=(
+  alfred
+  docker
+  spotify
+)
+for cask in ${casks[@]}; do
+  if brew list -1 | grep -q "^${cask}\$"; then
+    echo "Package '$cask' is installed"
+  else
+    brew cask install "$cask"
   fi
 done
 
