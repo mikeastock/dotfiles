@@ -1,0 +1,146 @@
+#!/usr/bin/env bash
+
+set -e
+
+# Create symlinks
+cd "$HOME"
+[ ! -L icloud-drive ] && ln -s "$HOME/Library/Mobile Documents/com~apple~CloudDocs" icloud-drive
+
+files=(
+  .asdfrc
+  .atom
+  .bash_aliases
+  .bashrc
+  .bin
+  .gemrc
+  .gitconfig
+  .oni
+  .psqlrc
+  .tmux.conf
+  .tmuxinator
+  .vscode
+  .zsh
+  .zshenv
+  .zshrc
+  .zshrc.linux
+  .zshrc.mac
+)
+for link in ${files[@]}; do
+  if [ -L "$HOME/$link" ]; then
+    echo "Link '$link' already exists"
+  else
+    ln -s "icloud-drive/dotfiles/$link" .
+  fi
+done
+
+# Link nvim config
+mkdir -p "$HOME/.config"
+cd "$HOME/.config"
+[ ! -L config ] && ln -s ../icloud-drive/dotfiles/.config/nvim .
+cd ..
+
+# Link .ssh config
+mkdir -p "$HOME/.ssh"
+cd "$HOME/.ssh"
+[ ! -L config ] && ln -s ../icloud-drive/dotfiles/.ssh/config .
+cd ..
+
+# Setup colors
+if [ -d ".config/base16-shell" ]; then
+  echo "base16-shell already installed"
+else
+  git clone https://github.com/chriskempson/base16-shell.git ~/.config/base16-shell
+fi
+
+# Set macOS default hidden settings
+
+## Disabling shadows on windows when taking screenshots - requires killall SystemUIServer
+defaults write com.apple.screencapture disable-shadow -bool true
+
+# Install things
+if command -v brew; then
+  echo "Homebrew installed; updating:"
+  brew update
+else
+  /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+fi
+
+# Brew installations
+brew tap heroku/brew
+packages=(
+  bat
+  fzf
+  git
+  heroku
+  hub
+  jid
+  jq
+  neovim
+  node-build
+  nodenv
+  postgresql@11
+  pyenv
+  rbenv
+  ripgrep
+  ruby-build
+  the_silver_searcher
+  tree
+  wget
+  yarn
+  z
+  zsh-autosuggestions
+  zsh-syntax-highlighting
+)
+for pkg in ${packages[@]}; do
+  if brew list -1 | grep -q "^${pkg}\$"; then
+    echo "Package '$pkg' is installed; updating:"
+    brew upgrade "$pkg" && brew cleanup "$pkg" || true
+  else
+    brew install "$pkg"
+  fi
+done
+
+# Start postgres
+brew services start postgresql@11
+
+## Set shell to zsh
+
+# Disabled until I get around to configuring zsh
+#sudo dscl . -create /Users/$USER UserShell /usr/local/bin/zsh
+
+## Set up node
+NODE_VERSION="12.13.0"
+if [ -d ".nodenv/versions/$NODE_VERSION" ]; then
+  echo "Node $NODE_VERSION already installed"
+else
+  nodenv install "$NODE_VERSION"
+fi
+eval "$(nodenv init -)"
+nodenv global "$NODE_VERSION"
+
+## Set up ruby
+RUBY_VERSION="2.6.6"
+if [ -d ".rbenv/versions/$RUBY_VERSION" ]; then
+  echo "Ruby $RUBY_VERSION already installed"
+else
+  rbenv install "$RUBY_VERSION"
+fi
+eval "$(rbenv init -)"
+rbenv global "$RUBY_VERSION"
+gem install bundler
+
+## Set up python
+PYTHON_VERSION="3.8.2"
+if [ -d ".pyenv/versions/$PYTHON_VERSION" ]; then
+  echo "Python $PYTHON_VERSION already installed"
+else
+  pyenv install "$PYTHON_VERSION"
+fi
+eval "$(pyenv init -)"
+pyenv global "$PYTHON_VERSION"
+
+## Install Rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+# Run profile
+source .zshrc
