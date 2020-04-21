@@ -17,11 +17,14 @@
   editor:
     fontFamily: "Source Code Pro, Menlo, Consolas, DejaVu Sans Mono, monospace"
     scrollPastEnd: true
+  "elm-format": {}
   "elm-lens":
     "markup-opacity": 50
   elmjutsu:
     alwaysCompileMain: true
     compileWithDebugger: true
+    elmExecPath: "./node_modules/.bin/elm"
+    elmTestExecPath: "./node_modules/.bin/elm-test"
     logDebugMessages: true
     reportWarnings: true
   "exception-reporting":

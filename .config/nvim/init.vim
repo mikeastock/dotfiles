@@ -214,10 +214,10 @@ let g:ale_fix_on_save = 1
 let g:ale_linters = {
       \ 'elixir': [],
       \ 'rust': ['rls'],
-      \ 'ruby': ['standardrb']
+      \ 'ruby': ['rubocop']
       \}
 let g:ale_fixers = {
-      \ 'ruby': ['standardrb']
+      \ 'ruby': ['rubocop']
       \}
 
 "replace 'f' with 1-char Sneak

@@ -10,4 +10,4 @@ windows:
         - DEMO_ENABLED=true rails server
         - DEMO_ENABLED=true be sidekiq
         - npm start
-        - ngrok http 9000 -subdomain buildr-dev
+        - ngrok start minio closeout
