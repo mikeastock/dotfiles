@@ -74,7 +74,6 @@ packages=(
   hub
   jid
   jq
-  minio/stable/mc
   neovim
   node-build
   nodenv

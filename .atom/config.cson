@@ -40,6 +40,7 @@
     command: "./bin/standardrb"
   "linter-ui-default":
     panelHeight: 300
+    showPanel: true
   "package-sync":
     createOnChange: true
     forceOverwrite: true
