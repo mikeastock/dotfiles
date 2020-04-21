@@ -35,7 +35,7 @@ done
 # Link nvim config
 mkdir -p "$HOME/.config"
 cd "$HOME/.config"
-[ ! -L config ] && ln -s ../icloud-drive/dotfiles/.config/nvim .
+[ ! -L nvim ] && ln -s ../icloud-drive/dotfiles/.config/nvim .
 cd ..
 
 # Link .ssh config
