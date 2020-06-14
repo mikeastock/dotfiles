@@ -15,7 +15,7 @@
     ]
     telemetryConsent: "limited"
   editor:
-    fontFamily: "Source Code Pro, Menlo, Consolas, DejaVu Sans Mono, monospace"
+    fontFamily: "Fira Code, Source Code Pro, Menlo, Consolas, DejaVu Sans Mono, monospace"
     scrollPastEnd: true
   "elm-format": {}
   "elm-lens":

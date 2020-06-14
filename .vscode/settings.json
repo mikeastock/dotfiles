@@ -2,6 +2,7 @@
     "workbench.startupEditor": "newUntitledFile",
     "editor.lineNumbers": "relative",
     "editor.minimap.enabled": false,
+    "editor.formatOnSave": true,
     "vim.camelCaseMotion.enable": true,
     "vim.leader": " ",
     "vim.normalModeKeyBindingsNonRecursive": [
@@ -57,7 +58,7 @@
             ]
         },
     ],
-    "workbench.colorTheme": "BeardedTheme",
+    "workbench.colorTheme": "One Dark Pro",
     "editor.fontSize": 14,
     "editor.fontFamily": "Source Code Pro, Menlo, Monaco, 'Courier New', monospace"
 }
