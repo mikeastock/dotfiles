@@ -68,6 +68,7 @@ fi
 brew tap heroku/brew
 packages=(
   bat
+  chruby
   fzf
   git
   heroku
@@ -79,10 +80,10 @@ packages=(
   nodenv
   postgresql@10
   pyenv
-  rbenv
   redis
   ripgrep
   ruby-build
+  ruby-install
   the_silver_searcher
   tmux
   wget
@@ -133,14 +134,13 @@ eval "$(nodenv init -)"
 nodenv global "$NODE_VERSION"
 
 ## Set up ruby
-RUBY_VERSION="2.6.6"
-if [ -d ".rbenv/versions/$RUBY_VERSION" ]; then
+RUBY_VERSION="2.7.1"
+if [ -d ".rubies/versions/$RUBY_VERSION" ]; then
   echo "Ruby $RUBY_VERSION already installed"
 else
-  rbenv install "$RUBY_VERSION"
+  ruby-install ruby "$RUBY_VERSION"
 fi
-eval "$(rbenv init -)"
-rbenv global "$RUBY_VERSION"
+chruby "$RUBY_VERSION"
 gem install bundler
 
 ## Set up python
