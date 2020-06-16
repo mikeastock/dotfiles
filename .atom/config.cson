@@ -2,13 +2,14 @@
   "atom-ide-ui":
     "atom-ide-diagnostics-ui":
       autoVisibility: true
+  "atom-package-deps":
+    ignored: [
+      "prettier-atom"
+    ]
   "autocomplete-plus": {}
   core:
     audioBeep: false
     debugLSP: true
-    disabledPackages: [
-      "linter"
-    ]
     ignoredNames: [
       ".git"
       "node_modules"
@@ -32,6 +33,7 @@
   "fuzzy-finder":
     scoringSystem: "fast"
     useRipGrep: true
+  "gruvbox-plus-syntax": {}
   "ide-ruby":
     lintLevel: "0"
   "language-elm":

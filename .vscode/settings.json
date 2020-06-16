@@ -2,10 +2,37 @@
     "workbench.startupEditor": "newUntitledFile",
     "editor.lineNumbers": "relative",
     "editor.minimap.enabled": false,
-    "editor.formatOnSave": true,
+    "files.trimTrailingWhitespace": true,
+    "files.insertFinalNewline": true,
+    "files.trimFinalNewlines": true,
     "vim.camelCaseMotion.enable": true,
     "vim.leader": " ",
+    "vim.hlsearch": true,
     "vim.normalModeKeyBindingsNonRecursive": [
+        {
+            "before": [
+                "enter"
+            ],
+            "commands": [
+                ":nohl",
+            ]
+        },
+        {
+            "before": [
+                "ctrl+h",
+            ],
+            "commands": [
+                "workbench.action.navigateLeft"
+            ]
+        },
+        {
+            "before": [
+                "ctrl+l",
+            ],
+            "commands": [
+                "workbench.action.navigateRight"
+            ]
+        },
         {
             "before": [
                 "<leader>",
@@ -35,30 +62,39 @@
         },
         {
             "before": [
-                ">"
+                "<leader>",
+                "s"
             ],
             "commands": [
-                "editor.action.indentLines"
-            ]
-        },
-        {
-            "before": [
-                "<"
-            ],
-            "commands": [
-                "editor.action.outdentLines"
-            ]
-        },
-        {
-            "before": [
-                "ctrl", "h"
-            ],
-            "commands": [
-                "ctrl"
+                {
+                    "command": "workbench.action.tasks.runTask",
+                    "args": [
+                        "Run test case"
+                    ]
+                },
             ]
         },
     ],
-    "workbench.colorTheme": "One Dark Pro",
+    "vim.visualModeKeyBindingsNonRecursive": [
+        {
+            "before": ["g", "s"],
+            "commands": ["editor.action.sortLinesAscending"]
+        }
+    ],
     "editor.fontSize": 14,
-    "editor.fontFamily": "Source Code Pro, Menlo, Monaco, 'Courier New', monospace"
+    "editor.fontFamily": "Fira Code",
+    "editor.fontLigatures": true,
+    "window.zoomLevel": 0,
+    "ruby.useLanguageServer": true,
+    "ruby.lint": {
+        "standard": true,
+        "useBundler": true,
+    },
+    "ruby.format": "standard",
+    "tabnine.disable_file_regex": [
+        ".elm"
+    ],
+    "[elm]": {
+        "editor.formatOnSave": true
+    }
 }
