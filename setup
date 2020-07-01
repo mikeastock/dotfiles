@@ -13,6 +13,7 @@ files=(
   .bin
   .gemrc
   .gitconfig
+  .ideavimrc
   .oni
   .psqlrc
   .tmux.conf
