@@ -77,8 +77,13 @@
     ],
     "vim.visualModeKeyBindingsNonRecursive": [
         {
-            "before": ["g", "s"],
-            "commands": ["editor.action.sortLinesAscending"]
+            "before": [
+                "g",
+                "s"
+            ],
+            "commands": [
+                "editor.action.sortLinesAscending"
+            ]
         }
     ],
     "editor.fontSize": 14,
@@ -87,14 +92,18 @@
     "window.zoomLevel": 0,
     "ruby.useLanguageServer": true,
     "ruby.lint": {
-        "standard": true,
-        "useBundler": true,
+        "rubocop": {
+            "useBundler": true,
+        },
     },
-    "ruby.format": "standard",
+    "ruby.format": "rubocop",
     "tabnine.disable_file_regex": [
         ".elm"
     ],
     "[elm]": {
         "editor.formatOnSave": true
-    }
+    },
+    "tabnine.experimentalAutoImports": true,
+    "explorer.confirmDelete": false,
+    "workbench.colorTheme": "Atom One Dark"
 }
