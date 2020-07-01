@@ -154,6 +154,7 @@ augroup indentation
 
   autocmd BufNewFile,BufRead Fastfile setfiletype ruby
   autocmd BufNewFile,BufRead *.fdoc setfiletype yaml
+  autocmd BufNewFile,BufRead *.mjml setfiletype html
   autocmd Filetype yaml set nocursorline
   autocmd BufNewFile,BufRead *.sass setfiletype sass
   autocmd Filetype markdown setlocal spell
