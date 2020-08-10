@@ -1,3 +1,18 @@
+set visualbell
+set noerrorbells
+
+" Plugins
+set surround
+set commentary
+set ReplaceWithRegister
+set easymotion
+set argtextobj
+set exchange
+set textobj-entire
+
+let g:argtextobj_pairs="(:),{:},<:>,[:]"
+
+" Mappings
 let mapleader = " "
 
 map <leader>w :w!<CR>
@@ -6,3 +21,10 @@ map <C-h> <C-W>h
 map <C-l> <C-W>l
 map <C-j> <C-W>j
 map <C-k> <C-W>k
+
+nnoremap <leader>f :action SearchEverywhere<CR>
+
+nnoremap gd :action GotoDeclaration<CR>
+nnoremap gi :action GotoImplementation<CR>
+
+nnoremap <C-CR> :action ShowIntentionActions<CR>

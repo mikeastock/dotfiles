@@ -21,7 +21,7 @@
   su = submodule update --init --recursive
   pim = pull origin master
   rbm = pull --rebase origin master
-  d = difftool
+  d = diff
   lc = log -n 1
 [push]
   default = current
