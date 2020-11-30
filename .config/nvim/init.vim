@@ -320,9 +320,6 @@ autocmd TermOpen * setlocal conceallevel=0 colorcolumn=0 relativenumber
 
 let test#strategy = 'basic'
 
-let g:jsx_ext_required = 0
-let g:used_javascript_libs = 'react,flux,chai'
-
 " Rename current file
 function! RenameFile()
   let old_name = expand('%')
