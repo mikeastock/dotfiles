@@ -70,8 +70,8 @@ export PATH="$PATH:$HOME/.bin:$HOME/bin:$HOME/.fzf/bin:/usr/local/heroku/bin:$HO
 # Setup Cargo (Rust)
 [ -f ~/.cargo/env ] && source ~/.cargo/env
 
-source /usr/local/share/chruby/chruby.sh
-source /usr/local/share/chruby/auto.sh
+# Setup rbenv (Ruby)
+eval "$(rbenv init -)"
 
 # Setup Nodenv (Node)
 export PATH="$HOME/.nodenv/bin:$PATH"
