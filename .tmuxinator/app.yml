@@ -5,9 +5,8 @@ windows:
   - nvim: nvim
   - git:
   - server:
-      layout: 2311,208x101,0,0[208x55,0,0,2,208x33,0,56,3,208x11,0,90{104x11,0,90,4,103x11,105,90[103x7,105,90,5,103x3,105,98,6]}]
+      layout: dc1f,166x67,0,0[166x31,0,0,2,166x26,0,32,3,166x8,0,59,5]
       panes:
         - DEMO_ENABLED=true rails server
         - DEMO_ENABLED=true be sidekiq
-        - npm start
         - ngrok start minio closeout
