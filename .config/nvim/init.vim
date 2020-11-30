@@ -3,10 +3,73 @@
 " github.com/mikeastock/dotfiles
 "
 
-" PLugins
-if filereadable(expand("~/.config/nvim/plugins.vim"))
-  source ~/.config/nvim/plugins.vim
-endif
+" Plugins
+call plug#begin('~/.config/nvim/plugged')
+
+"fuzzy finding
+Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
+Plug 'junegunn/fzf.vim'
+
+"looks
+Plug 'itchyny/lightline.vim'
+
+"workflow
+Plug 'AndrewRadev/splitjoin.vim'
+Plug 'FooSoft/vim-argwrap'
+Plug 'airblade/vim-gitgutter'
+Plug 'ap/vim-buftabline'
+Plug 'junegunn/vim-easy-align'
+Plug 'justinmk/vim-sneak'
+Plug 'mcasper/vim-infer-debugger'
+Plug 'pbrisbin/vim-mkdir'
+Plug 'tpope/vim-abolish'
+Plug 'tpope/vim-commentary'
+Plug 'tpope/vim-dispatch'
+Plug 'tpope/vim-fugitive'
+Plug 'tpope/vim-surround'
+Plug 'w0rp/ale'
+
+"Text objects
+Plug 'kana/vim-textobj-user', { 'for': 'ruby' }
+Plug 'nelstrom/vim-textobj-rubyblock', { 'for': 'ruby' }
+
+" Langauge specific
+Plug 'HerringtonDarkholme/yats.vim'
+Plug 'Keithbsmiley/rspec.vim', { 'for': 'ruby' }
+Plug 'andys8/vim-elm-syntax', { 'for': ['elm'] }
+Plug 'dag/vim-fish', { 'for': 'fish' }
+Plug 'elixir-lang/vim-elixir', { 'for': 'elixir,eelixir' }
+Plug 'fatih/vim-go', { 'for': 'golang' }
+Plug 'hashivim/vim-terraform', { 'for': 'terraform' }
+Plug 'jparise/vim-graphql'
+Plug 'keith/swift.vim', { 'for': 'swift' }
+Plug 'mhinz/vim-mix-format', { 'for': 'elixir,eelixir' }
+Plug 'mxw/vim-jsx', { 'for': 'javascript' }
+Plug 'othree/javascript-libraries-syntax.vim', { 'for': 'javascript' }
+Plug 'pangloss/vim-javascript', { 'for': 'javascript' }
+Plug 'rodjek/vim-puppet', { 'for': 'puppet' }
+Plug 'rust-lang/rust.vim', { 'for': 'rust' }
+Plug 'tpope/vim-rails', { 'for': 'ruby' }
+Plug 'vim-ruby/vim-ruby', { 'for': 'ruby' }
+
+"Autocomplete
+Plug 'neoclide/coc.nvim', {'branch': 'release'}
+
+"testing
+Plug 'janko-m/vim-test'
+Plug 'kassio/neoterm'
+
+"colors
+Plug 'nanotech/jellybeans.vim'
+Plug 'morhetz/gruvbox'
+Plug 'sjl/badwolf'
+Plug 'chriskempson/base16-vim'
+Plug 'flazz/vim-colorschemes'
+Plug 'junegunn/seoul256.vim'
+Plug 'rakr/vim-one'
+
+call plug#end()
+
 
 " Tabs and spaces
 set tabstop=2
@@ -72,9 +135,7 @@ let mapleader = "\<Space>"
 " Leader Mappings
 map <Leader>f :Files<CR>
 map <Leader>i mmgg=G`m<CR>
-map <Leader>kw :%s/\s\+$//<CR>
 map <Leader>q :call CloseBuffer()<CR>
-map <Leader>bq :bd!<CR>
 map <Leader>rs :%s/'/"<CR>
 map <Leader>vi :e ~/.config/nvim/init.vim<CR>
 map <Leader>w :w!<CR>
@@ -85,9 +146,7 @@ map <Leader>gb :Gblame<CR>
 map <Leader>gc :Gcommit<CR>
 map <Leader>gp :Gpush<CR>
 map <Leader>ga :Gwrite<CR>
-map <Leader>d :e config/database.yml<CR>
 map <Leader>l :Lines<CR>
-" map <Leader>t :Tags<CR>
 nmap <Leader>P :call AddDebugger("O")<CR>
 nmap <Leader>p :call AddDebugger("o")<CR>
 
@@ -154,7 +213,6 @@ augroup indentation
 
   autocmd BufNewFile,BufRead Fastfile setfiletype ruby
   autocmd BufNewFile,BufRead *.fdoc setfiletype yaml
-  autocmd BufNewFile,BufRead *.mjml setfiletype html
   autocmd Filetype yaml set nocursorline
   autocmd BufNewFile,BufRead *.sass setfiletype sass
   autocmd Filetype markdown setlocal spell
@@ -182,6 +240,11 @@ augroup END
 "COC
 inoremap <expr> <cr> pumvisible() ? "\<C-y>" : "\<C-g>u\<CR>"
 
+nnoremap <nowait><expr> <C-f> coc#float#has_scroll() ? coc#float#scroll(1) : "\<C-f>"
+nnoremap <nowait><expr> <C-b> coc#float#has_scroll() ? coc#float#scroll(0) : "\<C-b>"
+inoremap <nowait><expr> <C-f> coc#float#has_scroll() ? "\<c-r>=coc#float#scroll(1)\<cr>" : "\<Right>"
+inoremap <nowait><expr> <C-b> coc#float#has_scroll() ? "\<c-r>=coc#float#scroll(0)\<cr>" : "\<Left>"
+
 "ArgWrap
 nnoremap <silent><Leader>a :ArgWrap<CR>
 let g:argwrap_tail_comma = 1
@@ -206,14 +269,12 @@ command! -bang -nargs=* Rg
 "Elixir
 let g:mix_format_on_save = 1
 
-"Elm
-let g:elm_format_autosave = 1
-
 "Ale
 let g:ale_lint_on_text_changed = 'never'
 let g:ale_fix_on_save = 1
 let g:ale_linters = {
       \ 'elixir': [],
+      \ 'elm': [],
       \ 'rust': ['rls'],
       \ 'ruby': ['rubocop']
       \}
