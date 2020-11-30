@@ -36,18 +36,15 @@ Plug 'nelstrom/vim-textobj-rubyblock', { 'for': 'ruby' }
 " Langauge specific
 Plug 'HerringtonDarkholme/yats.vim'
 Plug 'Keithbsmiley/rspec.vim', { 'for': 'ruby' }
-Plug 'andys8/vim-elm-syntax', { 'for': ['elm'] }
+Plug 'andys8/vim-elm-syntax', { 'for': 'elm' }
 Plug 'dag/vim-fish', { 'for': 'fish' }
 Plug 'elixir-lang/vim-elixir', { 'for': 'elixir,eelixir' }
 Plug 'fatih/vim-go', { 'for': 'golang' }
 Plug 'hashivim/vim-terraform', { 'for': 'terraform' }
 Plug 'jparise/vim-graphql'
-Plug 'keith/swift.vim', { 'for': 'swift' }
 Plug 'mhinz/vim-mix-format', { 'for': 'elixir,eelixir' }
-Plug 'mxw/vim-jsx', { 'for': 'javascript' }
 Plug 'othree/javascript-libraries-syntax.vim', { 'for': 'javascript' }
 Plug 'pangloss/vim-javascript', { 'for': 'javascript' }
-Plug 'rodjek/vim-puppet', { 'for': 'puppet' }
 Plug 'rust-lang/rust.vim', { 'for': 'rust' }
 Plug 'tpope/vim-rails', { 'for': 'ruby' }
 Plug 'vim-ruby/vim-ruby', { 'for': 'ruby' }
