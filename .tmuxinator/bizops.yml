@@ -1,0 +1,7 @@
+name: bizops
+root: ./
+
+windows:
+  - nvim: nvim
+  - git:
+  - server: rails server -p 4000
