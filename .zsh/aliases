@@ -64,6 +64,5 @@ alias gst="git status"
 alias gsu="git submodule update"
 alias gupdate="git pull && git-clean -y"
 alias s="git status"
-alias ci="git ci-status -v"
 
 alias reset_db="bin/rake db:drop db:create db:structure:load db:migrate db:seed"
