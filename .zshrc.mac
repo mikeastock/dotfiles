@@ -7,18 +7,10 @@ export MINIO_SECRET_KEY=secret_access_key
 # Add postgresql 10 to path
 export PATH="/usr/local/opt/postgresql@12/bin:$PATH"
 
-export GOPATH="/usr/local/opt/gocode"
-export PATH="$PATH:$GOPATH/bin"
-
 # For Google Cloud SDK
 if [[ -f /usr/local/var/google-cloud-sdk ]]; then
   source "/usr/local/var/google-cloud-sdk/completion.zsh.inc"
   source "/usr/local/var/google-cloud-sdk/path.zsh.inc"
 fi
 
-# added by travis gem
-[ -f /Users/mikeastock/.travis/travis.sh ] && source /Users/mikeastock/.travis/travis.sh
-
 export NVIM_LISTEN_ADDRESS=127.0.0.1:6666
-
-export PATH="/usr/local/opt/erlang@19/bin:/Users/mikeastock/Library/Application Support/ErlangInstaller/20.0/bin:$PATH"

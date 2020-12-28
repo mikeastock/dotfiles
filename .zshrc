@@ -61,6 +61,8 @@ else
 fi
 
 # PATH setup
+# Add homebrew to front of path
+export PATH="/opt/homebrew/bin:$PATH"
 export PATH="$PATH:$HOME/.bin:$HOME/bin:$HOME/.fzf/bin:/usr/local/heroku/bin:$HOME/.git-semantic-commits:$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin"
 
 # Load FZF
@@ -72,6 +74,7 @@ export PATH="$PATH:$HOME/.bin:$HOME/bin:$HOME/.fzf/bin:/usr/local/heroku/bin:$HO
 
 # Setup rbenv (Ruby)
 eval "$(rbenv init -)"
+export RUBY_CONFIGURE_OPTS="--with-openssl-dir=$(brew --prefix openssl@1.1)"
 
 # Setup Nodenv (Node)
 export PATH="$HOME/.nodenv/bin:$PATH"
@@ -89,7 +92,8 @@ export ERL_AFLAGS="-kernel shell_history enabled"
 # Sourcing of other zsh files
 source $HOME/.zsh/aliases
 source $HOME/.zsh/z
-source /usr/local/share/zsh/site-functions
+[ -f /usr/local/share/zsh/site-functions ] && source /usr/local/share/zsh/site-functions
+[ -f /opt/homebrew/share/zsh/site-functions ] && source /opt/homebrew/share/zsh/site-functions
 
 if [[ `uname` == "Darwin" ]]; then
   source ~/.zshrc.mac
@@ -107,6 +111,9 @@ BASE16_SHELL=$HOME/.config/base16-shell/
 
 [ -f /usr/local/share/zsh-autosuggestions/zsh-autosuggestions.zsh ] && source /usr/local/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 [ -f /usr/local/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ] && source /usr/local/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+
+[ -f /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh ] && source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+[ -f /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ] && source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
 autoload -Uz pcurl
 
