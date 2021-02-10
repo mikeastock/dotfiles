@@ -1,10 +1,13 @@
 {
-  "languageserver": {
-    "elmLS": {
-      "command": "elm-language-server",
-      "filetypes": ["elm"],
-      "rootPatterns": ["elm.json"]
-    }
-  },
-  "codeLens.enable": true
+  "ignore_all_lsp": true,
+  "_oldConfig": {
+    "languageserver": {
+      "elmLS": {
+        "command": "elm-language-server",
+        "filetypes": ["elm"],
+        "rootPatterns": ["elm.json"]
+      }
+    },
+    "codeLens.enable": true
+  }
 }

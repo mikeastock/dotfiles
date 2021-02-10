@@ -2,12 +2,13 @@ set visualbell
 set noerrorbells
 
 " Plugins
-set surround
-set commentary
 set ReplaceWithRegister
-set easymotion
 set argtextobj
+set commentary
+set easymotion
 set exchange
+set ideajoin
+set surround
 set textobj-entire
 
 let g:argtextobj_pairs="(:),{:},<:>,[:]"
