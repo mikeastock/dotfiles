@@ -3,6 +3,7 @@
   email = mikeastock@gmail.com
 [alias]
   co = checkout
+  oc = checkout
   com = checkout master
   ci = commit
   cm = commit -v

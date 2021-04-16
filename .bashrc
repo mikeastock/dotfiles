@@ -24,3 +24,5 @@ export NVM_DIR="/Users/mikeastock/.nvm"
 
 source $HOME/.asdf/asdf.sh
 source $HOME/.asdf/completions/asdf.bash
+
+complete -C /opt/homebrew/bin/terraform terraform

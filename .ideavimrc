@@ -29,3 +29,4 @@ nnoremap gd :action GotoDeclaration<CR>
 nnoremap gi :action GotoImplementation<CR>
 
 nnoremap <C-CR> :action ShowIntentionActions<CR>
+nnoremap <C-T> :action FileStructurePopup<CR>

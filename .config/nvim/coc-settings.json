@@ -1,5 +1,14 @@
 {
-  "ignore_all_lsp": true,
+  "ignore_all_lsp": false,
+  "coc.preferences.formatOnSaveFiletypes": ["typescript"],
+  "languageserver": {
+    "terraform": {
+      "command": "terraform-ls",
+      "args": ["serve"],
+      "filetypes": ["terraform", "tf"],
+      "initializationOptions": {}
+    }
+  },
   "_oldConfig": {
     "languageserver": {
       "elmLS": {

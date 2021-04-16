@@ -42,6 +42,7 @@ Plug 'elixir-lang/vim-elixir', { 'for': 'elixir,eelixir' }
 Plug 'fatih/vim-go', { 'for': 'golang' }
 Plug 'hashivim/vim-terraform', { 'for': 'terraform' }
 Plug 'jparise/vim-graphql'
+Plug 'jvirtanen/vim-hcl', { 'for': 'hcl' }
 Plug 'mhinz/vim-mix-format', { 'for': 'elixir,eelixir' }
 Plug 'othree/javascript-libraries-syntax.vim', { 'for': 'javascript' }
 Plug 'pangloss/vim-javascript', { 'for': 'javascript' }
@@ -272,11 +273,15 @@ let g:ale_fix_on_save = 1
 let g:ale_linters = {
       \ 'elixir': [],
       \ 'elm': [],
+      \ 'hcl': ['terraform'],
+      \ 'ruby': ['rubocop'],
       \ 'rust': ['rls'],
-      \ 'ruby': ['rubocop']
+      \ 'terraform': ['terraform']
       \}
 let g:ale_fixers = {
-      \ 'ruby': ['rubocop']
+      \ 'ruby': ['rubocop'],
+      \ 'hcl': ['terraform'],
+      \ 'terraform': ['terraform']
       \}
 
 "replace 'f' with 1-char Sneak
