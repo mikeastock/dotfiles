@@ -69,7 +69,6 @@ fi
 brew tap heroku/brew
 packages=(
   bat
-  chruby
   fzf
   git
   heroku
@@ -78,8 +77,8 @@ packages=(
   neovim
   node-build
   nodenv
-  postgresql@12
   pyenv
+  rbenv
   redis
   ripgrep
   ruby-build
