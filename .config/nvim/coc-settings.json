@@ -1,6 +1,7 @@
 {
+  "diagnostic.displayByAle": true,
   "ignore_all_lsp": false,
-  "coc.preferences.formatOnSaveFiletypes": ["typescript"],
+  "coc.preferences.formatOnSaveFiletypes": ["javascript", "typescript"],
   "languageserver": {
     "terraform": {
       "command": "terraform-ls",

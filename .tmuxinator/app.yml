@@ -5,9 +5,9 @@ windows:
   - nvim: nvim
   - git:
   - server:
-      layout: 9b2d,120x71,0,0[120x33,0,0,2,120x27,0,34,3,120x9,0,62{60x9,0,62,4,59x9,61,62,5}]
+      layout: 7812,164x89,0,0[164x44,0,0,2,164x44,0,45{82x44,0,45,3,81x44,83,45[81x32,83,45,31,81x11,83,78,32]}]
       panes:
         - rails server
         - be sidekiq
-        - ngrok start minio app
-        - minio server ~/code/minio_data
+        - npm start
+        - ngrok start app

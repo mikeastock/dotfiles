@@ -18,6 +18,7 @@ Plug 'AndrewRadev/splitjoin.vim'
 Plug 'FooSoft/vim-argwrap'
 Plug 'airblade/vim-gitgutter'
 Plug 'ap/vim-buftabline'
+Plug 'dense-analysis/ale'
 Plug 'junegunn/vim-easy-align'
 Plug 'justinmk/vim-sneak'
 Plug 'mcasper/vim-infer-debugger'
@@ -27,7 +28,6 @@ Plug 'tpope/vim-commentary'
 Plug 'tpope/vim-dispatch'
 Plug 'tpope/vim-fugitive'
 Plug 'tpope/vim-surround'
-Plug 'w0rp/ale'
 
 "Text objects
 Plug 'kana/vim-textobj-user', { 'for': 'ruby' }
@@ -140,7 +140,7 @@ map <Leader>w :w!<CR>
 map <Leader>hs :%s/:\([^ ]*\)\(\s*\)=>/\1:/<CR>
 map <Leader>mi 0f:wywOit "pA" doj==oendkf{edi}Op==j0ftlvt.c(response)<CR>
 map <Leader>gs :Gstatus<CR>
-map <Leader>gb :Gblame<CR>
+map <Leader>gb :Git blame<CR>
 map <Leader>gc :Gcommit<CR>
 map <Leader>gp :Gpush<CR>
 map <Leader>ga :Gwrite<CR>
@@ -268,6 +268,7 @@ command! -bang -nargs=* Rg
 let g:mix_format_on_save = 1
 
 "Ale
+let g:ale_disable_lsp = 1
 let g:ale_lint_on_text_changed = 'never'
 let g:ale_fix_on_save = 1
 let g:ale_linters = {
@@ -321,6 +322,10 @@ tnoremap <Esc> <C-\><C-n>
 autocmd TermOpen * setlocal conceallevel=0 colorcolumn=0 relativenumber
 
 let test#strategy = 'basic'
+
+let g:user_debugger_dictionary = {
+      \ '\.rb': 'binding.pry',
+      \ }
 
 " Rename current file
 function! RenameFile()

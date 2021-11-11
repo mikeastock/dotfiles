@@ -4,7 +4,7 @@
 [alias]
   co = checkout
   oc = checkout
-  com = checkout master
+  com = checkout main
   ci = commit
   cm = commit -v
   t = status
@@ -12,16 +12,16 @@
   st = status
   br = branch --sort=-committerdate
   df = diff --color
-  dfom = diff master --color
+  dfom = diff main --color
   pl = pull
   p = push
   ad = add --patch
-  rb = rebase origin/master
+  rb = rebase origin/main
   hist = log --pretty=format:'%h %ad | %s%d [%an]' --graph --date=short
   lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
   su = submodule update --init --recursive
-  pim = pull origin master
-  rbm = pull --rebase origin master
+  pim = pull origin main
+  rbm = pull --rebase origin main
   d = diff
   lc = log -n 1
 [push]

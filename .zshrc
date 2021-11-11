@@ -95,10 +95,6 @@ source $HOME/.zsh/z
 [ -f /usr/local/share/zsh/site-functions ] && source /usr/local/share/zsh/site-functions
 [ -f /opt/homebrew/share/zsh/site-functions ] && source /opt/homebrew/share/zsh/site-functions
 
-if [[ `uname` == "Darwin" ]]; then
-  source ~/.zshrc.mac
-fi
-
 if [[ `uname` == "Linux" ]]; then
   source ~/.zshrc.linux
 fi
@@ -115,9 +111,18 @@ BASE16_SHELL=$HOME/.config/base16-shell/
 [ -f /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh ] && source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 [ -f /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ] && source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
+export MINIO_ROOT_USER=access_key_id
+export MINIO_ROOT_PASSWORD=secret_access_key
+
+# Add postgresql 13 to path
+export PATH="/opt/homebrew/opt/postgresql@13/bin:$PATH"
+
 autoload -Uz pcurl
 
 [ -f $HOME/.env ] && source $HOME/.env
+
+# Temp for macOS and Tmux
+export EVENT_NOKQUEUE=1
 
 # Add local bin to front of PATH
 export PATH="./bin:$PATH"

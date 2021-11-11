@@ -105,5 +105,6 @@
     },
     "tabnine.experimentalAutoImports": true,
     "explorer.confirmDelete": false,
-    "workbench.colorTheme": "Noctis Minimus"
+    "workbench.colorTheme": "Dracula",
+    "security.workspace.trust.untrustedFiles": "open"
 }
