@@ -1,10 +1,10 @@
 # Set custom prompt
-setopt PROMPT_SUBST
-autoload -U promptinit
-promptinit
-prompt pure
-prompt_newline='%666v'
-PROMPT=" $PROMPT"
+# setopt PROMPT_SUBST
+# autoload -U promptinit
+# promptinit
+# prompt pure
+# prompt_newline='%666v'
+# PROMPT=" $PROMPT"
 
 # Initialize completion
 autoload -Uz compinit
@@ -95,6 +95,10 @@ source $HOME/.zsh/z
 [ -f /usr/local/share/zsh/site-functions ] && source /usr/local/share/zsh/site-functions
 [ -f /opt/homebrew/share/zsh/site-functions ] && source /opt/homebrew/share/zsh/site-functions
 
+HISTDB_TABULATE_CMD=(sed -e $'s/\x1f/\t/g')
+source $HOME/.zsh/plugins/zsh-histdb/sqlite-history.zsh
+autoload -Uz add-zsh-hook
+
 if [[ `uname` == "Linux" ]]; then
   source ~/.zshrc.linux
 fi
@@ -111,11 +115,17 @@ BASE16_SHELL=$HOME/.config/base16-shell/
 [ -f /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh ] && source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 [ -f /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ] && source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
-export MINIO_ROOT_USER=access_key_id
-export MINIO_ROOT_PASSWORD=secret_access_key
+_zsh_autosuggest_strategy_histdb_top_here() {
+    local query="select commands.argv from
+history left join commands on history.command_id = commands.rowid
+left join places on history.place_id = places.rowid
+where places.dir LIKE '$(sql_escape $PWD)%'
+and commands.argv LIKE '$(sql_escape $1)%'
+group by commands.argv order by count(*) desc limit 1"
+    suggestion=$(_histdb_query "$query")
+}
 
-# Add postgresql 13 to path
-export PATH="/opt/homebrew/opt/postgresql@13/bin:$PATH"
+ZSH_AUTOSUGGEST_STRATEGY=histdb_top_here
 
 autoload -Uz pcurl
 
