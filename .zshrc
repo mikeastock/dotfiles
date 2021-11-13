@@ -1,11 +1,3 @@
-# Set custom prompt
-setopt PROMPT_SUBST
-autoload -U promptinit
-promptinit
-prompt pure
-prompt_newline='%666v'
-PROMPT=" $PROMPT"
-
 # Initialize completion
 autoload -Uz compinit
 if [ $(date +'%j') != $(stat -f '%Sm' -t '%j' ~/.zcompdump) ]; then
@@ -144,3 +136,16 @@ export MINIO_ROOT_PASSWORD=secret_access_key
 export PATH="/opt/homebrew/opt/postgresql@13/bin:$PATH"
 
 autoload -U +X bashcompinit && bashcompinit
+
+################
+# Setup prompt #
+################
+
+eval "$(starship init zsh)"
+
+# setopt PROMPT_SUBST
+# autoload -U promptinit
+# promptinit
+# prompt pure
+# prompt_newline='%666v'
+# PROMPT=" $PROMPT"

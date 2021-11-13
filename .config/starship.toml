@@ -10,7 +10,6 @@ $git_state\
 $git_status\
 $cmd_duration\
 $line_break\
-$python\
 $character"""
 
 [directory]
@@ -43,10 +42,6 @@ style = "bright-black"
 [cmd_duration]
 format = "[$duration]($style) "
 style = "yellow"
-
-[python]
-format = "[$virtualenv]($style) "
-style = "bright-black"
 
 # Make prompt a single line instead of two lines
 [line_break]
