@@ -137,5 +137,12 @@ export EVENT_NOKQUEUE=1
 # Add local bin to front of PATH
 export PATH="./bin:$PATH"
 
+export MINIO_ROOT_USER=access_key_id
+export MINIO_ROOT_PASSWORD=secret_access_key
+
+# Add postgresql 13 to path
+export PATH="/opt/homebrew/opt/postgresql@13/bin:$PATH"
+
 autoload -U +X bashcompinit && bashcompinit
-complete -o nospace -C /opt/homebrew/bin/terraform terraform
+
+eval "$(starship init zsh)"
