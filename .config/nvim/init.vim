@@ -37,6 +37,7 @@ Plug 'nelstrom/vim-textobj-rubyblock', { 'for': 'ruby' }
 Plug 'HerringtonDarkholme/yats.vim'
 Plug 'Keithbsmiley/rspec.vim', { 'for': 'ruby' }
 Plug 'andys8/vim-elm-syntax', { 'for': 'elm' }
+Plug 'cespare/vim-toml', { 'branch': 'main' }
 Plug 'dag/vim-fish', { 'for': 'fish' }
 Plug 'elixir-lang/vim-elixir', { 'for': 'elixir,eelixir' }
 Plug 'fatih/vim-go', { 'for': 'golang' }
