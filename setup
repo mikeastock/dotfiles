@@ -36,6 +36,7 @@ done
 # Link nvim config
 mkdir -p "$HOME/.config"
 cd "$HOME/.config"
+[ ! -L starship.toml ] && ln -s ../icloud-drive/dotfiles/.config/starship.toml .
 [ ! -L nvim ] && ln -s ../icloud-drive/dotfiles/.config/nvim .
 cd ..
 
@@ -57,73 +58,23 @@ fi
 ## Disabling shadows on windows when taking screenshots - requires killall SystemUIServer
 defaults write com.apple.screencapture disable-shadow -bool true
 
+
 # Install things
 if command -v brew; then
-  echo "Homebrew installed; updating:"
-  brew update
+  echo "Homebrew already installed;"
 else
-  /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 fi
 
-# Brew installations
-brew tap heroku/brew
-packages=(
-  bat
-  fzf
-  git
-  heroku
-  jid
-  jq
-  neovim
-  node-build
-  nodenv
-  pyenv
-  rbenv
-  redis
-  ripgrep
-  ruby-build
-  ruby-install
-  the_silver_searcher
-  tmux
-  wget
-  z
-  zsh-autosuggestions
-  zsh-syntax-highlighting
-)
-for pkg in ${packages[@]}; do
-  if brew list -1 | grep -q "^${pkg}\$"; then
-    echo "Package '$pkg' is installed; updating:"
-    brew upgrade "$pkg" && brew cleanup "$pkg" || true
-  else
-    brew install "$pkg"
-  fi
-done
-
-# Brew casks
-casks=(
-  alfred
-  docker
-  spotify
-)
-for cask in ${casks[@]}; do
-  if brew list --forumla -1 | grep -q "^${cask}\$"; then
-    echo "Package '$cask' is installed"
-  else
-    brew cask install "$cask"
-  fi
-done
-
-# Start services
-brew services start postgresql@12
-brew services start redis
-
-## Set shell to zsh
-
-# Disabled until I get around to configuring zsh
-#sudo dscl . -create /Users/$USER UserShell /usr/local/bin/zsh
+# Install homebrew bundle
+echo "Updating brew, running 'brew bundle', and upgrading packages"
+brew update
+brew tap Homebrew/bundle
+brew bundle --verbose
+brew upgrade
 
 ## Set up node
-NODE_VERSION="12.13.0"
+NODE_VERSION="15.14.0"
 if [ -d ".nodenv/versions/$NODE_VERSION" ]; then
   echo "Node $NODE_VERSION already installed"
 else
@@ -133,24 +84,14 @@ eval "$(nodenv init -)"
 nodenv global "$NODE_VERSION"
 
 ## Set up ruby
-RUBY_VERSION="2.7.3"
-if [ -d ".rubies/versions/$RUBY_VERSION" ]; then
+RUBY_VERSION="2.7.4"
+if [ -d ".rbenv/versions/$RUBY_VERSION" ]; then
   echo "Ruby $RUBY_VERSION already installed"
 else
-  ruby-install ruby "$RUBY_VERSION"
+  rbenv install "$RUBY_VERSION"
 fi
-chruby "$RUBY_VERSION"
+rbenv global "$RUBY_VERSION"
 gem install bundler
-
-## Set up python
-PYTHON_VERSION="3.8.2"
-if [ -d ".pyenv/versions/$PYTHON_VERSION" ]; then
-  echo "Python $PYTHON_VERSION already installed"
-else
-  pyenv install "$PYTHON_VERSION"
-fi
-eval "$(pyenv init -)"
-pyenv global "$PYTHON_VERSION"
 
 ## Install Rust
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
