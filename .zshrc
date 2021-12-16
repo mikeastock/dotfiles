@@ -38,11 +38,6 @@ else
   export EDITOR='nvim'
 fi
 
-# PATH setup
-# Add homebrew to front of path
-export PATH="/opt/homebrew/bin:$PATH"
-export PATH="$PATH:$HOME/.bin:$HOME/bin:$HOME/.fzf/bin:/usr/local/heroku/bin:$HOME/.git-semantic-commits:$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin"
-
 # Load FZF
 [ -f ~/.fzf/shell/key-bindings.zsh ] && source ~/.fzf/shell/key-bindings.zsh
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
@@ -93,16 +88,23 @@ BASE16_SHELL=$HOME/.config/base16-shell/
 
 [ -f $HOME/.env ] && source $HOME/.env
 
-# Add local bin to front of PATH
-export PATH="./bin:$PATH"
-
 export MINIO_ROOT_USER=access_key_id
 export MINIO_ROOT_PASSWORD=secret_access_key
 
+autoload -U +X bashcompinit && bashcompinit
+
+##############
+# PATH setup #
+##############
+
+# Add homebrew to front of path
+export PATH="/opt/homebrew/bin:$PATH"
+# Add local bin to front of PATH
+export PATH="./bin:$PATH"
 # Add postgresql 13 to path
 export PATH="/opt/homebrew/opt/postgresql@13/bin:$PATH"
-
-autoload -U +X bashcompinit && bashcompinit
+# Add home bins to path
+export PATH="$PATH:$HOME/.bin:$HOME/bin:$HOME/.fzf/bin"
 
 ################
 # Setup prompt #
