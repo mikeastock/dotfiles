@@ -64,22 +64,8 @@ export PATH="$PATH:$HOME/.bin:$HOME/bin:$HOME/.fzf/bin:/usr/local/heroku/bin:$HO
 # Setup Cargo (Rust)
 [ -f ~/.cargo/env ] && source ~/.cargo/env
 
-# Setup rbenv (Ruby)
-eval "$(rbenv init -)"
-export RUBY_CONFIGURE_OPTS="--with-openssl-dir=$(brew --prefix openssl@1.1)"
-
-# Setup Nodenv (Node)
-export PATH="$HOME/.nodenv/bin:$PATH"
-eval "$(nodenv init -)"
-
-# Setup pyenv (Pyrthon)
-export PATH="$HOME/.pyenv/bin:$PATH"
-eval "$(pyenv init -)"
-
-# Setup Kiex (Elixir)
-test -s "$HOME/.kiex/scripts/kiex" && source "$HOME/.kiex/scripts/kiex"
-
-export ERL_AFLAGS="-kernel shell_history enabled"
+# asdf
+. $(brew --prefix asdf)/libexec/asdf.sh
 
 # Sourcing of other zsh files
 source $HOME/.zsh/aliases
