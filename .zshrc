@@ -105,12 +105,7 @@ BASE16_SHELL=$HOME/.config/base16-shell/
 
 # ZSH_AUTOSUGGEST_STRATEGY=histdb_top_here
 
-autoload -Uz pcurl
-
 [ -f $HOME/.env ] && source $HOME/.env
-
-# Temp for macOS and Tmux
-export EVENT_NOKQUEUE=1
 
 # Add local bin to front of PATH
 export PATH="./bin:$PATH"
@@ -128,10 +123,3 @@ autoload -U +X bashcompinit && bashcompinit
 ################
 
 eval "$(starship init zsh)"
-
-# setopt PROMPT_SUBST
-# autoload -U promptinit
-# promptinit
-# prompt pure
-# prompt_newline='%666v'
-# PROMPT=" $PROMPT"
