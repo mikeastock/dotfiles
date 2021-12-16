@@ -6,6 +6,25 @@ else
   compinit -C
 fi
 
+##############
+# PATH setup #
+##############
+# Handle dup path in tmux for Mac OS X
+# http://superuser.com/questions/544989/does-tmux-sort-the-path-variable/583502#583502
+if [[ `uname` == "Darwin" ]]; then
+  if [ -f /etc/profile ]; then
+    PATH=""
+    source /etc/profile
+  fi
+fi
+
+# Add homebrew to front of path
+export PATH="/opt/homebrew/bin:$PATH"
+# Add local bin to front of PATH
+export PATH="./bin:$PATH"
+# Add home bins to path
+export PATH="$PATH:$HOME/.bin:$HOME/bin:$HOME/.fzf/bin:/opt/homebrew/opt/postgresql@13/bin"
+
 # GNU Screen sets -o vi if EDITOR=vi, so we have to force it back.
 set -o emacs
 
@@ -22,15 +41,6 @@ export CLICOLOR=1
 # By default, ^S freezes terminal output and ^Q resumes it. Disable that so
 # that those keys can be used for other things.
 unsetopt flowcontrol
-
- # Handle dup path in tmux for Mac OS X
- # http://superuser.com/questions/544989/does-tmux-sort-the-path-variable/583502#583502
- if [[ `uname` == "Darwin" ]]; then
-   if [ -f /etc/profile ]; then
-     PATH=""
-     source /etc/profile
-   fi
- fi
 
 if [[ -n $SSH_CONNECTION ]]; then
   export EDITOR='vim'
@@ -92,19 +102,6 @@ export MINIO_ROOT_USER=access_key_id
 export MINIO_ROOT_PASSWORD=secret_access_key
 
 autoload -U +X bashcompinit && bashcompinit
-
-##############
-# PATH setup #
-##############
-
-# Add homebrew to front of path
-export PATH="/opt/homebrew/bin:$PATH"
-# Add local bin to front of PATH
-export PATH="./bin:$PATH"
-# Add postgresql 13 to path
-export PATH="/opt/homebrew/opt/postgresql@13/bin:$PATH"
-# Add home bins to path
-export PATH="$PATH:$HOME/.bin:$HOME/bin:$HOME/.fzf/bin"
 
 ################
 # Setup prompt #
