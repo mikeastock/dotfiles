@@ -52,6 +52,11 @@ setopt hist_verify
 setopt inc_append_history
 setopt share_history # share command history data
 
+HISTDB_TABULATE_CMD=(sed -e $'s/\x1f/\t/g')
+source $HOME/.zsh/plugins/zsh-histdb/sqlite-history.zsh
+autoload -Uz add-zsh-hook
+
+
 # By default, ^S freezes terminal output and ^Q resumes it. Disable that so
 # that those keys can be used for other things.
 unsetopt flowcontrol
@@ -78,10 +83,6 @@ source $HOME/.zsh/z
 [ -f /usr/local/share/zsh/site-functions ] && source /usr/local/share/zsh/site-functions
 [ -f /opt/homebrew/share/zsh/site-functions ] && source /opt/homebrew/share/zsh/site-functions
 
-HISTDB_TABULATE_CMD=(sed -e $'s/\x1f/\t/g')
-source $HOME/.zsh/plugins/zsh-histdb/sqlite-history.zsh
-autoload -Uz add-zsh-hook
-
 if [[ `uname` == "Linux" ]]; then
   source ~/.zshrc.linux
 fi
@@ -98,17 +99,20 @@ BASE16_SHELL=$HOME/.config/base16-shell/
 [ -f /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh ] && source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 [ -f /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ] && source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
-# _zsh_autosuggest_strategy_histdb_top_here() {
-#     local query="select commands.argv from
-# history left join commands on history.command_id = commands.rowid
-# left join places on history.place_id = places.rowid
-# where places.dir LIKE '$(sql_escape $PWD)%'
-# and commands.argv LIKE '$(sql_escape $1)%'
-# group by commands.argv order by count(*) desc limit 1"
-#     suggestion=$(_histdb_query "$query")
-# }
+_zsh_autosuggest_strategy_histdb_top_here() {
+    local query="select commands.argv from
+history left join commands on history.command_id = commands.rowid
+left join places on history.place_id = places.rowid
+where places.dir LIKE '$(sql_escape $PWD)%'
+and commands.argv LIKE '$(sql_escape $1)%'
+group by commands.argv order by count(*) desc limit 1"
+    suggestion=$(_histdb_query "$query")
+}
 
-# ZSH_AUTOSUGGEST_STRATEGY=histdb_top_here
+ZSH_AUTOSUGGEST_STRATEGY=histdb_top_here
+
+source $HOME/.zsh/plugins/zsh-histdb/histdb-interactive.zsh
+bindkey '^r' _histdb-isearch
 
 [ -f $HOME/.env ] && source $HOME/.env
 
