@@ -75,23 +75,23 @@ brew upgrade
 
 ## Set up node
 NODE_VERSION="15.14.0"
-if [ -d ".nodenv/versions/$NODE_VERSION" ]; then
+if [ -d ".asdf/installs/nodejs/$NODE_VERSION" ]; then
   echo "Node $NODE_VERSION already installed"
 else
-  nodenv install "$NODE_VERSION"
+  asdf plugin add nodejs
+  asdf install nodejs "$NODE_VERSION"
 fi
-eval "$(nodenv init -)"
-nodenv global "$NODE_VERSION"
+asdf global nodejs "$NODE_VERSION"
 
 ## Set up ruby
 RUBY_VERSION="2.7.4"
-if [ -d ".rbenv/versions/$RUBY_VERSION" ]; then
+if [ -d ".asdf/installs/ruby/$RUBY_VERSION" ]; then
   echo "Ruby $RUBY_VERSION already installed"
 else
-  rbenv install "$RUBY_VERSION"
+  asdf plugin add ruby
+  asdf install ruby "$RUBY_VERSION"
 fi
-rbenv global "$RUBY_VERSION"
-gem install bundler
+asdf global ruby "$RUBY_VERSION"
 
 ## Install Rust
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
