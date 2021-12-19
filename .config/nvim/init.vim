@@ -133,18 +133,12 @@ let mapleader = "\<Space>"
 
 " Leader Mappings
 map <Leader>f :Files<CR>
-map <Leader>i mmgg=G`m<CR>
 map <Leader>q :call CloseBuffer()<CR>
 map <Leader>rs :%s/'/"<CR>
 map <Leader>vi :e ~/.config/nvim/init.vim<CR>
 map <Leader>w :w!<CR>
 map <Leader>hs :%s/:\([^ ]*\)\(\s*\)=>/\1:/<CR>
-map <Leader>mi 0f:wywOit "pA" doj==oendkf{edi}Op==j0ftlvt.c(response)<CR>
-map <Leader>gs :Gstatus<CR>
 map <Leader>gb :Git blame<CR>
-map <Leader>gc :Gcommit<CR>
-map <Leader>gp :Gpush<CR>
-map <Leader>ga :Gwrite<CR>
 map <Leader>l :Lines<CR>
 nmap <Leader>P :call AddDebugger("O")<CR>
 nmap <Leader>p :call AddDebugger("o")<CR>
