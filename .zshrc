@@ -20,8 +20,6 @@ fi
 
 # Add homebrew to front of path
 export PATH="/opt/homebrew/bin:$PATH"
-# Add local bin to front of PATH
-export PATH="./bin:$PATH"
 # Add home bins to path
 export PATH="$PATH:$HOME/.bin:$HOME/bin:$HOME/.fzf/bin:/opt/homebrew/opt/postgresql@13/bin"
 
@@ -99,20 +97,21 @@ BASE16_SHELL=$HOME/.config/base16-shell/
 [ -f /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh ] && source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 [ -f /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ] && source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
-_zsh_autosuggest_strategy_histdb_top_here() {
-    local query="select commands.argv from
-history left join commands on history.command_id = commands.rowid
-left join places on history.place_id = places.rowid
-where places.dir LIKE '$(sql_escape $PWD)%'
-and commands.argv LIKE '$(sql_escape $1)%'
-group by commands.argv order by count(*) desc limit 1"
-    suggestion=$(_histdb_query "$query")
-}
+# _zsh_autosuggest_strategy_histdb_top_here() {
+#     local query="select commands.argv from
+# history left join commands on history.command_id = commands.rowid
+# left join places on history.place_id = places.rowid
+# where places.dir LIKE '$(sql_escape $PWD)%'
+# and commands.argv LIKE '$(sql_escape $1)%'
+# group by commands.argv order by count(*) desc limit 1"
+#     suggestion=$(_histdb_query "$query")
+# }
 
-ZSH_AUTOSUGGEST_STRATEGY=histdb_top_here
+# ZSH_AUTOSUGGEST_STRATEGY=histdb_top_here
 
-source $HOME/.zsh/plugins/zsh-histdb/histdb-interactive.zsh
-bindkey '^r' _histdb-isearch
+HISTDB_FZF_DEFAULT_MODE=global
+source $HOME/.zsh/plugins/zsh-histdb-fzf/fzf-histdb.zsh
+bindkey '^r' histdb-fzf-widget
 
 [ -f $HOME/.env ] && source $HOME/.env
 
@@ -120,6 +119,12 @@ export MINIO_ROOT_USER=access_key_id
 export MINIO_ROOT_PASSWORD=secret_access_key
 
 autoload -U +X bashcompinit && bashcompinit
+
+###################################
+# Add local bin to front of PATH  #
+# This happens last so it's first #
+###################################
+export PATH="./bin:$PATH"
 
 ################
 # Setup prompt #

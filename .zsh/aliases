@@ -12,7 +12,6 @@ alias cat="bat --theme base16"
 alias cp="cp -r"
 alias e="$EDITOR"
 alias grep="grep --color=auto"
-alias h="heroku"
 alias l="ls -lah"
 alias lh="ls -Alh"
 alias ll="ls -lh"
@@ -22,6 +21,9 @@ alias tlf="tail -f"
 alias v="$VISUAL"
 alias view="nvim -R -"
 alias vim="nvim"
+
+alias h="heroku"
+alias hc="heroku run \"USER=mike rails console\""
 
 # tmux
 alias mux="tmuxinator"
