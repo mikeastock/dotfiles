@@ -21,7 +21,7 @@ fi
 # Add homebrew to front of path
 export PATH="/opt/homebrew/bin:$PATH"
 # Add home bins to path
-export PATH="$PATH:$HOME/.bin:$HOME/bin:$HOME/.fzf/bin:/opt/homebrew/opt/postgresql@13/bin"
+export PATH="$PATH:$HOME/.bin:$HOME/bin:$HOME/.fzf/bin:/opt/homebrew/opt/postgresql@13.6/bin"
 
 # GNU Screen sets -o vi if EDITOR=vi, so we have to force it back.
 set -o emacs
@@ -54,7 +54,6 @@ HISTDB_TABULATE_CMD=(sed -e $'s/\x1f/\t/g')
 source $HOME/.zsh/plugins/zsh-histdb/sqlite-history.zsh
 autoload -Uz add-zsh-hook
 
-
 # By default, ^S freezes terminal output and ^Q resumes it. Disable that so
 # that those keys can be used for other things.
 unsetopt flowcontrol
@@ -68,6 +67,10 @@ fi
 # Load FZF
 [ -f ~/.fzf/shell/key-bindings.zsh ] && source ~/.fzf/shell/key-bindings.zsh
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+export FZF_DEFAULT_OPTS=" \
+--color=bg+:#313244,bg:#1e1e2e,spinner:#f5e0dc,hl:#f38ba8 \
+--color=fg:#cdd6f4,header:#f38ba8,info:#cba6f7,pointer:#f5e0dc \
+--color=marker:#f5e0dc,fg+:#cdd6f4,prompt:#cba6f7,hl+:#f38ba8"
 
 # Setup Cargo (Rust)
 [ -f ~/.cargo/env ] && source ~/.cargo/env
@@ -88,14 +91,19 @@ fi
 [ -f ~/.cargo/env ] && source ~/.cargo/env
 export RUST_SRC_PATH="$(rustc --print sysroot)/lib/rustlib/src/rust/src"
 
-BASE16_SHELL=$HOME/.config/base16-shell/
-[ -n "$PS1" ] && [ -s $BASE16_SHELL/profile_helper.sh ] && eval "$($BASE16_SHELL/profile_helper.sh)"
+# BASE16_SHELL=$HOME/.config/base16-shell/
+# [ -n "$PS1" ] && [ -s $BASE16_SHELL/profile_helper.sh ] && eval "$($BASE16_SHELL/profile_helper.sh)"
 
 [ -f /usr/local/share/zsh-autosuggestions/zsh-autosuggestions.zsh ] && source /usr/local/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 [ -f /usr/local/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ] && source /usr/local/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
 [ -f /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh ] && source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 [ -f /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ] && source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+
+[ -f $HOME/.zsh/catppuccin-zsh-syntax-highlighting.zsh ] && source $HOME/.zsh/catppuccin-zsh-syntax-highlighting.zsh
+
+# Config for elm-watch
+export ELM_WATCH_OPEN_EDITOR='idea --line "$line" "$file"'
 
 # _zsh_autosuggest_strategy_histdb_top_here() {
 #     local query="select commands.argv from
@@ -110,6 +118,7 @@ BASE16_SHELL=$HOME/.config/base16-shell/
 # ZSH_AUTOSUGGEST_STRATEGY=histdb_top_here
 
 HISTDB_FZF_DEFAULT_MODE=global
+HISTDB_FZF_FORCE_DATE_FORMAT=us
 source $HOME/.zsh/plugins/zsh-histdb-fzf/fzf-histdb.zsh
 bindkey '^r' histdb-fzf-widget
 

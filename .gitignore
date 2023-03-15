@@ -1,5 +1,6 @@
 .atom/.atom-socket-secret*
-.bin/elm-test-rs
-.bin/git-clean
+.bin/*
 .config/nvim/.netrwhist
+.config/fish/fish_plugins
+.config/fish/themes
 .vscode/extensions/

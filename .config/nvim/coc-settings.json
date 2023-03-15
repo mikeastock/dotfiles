@@ -1,7 +1,29 @@
 {
-  "diagnostic.displayByAle": true,
   "ignore_all_lsp": false,
-  "coc.preferences.formatOnSaveFiletypes": ["javascript", "typescript"],
+  "coc.preferences.formatOnSaveFiletypes": [
+    "elm",
+    "javascript",
+    "json",
+    "ruby",
+    "typescript",
+    "yaml"
+  ],
+  "codeLens.enable": true,
+  "solargraph": {
+    "autoformat": true,
+    "diagnostics": true,
+    "formatting": true,
+    "completion": false,
+    "useBundler": true
+  },
+  //"solargraph.autoformat": true,
+  //"solargraph.diagnostics": true,
+  //"solargraph.formatting": true,
+  //"solargraph.completion": false,
+  //"solargraph.useBundler": true,
+  "suggest.noselect": false,
+  "suggest.enablePreselect": false,
+  "suggest.hover": false,
   "languageserver": {
     "terraform": {
       "command": "terraform-ls",
@@ -9,15 +31,17 @@
       "filetypes": ["terraform", "tf"],
       "initializationOptions": {}
     }
+    //"elmLS": {
+    //  "command": "elm-language-server",
+    //  "filetypes": ["elm"],
+    //  "rootPatterns": [
+    //    "elm.json",
+    //    "elm/elm.json"
+    //  ]
+    //}
   },
-  "_oldConfig": {
-    "languageserver": {
-      "elmLS": {
-        "command": "elm-language-server",
-        "filetypes": ["elm"],
-        "rootPatterns": ["elm.json"]
-      }
-    },
-    "codeLens.enable": true
+  "elixir.pathToElixirLS": "~/.elixir-ls/release/language_server.sh",
+  "prettier": {
+    "printWidth": 90
   }
 }

@@ -7,7 +7,7 @@
 call plug#begin('~/.config/nvim/plugged')
 
 "fuzzy finding
-Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
+Plug 'junegunn/fzf', { 'dir': '/opt/homebrew/fzf' }
 Plug 'junegunn/fzf.vim'
 
 "looks
@@ -18,16 +18,17 @@ Plug 'AndrewRadev/splitjoin.vim'
 Plug 'FooSoft/vim-argwrap'
 Plug 'airblade/vim-gitgutter'
 Plug 'ap/vim-buftabline'
-Plug 'dense-analysis/ale'
+" Plug 'dense-analysis/ale'
 Plug 'junegunn/vim-easy-align'
 Plug 'justinmk/vim-sneak'
-Plug 'mcasper/vim-infer-debugger'
+Plug 'mikeastock/vim-infer-debugger'
 Plug 'pbrisbin/vim-mkdir'
 Plug 'tpope/vim-abolish'
 Plug 'tpope/vim-commentary'
 Plug 'tpope/vim-dispatch'
 Plug 'tpope/vim-fugitive'
 Plug 'tpope/vim-surround'
+Plug 'mg979/vim-visual-multi', { 'branch': 'master' }
 
 "Text objects
 Plug 'kana/vim-textobj-user', { 'for': 'ruby' }
@@ -36,6 +37,7 @@ Plug 'nelstrom/vim-textobj-rubyblock', { 'for': 'ruby' }
 " Langauge specific
 Plug 'HerringtonDarkholme/yats.vim'
 Plug 'Keithbsmiley/rspec.vim', { 'for': 'ruby' }
+Plug 'amadeus/vim-mjml', { 'for': 'mjml' }
 Plug 'andys8/vim-elm-syntax', { 'for': 'elm' }
 Plug 'cespare/vim-toml', { 'branch': 'main' }
 Plug 'dag/vim-fish', { 'for': 'fish' }
@@ -55,7 +57,7 @@ Plug 'vim-ruby/vim-ruby', { 'for': 'ruby' }
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
 
 "testing
-Plug 'janko-m/vim-test'
+Plug 'vim-test/vim-test'
 Plug 'kassio/neoterm'
 
 "colors
@@ -66,6 +68,7 @@ Plug 'chriskempson/base16-vim'
 Plug 'flazz/vim-colorschemes'
 Plug 'junegunn/seoul256.vim'
 Plug 'rakr/vim-one'
+Plug 'catppuccin/nvim', { 'as': 'catppuccin' }
 
 call plug#end()
 
@@ -79,7 +82,16 @@ set expandtab
 set autoindent
 set smarttab
 
+" Undo
+if !isdirectory($HOME."/.config/nvim/undo-dir")
+  call mkdir($HOME."/.config/nvim/undo-dir", "", 0700)
+endif
+set undodir=~/.config/nvim/undo-dir
+set undofile
+
+
 " Misc
+set virtualedit=insert
 set number
 set relativenumber
 set ruler
@@ -118,11 +130,12 @@ set noshowmode " Hide -- INSERT -- in cmdline for echodoc
 
 " Color
 set termguicolors
+colorscheme catppuccin-mocha " catppuccin-latte, catppuccin-frappe, catppuccin-macchiato, catppuccin-mocha
 
-if filereadable(expand("~/.vimrc_background"))
-  let base16colorspace=256
-  source ~/.vimrc_background
-endif
+" if filereadable(expand("~/.vimrc_background"))
+"   let base16colorspace=256
+"   source ~/.vimrc_background
+" endif
 
 syntax enable
 highlight MatchParen ctermbg=black
@@ -226,24 +239,50 @@ augroup gitCommit
   autocmd FileType *.md setlocal spell textwidth=80
 augroup END
 
+au BufRead,BufNewFile *.star set filetype=python
+
 "##############################################################################
 "# PLUGIN SETTINGS
 "##############################################################################
 
 "COC
-inoremap <expr> <cr> pumvisible() ? "\<C-y>" : "\<C-g>u\<CR>"
+" inoremap <expr> <cr> pumvisible() ? "\<C-y>" : "\<C-g>u\<CR>"
+" inoremap <silent><expr> <cr> coc#pum#visible() ? coc#pum#confirm() : "\<cr>"
+inoremap <expr> <cr> coc#pum#visible() ? coc#_select_confirm() : "\<CR>"
 
-nnoremap <nowait><expr> <C-f> coc#float#has_scroll() ? coc#float#scroll(1) : "\<C-f>"
-nnoremap <nowait><expr> <C-b> coc#float#has_scroll() ? coc#float#scroll(0) : "\<C-b>"
-inoremap <nowait><expr> <C-f> coc#float#has_scroll() ? "\<c-r>=coc#float#scroll(1)\<cr>" : "\<Right>"
-inoremap <nowait><expr> <C-b> coc#float#has_scroll() ? "\<c-r>=coc#float#scroll(0)\<cr>" : "\<Left>"
+" nnoremap <nowait><expr> <C-f> coc#float#has_scroll() ? coc#float#scroll(1) : "\<C-f>"
+" nnoremap <nowait><expr> <C-b> coc#float#has_scroll() ? coc#float#scroll(0) : "\<C-b>"
+" inoremap <nowait><expr> <C-f> coc#float#has_scroll() ? "\<c-r>=coc#float#scroll(1)\<cr>" : "\<Right>"
+" inoremap <nowait><expr> <C-b> coc#float#has_scroll() ? "\<c-r>=coc#float#scroll(0)\<cr>" : "\<Left>"
+
+nmap <silent> gr <Plug>(coc-references)
+nmap <silent> <F3> <Plug>(coc-rename)
+" Find symbol of current document.
+nnoremap <silent><nowait> <space>o  :<C-u>CocList outline<cr>
+
+nmap <silent> <F2> <Plug>(coc-diagnostic-next)
+" nmap <silent> <leader>A <Plug>(coc-diagnostic-next-error)
+
+" " Do default action for next item.
+" nnoremap <silent><nowait> <space>j  :<C-u>CocNext<CR>
+" " Do default action for previous item.
+" nnoremap <silent><nowait> <space>k  :<C-u>CocPrev<CR>
+
 
 "ArgWrap
 nnoremap <silent><Leader>a :ArgWrap<CR>
 let g:argwrap_tail_comma = 1
 
 "FZF
-let $FZF_DEFAULT_COMMAND = 'ag --hidden --ignore .git -g ""'
+let $FZF_DEFAULT_COMMAND = 'rg --hidden --glob "!**/.git/**" --files'
+
+" Empty value to disable preview window altogether
+let g:fzf_preview_window = []
+
+command! -bang -nargs=* Rg
+  \ call fzf#vim#grep(
+  \   'rg --column --line-number --no-heading --color=always --smart-case -- '.shellescape(<q-args>), 1,
+  \   fzf#vim#with_preview(), <bang>0)
 
 " Enable per-command history.
 " CTRL-N and CTRL-P will be automatically bound to next-history and
@@ -251,34 +290,26 @@ let $FZF_DEFAULT_COMMAND = 'ag --hidden --ignore .git -g ""'
 " explicitly bind the keys to down and up in your $FZF_DEFAULT_OPTS.
 let g:fzf_history_dir = '~/.local/share/fzf-history'
 
-" Similarly, we can apply it to fzf#vim#grep. To use ripgrep instead of ag:
-command! -bang -nargs=* Rg
-  \ call fzf#vim#grep(
-  \   'rg --column --line-number --no-heading --color=always '.shellescape(<q-args>), 1,
-  \   <bang>0 ? fzf#vim#with_preview('up:60%')
-  \           : fzf#vim#with_preview('right:50%:hidden', '?'),
-  \   <bang>0)
-
 "Elixir
 let g:mix_format_on_save = 1
 
 "Ale
-let g:ale_disable_lsp = 1
-let g:ale_lint_on_text_changed = 'never'
-let g:ale_fix_on_save = 1
-let g:ale_linters = {
-      \ 'elixir': [],
-      \ 'elm': [],
-      \ 'hcl': ['terraform'],
-      \ 'ruby': ['rubocop'],
-      \ 'rust': ['rls'],
-      \ 'terraform': ['terraform']
-      \}
-let g:ale_fixers = {
-      \ 'ruby': ['rubocop'],
-      \ 'hcl': ['terraform'],
-      \ 'terraform': ['terraform']
-      \}
+" let g:ale_disable_lsp = 1
+" let g:ale_lint_on_text_changed = 'never'
+" let g:ale_fix_on_save = 1
+" let g:ale_linters = {
+"       \ 'elixir': [],
+"       \ 'elm': [],
+"       \ 'hcl': ['terraform'],
+"       \ 'ruby': ['rubocop'],
+"       \ 'rust': ['rls'],
+"       \ 'terraform': ['terraform']
+"       \}
+" let g:ale_fixers = {
+"       \ 'ruby': ['rubocop'],
+"       \ 'hcl': ['terraform'],
+"       \ 'terraform': ['terraform']
+"       \}
 
 "replace 'f' with 1-char Sneak
 nmap f <Plug>Sneak_f
@@ -317,9 +348,10 @@ tnoremap <Esc> <C-\><C-n>
 autocmd TermOpen * setlocal conceallevel=0 colorcolumn=0 relativenumber
 
 let test#strategy = 'basic'
+let g:test#javascript#playwright#file_pattern = '\v(e2e/.*|(spec|test))\.(js|jsx|coffee|ts|tsx)$'
 
 let g:user_debugger_dictionary = {
-      \ '\.rb': 'binding.pry',
+      \ '\.rb': 'binding.irb',
       \ }
 
 " Rename current file
