@@ -29,6 +29,8 @@ Plug 'tpope/vim-dispatch'
 Plug 'tpope/vim-fugitive'
 Plug 'tpope/vim-surround'
 Plug 'mg979/vim-visual-multi', { 'branch': 'master' }
+" Plug 'brenoprata10/nvim-highlight-colors'
+Plug 'rrethy/vim-hexokinase', { 'do': 'make hexokinase' }
 
 "Text objects
 Plug 'kana/vim-textobj-user', { 'for': 'ruby' }
@@ -55,6 +57,7 @@ Plug 'vim-ruby/vim-ruby', { 'for': 'ruby' }
 
 "Autocomplete
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
+Plug 'github/copilot.vim'
 
 "testing
 Plug 'vim-test/vim-test'
@@ -131,6 +134,9 @@ set noshowmode " Hide -- INSERT -- in cmdline for echodoc
 " Color
 set termguicolors
 colorscheme catppuccin-mocha " catppuccin-latte, catppuccin-frappe, catppuccin-macchiato, catppuccin-mocha
+
+" Color Preview
+" call v:lua.require('nvim-highlight-colors').setup({enable_named_colors = true, enable_tailwind = true})
 
 " if filereadable(expand("~/.vimrc_background"))
 "   let base16colorspace=256

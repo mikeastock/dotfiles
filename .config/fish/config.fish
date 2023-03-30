@@ -39,9 +39,11 @@ alias b="bundle"
 alias be="bundle exec"
 
 # Rails
+alias r="bin/rails"
 alias migrate="bin/rails db:migrate"
 alias m="migrate"
 alias rk="rake"
+alias reset_elm="rm app/assets/javascripts/elm.js && rm -rf public/dist/assets && npm run build && rails assets:precompile"
 
 alias g="git"
 alias gap="git add -p"
@@ -84,7 +86,7 @@ zoxide init fish | source
 source /opt/homebrew/opt/asdf/libexec/asdf.fish
 
 ###### History Search
-atuin init fish | source
+atuin init fish --disable-up-arrow | source
 
 ####### PROMPT CONFIG
 starship init fish | source

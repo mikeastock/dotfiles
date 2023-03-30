@@ -16,11 +16,6 @@
     "completion": false,
     "useBundler": true
   },
-  //"solargraph.autoformat": true,
-  //"solargraph.diagnostics": true,
-  //"solargraph.formatting": true,
-  //"solargraph.completion": false,
-  //"solargraph.useBundler": true,
   "suggest.noselect": false,
   "suggest.enablePreselect": false,
   "suggest.hover": false,
