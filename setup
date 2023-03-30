@@ -7,14 +7,12 @@ cd "$HOME"
 [ ! -L icloud-drive ] && ln -s "$HOME/Library/Mobile Documents/com~apple~CloudDocs" icloud-drive
 
 files=(
-  .atom
   .bash_aliases
   .bashrc
   .bin
   .gemrc
   .gitconfig
   .ideavimrc
-  .oni
   .psqlrc
   .tmux.conf
   .tmuxinator
@@ -36,8 +34,9 @@ done
 # Link nvim config
 mkdir -p "$HOME/.config"
 cd "$HOME/.config"
-[ ! -L starship.toml ] && ln -s ../icloud-drive/dotfiles/.config/starship.toml .
+[ ! -L fish ] && ln -s ../icloud-drive/dotfiles/.config/fish .
 [ ! -L nvim ] && ln -s ../icloud-drive/dotfiles/.config/nvim .
+[ ! -L starship.toml ] && ln -s ../icloud-drive/dotfiles/.config/starship.toml .
 cd ..
 
 # Link .ssh config
