@@ -7,21 +7,13 @@ cd "$HOME"
 [ ! -L icloud-drive ] && ln -s "$HOME/Library/Mobile Documents/com~apple~CloudDocs" icloud-drive
 
 files=(
-  .bash_aliases
-  .bashrc
   .bin
-  .gemrc
   .gitconfig
   .ideavimrc
   .psqlrc
   .tmux.conf
   .tmuxinator
   .vscode
-  .zsh
-  .zshenv
-  .zshrc
-  .zshrc.linux
-  .zshrc.mac
 )
 for link in ${files[@]}; do
   if [ -L "$HOME/$link" ]; then
@@ -45,18 +37,10 @@ cd "$HOME/.ssh"
 [ ! -L config ] && ln -s ../icloud-drive/dotfiles/.ssh/config .
 cd ..
 
-# Setup colors
-if [ -d ".config/base16-shell" ]; then
-  echo "base16-shell already installed"
-else
-  git clone https://github.com/chriskempson/base16-shell.git ~/.config/base16-shell
-fi
-
 # Set macOS default hidden settings
 
 ## Disabling shadows on windows when taking screenshots - requires killall SystemUIServer
 defaults write com.apple.screencapture disable-shadow -bool true
-
 
 # Install things
 if command -v brew; then
@@ -71,28 +55,3 @@ brew update
 brew tap Homebrew/bundle
 brew bundle --verbose
 brew upgrade
-
-## Set up node
-NODE_VERSION="15.14.0"
-if [ -d ".asdf/installs/nodejs/$NODE_VERSION" ]; then
-  echo "Node $NODE_VERSION already installed"
-else
-  asdf plugin add nodejs
-  asdf install nodejs "$NODE_VERSION"
-fi
-asdf global nodejs "$NODE_VERSION"
-
-## Set up ruby
-RUBY_VERSION="2.7.4"
-if [ -d ".asdf/installs/ruby/$RUBY_VERSION" ]; then
-  echo "Ruby $RUBY_VERSION already installed"
-else
-  asdf plugin add ruby
-  asdf install ruby "$RUBY_VERSION"
-fi
-asdf global ruby "$RUBY_VERSION"
-
-## Install Rust
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-
-source .zshrc
