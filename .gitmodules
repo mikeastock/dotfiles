@@ -1,3 +1,0 @@
-[submodule ".zsh/plugins/zsh-histdb"]
-	path = .zsh/plugins/zsh-histdb
-	url = git@github.com:larkery/zsh-histdb.git
