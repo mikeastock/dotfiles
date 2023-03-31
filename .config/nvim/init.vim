@@ -4,7 +4,7 @@
 "
 
 " Plugins
-call plug#begin('~/.config/nvim/plugged')
+call plug#begin('~/.config/nvim/plugged.nosync')
 
 "fuzzy finding
 Plug 'junegunn/fzf', { 'dir': '/opt/homebrew/fzf' }
