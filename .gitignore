@@ -1,6 +1,7 @@
 .atom/.atom-socket-secret*
 .bin/*
 .config/nvim/.netrwhist
+.config/nvim/undo-dir/*
 .config/fish/fish_plugins
 .config/fish/themes
 .vscode/extensions/
