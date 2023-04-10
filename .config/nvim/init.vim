@@ -274,6 +274,10 @@ nmap <silent> <F2> <Plug>(coc-diagnostic-next)
 " " Do default action for previous item.
 " nnoremap <silent><nowait> <space>k  :<C-u>CocPrev<CR>
 
+let g:coc_filetype_map = {
+  \ 'rspec.ruby': 'ruby',
+  \ }
+
 
 "ArgWrap
 nnoremap <silent><Leader>a :ArgWrap<CR>

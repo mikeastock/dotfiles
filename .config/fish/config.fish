@@ -72,18 +72,22 @@ alias ci="git ci-status -v"
 # Homebrew
 fish_add_path /opt/homebrew/bin
 
-# Local bin dirs
-fish_add_path ~/bin
-fish_add_path -m ./bin
-
 # PostgreSQL 13
-fish_add_path /opt/homebrew/opt/postgresql@13.6/bin/
+fish_add_path /opt/homebrew/opt/postgresql@13/bin/
 
 ####### Z Alt
 zoxide init fish | source
 
 ###### ASDF
-source /opt/homebrew/opt/asdf/libexec/asdf.fish
+# source /opt/homebrew/opt/asdf/libexec/asdf.fish
+set -x ASDF_DIR /opt/homebrew/opt/asdf/libexec
+fish_add_path "$HOME/.asdf/shims" "$ASDF_DIR/bin"
+source "$ASDF_DIR/lib/asdf.fish"
+
+# Local bin dirs - Added after ASDF so that these take precedence
+fish_add_path ~/bin
+# fish_add_path ./bin
+set PATH ./bin $PATH
 
 ###### History Search
 atuin init fish --disable-up-arrow | source
