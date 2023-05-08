@@ -43,7 +43,7 @@ alias r="bin/rails"
 alias migrate="bin/rails db:migrate"
 alias m="migrate"
 alias rk="rake"
-alias reset_elm="rm app/assets/javascripts/elm.js && rm -rf public/dist/assets && npm run build && rails assets:precompile"
+alias reset_elm="rm -f app/assets/javascripts/elm.js && rm -rf public/dist/assets && npm run build && rails assets:precompile"
 
 alias g="git"
 alias gap="git add -p"

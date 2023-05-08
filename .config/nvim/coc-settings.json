@@ -6,6 +6,7 @@
     "json",
     "ruby",
     "typescript",
+    "typescriptreact",
     "yaml"
   ],
   "codeLens.enable": true,
