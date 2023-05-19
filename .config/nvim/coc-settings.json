@@ -39,5 +39,9 @@
   "elixir.pathToElixirLS": "~/.elixir-ls/release/language_server.sh",
   "prettier": {
     "printWidth": 90
+  },
+  "tailwindCSS.experimental.classRegex": ["tw_w+s+=s+\"(.*)\""],
+  "tailwindCSS.includeLanguages": {
+    "ruby": "html"
   }
 }
