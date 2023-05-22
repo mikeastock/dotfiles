@@ -27,7 +27,12 @@ done
 mkdir -p "$HOME/.config"
 cd "$HOME/.config"
 [ ! -L fish ] && ln -s ../icloud-drive/dotfiles/.config/fish .
-[ ! -L nvim ] && ln -s ../icloud-drive/dotfiles/.config/nvim .
+
+[ ! -L nvim ] && mkdir nvim
+[ ! -L nvim/init.lua ] && ln -s ../icloud-drive/dotfiles/.config/nvim/init.lua nvim/init.lua
+[ ! -L nvim/autoload ] && ln -s ../icloud-drive/dotfiles/.config/nvim/autoload nvim/autoload
+[ ! -L nvim/coc-settings.json ] && ln -s ../icloud-drive/dotfiles/.config/nvim/coc-settings.json nvim/coc-settings.json
+
 [ ! -L starship.toml ] && ln -s ../icloud-drive/dotfiles/.config/starship.toml .
 cd ..
 
