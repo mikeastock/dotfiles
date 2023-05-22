@@ -246,13 +246,11 @@ endfunction
 call MapCR()
 ]])
 
-vmap("<Enter>", "<Plug>(EasyAlign)")
+vmap("<Enter>", "<cmd>EasyAlign")
 
 -- more natural movement with wrap on
 nmap('j', 'gj')
 nmap('k', 'gk')
-vmap('j', 'gj')
-vmap('k', 'gk')
 
 -- Easy buffer navigation
 nmap('<C-h>', '<C-w>h')
@@ -265,17 +263,21 @@ nmap("K", "<cmd>Rg <C-R><C-W><CR>")
 nmap("<Right>", "<cmd>bn<CR>")
 nmap("<Left>", "<cmd>bp<CR>")
 
----- Because I can't spell
---cabbrev Wq wq
---cabbrev WQ wq
---cabbrev Qall qall
---cabbrev Wqall wqall
+-- Emacs-like beginning and end of line.
+imap("<c-e>", "<c-o>$")
+imap("<c-a>", "<c-o>^")
+
+-- Because I can't spell
+vim.cmd.cabbrev({"Wq", "wq"})
+vim.cmd.cabbrev({"WQ", "wq"})
+vim.cmd.cabbrev({"Qall", "qall"})
+vim.cmd.cabbrev({"Wqall", "wqall"})
 
 --##############################################################################
 --# AUTOCMDS
 --##############################################################################
 
-vim.cmd("filetype plugin indent on")
+vim.cmd.filetype({"plugin", "indent", "on"})
 
 vim.cmd([[
 augroup indentation
@@ -296,10 +298,6 @@ augroup indentation
   autocmd FileType swift set ai sw=4 sts=4 et
 augroup END
 
-augroup elm
-  autocmd FileType elm map <Leader>t ElmTest<CR>
-augroup END
-
 " Remove trailing whitespace on save
 augroup trailingWhitespace
   autocmd BufWritePre * :%s/\s\+$//e
@@ -309,8 +307,6 @@ augroup gitCommit
   autocmd FileType gitcommit setlocal spell textwidth=72
   autocmd FileType *.md setlocal spell textwidth=80
 augroup END
-
-au BufRead,BufNewFile *.star set filetype=python
 ]])
 
 --##############################################################################
@@ -369,8 +365,8 @@ vim.g.fzf_preview_window = false
 -- explicitly bind the keys to down and up in your $FZF_DEFAULT_OPTS.
 vim.g.fzf_history_dir = HOME .. "/.local/share/fzf-history"
 
-----Elixir
---let g:mix_format_on_save = 1
+--Elixir
+vim.g.mix_format_on_save = true
 
 ----Ale
 ---- let g:ale_disable_lsp = 1
@@ -386,6 +382,8 @@ vim.g.fzf_history_dir = HOME .. "/.local/share/fzf-history"
 ----       \}
 
 ----replace 'f' with 1-char Sneak
+nmap("f", "<Plug>Sneak_f")
+nmap("F", "<Plug>Sneak_F")
 --nmap f <Plug>Sneak_f
 --nmap F <Plug>Sneak_F
 --xmap f <Plug>Sneak_f
