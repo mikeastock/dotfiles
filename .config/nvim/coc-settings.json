@@ -1,25 +1,10 @@
 {
-  "ignore_all_lsp": false,
-  "coc.preferences.formatOnSaveFiletypes": [
-    "elm",
-    "javascript",
-    "json",
-    "ruby",
-    "typescript",
-    "typescriptreact",
-    "yaml"
-  ],
-  "codeLens.enable": true,
-  "solargraph": {
-    "autoformat": true,
-    "diagnostics": true,
-    "formatting": true,
-    "completion": false,
-    "useBundler": true
+  "[elm][javascript][ruby][typescript][typescriptreact][yaml]": {
+    "coc.preferences.formatOnSave": true
   },
+  "codeLens.enable": true,
   "suggest.noselect": false,
   "suggest.enablePreselect": false,
-  "suggest.hover": false,
   "languageserver": {
     "terraform": {
       "command": "terraform-ls",
@@ -52,9 +37,7 @@
     }
   },
   "elixir.pathToElixirLS": "~/.elixir-ls/release/language_server.sh",
-  "prettier": {
-    "printWidth": 90
-  },
+  "prettier.printWidth": 90,
   "tailwindCSS.experimental.classRegex": ["tw_w+s+=s+\"(.*)\""],
   "tailwindCSS.includeLanguages": {
     "ruby": "html"

@@ -392,12 +392,12 @@ inoremap <expr> <cr> coc#pum#visible() ? coc#_select_confirm() : "\<CR>"
 -- inoremap <nowait><expr> <C-f> coc#float#has_scroll() ? "\<c-r>=coc#float#scroll(1)\<cr>" : "\<Right>"
 -- inoremap <nowait><expr> <C-b> coc#float#has_scroll() ? "\<c-r>=coc#float#scroll(0)\<cr>" : "\<Left>"
 
-nmap("gr", "<cmd>(coc-references)")
-nmap("<F3>", "<cmd>(coc-rename)")
+nmap("gr", "<Plug>(coc-references)")
+nmap("<F3>", "<Plug>(coc-rename)")
 -- Find symbol of current document.
-nmap("<Leader>o", "<cmd>CocList outline<cr>")
+nmap("<Leader>o", "<cmd>CocList outline<CR>")
 
-nmap("<F2>", "<cmd>(coc-diagnostic-next)")
+nmap("<F2>", "<Plug>(coc-diagnostic-next)")
 -- nmap <silent> <leader>A <Plug>(coc-diagnostic-next-error)
 
 -- " Do default action for next item.
