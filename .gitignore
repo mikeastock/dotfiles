@@ -2,7 +2,7 @@
 .bin/*
 .config/nvim/.netrwhist
 .config/nvim/undo-dir/*
-.config/nvim/plugged.nosync/*
+.config/nvim/plugin.nosync/*
 .config/fish/fish_plugins
 .config/fish/themes
 .vscode/extensions/
