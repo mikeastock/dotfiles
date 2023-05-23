@@ -34,9 +34,9 @@ end
 
 local ensure_packer = function()
   local fn = vim.fn
-  local install_path = fn.stdpath('data')..'/site/pack/packer/start/packer.nvim'
+  local install_path = fn.stdpath('data') .. '/site/pack/packer/start/packer.nvim'
   if fn.empty(fn.glob(install_path)) > 0 then
-    fn.system({'git', 'clone', '--depth', '1', 'https://github.com/wbthomason/packer.nvim', install_path})
+    fn.system({ 'git', 'clone', '--depth', '1', 'https://github.com/wbthomason/packer.nvim', install_path })
     vim.cmd [[packadd packer.nvim]]
     return true
   end
@@ -53,7 +53,7 @@ require('packer').startup(function(use)
   use {
     'junegunn/fzf.vim',
     requires = { 'junegunn/fzf', run = ':call fzf#install()' }
- }
+  }
 
   -- UI
   use 'itchyny/lightline.vim'
@@ -90,6 +90,16 @@ require('packer').startup(function(use)
 
   -- Text objects
   use {
+    'nvim-treesitter/nvim-treesitter',
+  }
+
+  use {
+    "nvim-treesitter/nvim-treesitter-textobjects",
+    after = "nvim-treesitter",
+    requires = "nvim-treesitter/nvim-treesitter",
+  }
+
+  use {
     'andymass/vim-matchup',
     setup = function()
       -- may set any options here
@@ -101,26 +111,26 @@ require('packer').startup(function(use)
 
   -- JS
   use { 'HerringtonDarkholme/yats.vim', ft = 'typescript' }
-  use {'othree/javascript-libraries-syntax.vim', ft = { 'javascript' }}
-  use {'pangloss/vim-javascript', ft = { 'javascript' }}
+  use { 'othree/javascript-libraries-syntax.vim', ft = { 'javascript' } }
+  use { 'pangloss/vim-javascript', ft = { 'javascript' } }
 
   -- Ruby
-  use {'Keithbsmiley/rspec.vim', ft = { 'ruby' }}
-  use {'tpope/vim-rails', ft = { 'ruby' }}
-  use {'vim-ruby/vim-ruby', ft = { 'ruby' }}
+  use { 'Keithbsmiley/rspec.vim', ft = { 'ruby' } }
+  use { 'tpope/vim-rails', ft = { 'ruby' } }
+  use { 'vim-ruby/vim-ruby', ft = { 'ruby' } }
 
   -- Elixir
-  use {'elixir-lang/vim-elixir', ft = { 'elixir,eelixir' }}
-  use {'mhinz/vim-mix-format', ft = { 'elixir,eelixir' }}
+  use { 'elixir-lang/vim-elixir', ft = { 'elixir,eelixir' } }
+  use { 'mhinz/vim-mix-format', ft = { 'elixir,eelixir' } }
 
   -- Misc
-  use {'amadeus/vim-mjml', ft = { 'mjml' }}
-  use {'andys8/vim-elm-syntax', ft = { 'elm' }}
-  use {'dag/vim-fish', ft = { 'fish' }}
-  use {'fatih/vim-go', ft = { 'golang' }}
-  use {'hashivim/vim-terraform', ft = { 'terraform' }}
-  use {'jvirtanen/vim-hcl', ft = { 'hcl' }}
-  use {'rust-lang/rust.vim', ft = { 'rust' }}
+  use { 'amadeus/vim-mjml', ft = { 'mjml' } }
+  use { 'andys8/vim-elm-syntax', ft = { 'elm' } }
+  use { 'dag/vim-fish', ft = { 'fish' } }
+  use { 'fatih/vim-go', ft = { 'golang' } }
+  use { 'hashivim/vim-terraform', ft = { 'terraform' } }
+  use { 'jvirtanen/vim-hcl', ft = { 'hcl' } }
+  use { 'rust-lang/rust.vim', ft = { 'rust' } }
   -- use {'cespare/vim-toml', { 'branch': 'main' }}
 
   -- -- Autocomplete
@@ -142,7 +152,7 @@ require('packer').startup(function(use)
   use { "catppuccin/nvim", as = "catppuccin" }
 
   -- LSP
-  use {'neoclide/coc.nvim', branch = 'release'}
+  use { 'neoclide/coc.nvim', branch = 'release' }
   -- use {
   --   "williamboman/mason.nvim",
   --   "williamboman/mason-lspconfig.nvim",
@@ -211,10 +221,10 @@ set list
 set listchars=tab:·\ ,trail:█
 ]])
 
-vim.opt.mouse = "" -- I HATE MICE
-vim.opt.gdefault = true -- Assume the /g flag on :s substitutions to replace all matches in a line
+vim.opt.mouse = ""        -- I HATE MICE
+vim.opt.gdefault = true   -- Assume the /g flag on :s substitutions to replace all matches in a line
 vim.opt.shiftround = true -- When at 3 spaces and I hit >>, go to 4, not 5.
-vim.opt.showmode = false -- Hide -- INSERT -- in cmdline for echodoc
+vim.opt.showmode = false  -- Hide -- INSERT -- in cmdline for echodoc
 
 -- Color
 vim.opt.termguicolors = true
@@ -280,16 +290,16 @@ imap("<c-e>", "<c-o>$")
 imap("<c-a>", "<c-o>^")
 
 -- Because I can't spell
-vim.cmd.cabbrev({"Wq", "wq"})
-vim.cmd.cabbrev({"WQ", "wq"})
-vim.cmd.cabbrev({"Qall", "qall"})
-vim.cmd.cabbrev({"Wqall", "wqall"})
+vim.cmd.cabbrev({ "Wq", "wq" })
+vim.cmd.cabbrev({ "WQ", "wq" })
+vim.cmd.cabbrev({ "Qall", "qall" })
+vim.cmd.cabbrev({ "Wqall", "wqall" })
 
 --##############################################################################
 --# AUTOCMDS
 --##############################################################################
 
-vim.cmd.filetype({"plugin", "indent", "on"})
+vim.cmd.filetype({ "plugin", "indent", "on" })
 
 vim.cmd([[
 augroup indentation
@@ -300,12 +310,8 @@ augroup indentation
         \ endif
 
   " for ruby, autoindent with two spaces, always expand tabs
-  autocmd FileType ruby,haml,eruby,yaml,fdoc,html,javascript,sass,cucumber set ai sw=2 sts=2 et
+  autocmd FileType ruby,haml,eruby,yaml,html,javascript set ai sw=2 sts=2 et
 
-  autocmd BufNewFile,BufRead Fastfile setfiletype ruby
-  autocmd BufNewFile,BufRead *.fdoc setfiletype yaml
-  autocmd Filetype yaml set nocursorline
-  autocmd BufNewFile,BufRead *.sass setfiletype sass
   autocmd Filetype markdown setlocal spell
   autocmd FileType swift set ai sw=4 sts=4 et
 augroup END
@@ -324,6 +330,46 @@ augroup END
 --##############################################################################
 --# PLUGIN SETTINGS
 --##############################################################################
+
+require('nvim-treesitter.configs').setup {
+  ensure_installed = { "lua", "ruby" },
+  sync_install = true,
+  highlight = {
+    enable = true,
+  },
+  textobjects = {
+    select = {
+      enable = true,
+      lookahead = true,
+      keymaps = {
+        ["af"] = "@function.outer",
+        ["if"] = "@function.inner",
+        ["ac"] = "@class.outer",
+        ["ic"] = "@class.inner",
+      },
+    },
+    move = {
+      enable = true,
+      set_jumps = true,
+      goto_next_start = {
+        ["]m"] = "@function.outer",
+        ["]]"] = "@class.outer",
+      },
+      goto_next_end = {
+        ["]M"] = "@function.outer",
+        ["]["] = "@class.outer",
+      },
+      goto_previous_start = {
+        ["[m"] = "@function.outer",
+        ["[["] = "@class.outer",
+      },
+      goto_previous_end = {
+        ["[M"] = "@function.outer",
+        ["[]"] = "@class.outer",
+      },
+    },
+  }
+}
 
 -- -- Mason
 -- require("mason").setup()
@@ -485,9 +531,7 @@ tmap("<Esc>", "<C-\\><C-n>")
 -- I like relative numbering when in normal mode.
 vim.cmd("autocmd TermOpen * setlocal conceallevel=0 colorcolumn=0 relativenumber")
 
---let g:user_debugger_dictionary = {
---      \ '\.rb': 'binding.irb',
---      \ }
+-- vim.g.user_debugger_dictionary = { ".rb" = "binding.irb" }
 
 -- Rename current file
 vim.cmd([[

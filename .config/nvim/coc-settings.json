@@ -1,5 +1,5 @@
 {
-  "[elm][javascript][ruby][typescript][typescriptreact][yaml]": {
+  "[elm][javascript][ruby][typescript][typescriptreact][yaml][lua]": {
     "coc.preferences.formatOnSave": true
   },
   "codeLens.enable": true,
