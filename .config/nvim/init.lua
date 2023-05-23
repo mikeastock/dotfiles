@@ -140,8 +140,20 @@ require('packer').startup(function(use)
   -- use 'junegunn/seoul256.vim'
   -- use 'rakr/vim-one'
   use { "catppuccin/nvim", as = "catppuccin" }
-end)
 
+  -- LSP
+  use {'neoclide/coc.nvim', branch = 'release'}
+  -- use {
+  --   "williamboman/mason.nvim",
+  --   "williamboman/mason-lspconfig.nvim",
+  --   "neovim/nvim-lspconfig",
+  -- }
+
+  -- use {
+  --   "folke/trouble.nvim",
+  --   requires = { "nvim-tree/nvim-web-devicons" },
+  -- }
+end)
 
 -- Tabs and spaces
 vim.opt.tabstop = 2
@@ -313,36 +325,89 @@ augroup END
 --# PLUGIN SETTINGS
 --##############################################################################
 
-----COC
----- inoremap <expr> <cr> pumvisible() ? "\<C-y>" : "\<C-g>u\<CR>"
----- inoremap <silent><expr> <cr> coc#pum#visible() ? coc#pum#confirm() : "\<cr>"
---inoremap <expr> <cr> coc#pum#visible() ? coc#_select_confirm() : "\<CR>"
+-- -- Mason
+-- require("mason").setup()
+-- require("mason-lspconfig").setup({
+--   ensure_installed = { "lua_ls", "ruby_ls", "tsserver" },
+-- })
 
----- nnoremap <nowait><expr> <C-f> coc#float#has_scroll() ? coc#float#scroll(1) : "\<C-f>"
----- nnoremap <nowait><expr> <C-b> coc#float#has_scroll() ? coc#float#scroll(0) : "\<C-b>"
----- inoremap <nowait><expr> <C-f> coc#float#has_scroll() ? "\<c-r>=coc#float#scroll(1)\<cr>" : "\<Right>"
----- inoremap <nowait><expr> <C-b> coc#float#has_scroll() ? "\<c-r>=coc#float#scroll(0)\<cr>" : "\<Left>"
+-- require("lspconfig").lua_ls.setup {}
 
---nmap <silent> gr <Plug>(coc-references)
---nmap <silent> <F3> <Plug>(coc-rename)
----- Find symbol of current document.
---nnoremap <silent><nowait> <space>o  :<C-u>CocList outline<cr>
+-- require('lspconfig').ruby_ls.setup {
+--   init_options = {
+--     -- Add Ruby LSP configuration here, eg:
+--     formatter = "auto"
+--   },
+--   -- Add your lspconfig configurations/overrides here, eg:
+--   on_attach = function(client, buffer)
+--     -- in the case you have an existing `on_attach` function
+--     -- with mappings you share with other lsp clients configs
+--     pcall(on_attach, client, buffer)
 
---nmap <silent> <F2> <Plug>(coc-diagnostic-next)
----- nmap <silent> <leader>A <Plug>(coc-diagnostic-next-error)
+--     local diagnostic_handler = function ()
+--       local params = vim.lsp.util.make_text_document_params(buffer)
 
----- " Do default action for next item.
----- nnoremap <silent><nowait> <space>j  :<C-u>CocNext<CR>
----- " Do default action for previous item.
----- nnoremap <silent><nowait> <space>k  :<C-u>CocPrev<CR>
+--       client.request(
+--         'textDocument/diagnostic',
+--         {textDocument = params},
+--         function(err, result)
+--           if err then
+--             local err_msg = string.format("ruby-lsp - diagnostics error - %s", vim.inspect(err))
+--             vim.lsp.log.error(err_msg)
+--           end
+--           if not result then return end
 
---let g:coc_filetype_map = {
---  \ 'rspec.ruby': 'ruby',
---  \ }
+--           vim.lsp.diagnostic.on_publish_diagnostics(
+--             nil,
+--             vim.tbl_extend('keep', params, { diagnostics = result.items }),
+--             { client_id = client.id }
+--           )
+--         end
+--       )
+--     end
+
+--     diagnostic_handler() -- to request diagnostics when attaching the client to the buffer
+
+--     local ruby_group = vim.api.nvim_create_augroup('ruby_ls', {clear = false})
+--     vim.api.nvim_create_autocmd(
+--       {'BufEnter', 'BufWritePre', 'InsertLeave', 'TextChanged'},
+--       {
+--         buffer = buffer,
+--         callback = diagnostic_handler,
+--         group = ruby_group,
+--       }
+--     )
+--   end
+-- }
+
+--COC
+-- inoremap <expr> <cr> pumvisible() ? "\<C-y>" : "\<C-g>u\<CR>"
+-- inoremap <silent><expr> <cr> coc#pum#visible() ? coc#pum#confirm() : "\<cr>"
+vim.cmd([[
+inoremap <expr> <cr> coc#pum#visible() ? coc#_select_confirm() : "\<CR>"
+]])
+
+-- nnoremap <nowait><expr> <C-f> coc#float#has_scroll() ? coc#float#scroll(1) : "\<C-f>"
+-- nnoremap <nowait><expr> <C-b> coc#float#has_scroll() ? coc#float#scroll(0) : "\<C-b>"
+-- inoremap <nowait><expr> <C-f> coc#float#has_scroll() ? "\<c-r>=coc#float#scroll(1)\<cr>" : "\<Right>"
+-- inoremap <nowait><expr> <C-b> coc#float#has_scroll() ? "\<c-r>=coc#float#scroll(0)\<cr>" : "\<Left>"
+
+nmap("gr", "<cmd>(coc-references)")
+nmap("<F3>", "<cmd>(coc-rename)")
+-- Find symbol of current document.
+nmap("<Leader>o", "<cmd>CocList outline<cr>")
+
+nmap("<F2>", "<cmd>(coc-diagnostic-next)")
+-- nmap <silent> <leader>A <Plug>(coc-diagnostic-next-error)
+
+-- " Do default action for next item.
+-- nnoremap <silent><nowait> <space>j  :<C-u>CocNext<CR>
+-- " Do default action for previous item.
+-- nnoremap <silent><nowait> <space>k  :<C-u>CocPrev<CR>
 
 
 ----ArgWrap
-nmap("<silent><Leader>a", "<cmd>ArgWrap<CR>")
+nmap("<Leader>a", "<cmd>ArgWrap<CR>")
 vim.g.argwrap_tail_comma = true
 
 --FZF
