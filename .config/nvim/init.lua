@@ -51,12 +51,20 @@ require('packer').startup(function(use)
 
   -- fuzzy finding
   use {
-    'junegunn/fzf.vim',
-    requires = { 'junegunn/fzf', run = ':call fzf#install()' }
+    'nvim-telescope/telescope.nvim',
+    branch = '0.1.x',
+    requires = {
+      'nvim-lua/plenary.nvim',
+      'nvim-tree/nvim-web-devicons'
+    },
   }
 
   -- UI
-  use 'itchyny/lightline.vim'
+  -- use 'itchyny/lightline.vim'
+  use {
+    'nvim-lualine/lualine.nvim',
+    requires = { 'nvim-tree/nvim-web-devicons' },
+  }
 
   -- workflow
   use 'AndrewRadev/splitjoin.vim'
@@ -230,16 +238,13 @@ vim.opt.showmode = false  -- Hide -- INSERT -- in cmdline for echodoc
 vim.opt.termguicolors = true
 vim.cmd.colorscheme "catppuccin-mocha" -- catppuccin-latte, catppuccin-frappe, catppuccin-macchiato, catppuccin-mocha
 
--- Color Preview
--- call v:lua.require('nvim-highlight-colors').setup({enable_named_colors = true, enable_tailwind = true})
-
 -- syntax enable
--- highlight MatchParen ctermbg=black
+vim.cmd.highlight({ "MatchParen", "ctermbg=black" })
 
 vim.g.mapleader = " "
 
 -- Leader Mappings
-nmap("<Leader>f", "<cmd>Files<CR>")
+nmap("<Leader>f", "<cmd>Telescope find_files find_command=rg,--ignore,--hidden,--files<CR>")
 nmap("<Leader>q", "<cmd>call CloseBuffer()<CR>")
 nmap("<Leader>rs", "<cmd>%s/'/\"<CR>")
 nmap("<Leader>vi", "<cmd>e ~/.config/nvim/init.lua<CR>")
@@ -280,7 +285,7 @@ nmap('<C-j>', '<C-w>j')
 nmap('<C-k>', '<C-w>k')
 nmap('<C-l>', '<C-w>l')
 
-nmap("K", "<cmd>Rg <C-R><C-W><CR>")
+nmap("K", "<cmd>Telescope grep_string<CR>")
 
 nmap("<Right>", "<cmd>bn<CR>")
 nmap("<Left>", "<cmd>bp<CR>")
@@ -334,8 +339,14 @@ augroup END
 require('nvim-treesitter.configs').setup {
   ensure_installed = { "lua", "ruby" },
   sync_install = true,
-  highlight = {
+  incremental_selection = {
     enable = true,
+    keymaps = {
+      init_selection = "gnn",
+      node_incremental = "grn",
+      scope_incremental = "grc",
+      node_decremental = "grm",
+    },
   },
   textobjects = {
     select = {
@@ -370,6 +381,21 @@ require('nvim-treesitter.configs').setup {
     },
   }
 }
+
+-- Telescope
+require('telescope').setup {
+  defaults = {
+    mappings = {
+      i = {
+        ["<C-j>"] = "move_selection_next",
+        ["<C-k>"] = "move_selection_previous",
+      }
+    }
+  }
+}
+
+-- lualine
+require('lualine').setup()
 
 -- -- Mason
 -- require("mason").setup()
@@ -456,41 +482,6 @@ nmap("<F2>", "<Plug>(coc-diagnostic-next)")
 nmap("<Leader>a", "<cmd>ArgWrap<CR>")
 vim.g.argwrap_tail_comma = true
 
---FZF
-vim.cmd([[
-let $FZF_DEFAULT_COMMAND = 'rg --hidden --glob "!**/.git/**" --files'
-
-command! -bang -nargs=* Rg
-  \ call fzf#vim#grep(
-  \   'rg --column --line-number --no-heading --color=always --smart-case -- '.shellescape(<q-args>), 1,
-  \   fzf#vim#with_preview(), <bang>0)
-]])
-
-
--- Empty value to disable preview window altogether
-vim.g.fzf_preview_window = false
-
--- Enable per-command history.
--- CTRL-N and CTRL-P will be automatically bound to next-history and
--- previous-history instead of down and up. If you don't like the change,
--- explicitly bind the keys to down and up in your $FZF_DEFAULT_OPTS.
-vim.g.fzf_history_dir = HOME .. "/.local/share/fzf-history"
-
---Elixir
-vim.g.mix_format_on_save = true
-
-----Ale
----- let g:ale_disable_lsp = 1
----- let g:ale_lint_on_text_changed = 'never'
----- let g:ale_fix_on_save = 1
----- let g:ale_linters = {
-----       \ 'eruby': ['erblint'],
-----       \ 'ruby': ['rubocop'],
-----       \}
----- let g:ale_fixers = {
-----       \ 'eruby': ['erblint'],
-----       \ 'ruby': ['rubocop'],
-----       \}
 
 ----replace 'f' with 1-char Sneak
 nmap("f", "<Plug>Sneak_f")
@@ -531,7 +522,9 @@ tmap("<Esc>", "<C-\\><C-n>")
 -- I like relative numbering when in normal mode.
 vim.cmd("autocmd TermOpen * setlocal conceallevel=0 colorcolumn=0 relativenumber")
 
--- vim.g.user_debugger_dictionary = { ".rb" = "binding.irb" }
+vim.cmd([[
+let g:user_debugger_dictionary = { '\.rb' : 'binding.irb' }
+]])
 
 -- Rename current file
 vim.cmd([[
