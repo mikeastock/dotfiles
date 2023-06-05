@@ -50,7 +50,7 @@ alias gap="git add -p"
 alias gc="git commit -v"
 alias gcd="git checkout develop"
 alias gcm="git checkout main"
-alias co="git checkout main"
+alias co="git checkout"
 alias gf="git-flow"
 alias gp="git push -u"
 alias gpl="git pull"
@@ -74,6 +74,9 @@ fish_add_path /opt/homebrew/bin
 
 # PostgreSQL 13
 fish_add_path /opt/homebrew/opt/postgresql@13/bin/
+
+# GNU sed
+fish_add_path /opt/homebrew/opt/gnu-sed/libexec/gnubin/
 
 ####### Z Alt
 zoxide init fish | source
