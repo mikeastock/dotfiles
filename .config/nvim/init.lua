@@ -51,13 +51,18 @@ require('packer').startup(function(use)
 
   -- fuzzy finding
   use {
-    'nvim-telescope/telescope.nvim',
-    branch = '0.1.x',
-    requires = {
-      'nvim-lua/plenary.nvim',
-      'nvim-tree/nvim-web-devicons'
-    },
+    'ibhagwan/fzf-lua',
+    requires = { 'nvim-tree/nvim-web-devicons' },
   }
+  -- use {
+  --   'nvim-telescope/telescope.nvim',
+  --   branch = '0.1.x',
+  --   requires = {
+  --     'nvim-lua/plenary.nvim',
+  --     'nvim-tree/nvim-web-devicons',
+  --     'nvim-telescope/telescope-fzy-native.nvim'
+  --   },
+  -- }
 
   -- UI
   -- use 'itchyny/lightline.vim'
@@ -224,7 +229,7 @@ set lazyredraw
 set splitbelow
 set splitright
 set colorcolumn=80
-set synmaxcol=250
+set synmaxcol=3000
 set list
 set listchars=tab:·\ ,trail:█
 ]])
@@ -244,7 +249,7 @@ vim.cmd.highlight({ "MatchParen", "ctermbg=black" })
 vim.g.mapleader = " "
 
 -- Leader Mappings
-nmap("<Leader>f", "<cmd>Telescope find_files find_command=rg,--ignore,--hidden,--files<CR>")
+-- nmap("<Leader>f", "<cmd>Telescope find_files find_command=rg,--smart-case,--files<CR>")
 nmap("<Leader>q", "<cmd>call CloseBuffer()<CR>")
 nmap("<Leader>rs", "<cmd>%s/'/\"<CR>")
 nmap("<Leader>vi", "<cmd>e ~/.config/nvim/init.lua<CR>")
@@ -284,8 +289,6 @@ nmap('<C-h>', '<C-w>h')
 nmap('<C-j>', '<C-w>j')
 nmap('<C-k>', '<C-w>k')
 nmap('<C-l>', '<C-w>l')
-
-nmap("K", "<cmd>Telescope grep_string<CR>")
 
 nmap("<Right>", "<cmd>bn<CR>")
 nmap("<Left>", "<cmd>bp<CR>")
@@ -382,17 +385,42 @@ require('nvim-treesitter.configs').setup {
   }
 }
 
--- Telescope
-require('telescope').setup {
-  defaults = {
-    mappings = {
-      i = {
-        ["<C-j>"] = "move_selection_next",
-        ["<C-k>"] = "move_selection_previous",
-      }
-    }
+-- fuzzy finding plugin
+local fzf_actions = require 'fzf-lua.actions'
+
+require('fzf-lua').setup({
+  'max-perf',
+  files = {
+    fzf_opts = {
+      ['--history'] = vim.fn.stdpath("data") .. '/fzf-lua-files-history',
+    },
+  },
+  actions = {
+    files = {
+      ["default"] = fzf_actions.file_edit,
+      ["ctrl-t"]  = fzf_actions.file_edit,
+      ["ctrl-s"]  = fzf_actions.file_split,
+      ["ctrl-x"]  = fzf_actions.file_split,
+      ["ctrl-v"]  = fzf_actions.file_vsplit,
+    },
   }
-}
+})
+nmap(
+  "<Leader>f",
+  "<cmd>lua require('fzf-lua').files({ fzf_opts = { ['--layout'] = 'default' } })<CR>"
+)
+nmap("K", "<cmd>lua require('fzf-lua').grep_cword()<CR>")
+-- require('telescope').setup {
+--   defaults = {
+--     mappings = {
+--       i = {
+--         ["<C-j>"] = "move_selection_next",
+--         ["<C-k>"] = "move_selection_previous",
+--       }
+--     }
+--   }
+-- }
+-- require('telescope').load_extension('fzy_native')
 
 -- lualine
 require('lualine').setup()
@@ -523,7 +551,7 @@ tmap("<Esc>", "<C-\\><C-n>")
 vim.cmd("autocmd TermOpen * setlocal conceallevel=0 colorcolumn=0 relativenumber")
 
 vim.cmd([[
-let g:user_debugger_dictionary = { '\.rb' : 'binding.irb' }
+let g:user_debugger_dictionary = { '\.rb' : 'binding.irb', '\.tsx' : 'debugger' }
 ]])
 
 -- Rename current file
