@@ -91,7 +91,6 @@ require('packer').startup(function(use)
   use 'tpope/vim-fugitive'
   use 'tpope/vim-surround'
   -- use 'mg979/vim-visual-multi', { 'branch': 'master' }
-  -- use 'dense-analysis/ale'
 
   -- CSS Color Previews
   use {
@@ -147,8 +146,10 @@ require('packer').startup(function(use)
   -- use {'cespare/vim-toml', { 'branch': 'main' }}
 
   -- -- Autocomplete
-  -- use 'neoclide/coc.nvim', {'branch': 'release'}
   use 'github/copilot.vim'
+  use { 'ms-jpq/coq_nvim', run = 'python3 -m coq deps' }
+  use 'ms-jpq/coq.artifacts'
+  use 'ms-jpq/coq.thirdparty'
 
   -- -- testing
   use 'vim-test/vim-test'
@@ -165,17 +166,14 @@ require('packer').startup(function(use)
   use { "catppuccin/nvim", as = "catppuccin" }
 
   -- LSP
-  use { 'neoclide/coc.nvim', branch = 'release' }
-  -- use {
-  --   "williamboman/mason.nvim",
-  --   "williamboman/mason-lspconfig.nvim",
-  --   "neovim/nvim-lspconfig",
-  -- }
+  -- use { 'neoclide/coc.nvim', branch = 'release' }
+  use 'neovim/nvim-lspconfig'
+  use 'dense-analysis/ale'
 
-  -- use {
-  --   "folke/trouble.nvim",
-  --   requires = { "nvim-tree/nvim-web-devicons" },
-  -- }
+  use {
+    "folke/trouble.nvim",
+    requires = { "nvim-tree/nvim-web-devicons" },
+  }
 end)
 
 -- Tabs and spaces
@@ -322,6 +320,7 @@ augroup indentation
 
   autocmd Filetype markdown setlocal spell
   autocmd FileType swift set ai sw=4 sts=4 et
+  autocmd BufNewFile,BufRead Dangerfile set syntax=ruby
 augroup END
 
 " Remove trailing whitespace on save
@@ -410,6 +409,10 @@ nmap(
   "<cmd>lua require('fzf-lua').files({ fzf_opts = { ['--layout'] = 'default' } })<CR>"
 )
 nmap("K", "<cmd>lua require('fzf-lua').grep_cword()<CR>")
+nmap(
+  "<C-t>",
+  "<cmd>lua require('fzf-lua').lsp_definitions()<CR>"
+)
 -- require('telescope').setup {
 --   defaults = {
 --     mappings = {
@@ -431,73 +434,108 @@ require('lualine').setup()
 --   ensure_installed = { "lua_ls", "ruby_ls", "tsserver" },
 -- })
 
--- require("lspconfig").lua_ls.setup {}
 
--- require('lspconfig').ruby_ls.setup {
---   init_options = {
---     -- Add Ruby LSP configuration here, eg:
---     formatter = "auto"
---   },
---   -- Add your lspconfig configurations/overrides here, eg:
---   on_attach = function(client, buffer)
---     -- in the case you have an existing `on_attach` function
---     -- with mappings you share with other lsp clients configs
---     pcall(on_attach, client, buffer)
+-- LSP Config
+local lsp = require('lspconfig')
 
---     local diagnostic_handler = function ()
---       local params = vim.lsp.util.make_text_document_params(buffer)
+local lspFormattingGroup = vim.api.nvim_create_augroup("LspFormatting", {});
+vim.api.nvim_create_autocmd(
+  { "BufWritePre" },
+  {
+    pattern = "*",
+    callback = function()
+      vim.lsp.buf.format()
+    end,
+    group = lspFormattingGroup,
+  }
+)
 
---       client.request(
---         'textDocument/diagnostic',
---         {textDocument = params},
---         function(err, result)
---           if err then
---             local err_msg = string.format("ruby-lsp - diagnostics error - %s", vim.inspect(err))
---             vim.lsp.log.error(err_msg)
---           end
---           if not result then return end
+vim.g.coq_settings = {
+  auto_start = 'shut-up',
+  clients = {
+    tabnine = { enabled = true }
+  },
+  keymap = {
+    jump_to_mark = '' -- This defaults to <C-h> which we use to make switching buffers easier
+  },
+}
 
---           vim.lsp.diagnostic.on_publish_diagnostics(
---             nil,
---             vim.tbl_extend('keep', params, { diagnostics = result.items }),
---             { client_id = client.id }
---           )
---         end
---       )
---     end
+local coq = require('coq')
 
---     diagnostic_handler() -- to request diagnostics when attaching the client to the buffer
+lsp.lua_ls.setup(coq.lsp_ensure_capabilities({
+  settings = {
+    Lua = {
+      diagnostics = {
+        globals = { "vim" },
+      },
+    },
+  }
+}))
 
---     local ruby_group = vim.api.nvim_create_augroup('ruby_ls', {clear = false})
---     vim.api.nvim_create_autocmd(
---       {'BufEnter', 'BufWritePre', 'InsertLeave', 'TextChanged'},
---       {
---         buffer = buffer,
---         callback = diagnostic_handler,
---         group = ruby_group,
---       }
---     )
---   end
--- }
+lsp.tsserver.setup(coq.lsp_ensure_capabilities())
+
+lsp.ruby_ls.setup(coq.lsp_ensure_capabilities({
+  cmd = { "./bin/ruby-lsp" },
+  init_options = {
+    -- Add Ruby LSP configuration here, eg:
+    formatter = "auto"
+  },
+  enabledfeatures = { "codeactions", "diagnostics", "documenthighlights", "documentsymbols", "formatting", "inlayhint" },
+  -- Add your lspconfig configurations/overrides here, eg:
+  on_attach = function(client, buffer)
+    -- in the case you have an existing `on_attach` function
+    -- with mappings you share with other lsp clients configs
+    pcall(on_attach, client, buffer)
+
+    local diagnostic_handler = function()
+      local params = vim.lsp.util.make_text_document_params(buffer)
+
+      client.request(
+        'textDocument/diagnostic',
+        { textDocument = params },
+        function(err, result)
+          if err then
+            local err_msg = string.format("./bin/ruby-lsp - diagnostics error - %s", vim.inspect(err))
+            vim.lsp.log.error(err_msg)
+          end
+          if not result then return end
+
+          vim.lsp.diagnostic.on_publish_diagnostics(
+            nil,
+            vim.tbl_extend('keep', params, { diagnostics = result.items }),
+            { client_id = client.id }
+          )
+        end
+      )
+    end
+
+    diagnostic_handler() -- to request diagnostics when attaching the client to the buffer
+
+    local ruby_group = vim.api.nvim_create_augroup('ruby_ls', { clear = false })
+    vim.api.nvim_create_autocmd(
+      { 'BufEnter', 'BufWritePre', 'InsertLeave', 'TextChanged' },
+      {
+        buffer = buffer,
+        callback = diagnostic_handler,
+        group = ruby_group,
+      }
+    )
+  end
+}))
 
 --COC
 -- inoremap <expr> <cr> pumvisible() ? "\<C-y>" : "\<C-g>u\<CR>"
 -- inoremap <silent><expr> <cr> coc#pum#visible() ? coc#pum#confirm() : "\<cr>"
-vim.cmd([[
-inoremap <expr> <cr> coc#pum#visible() ? coc#_select_confirm() : "\<CR>"
-]])
+-- vim.cmd([[
+-- inoremap <expr> <cr> coc#pum#visible() ? coc#_select_confirm() : "\<CR>"
+-- ]])
 
 -- nnoremap <nowait><expr> <C-f> coc#float#has_scroll() ? coc#float#scroll(1) : "\<C-f>"
 -- nnoremap <nowait><expr> <C-b> coc#float#has_scroll() ? coc#float#scroll(0) : "\<C-b>"
 -- inoremap <nowait><expr> <C-f> coc#float#has_scroll() ? "\<c-r>=coc#float#scroll(1)\<cr>" : "\<Right>"
 -- inoremap <nowait><expr> <C-b> coc#float#has_scroll() ? "\<c-r>=coc#float#scroll(0)\<cr>" : "\<Left>"
 
-nmap("gr", "<Plug>(coc-references)")
-nmap("<F3>", "<Plug>(coc-rename)")
--- Find symbol of current document.
-nmap("<Leader>o", "<cmd>CocList outline<CR>")
-
-nmap("<F2>", "<Plug>(coc-diagnostic-next)")
+-- nmap("<F2>", "<Plug>(coc-diagnostic-next)")
 -- nmap <silent> <leader>A <Plug>(coc-diagnostic-next-error)
 
 -- " Do default action for next item.
@@ -505,6 +543,16 @@ nmap("<F2>", "<Plug>(coc-diagnostic-next)")
 -- " Do default action for previous item.
 -- nnoremap <silent><nowait> <space>k  :<C-u>CocPrev<CR>
 
+--ALE
+vim.g.ale_fix_on_save = true
+vim.g.ale_linters = {
+  eruby = { "erblint" },
+  ruby = {},
+}
+vim.g.ale_fixers = {
+  eruby = { "erblint" },
+  ruby = {},
+}
 
 ----ArgWrap
 nmap("<Leader>a", "<cmd>ArgWrap<CR>")
