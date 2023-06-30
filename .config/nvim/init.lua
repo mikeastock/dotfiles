@@ -146,7 +146,7 @@ require('packer').startup(function(use)
   -- use {'cespare/vim-toml', { 'branch': 'main' }}
 
   -- -- Autocomplete
-  use 'github/copilot.vim'
+  -- use 'github/copilot.vim'
   use { 'ms-jpq/coq_nvim', run = 'python3 -m coq deps' }
   use 'ms-jpq/coq.artifacts'
   use 'ms-jpq/coq.thirdparty'
@@ -461,6 +461,11 @@ vim.g.coq_settings = {
 }
 
 local coq = require('coq')
+coq.Now()
+
+require("coq_3p") {
+  { src = "copilot", short_name = "COP", accept_key = "<c-f>" }
+}
 
 lsp.lua_ls.setup(coq.lsp_ensure_capabilities({
   settings = {
