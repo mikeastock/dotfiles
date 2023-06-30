@@ -54,18 +54,8 @@ require('packer').startup(function(use)
     'ibhagwan/fzf-lua',
     requires = { 'nvim-tree/nvim-web-devicons' },
   }
-  -- use {
-  --   'nvim-telescope/telescope.nvim',
-  --   branch = '0.1.x',
-  --   requires = {
-  --     'nvim-lua/plenary.nvim',
-  --     'nvim-tree/nvim-web-devicons',
-  --     'nvim-telescope/telescope-fzy-native.nvim'
-  --   },
-  -- }
 
   -- UI
-  -- use 'itchyny/lightline.vim'
   use {
     'nvim-lualine/lualine.nvim',
     requires = { 'nvim-tree/nvim-web-devicons' },
@@ -166,7 +156,6 @@ require('packer').startup(function(use)
   use { "catppuccin/nvim", as = "catppuccin" }
 
   -- LSP
-  -- use { 'neoclide/coc.nvim', branch = 'release' }
   use 'neovim/nvim-lspconfig'
   use 'dense-analysis/ale'
 
@@ -247,7 +236,6 @@ vim.cmd.highlight({ "MatchParen", "ctermbg=black" })
 vim.g.mapleader = " "
 
 -- Leader Mappings
--- nmap("<Leader>f", "<cmd>Telescope find_files find_command=rg,--smart-case,--files<CR>")
 nmap("<Leader>q", "<cmd>call CloseBuffer()<CR>")
 nmap("<Leader>rs", "<cmd>%s/'/\"<CR>")
 nmap("<Leader>vi", "<cmd>e ~/.config/nvim/init.lua<CR>")
@@ -413,17 +401,6 @@ nmap(
   "<C-t>",
   "<cmd>lua require('fzf-lua').lsp_definitions()<CR>"
 )
--- require('telescope').setup {
---   defaults = {
---     mappings = {
---       i = {
---         ["<C-j>"] = "move_selection_next",
---         ["<C-k>"] = "move_selection_previous",
---       }
---     }
---   }
--- }
--- require('telescope').load_extension('fzy_native')
 
 -- lualine
 require('lualine').setup()
