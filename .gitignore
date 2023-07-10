@@ -1,3 +1,4 @@
+.git.nosync/*
 .atom/.atom-socket-secret*
 .bin/*
 .config/fish/fish_plugins
