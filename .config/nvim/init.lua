@@ -467,7 +467,7 @@ lsp.ruby_ls.setup(coq.lsp_ensure_capabilities({
   on_attach = function(client, buffer)
     -- in the case you have an existing `on_attach` function
     -- with mappings you share with other lsp clients configs
-    pcall(on_attach, client, buffer)
+    -- pcall(on_attach, client, buffer)
 
     local diagnostic_handler = function()
       local params = vim.lsp.util.make_text_document_params(buffer)
