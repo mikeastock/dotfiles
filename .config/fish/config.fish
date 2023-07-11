@@ -87,9 +87,6 @@ zoxide init fish | source
 
 ###### ASDF
 source /opt/homebrew/opt/asdf/libexec/asdf.fish
-# set -x ASDF_DIR /opt/homebrew/opt/asdf/libexec
-# fish_add_path "$HOME/.asdf/shims" "$ASDF_DIR/bin"
-# source "$ASDF_DIR/lib/asdf.fish"
 
 # Local bin dirs - Added after ASDF so that these take precedence
 fish_add_path ~/bin
