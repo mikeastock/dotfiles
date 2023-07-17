@@ -11,159 +11,141 @@ function map(mode, shortcut, command)
 end
 
 function nmap(shortcut, command)
-  map('n', shortcut, command)
+  map("n", shortcut, command)
 end
 
 function imap(shortcut, command)
-  map('i', shortcut, command)
+  map("i", shortcut, command)
 end
 
 function vmap(shortcut, command)
-  map('v', shortcut, command)
+  map("v", shortcut, command)
 end
 
 function cmap(shortcut, command)
-  map('c', shortcut, command)
+  map("c", shortcut, command)
 end
 
 function tmap(shortcut, command)
-  map('t', shortcut, command)
+  map("t", shortcut, command)
 end
+
+-- Need to set these configs before plugins
+
+vim.g.mapleader = " "
+vim.opt.termguicolors = true
 
 -- Plugins
 
-local ensure_packer = function()
-  local fn = vim.fn
-  local install_path = fn.stdpath('data') .. '/site/pack/packer/start/packer.nvim'
-  if fn.empty(fn.glob(install_path)) > 0 then
-    fn.system({ 'git', 'clone', '--depth', '1', 'https://github.com/wbthomason/packer.nvim', install_path })
-    vim.cmd [[packadd packer.nvim]]
-    return true
-  end
-  return false
+local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
+if not vim.loop.fs_stat(lazypath) then
+  vim.fn.system({
+    "git",
+    "clone",
+    "--filter=blob:none",
+    "https://github.com/folke/lazy.nvim.git",
+    "--branch=stable", -- latest stable release
+    lazypath,
+  })
 end
+vim.opt.rtp:prepend(lazypath)
 
-local packer_bootstrap = ensure_packer()
-
-require('packer').startup(function(use)
-  -- Packer can manage itself
-  use 'wbthomason/packer.nvim'
+require("lazy").setup({
+  "folke/neodev.nvim", -- Configure init.lua lua-lsp and neovim completions
 
   -- fuzzy finding
-  use {
-    'ibhagwan/fzf-lua',
-    requires = { 'nvim-tree/nvim-web-devicons' },
-  }
+  "ibhagwan/fzf-lua",
 
   -- UI
-  use {
-    'nvim-lualine/lualine.nvim',
-    requires = { 'nvim-tree/nvim-web-devicons' },
-  }
+  {
+    "nvim-lualine/lualine.nvim",
+    dependencies = { "nvim-tree/nvim-web-devicons" },
+  },
 
   -- workflow
-  use 'AndrewRadev/splitjoin.vim'
-  use 'FooSoft/vim-argwrap'
-  use {
-    'lewis6991/gitsigns.nvim',
+  "AndrewRadev/splitjoin.vim",
+  "FooSoft/vim-argwrap",
+  {
+    "lewis6991/gitsigns.nvim",
     config = function()
-      require('gitsigns').setup()
+      require("gitsigns").setup()
     end
-  }
-  use 'ap/vim-buftabline'
-  use 'junegunn/vim-easy-align'
-  use 'justinmk/vim-sneak'
-  use 'mikeastock/vim-infer-debugger'
-  use 'pbrisbin/vim-mkdir'
-  use 'tpope/vim-abolish'
-  use 'tpope/vim-commentary'
-  use 'tpope/vim-dispatch'
-  use 'tpope/vim-fugitive'
-  use 'tpope/vim-surround'
-  -- use 'mg979/vim-visual-multi', { 'branch': 'master' }
+  },
+
+  "ap/vim-buftabline",
+  "junegunn/vim-easy-align",
+  "justinmk/vim-sneak",
+  "mikeastock/vim-infer-debugger",
+  "pbrisbin/vim-mkdir",
+  "tpope/vim-abolish",
+  "tpope/vim-commentary",
+  "tpope/vim-dispatch",
+  "tpope/vim-fugitive",
+  "tpope/vim-surround",
 
   -- CSS Color Previews
-  use {
-    'norcalli/nvim-colorizer.lua',
+  {
+    "norcalli/nvim-colorizer.lua",
     config = function()
-      require('colorizer').setup()
+      require("colorizer").setup()
     end
-  }
+  },
 
-  -- Text objects
-  -- use {
-  --   'nvim-treesitter/nvim-treesitter',
-  -- }
-
-  -- use {
-  --   "nvim-treesitter/nvim-treesitter-textobjects",
-  --   after = "nvim-treesitter",
-  --   requires = "nvim-treesitter/nvim-treesitter",
-  -- }
-
-  use {
-    'andymass/vim-matchup',
+  {
+    "andymass/vim-matchup",
     setup = function()
       -- may set any options here
       vim.g.matchup_matchparen_offscreen = { method = "popup" }
     end
-  }
+  },
+
+  -- Autocomplete
+  "github/copilot.vim",
+  -- { "ms-jpq/coq_nvim", run = "python3 -m coq deps" },
+  -- "ms-jpq/coq.artifacts",
+  -- "ms-jpq/coq.thirdparty",
+
+  -- testing
+  "vim-test/vim-test",
+  "kassio/neoterm",
+
+  -- colors
+  "catppuccin/nvim",
+
+  -- LSP
+  "neovim/nvim-lspconfig",
+  "dense-analysis/ale",
+
+  {
+    "folke/trouble.nvim",
+    dependencies = { "nvim-tree/nvim-web-devicons" },
+  },
 
   -- Langauge specific
 
   -- JS
-  use { 'HerringtonDarkholme/yats.vim', ft = 'typescript' }
-  use { 'othree/javascript-libraries-syntax.vim', ft = { 'javascript' } }
-  use { 'pangloss/vim-javascript', ft = { 'javascript' } }
+  { "HerringtonDarkholme/yats.vim", ft = "typescript" },
+  { "othree/javascript-libraries-syntax.vim", ft = "javascript" },
+  { "pangloss/vim-javascript", ft = "javascript" },
 
   -- Ruby
-  use { 'Keithbsmiley/rspec.vim', ft = { 'ruby' } }
-  use { 'tpope/vim-rails', ft = { 'ruby' } }
-  use { 'vim-ruby/vim-ruby', ft = { 'ruby' } }
+  { "Keithbsmiley/rspec.vim", ft = "ruby" },
+  { "tpope/vim-rails", ft = "ruby" },
+  { "vim-ruby/vim-ruby", ft = "ruby" },
 
   -- Elixir
-  use { 'elixir-lang/vim-elixir', ft = { 'elixir,eelixir' } }
-  use { 'mhinz/vim-mix-format', ft = { 'elixir,eelixir' } }
+  { "elixir-lang/vim-elixir", ft = "elixir,eelixir" },
+  { "mhinz/vim-mix-format", ft = "elixir,eelixir" },
 
   -- Misc
-  use { 'amadeus/vim-mjml', ft = { 'mjml' } }
-  use { 'andys8/vim-elm-syntax', ft = { 'elm' } }
-  use { 'dag/vim-fish', ft = { 'fish' } }
-  use { 'fatih/vim-go', ft = { 'golang' } }
-  use { 'hashivim/vim-terraform', ft = { 'terraform' } }
-  use { 'jvirtanen/vim-hcl', ft = { 'hcl' } }
-  use { 'rust-lang/rust.vim', ft = { 'rust' } }
-  -- use {'cespare/vim-toml', { 'branch': 'main' }}
-
-  -- -- Autocomplete
-  use 'github/copilot.vim'
-  use { 'ms-jpq/coq_nvim', run = 'python3 -m coq deps' }
-  use 'ms-jpq/coq.artifacts'
-  use 'ms-jpq/coq.thirdparty'
-
-  -- -- testing
-  use 'vim-test/vim-test'
-  use 'kassio/neoterm'
-
-  -- colors
-  -- use 'nanotech/jellybeans.vim'
-  -- use 'morhetz/gruvbox'
-  -- use 'sjl/badwolf'
-  -- use 'chriskempson/base16-vim'
-  -- use 'flazz/vim-colorschemes'
-  -- use 'junegunn/seoul256.vim'
-  -- use 'rakr/vim-one'
-  use { "catppuccin/nvim", as = "catppuccin" }
-
-  -- LSP
-  use 'neovim/nvim-lspconfig'
-  use 'dense-analysis/ale'
-
-  use {
-    "folke/trouble.nvim",
-    requires = { "nvim-tree/nvim-web-devicons" },
-  }
-end)
+  { "amadeus/vim-mjml", ft = "mjml" },
+  { "andys8/vim-elm-syntax", ft = "elm" },
+  { "dag/vim-fish", ft = "fish" },
+  { "fatih/vim-go", ft = "golang" },
+  { "hashivim/vim-terraform", ft = "terraform" },
+  { "jvirtanen/vim-hcl", ft = "hcl" },
+  { "rust-lang/rust.vim", ft = "rust" },
+})
 
 -- Tabs and spaces
 vim.opt.tabstop = 2
@@ -227,13 +209,10 @@ vim.opt.shiftround = true -- When at 3 spaces and I hit >>, go to 4, not 5.
 vim.opt.showmode = false  -- Hide -- INSERT -- in cmdline for echodoc
 
 -- Color
-vim.opt.termguicolors = true
 vim.cmd.colorscheme "catppuccin-mocha" -- catppuccin-latte, catppuccin-frappe, catppuccin-macchiato, catppuccin-mocha
 
 -- syntax enable
 vim.cmd.highlight({ "MatchParen", "ctermbg=black" })
-
-vim.g.mapleader = " "
 
 -- Leader Mappings
 nmap("<Leader>q", "<cmd>call CloseBuffer()<CR>")
@@ -267,14 +246,14 @@ call MapCR()
 vmap("<Enter>", "<cmd>EasyAlign")
 
 -- more natural movement with wrap on
-nmap('j', 'gj')
-nmap('k', 'gk')
+nmap("j", "gj")
+nmap("k", "gk")
 
 -- Easy buffer navigation
-nmap('<C-h>', '<C-w>h')
-nmap('<C-j>', '<C-w>j')
-nmap('<C-k>', '<C-w>k')
-nmap('<C-l>', '<C-w>l')
+nmap("<C-h>", "<C-w>h")
+nmap("<C-j>", "<C-w>j")
+nmap("<C-k>", "<C-w>k")
+nmap("<C-l>", "<C-w>l")
 
 nmap("<Right>", "<cmd>bn<CR>")
 nmap("<Left>", "<cmd>bp<CR>")
@@ -326,7 +305,7 @@ augroup END
 --# PLUGIN SETTINGS
 --##############################################################################
 
--- require('nvim-treesitter.configs').setup {
+-- require("nvim-treesitter.configs").setup {
 --   ensure_installed = { "lua", "ruby" },
 --   sync_install = true,
 --   incremental_selection = {
@@ -373,13 +352,13 @@ augroup END
 -- }
 
 -- fuzzy finding plugin
-local fzf_actions = require 'fzf-lua.actions'
+local fzf_actions = require "fzf-lua.actions"
 
-require('fzf-lua').setup({
-  'max-perf',
+require("fzf-lua").setup({
+  "max-perf",
   files = {
     fzf_opts = {
-      ['--history'] = vim.fn.stdpath("data") .. '/fzf-lua-files-history',
+      ["--history"] = vim.fn.stdpath("data") .. "/fzf-lua-files-history",
     },
   },
   actions = {
@@ -403,7 +382,7 @@ nmap(
 )
 
 -- lualine
-require('lualine').setup()
+require("lualine").setup()
 
 -- -- Mason
 -- require("mason").setup()
@@ -413,7 +392,7 @@ require('lualine').setup()
 
 
 -- LSP Config
-local lsp = require('lspconfig')
+local lsp = require("lspconfig")
 
 local lspFormattingGroup = vim.api.nvim_create_augroup("LspFormatting", {});
 vim.api.nvim_create_autocmd(
@@ -427,36 +406,36 @@ vim.api.nvim_create_autocmd(
   }
 )
 
-vim.g.coq_settings = {
-  auto_start = 'shut-up',
-  clients = {
-    tabnine = { enabled = true }
-  },
-  keymap = {
-    jump_to_mark = '' -- This defaults to <C-h> which we use to make switching buffers easier
-  },
-}
+-- vim.g.coq_settings = {
+--   auto_start = "shut-up",
+--   clients = {
+--     tabnine = { enabled = true }
+--   },
+--   keymap = {
+--     jump_to_mark = "" -- This defaults to <C-h> which we use to make switching buffers easier
+--   },
+-- }
 
-local coq = require('coq')
-coq.Now()
+-- local coq = require("coq")
+-- coq.Now()
 
-require("coq_3p") {
-  { src = "copilot", short_name = "COP", accept_key = "<c-f>" }
-}
+-- require("coq_3p") {
+--   { src = "copilot", short_name = "COP", accept_key = "<c-f>" }
+-- }
 
-lsp.lua_ls.setup(coq.lsp_ensure_capabilities({
-  settings = {
-    Lua = {
-      diagnostics = {
-        globals = { "vim" },
-      },
-    },
-  }
-}))
+-- lsp.lua_ls.setup(coq.lsp_ensure_capabilities({
+--   settings = {
+--     Lua = {
+--       diagnostics = {
+--         globals = { "vim" },
+--       },
+--     },
+--   }
+-- }))
 
-lsp.tsserver.setup(coq.lsp_ensure_capabilities())
+-- lsp.tsserver.setup()
 
-lsp.ruby_ls.setup(coq.lsp_ensure_capabilities({
+lsp.ruby_ls.setup({
   cmd = { "./bin/ruby-lsp" },
   init_options = {
     -- Add Ruby LSP configuration here, eg:
@@ -473,7 +452,7 @@ lsp.ruby_ls.setup(coq.lsp_ensure_capabilities({
       local params = vim.lsp.util.make_text_document_params(buffer)
 
       client.request(
-        'textDocument/diagnostic',
+        "textDocument/diagnostic",
         { textDocument = params },
         function(err, result)
           if err then
@@ -484,7 +463,7 @@ lsp.ruby_ls.setup(coq.lsp_ensure_capabilities({
 
           vim.lsp.diagnostic.on_publish_diagnostics(
             nil,
-            vim.tbl_extend('keep', params, { diagnostics = result.items }),
+            vim.tbl_extend("keep", params, { diagnostics = result.items }),
             { client_id = client.id }
           )
         end
@@ -493,9 +472,9 @@ lsp.ruby_ls.setup(coq.lsp_ensure_capabilities({
 
     diagnostic_handler() -- to request diagnostics when attaching the client to the buffer
 
-    local ruby_group = vim.api.nvim_create_augroup('ruby_ls', { clear = false })
+    local ruby_group = vim.api.nvim_create_augroup("ruby_ls", { clear = false })
     vim.api.nvim_create_autocmd(
-      { 'BufEnter', 'BufWritePre', 'InsertLeave', 'TextChanged' },
+      { "BufEnter", "BufWritePre", "InsertLeave", "TextChanged" },
       {
         buffer = buffer,
         callback = diagnostic_handler,
@@ -503,7 +482,7 @@ lsp.ruby_ls.setup(coq.lsp_ensure_capabilities({
       }
     )
   end
-}))
+})
 
 --COC
 -- inoremap <expr> <cr> pumvisible() ? "\<C-y>" : "\<C-g>u\<CR>"
@@ -541,7 +520,7 @@ nmap("<Leader>a", "<cmd>ArgWrap<CR>")
 vim.g.argwrap_tail_comma = true
 
 
-----replace 'f' with 1-char Sneak
+----replace "f" with 1-char Sneak
 nmap("f", "<Plug>Sneak_f")
 nmap("F", "<Plug>Sneak_F")
 --nmap f <Plug>Sneak_f
@@ -551,7 +530,7 @@ nmap("F", "<Plug>Sneak_F")
 --omap f <Plug>Sneak_f
 --omap F <Plug>Sneak_F
 
-----replace 't' with 1-char Sneak
+----replace "t" with 1-char Sneak
 --nmap t <Plug>Sneak_t
 --nmap T <Plug>Sneak_T
 --xmap t <Plug>Sneak_t
