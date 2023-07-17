@@ -30,122 +30,9 @@ function tmap(shortcut, command)
   map("t", shortcut, command)
 end
 
--- Need to set these configs before plugins
+-- Global options
 
 vim.g.mapleader = " "
-vim.opt.termguicolors = true
-
--- Plugins
-
-local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
-if not vim.loop.fs_stat(lazypath) then
-  vim.fn.system({
-    "git",
-    "clone",
-    "--filter=blob:none",
-    "https://github.com/folke/lazy.nvim.git",
-    "--branch=stable", -- latest stable release
-    lazypath,
-  })
-end
-vim.opt.rtp:prepend(lazypath)
-
-require("lazy").setup({
-  "folke/neodev.nvim", -- Configure init.lua lua-lsp and neovim completions
-
-  -- fuzzy finding
-  "ibhagwan/fzf-lua",
-
-  -- UI
-  {
-    "nvim-lualine/lualine.nvim",
-    dependencies = { "nvim-tree/nvim-web-devicons" },
-  },
-
-  -- workflow
-  "AndrewRadev/splitjoin.vim",
-  "FooSoft/vim-argwrap",
-  {
-    "lewis6991/gitsigns.nvim",
-    config = function()
-      require("gitsigns").setup()
-    end
-  },
-
-  "ap/vim-buftabline",
-  "junegunn/vim-easy-align",
-  "justinmk/vim-sneak",
-  "mikeastock/vim-infer-debugger",
-  "pbrisbin/vim-mkdir",
-  "tpope/vim-abolish",
-  "tpope/vim-commentary",
-  "tpope/vim-dispatch",
-  "tpope/vim-fugitive",
-  "tpope/vim-surround",
-
-  -- CSS Color Previews
-  {
-    "norcalli/nvim-colorizer.lua",
-    config = function()
-      require("colorizer").setup()
-    end
-  },
-
-  {
-    "andymass/vim-matchup",
-    setup = function()
-      -- may set any options here
-      vim.g.matchup_matchparen_offscreen = { method = "popup" }
-    end
-  },
-
-  -- Autocomplete
-  "github/copilot.vim",
-  -- { "ms-jpq/coq_nvim", run = "python3 -m coq deps" },
-  -- "ms-jpq/coq.artifacts",
-  -- "ms-jpq/coq.thirdparty",
-
-  -- testing
-  "vim-test/vim-test",
-  "kassio/neoterm",
-
-  -- colors
-  "catppuccin/nvim",
-
-  -- LSP
-  "neovim/nvim-lspconfig",
-  "dense-analysis/ale",
-
-  {
-    "folke/trouble.nvim",
-    dependencies = { "nvim-tree/nvim-web-devicons" },
-  },
-
-  -- Langauge specific
-
-  -- JS
-  { "HerringtonDarkholme/yats.vim", ft = "typescript" },
-  { "othree/javascript-libraries-syntax.vim", ft = "javascript" },
-  { "pangloss/vim-javascript", ft = "javascript" },
-
-  -- Ruby
-  { "Keithbsmiley/rspec.vim", ft = "ruby" },
-  { "tpope/vim-rails", ft = "ruby" },
-  { "vim-ruby/vim-ruby", ft = "ruby" },
-
-  -- Elixir
-  { "elixir-lang/vim-elixir", ft = "elixir,eelixir" },
-  { "mhinz/vim-mix-format", ft = "elixir,eelixir" },
-
-  -- Misc
-  { "amadeus/vim-mjml", ft = "mjml" },
-  { "andys8/vim-elm-syntax", ft = "elm" },
-  { "dag/vim-fish", ft = "fish" },
-  { "fatih/vim-go", ft = "golang" },
-  { "hashivim/vim-terraform", ft = "terraform" },
-  { "jvirtanen/vim-hcl", ft = "hcl" },
-  { "rust-lang/rust.vim", ft = "rust" },
-})
 
 -- Tabs and spaces
 vim.opt.tabstop = 2
@@ -210,6 +97,7 @@ vim.opt.showmode = false  -- Hide -- INSERT -- in cmdline for echodoc
 
 -- Color
 vim.cmd.colorscheme "catppuccin-mocha" -- catppuccin-latte, catppuccin-frappe, catppuccin-macchiato, catppuccin-mocha
+vim.opt.termguicolors = true
 
 -- syntax enable
 vim.cmd.highlight({ "MatchParen", "ctermbg=black" })
@@ -268,6 +156,154 @@ vim.cmd.cabbrev({ "WQ", "wq" })
 vim.cmd.cabbrev({ "Qall", "qall" })
 vim.cmd.cabbrev({ "Wqall", "wqall" })
 
+-- Plugins
+
+local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
+if not vim.loop.fs_stat(lazypath) then
+  vim.fn.system({
+    "git",
+    "clone",
+    "--filter=blob:none",
+    "https://github.com/folke/lazy.nvim.git",
+    "--branch=stable", -- latest stable release
+    lazypath,
+  })
+end
+vim.opt.rtp:prepend(lazypath)
+
+require("lazy").setup({
+  -- fuzzy finding
+  "ibhagwan/fzf-lua",
+
+  -- UI
+  {
+    "nvim-lualine/lualine.nvim",
+    dependencies = { "nvim-tree/nvim-web-devicons" },
+    config = true,
+    lazy = false,
+  },
+
+  -- workflow
+  "AndrewRadev/splitjoin.vim",
+  "FooSoft/vim-argwrap",
+  {
+    "lewis6991/gitsigns.nvim",
+    config = true,
+    lazy = false,
+  },
+
+  "ap/vim-buftabline",
+  "junegunn/vim-easy-align",
+  "justinmk/vim-sneak",
+  "mikeastock/vim-infer-debugger",
+  "pbrisbin/vim-mkdir",
+  "tpope/vim-abolish",
+  "tpope/vim-commentary",
+  "tpope/vim-dispatch",
+  "tpope/vim-fugitive",
+  "tpope/vim-surround",
+
+  -- CSS Color Previews
+  {
+    "norcalli/nvim-colorizer.lua",
+    config = true,
+    lazy = false,
+  },
+
+  {
+    "andymass/vim-matchup",
+    setup = function()
+      -- may set any options here
+      vim.g.matchup_matchparen_offscreen = { method = "popup" }
+    end
+  },
+
+  -- Autocomplete
+  {
+    "zbirenbaum/copilot.lua",
+    cmd = "Copilot",
+    event = "InsertEnter",
+    config = function()
+      require("copilot").setup({
+        suggestion = {
+          auto_trigger = true,
+            keymap = {
+              accept = "<C-f>",
+            },
+        },
+      })
+    end,
+  },
+  {
+    "hrsh7th/nvim-cmp",
+    version = false, -- last release is way too old
+    event = "InsertEnter",
+    dependencies = {
+      "hrsh7th/cmp-nvim-lsp",
+      "hrsh7th/cmp-buffer",
+      "hrsh7th/cmp-path",
+    },
+    opts = function()
+      local cmp = require("cmp")
+
+      cmp.event:on("menu_opened", function()
+        vim.b.copilot_suggestion_hidden = true
+      end)
+
+      cmp.event:on("menu_closed", function()
+        vim.b.copilot_suggestion_hidden = false
+      end)
+    end
+  },
+
+  -- testing
+  "vim-test/vim-test",
+  "kassio/neoterm",
+
+  -- colors
+  "catppuccin/nvim",
+
+  -- LSP
+  {
+    "neovim/nvim-lspconfig",
+    event = { "BufReadPre", "BufNewFile" },
+    dependencies = {
+      { "folke/neodev.nvim", opts = {} }, -- Configure init.lua lua-lsp and neovim completions
+    },
+  },
+  "dense-analysis/ale",
+
+  {
+    "folke/trouble.nvim",
+    dependencies = { "nvim-tree/nvim-web-devicons" },
+  },
+
+  -- Langauge specific
+
+  -- JS
+  { "HerringtonDarkholme/yats.vim", ft = "typescript" },
+  { "othree/javascript-libraries-syntax.vim", ft = "javascript" },
+  { "pangloss/vim-javascript", ft = "javascript" },
+
+  -- Ruby
+  { "Keithbsmiley/rspec.vim", ft = "ruby" },
+  { "tpope/vim-rails", ft = "ruby" },
+  { "vim-ruby/vim-ruby", ft = "ruby" },
+
+  -- Elixir
+  { "elixir-lang/vim-elixir", ft = "elixir,eelixir" },
+  { "mhinz/vim-mix-format", ft = "elixir,eelixir" },
+
+  -- Misc
+  { "amadeus/vim-mjml", ft = "mjml" },
+  { "andys8/vim-elm-syntax", ft = "elm" },
+  { "dag/vim-fish", ft = "fish" },
+  { "fatih/vim-go", ft = "golang" },
+  { "hashivim/vim-terraform", ft = "terraform" },
+  { "jvirtanen/vim-hcl", ft = "hcl" },
+  { "rust-lang/rust.vim", ft = "rust" },
+})
+
 --##############################################################################
 --# AUTOCMDS
 --##############################################################################
@@ -305,52 +341,6 @@ augroup END
 --# PLUGIN SETTINGS
 --##############################################################################
 
--- require("nvim-treesitter.configs").setup {
---   ensure_installed = { "lua", "ruby" },
---   sync_install = true,
---   incremental_selection = {
---     enable = true,
---     keymaps = {
---       init_selection = "gnn",
---       node_incremental = "grn",
---       scope_incremental = "grc",
---       node_decremental = "grm",
---     },
---   },
---   textobjects = {
---     select = {
---       enable = true,
---       lookahead = true,
---       keymaps = {
---         ["af"] = "@function.outer",
---         ["if"] = "@function.inner",
---         ["ac"] = "@class.outer",
---         ["ic"] = "@class.inner",
---       },
---     },
---     move = {
---       enable = true,
---       set_jumps = true,
---       goto_next_start = {
---         ["]m"] = "@function.outer",
---         ["]]"] = "@class.outer",
---       },
---       goto_next_end = {
---         ["]M"] = "@function.outer",
---         ["]["] = "@class.outer",
---       },
---       goto_previous_start = {
---         ["[m"] = "@function.outer",
---         ["[["] = "@class.outer",
---       },
---       goto_previous_end = {
---         ["[M"] = "@function.outer",
---         ["[]"] = "@class.outer",
---       },
---     },
---   }
--- }
-
 -- fuzzy finding plugin
 local fzf_actions = require "fzf-lua.actions"
 
@@ -381,15 +371,6 @@ nmap(
   "<cmd>lua require('fzf-lua').lsp_definitions()<CR>"
 )
 
--- lualine
-require("lualine").setup()
-
--- -- Mason
--- require("mason").setup()
--- require("mason-lspconfig").setup({
---   ensure_installed = { "lua_ls", "ruby_ls", "tsserver" },
--- })
-
 
 -- LSP Config
 local lsp = require("lspconfig")
@@ -405,23 +386,6 @@ vim.api.nvim_create_autocmd(
     group = lspFormattingGroup,
   }
 )
-
--- vim.g.coq_settings = {
---   auto_start = "shut-up",
---   clients = {
---     tabnine = { enabled = true }
---   },
---   keymap = {
---     jump_to_mark = "" -- This defaults to <C-h> which we use to make switching buffers easier
---   },
--- }
-
--- local coq = require("coq")
--- coq.Now()
-
--- require("coq_3p") {
---   { src = "copilot", short_name = "COP", accept_key = "<c-f>" }
--- }
 
 -- lsp.lua_ls.setup(coq.lsp_ensure_capabilities({
 --   settings = {
@@ -484,25 +448,6 @@ lsp.ruby_ls.setup({
   end
 })
 
---COC
--- inoremap <expr> <cr> pumvisible() ? "\<C-y>" : "\<C-g>u\<CR>"
--- inoremap <silent><expr> <cr> coc#pum#visible() ? coc#pum#confirm() : "\<cr>"
--- vim.cmd([[
--- inoremap <expr> <cr> coc#pum#visible() ? coc#_select_confirm() : "\<CR>"
--- ]])
-
--- nnoremap <nowait><expr> <C-f> coc#float#has_scroll() ? coc#float#scroll(1) : "\<C-f>"
--- nnoremap <nowait><expr> <C-b> coc#float#has_scroll() ? coc#float#scroll(0) : "\<C-b>"
--- inoremap <nowait><expr> <C-f> coc#float#has_scroll() ? "\<c-r>=coc#float#scroll(1)\<cr>" : "\<Right>"
--- inoremap <nowait><expr> <C-b> coc#float#has_scroll() ? "\<c-r>=coc#float#scroll(0)\<cr>" : "\<Left>"
-
--- nmap("<F2>", "<Plug>(coc-diagnostic-next)")
--- nmap <silent> <leader>A <Plug>(coc-diagnostic-next-error)
-
--- " Do default action for next item.
--- nnoremap <silent><nowait> <space>j  :<C-u>CocNext<CR>
--- " Do default action for previous item.
--- nnoremap <silent><nowait> <space>k  :<C-u>CocPrev<CR>
 
 --ALE
 vim.g.ale_fix_on_save = true
@@ -523,35 +468,12 @@ vim.g.argwrap_tail_comma = true
 ----replace "f" with 1-char Sneak
 nmap("f", "<Plug>Sneak_f")
 nmap("F", "<Plug>Sneak_F")
---nmap f <Plug>Sneak_f
---nmap F <Plug>Sneak_F
---xmap f <Plug>Sneak_f
---xmap F <Plug>Sneak_F
---omap f <Plug>Sneak_f
---omap F <Plug>Sneak_F
-
-----replace "t" with 1-char Sneak
---nmap t <Plug>Sneak_t
---nmap T <Plug>Sneak_T
---xmap t <Plug>Sneak_t
---xmap T <Plug>Sneak_T
---omap t <Plug>Sneak_t
---omap T <Plug>Sneak_T
 
 -- Testing settings
 nmap("<Leader>s", ":TestNearest<CR>")
 nmap("<Leader>t", ":TestNearest<CR>")
 nmap("<Leader>T", ":TestFile<CR>")
 nmap("<Leader>r", ":TestFile<CR>")
-
---let test#strategy = 'basic'
---let g:test#javascript#playwright#file_pattern = '\v(e2e/.*|(spec|test))\.(js|jsx|coffee|ts|tsx)$'
-
--- Useful maps
--- hide/close terminal
-nmap("<Leader>th", ":call neoterm#close()<CR>")
--- clear terminal
-nmap("<Leader>tl", ":call neoterm#clear()<CR>")
 
 -- Make escape work in the Neovim terminal.
 tmap("<Esc>", "<C-\\><C-n>")
