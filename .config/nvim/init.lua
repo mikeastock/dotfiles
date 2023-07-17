@@ -136,7 +136,7 @@ require('packer').startup(function(use)
   -- use {'cespare/vim-toml', { 'branch': 'main' }}
 
   -- -- Autocomplete
-  -- use 'github/copilot.vim'
+  use 'github/copilot.vim'
   use { 'ms-jpq/coq_nvim', run = 'python3 -m coq deps' }
   use 'ms-jpq/coq.artifacts'
   use 'ms-jpq/coq.thirdparty'
