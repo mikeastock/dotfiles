@@ -356,6 +356,57 @@ require("lazy").setup({
             },
           }
         },
+        ruby_ls = {
+          cmd = { "./bin/ruby-lsp" },
+          init_options = {
+            -- Add Ruby LSP configuration here, eg:
+            formatter = "auto"
+          },
+          enabledfeatures = {
+            "codeactions",
+            "diagnostics",
+            "documenthighlights",
+            "documentsymbols",
+            "formatting",
+            "inlayhint",
+          },
+          -- Add your lspconfig configurations/overrides here, eg:
+          on_attach = function(client, buffer)
+            local diagnostic_handler = function()
+              local params = vim.lsp.util.make_text_document_params(buffer)
+
+              client.request(
+                "textDocument/diagnostic",
+                { textDocument = params },
+                function(err, result)
+                  if err then
+                    local err_msg = string.format("./bin/ruby-lsp - diagnostics error - %s", vim.inspect(err))
+                    vim.lsp.log.error(err_msg)
+                  end
+                  if not result then return end
+
+                  vim.lsp.diagnostic.on_publish_diagnostics(
+                    nil,
+                    vim.tbl_extend("keep", params, { diagnostics = result.items }),
+                    { client_id = client.id }
+                  )
+                end
+              )
+            end
+
+            diagnostic_handler()   -- to request diagnostics when attaching the client to the buffer
+
+            local ruby_group = vim.api.nvim_create_augroup("ruby_ls", { clear = false })
+            vim.api.nvim_create_autocmd(
+              { "BufEnter", "BufWritePre", "InsertLeave", "TextChanged" },
+              {
+                buffer = buffer,
+                callback = diagnostic_handler,
+                group = ruby_group,
+              }
+            )
+          end
+        },
       },
     },
     config = function(_, opts)
@@ -496,59 +547,6 @@ nmap(
   "<C-t>",
   "<cmd>lua require('fzf-lua').lsp_definitions()<CR>"
 )
-
-
--- lsp.tsserver.setup()
-
--- lsp.ruby_ls.setup({
---   cmd = { "./bin/ruby-lsp" },
---   init_options = {
---     -- Add Ruby LSP configuration here, eg:
---     formatter = "auto"
---   },
---   enabledfeatures = { "codeactions", "diagnostics", "documenthighlights", "documentsymbols", "formatting", "inlayhint" },
---   -- Add your lspconfig configurations/overrides here, eg:
---   on_attach = function(client, buffer)
---     -- in the case you have an existing `on_attach` function
---     -- with mappings you share with other lsp clients configs
---     -- pcall(on_attach, client, buffer)
-
---     local diagnostic_handler = function()
---       local params = vim.lsp.util.make_text_document_params(buffer)
-
---       client.request(
---         "textDocument/diagnostic",
---         { textDocument = params },
---         function(err, result)
---           if err then
---             local err_msg = string.format("./bin/ruby-lsp - diagnostics error - %s", vim.inspect(err))
---             vim.lsp.log.error(err_msg)
---           end
---           if not result then return end
-
---           vim.lsp.diagnostic.on_publish_diagnostics(
---             nil,
---             vim.tbl_extend("keep", params, { diagnostics = result.items }),
---             { client_id = client.id }
---           )
---         end
---       )
---     end
-
---     diagnostic_handler() -- to request diagnostics when attaching the client to the buffer
-
---     local ruby_group = vim.api.nvim_create_augroup("ruby_ls", { clear = false })
---     vim.api.nvim_create_autocmd(
---       { "BufEnter", "BufWritePre", "InsertLeave", "TextChanged" },
---       {
---         buffer = buffer,
---         callback = diagnostic_handler,
---         group = ruby_group,
---       }
---     )
---   end
--- })
-
 
 --ALE
 vim.g.ale_fix_on_save = true
