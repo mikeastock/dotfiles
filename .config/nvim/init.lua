@@ -179,8 +179,8 @@ require("lazy").setup({
   {
     "nvim-lualine/lualine.nvim",
     dependencies = { "nvim-tree/nvim-web-devicons" },
-    config = true,
-    lazy = false,
+    event = "VeryLazy",
+    opts = {},
   },
 
   -- workflow
@@ -188,8 +188,8 @@ require("lazy").setup({
   "FooSoft/vim-argwrap",
   {
     "lewis6991/gitsigns.nvim",
-    config = true,
-    lazy = false,
+    event = "VeryLazy",
+    opts = {},
   },
 
   "ap/vim-buftabline",
@@ -206,8 +206,8 @@ require("lazy").setup({
   -- CSS Color Previews
   {
     "norcalli/nvim-colorizer.lua",
-    config = true,
-    lazy = false,
+    event = "VeryLazy",
+    opts = {},
   },
 
   {
@@ -227,12 +227,40 @@ require("lazy").setup({
       require("copilot").setup({
         suggestion = {
           auto_trigger = true,
-            keymap = {
-              accept = "<C-f>",
-            },
+          keymap = {
+            accept = "<C-f>",
+          },
         },
       })
     end,
+  },
+  -- snippets
+  {
+    "L3MON4D3/LuaSnip",
+    dependencies = {
+      "rafamadriz/friendly-snippets",
+      config = function()
+        require("luasnip.loaders.from_vscode").lazy_load()
+      end,
+    },
+    opts = {
+      history = true,
+      delete_check_events = "TextChanged",
+    },
+    -- stylua: ignore
+    keys = {
+      {
+        "<tab>",
+        function()
+          return require("luasnip").jumpable(1) and "<Plug>luasnip-jump-next" or "<tab>"
+        end,
+        expr = true,
+        silent = true,
+        mode = "i",
+      },
+      { "<tab>",   function() require("luasnip").jump(1) end,  mode = "s" },
+      { "<s-tab>", function() require("luasnip").jump(-1) end, mode = { "i", "s" } },
+    },
   },
   {
     "hrsh7th/nvim-cmp",
@@ -242,9 +270,11 @@ require("lazy").setup({
       "hrsh7th/cmp-nvim-lsp",
       "hrsh7th/cmp-buffer",
       "hrsh7th/cmp-path",
+      "saadparwaiz1/cmp_luasnip",
     },
     opts = function()
       local cmp = require("cmp")
+      local defaults = require("cmp.config.default")()
 
       cmp.event:on("menu_opened", function()
         vim.b.copilot_suggestion_hidden = true
@@ -253,6 +283,37 @@ require("lazy").setup({
       cmp.event:on("menu_closed", function()
         vim.b.copilot_suggestion_hidden = false
       end)
+
+      return {
+        completion = {
+          completeopt = "menu,menuone,noinsert",
+        },
+        snippet = {
+          expand = function(args)
+            require("luasnip").lsp_expand(args.body)
+          end,
+        },
+        mapping = cmp.mapping.preset.insert({
+          ["<C-n>"] = cmp.mapping.select_next_item({ behavior = cmp.SelectBehavior.Insert }),
+          ["<C-p>"] = cmp.mapping.select_prev_item({ behavior = cmp.SelectBehavior.Insert }),
+          ["<C-b>"] = cmp.mapping.scroll_docs(-4),
+          ["<C-f>"] = cmp.mapping.scroll_docs(4),
+          ["<C-Space>"] = cmp.mapping.complete(),
+          ["<C-e>"] = cmp.mapping.abort(),
+          ["<CR>"] = cmp.mapping.confirm({ select = true }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
+          ["<S-CR>"] = cmp.mapping.confirm({
+            behavior = cmp.ConfirmBehavior.Replace,
+            select = true,
+          }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
+        }),
+        sources = cmp.config.sources({
+          { name = "nvim_lsp" },
+          { name = "luasnip" },
+          { name = "buffer" },
+          { name = "path" },
+        }),
+        sorting = defaults.sorting,
+      }
     end
   },
 
@@ -262,14 +323,79 @@ require("lazy").setup({
 
   -- colors
   "catppuccin/nvim",
+  {
+    "folke/tokyonight.nvim",
+    lazy = true,
+    opts = { style = "moon" },
+  },
 
   -- LSP
   {
     "neovim/nvim-lspconfig",
     event = { "BufReadPre", "BufNewFile" },
     dependencies = {
-      { "folke/neodev.nvim", opts = {} }, -- Configure init.lua lua-lsp and neovim completions
+      { "folke/neodev.nvim", opts = {} },
+      "hrsh7th/cmp-nvim-lsp",
     },
+    opts = {
+      -- add any global capabilities here
+      capabilities = {},
+
+      -- LSP Server Settings
+      ---@type lspconfig.options
+      servers = {
+        lua_ls = {
+          settings = {
+            Lua = {
+              completion = {
+                callSnippet = "Replace"
+              },
+              diagnostics = {
+                globals = { "vim" },
+              },
+            },
+          }
+        },
+      },
+    },
+    config = function(_, opts)
+      local lspFormattingGroup = vim.api.nvim_create_augroup("LspFormatting", {});
+      vim.api.nvim_create_autocmd(
+        { "BufWritePre" },
+        {
+          pattern = "*",
+          callback = function()
+            vim.lsp.buf.format()
+          end,
+          group = lspFormattingGroup,
+        }
+      )
+
+      local servers = opts.servers
+      local cmp_nvim_lsp = require("cmp_nvim_lsp")
+      local capabilities = vim.tbl_deep_extend(
+        "force",
+        {},
+        vim.lsp.protocol.make_client_capabilities(),
+        cmp_nvim_lsp.default_capabilities(),
+        opts.capabilities
+      )
+
+      local function setup(server)
+        local server_opts = vim.tbl_deep_extend(
+          "force",
+          { capabilities = vim.deepcopy(capabilities) },
+          servers[server] or {}
+        )
+
+        require("lspconfig")[server].setup(server_opts)
+      end
+
+      for server, _ in pairs(servers) do
+        setup(server)
+      end
+    end,
+    lazy = false,
   },
   "dense-analysis/ale",
 
@@ -281,27 +407,27 @@ require("lazy").setup({
   -- Langauge specific
 
   -- JS
-  { "HerringtonDarkholme/yats.vim", ft = "typescript" },
+  { "HerringtonDarkholme/yats.vim",           ft = "typescript" },
   { "othree/javascript-libraries-syntax.vim", ft = "javascript" },
-  { "pangloss/vim-javascript", ft = "javascript" },
+  { "pangloss/vim-javascript",                ft = "javascript" },
 
   -- Ruby
-  { "Keithbsmiley/rspec.vim", ft = "ruby" },
-  { "tpope/vim-rails", ft = "ruby" },
-  { "vim-ruby/vim-ruby", ft = "ruby" },
+  { "Keithbsmiley/rspec.vim",                 ft = "ruby" },
+  { "tpope/vim-rails",                        ft = "ruby" },
+  { "vim-ruby/vim-ruby",                      ft = "ruby" },
 
   -- Elixir
-  { "elixir-lang/vim-elixir", ft = "elixir,eelixir" },
-  { "mhinz/vim-mix-format", ft = "elixir,eelixir" },
+  { "elixir-lang/vim-elixir",                 ft = "elixir,eelixir" },
+  { "mhinz/vim-mix-format",                   ft = "elixir,eelixir" },
 
   -- Misc
-  { "amadeus/vim-mjml", ft = "mjml" },
-  { "andys8/vim-elm-syntax", ft = "elm" },
-  { "dag/vim-fish", ft = "fish" },
-  { "fatih/vim-go", ft = "golang" },
-  { "hashivim/vim-terraform", ft = "terraform" },
-  { "jvirtanen/vim-hcl", ft = "hcl" },
-  { "rust-lang/rust.vim", ft = "rust" },
+  { "amadeus/vim-mjml",                       ft = "mjml" },
+  { "andys8/vim-elm-syntax",                  ft = "elm" },
+  { "dag/vim-fish",                           ft = "fish" },
+  { "fatih/vim-go",                           ft = "golang" },
+  { "hashivim/vim-terraform",                 ft = "terraform" },
+  { "jvirtanen/vim-hcl",                      ft = "hcl" },
+  { "rust-lang/rust.vim",                     ft = "rust" },
 })
 
 --##############################################################################
@@ -372,81 +498,56 @@ nmap(
 )
 
 
--- LSP Config
-local lsp = require("lspconfig")
-
-local lspFormattingGroup = vim.api.nvim_create_augroup("LspFormatting", {});
-vim.api.nvim_create_autocmd(
-  { "BufWritePre" },
-  {
-    pattern = "*",
-    callback = function()
-      vim.lsp.buf.format()
-    end,
-    group = lspFormattingGroup,
-  }
-)
-
--- lsp.lua_ls.setup(coq.lsp_ensure_capabilities({
---   settings = {
---     Lua = {
---       diagnostics = {
---         globals = { "vim" },
---       },
---     },
---   }
--- }))
-
 -- lsp.tsserver.setup()
 
-lsp.ruby_ls.setup({
-  cmd = { "./bin/ruby-lsp" },
-  init_options = {
-    -- Add Ruby LSP configuration here, eg:
-    formatter = "auto"
-  },
-  enabledfeatures = { "codeactions", "diagnostics", "documenthighlights", "documentsymbols", "formatting", "inlayhint" },
-  -- Add your lspconfig configurations/overrides here, eg:
-  on_attach = function(client, buffer)
-    -- in the case you have an existing `on_attach` function
-    -- with mappings you share with other lsp clients configs
-    -- pcall(on_attach, client, buffer)
+-- lsp.ruby_ls.setup({
+--   cmd = { "./bin/ruby-lsp" },
+--   init_options = {
+--     -- Add Ruby LSP configuration here, eg:
+--     formatter = "auto"
+--   },
+--   enabledfeatures = { "codeactions", "diagnostics", "documenthighlights", "documentsymbols", "formatting", "inlayhint" },
+--   -- Add your lspconfig configurations/overrides here, eg:
+--   on_attach = function(client, buffer)
+--     -- in the case you have an existing `on_attach` function
+--     -- with mappings you share with other lsp clients configs
+--     -- pcall(on_attach, client, buffer)
 
-    local diagnostic_handler = function()
-      local params = vim.lsp.util.make_text_document_params(buffer)
+--     local diagnostic_handler = function()
+--       local params = vim.lsp.util.make_text_document_params(buffer)
 
-      client.request(
-        "textDocument/diagnostic",
-        { textDocument = params },
-        function(err, result)
-          if err then
-            local err_msg = string.format("./bin/ruby-lsp - diagnostics error - %s", vim.inspect(err))
-            vim.lsp.log.error(err_msg)
-          end
-          if not result then return end
+--       client.request(
+--         "textDocument/diagnostic",
+--         { textDocument = params },
+--         function(err, result)
+--           if err then
+--             local err_msg = string.format("./bin/ruby-lsp - diagnostics error - %s", vim.inspect(err))
+--             vim.lsp.log.error(err_msg)
+--           end
+--           if not result then return end
 
-          vim.lsp.diagnostic.on_publish_diagnostics(
-            nil,
-            vim.tbl_extend("keep", params, { diagnostics = result.items }),
-            { client_id = client.id }
-          )
-        end
-      )
-    end
+--           vim.lsp.diagnostic.on_publish_diagnostics(
+--             nil,
+--             vim.tbl_extend("keep", params, { diagnostics = result.items }),
+--             { client_id = client.id }
+--           )
+--         end
+--       )
+--     end
 
-    diagnostic_handler() -- to request diagnostics when attaching the client to the buffer
+--     diagnostic_handler() -- to request diagnostics when attaching the client to the buffer
 
-    local ruby_group = vim.api.nvim_create_augroup("ruby_ls", { clear = false })
-    vim.api.nvim_create_autocmd(
-      { "BufEnter", "BufWritePre", "InsertLeave", "TextChanged" },
-      {
-        buffer = buffer,
-        callback = diagnostic_handler,
-        group = ruby_group,
-      }
-    )
-  end
-})
+--     local ruby_group = vim.api.nvim_create_augroup("ruby_ls", { clear = false })
+--     vim.api.nvim_create_autocmd(
+--       { "BufEnter", "BufWritePre", "InsertLeave", "TextChanged" },
+--       {
+--         buffer = buffer,
+--         callback = diagnostic_handler,
+--         group = ruby_group,
+--       }
+--     )
+--   end
+-- })
 
 
 --ALE
