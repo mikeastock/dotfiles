@@ -90,7 +90,7 @@ source /opt/homebrew/opt/asdf/libexec/asdf.fish
 
 # Local bin dirs - Added after ASDF so that these take precedence
 fish_add_path ~/bin
-# fish_add_path ./bin
+# Workaround to add a relative dir to my path
 set PATH ./bin $PATH
 
 ###### History Search
