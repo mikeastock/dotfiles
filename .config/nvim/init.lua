@@ -156,6 +156,10 @@ vim.cmd.cabbrev({ "WQ", "wq" })
 vim.cmd.cabbrev({ "Qall", "qall" })
 vim.cmd.cabbrev({ "Wqall", "wqall" })
 
+vim.cmd([[
+let g:user_debugger_dictionary = { '\.rb' : 'binding.irb', '\.tsx' : 'debugger' }
+]])
+
 -- Plugins
 
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
@@ -336,6 +340,7 @@ require("lazy").setup({
     dependencies = {
       { "folke/neodev.nvim", opts = {} },
       "hrsh7th/cmp-nvim-lsp",
+      "jose-elias-alvarez/typescript.nvim",
     },
     opts = {
       -- add any global capabilities here
@@ -394,7 +399,7 @@ require("lazy").setup({
               )
             end
 
-            diagnostic_handler()   -- to request diagnostics when attaching the client to the buffer
+            diagnostic_handler() -- to request diagnostics when attaching the client to the buffer
 
             local ruby_group = vim.api.nvim_create_augroup("ruby_ls", { clear = false })
             vim.api.nvim_create_autocmd(
@@ -407,6 +412,13 @@ require("lazy").setup({
             )
           end
         },
+        tsserver = {},
+      },
+      setup = {
+        tsserver = function(_, opts)
+          require("typescript").setup({ server = opts })
+          return true
+        end,
       },
     },
     config = function(_, opts)
@@ -438,6 +450,12 @@ require("lazy").setup({
           { capabilities = vim.deepcopy(capabilities) },
           servers[server] or {}
         )
+
+        if opts.setup[server] then
+          if opts.setup[server](server, server_opts) then
+            return
+          end
+        end
 
         require("lspconfig")[server].setup(server_opts)
       end
@@ -579,10 +597,6 @@ tmap("<Esc>", "<C-\\><C-n>")
 
 -- I like relative numbering when in normal mode.
 vim.cmd("autocmd TermOpen * setlocal conceallevel=0 colorcolumn=0 relativenumber")
-
-vim.cmd([[
-let g:user_debugger_dictionary = { '\.rb' : 'binding.irb', '\.tsx' : 'debugger' }
-]])
 
 -- Rename current file
 vim.cmd([[
