@@ -275,8 +275,9 @@ require("lazy").setup({
       "hrsh7th/cmp-buffer",
       "hrsh7th/cmp-path",
       "saadparwaiz1/cmp_luasnip",
+      { "roobert/tailwindcss-colorizer-cmp.nvim", opts = {} },
     },
-    opts = function()
+    opts = function(_, _)
       local cmp = require("cmp")
       local defaults = require("cmp.config.default")()
 
@@ -412,9 +413,19 @@ require("lazy").setup({
             )
           end
         },
+        tailwindcss = {
+          filetypes_exclude = { "markdown" },
+        },
         tsserver = {},
       },
       setup = {
+        tailwindcss = function(_, opts)
+          local tw = require("lspconfig.server_configurations.tailwindcss")
+          --- @param ft string
+          opts.filetypes = vim.tbl_filter(function(ft)
+            return not vim.tbl_contains(opts.filetypes_exclude or {}, ft)
+          end, tw.default_config.filetypes)
+        end,
         tsserver = function(_, opts)
           require("typescript").setup({ server = opts })
           return true

@@ -28,7 +28,7 @@
 [push]
   default = current
 [core]
-  editor = nvim
+  editor = lvim
   excludesfile = /Users/mikeastock/.gitignore
 [color]
   ui = auto

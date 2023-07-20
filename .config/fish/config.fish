@@ -1,7 +1,7 @@
 ####### MISC CONFIG
 
 set -U fish_greeting
-set -gx EDITOR nvim
+set -gx EDITOR lvim
 set -gx ELM_WATCH_OPEN_EDITOR 'idea --line "$line" "$file"'
 
 # https://github.com/rails/rails/issues/38560
@@ -25,7 +25,7 @@ alias lh="ls -Alh"
 alias ll="ls -lh"
 alias ln="ln -v"
 alias mkdir="mkdir -p"
-alias vim="nvim"
+alias vim="lvim"
 
 alias h="heroku"
 alias hc="heroku run CONSOLE_USER=mike rails console"
@@ -90,6 +90,7 @@ source /opt/homebrew/opt/asdf/libexec/asdf.fish
 
 # Local bin dirs - Added after ASDF so that these take precedence
 fish_add_path ~/bin
+fish_add_path ~/.local/bin
 # Workaround to add a relative dir to my path
 set PATH ./bin $PATH
 
