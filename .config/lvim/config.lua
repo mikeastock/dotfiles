@@ -20,10 +20,9 @@ endfunction
 call MapCR()
 ]])
 
+-- Custom Lvim configs
 lvim.colorscheme = "tokyonight-night"
-
 lvim.format_on_save.enabled = true
-
 lvim.builtin.telescope.defaults.path_display = {}
 
 -- Because I can't spell
