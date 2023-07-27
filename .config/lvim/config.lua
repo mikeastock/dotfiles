@@ -12,6 +12,9 @@ vim.opt.mouse = ""
 -- Make vim go to beginning of line
 vim.cmd("map 0 ^")
 
+-- I like relative numbering when in normal mode.
+vim.cmd("autocmd TermOpen * setlocal conceallevel=0 colorcolumn=0 relativenumber")
+
 -- Remove search highlight
 vim.cmd([[
 function! MapCR()
@@ -20,10 +23,27 @@ endfunction
 call MapCR()
 ]])
 
+-- Rename current file
+vim.cmd([[
+function! RenameFile()
+  let old_name = expand('%')
+  let new_name = input('New file name: ', expand('%'), 'file')
+  if new_name != '' && new_name != old_name
+    exec ':saveas ' . new_name
+    exec ':silent !rm ' . old_name
+    redraw!
+  endif
+endfunction
+]])
+lvim.builtin.which_key.mappings["n"] = { ":call RenameFile()<CR>", "Rename file" }
+
 -- Custom Lvim configs
 lvim.colorscheme = "tokyonight-night"
 lvim.format_on_save.enabled = true
 lvim.builtin.telescope.defaults.path_display = {}
+
+-- Unset using system clipboard
+vim.opt.clipboard = {}
 
 -- Because I can't spell
 vim.cmd.cabbrev({ "Wq", "wq" })
@@ -46,6 +66,11 @@ lvim.builtin.which_key.mappings["q"] = { "<cmd>BufferKill<CR>", "Close Buffer" }
 
 lvim.builtin.which_key.mappings["t"] = { ":TestNearest<CR>", "Test nearest" }
 lvim.builtin.which_key.mappings["r"] = { ":TestFile<CR>", "Test file" }
+
+lvim.builtin.which_key.mappings["a"] = { ":ArgWrap<CR>", "ArgWrap" }
+
+lvim.builtin.which_key.mappings["p"] = { "<cmd>call AddDebugger('O')<CR>", "Insert debugger below" }
+lvim.builtin.which_key.mappings["P"] = { "<cmd>call AddDebugger('o')<CR>", "Insert debugger above" }
 
 -- lvim.builtin.which_key.mappings["s"] = { "<cmd>lua require('neotest').run.run()<cr>", "Test Method" }
 -- lvim.builtin.which_key.mappings["r"] = { "<cmd>lua require('neotest').run.run(vim.fn.expand('%'))<cr>", "Test Method" }
@@ -78,6 +103,14 @@ table.insert(lvim.plugins, {
     lazy = false,
     priority = 1000,
     opts = {},
+  },
+  {
+    "FooSoft/vim-argwrap",
+    event = "InsertEnter"
+  },
+  {
+    "mikeastock/vim-infer-debugger",
+    lazy = false
   },
 
   -- Setup neotest

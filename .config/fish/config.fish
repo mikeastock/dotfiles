@@ -25,7 +25,7 @@ alias lh="ls -Alh"
 alias ll="ls -lh"
 alias ln="ln -v"
 alias mkdir="mkdir -p"
-alias vim="lvim"
+alias vim="nvim"
 
 alias h="heroku"
 alias hc="heroku run CONSOLE_USER=mike rails console"
