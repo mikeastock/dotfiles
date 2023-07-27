@@ -96,7 +96,6 @@ vim.opt.shiftround = true -- When at 3 spaces and I hit >>, go to 4, not 5.
 vim.opt.showmode = false  -- Hide -- INSERT -- in cmdline for echodoc
 
 -- Color
-vim.cmd.colorscheme "catppuccin-mocha" -- catppuccin-latte, catppuccin-frappe, catppuccin-macchiato, catppuccin-mocha
 vim.opt.termguicolors = true
 
 -- syntax enable
@@ -131,7 +130,7 @@ endfunction
 call MapCR()
 ]])
 
-vmap("<Enter>", "<cmd>EasyAlign")
+vmap("<Enter>", "<cmd>EasyAlign<CR>")
 
 -- more natural movement with wrap on
 nmap("j", "gj")
@@ -188,7 +187,6 @@ require("lazy").setup({
   },
 
   -- workflow
-  "AndrewRadev/splitjoin.vim",
   "FooSoft/vim-argwrap",
   {
     "lewis6991/gitsigns.nvim",
@@ -223,6 +221,10 @@ require("lazy").setup({
   },
 
   -- Autocomplete
+  -- {
+  --   "github/copilot.vim",
+  --   event = "InsertEnter",
+  -- },
   {
     "zbirenbaum/copilot.lua",
     cmd = "Copilot",
@@ -622,3 +624,6 @@ function! RenameFile()
 endfunction
 ]])
 nmap("<Leader>n", ":call RenameFile()<CR>")
+
+-- LAST
+vim.cmd([[colorscheme tokyonight-night]])
