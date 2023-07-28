@@ -231,6 +231,8 @@ require("lazy").setup({
     event = "InsertEnter",
     config = function()
       require("copilot").setup({
+        -- suggestion = { enabled = false },
+        -- panel = { enabled = false },
         suggestion = {
           auto_trigger = true,
           keymap = {
@@ -278,18 +280,24 @@ require("lazy").setup({
       "hrsh7th/cmp-path",
       "saadparwaiz1/cmp_luasnip",
       { "roobert/tailwindcss-colorizer-cmp.nvim", opts = {} },
+      -- {
+      --   "zbirenbaum/copilot-cmp",
+      --   config = function()
+      --     require("copilot_cmp").setup()
+      --   end
+      -- }
     },
     opts = function(_, _)
       local cmp = require("cmp")
       local defaults = require("cmp.config.default")()
 
-      cmp.event:on("menu_opened", function()
-        vim.b.copilot_suggestion_hidden = true
-      end)
+      -- cmp.event:on("menu_opened", function()
+      --   vim.b.copilot_suggestion_hidden = true
+      -- end)
 
-      cmp.event:on("menu_closed", function()
-        vim.b.copilot_suggestion_hidden = false
-      end)
+      -- cmp.event:on("menu_closed", function()
+      --   vim.b.copilot_suggestion_hidden = false
+      -- end)
 
       return {
         completion = {
@@ -311,7 +319,8 @@ require("lazy").setup({
           ["<S-CR>"] = cmp.mapping.confirm({
             behavior = cmp.ConfirmBehavior.Replace,
             select = true,
-          }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
+          }),                                                      -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
+          ["<C-f>"] = require("copilot.suggestion").accept_line(), -- Allow accepting copilot with cmp open
         }),
         sources = cmp.config.sources({
           { name = "nvim_lsp" },
@@ -364,63 +373,64 @@ require("lazy").setup({
             },
           }
         },
-        ruby_ls = {
-          cmd = { "./bin/ruby-lsp" },
-          init_options = {
-            -- Add Ruby LSP configuration here, eg:
-            formatter = "auto"
-          },
-          enabledfeatures = {
-            "codeactions",
-            "diagnostics",
-            "documenthighlights",
-            "documentsymbols",
-            "formatting",
-            "inlayhint",
-          },
-          -- Add your lspconfig configurations/overrides here, eg:
-          on_attach = function(client, buffer)
-            local diagnostic_handler = function()
-              local params = vim.lsp.util.make_text_document_params(buffer)
-
-              client.request(
-                "textDocument/diagnostic",
-                { textDocument = params },
-                function(err, result)
-                  if err then
-                    local err_msg = string.format("./bin/ruby-lsp - diagnostics error - %s", vim.inspect(err))
-                    vim.lsp.log.error(err_msg)
-                  end
-                  if not result then return end
-
-                  vim.lsp.diagnostic.on_publish_diagnostics(
-                    nil,
-                    vim.tbl_extend("keep", params, { diagnostics = result.items }),
-                    { client_id = client.id }
-                  )
-                end
-              )
-            end
-
-            diagnostic_handler() -- to request diagnostics when attaching the client to the buffer
-
-            local ruby_group = vim.api.nvim_create_augroup("ruby_ls", { clear = false })
-            vim.api.nvim_create_autocmd(
-              { "BufEnter", "BufWritePre", "InsertLeave", "TextChanged" },
-              {
-                buffer = buffer,
-                callback = diagnostic_handler,
-                group = ruby_group,
-              }
-            )
-          end
-        },
+        ruby_ls = {},
         tailwindcss = {
           filetypes_exclude = { "markdown" },
         },
         tsserver = {},
       },
       setup = {
+        ruby_ls = function(_, opts)
+          _timers = {}
+
+          local function setup_diagnostics(client, buffer)
+            if require("vim.lsp.diagnostic")._enable then
+              return
+            end
+
+            local diagnostic_handler = function()
+              local params = vim.lsp.util.make_text_document_params(buffer)
+              client.request("textDocument/diagnostic", { textDocument = params }, function(err, result)
+                if err then
+                  local err_msg = string.format("diagnostics error - %s", vim.inspect(err))
+                  vim.lsp.log.error(err_msg)
+                end
+                if not result then
+                  return
+                end
+                vim.lsp.diagnostic.on_publish_diagnostics(
+                  nil,
+                  vim.tbl_extend("keep", params, { diagnostics = result.items }),
+                  { client_id = client.id }
+                )
+              end)
+            end
+
+            diagnostic_handler() -- to request diagnostics on buffer when first attaching
+
+            vim.api.nvim_buf_attach(buffer, false, {
+              on_lines = function()
+                if _timers[buffer] then
+                  vim.fn.timer_stop(_timers[buffer])
+                end
+                _timers[buffer] = vim.fn.timer_start(200, diagnostic_handler)
+              end,
+              on_detach = function()
+                if _timers[buffer] then
+                  vim.fn.timer_stop(_timers[buffer])
+                end
+              end,
+            })
+          end
+
+          require("lspconfig").ruby_ls.setup({
+            on_attach = function(client, buffer)
+              setup_diagnostics(client, buffer)
+            end,
+          })
+
+          return true
+        end,
         tailwindcss = function(_, opts)
           local tw = require("lspconfig.server_configurations.tailwindcss")
           --- @param ft string
