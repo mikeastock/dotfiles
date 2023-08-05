@@ -270,68 +270,97 @@ require("lazy").setup({
       { "<s-tab>", function() require("luasnip").jump(-1) end, mode = { "i", "s" } },
     },
   },
-  {
-    "hrsh7th/nvim-cmp",
-    version = false, -- last release is way too old
-    event = "InsertEnter",
-    dependencies = {
-      "hrsh7th/cmp-nvim-lsp",
-      "hrsh7th/cmp-buffer",
-      "hrsh7th/cmp-path",
-      "saadparwaiz1/cmp_luasnip",
-      { "roobert/tailwindcss-colorizer-cmp.nvim", opts = {} },
-      -- {
-      --   "zbirenbaum/copilot-cmp",
-      --   config = function()
-      --     require("copilot_cmp").setup()
-      --   end
-      -- }
-    },
-    opts = function(_, _)
-      local cmp = require("cmp")
-      local defaults = require("cmp.config.default")()
+  -- {
+  --   "ms-jpq/coq_nvim",
+  --   branch = "coq",
+  --   event = "InsertEnter",
+  --   dependencies = {
+  --     "ms-jpq/coq.artifacts",
+  --     -- "ms-jpq/coq.thirdparty",
+  --     -- "ms-jpq/coq.lsp",
+  --     -- "ms-jpq/coq.bibtex",
+  --     -- "ms-jpq/coq.cmake",
+  --     -- "ms-jpq/coq.coc",
+  --     -- "ms-jpq/coq.conjure",
+  --     -- "ms-jpq/coq.cyfix",
+  --     -- "ms-jpq/coq.fast",
+  --     -- "ms-jpq/coq.fish",
+  --     -- "ms-jpq/coq.norg",
+  --     -- "ms-jpq/coq.omni",
+  --     -- "ms-jpq/coq.org",
+  --     -- "ms-jpq/coq.pairs",
+  --     -- "ms-jpq/coq.pandoc",
+  --     -- "ms-jpq/coq.python",
+  --     -- "ms-jpq/coq.rust",
+  --     -- "ms-jpq/coq.shell",
+  --     -- "ms-jpq/coq.themes",
+  --     -- "ms-jpq/coq.treesitter",
+  --     -- "ms-jpq/coq.vimtex",
+  --     -- "ms-jpq/coq.zk",
+  --   },
+  -- },
+  -- {
+  --   "hrsh7th/nvim-cmp",
+  --   version = false, -- last release is way too old
+  --   event = "InsertEnter",
+  --   dependencies = {
+  --     "hrsh7th/cmp-nvim-lsp",
+  --     "hrsh7th/cmp-buffer",
+  --     "hrsh7th/cmp-path",
+  --     "saadparwaiz1/cmp_luasnip",
+  --     { "roobert/tailwindcss-colorizer-cmp.nvim", opts = {} },
+  --     -- {
+  --     --   "zbirenbaum/copilot-cmp",
+  --     --   config = function()
+  --     --     require("copilot_cmp").setup()
+  --     --   end
+  --     -- }
+  --   },
+  --   opts = function(_, _)
+  --     local cmp = require("cmp")
+  --     local defaults = require("cmp.config.default")()
 
-      -- cmp.event:on("menu_opened", function()
-      --   vim.b.copilot_suggestion_hidden = true
-      -- end)
+  --     -- cmp.event:on("menu_opened", function()
+  --     --   vim.b.copilot_suggestion_hidden = true
+  --     -- end)
 
-      -- cmp.event:on("menu_closed", function()
-      --   vim.b.copilot_suggestion_hidden = false
-      -- end)
+  --     -- cmp.event:on("menu_closed", function()
+  --     --   vim.b.copilot_suggestion_hidden = false
+  --     -- end)
 
-      return {
-        completion = {
-          completeopt = "menu,menuone,noinsert",
-        },
-        snippet = {
-          expand = function(args)
-            require("luasnip").lsp_expand(args.body)
-          end,
-        },
-        mapping = cmp.mapping.preset.insert({
-          ["<C-n>"] = cmp.mapping.select_next_item({ behavior = cmp.SelectBehavior.Insert }),
-          ["<C-p>"] = cmp.mapping.select_prev_item({ behavior = cmp.SelectBehavior.Insert }),
-          ["<C-b>"] = cmp.mapping.scroll_docs(-4),
-          ["<C-f>"] = cmp.mapping.scroll_docs(4),
-          ["<C-Space>"] = cmp.mapping.complete(),
-          ["<C-e>"] = cmp.mapping.abort(),
-          ["<CR>"] = cmp.mapping.confirm({ select = true }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
-          ["<S-CR>"] = cmp.mapping.confirm({
-            behavior = cmp.ConfirmBehavior.Replace,
-            select = true,
-          }),                                                      -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
-          ["<C-f>"] = require("copilot.suggestion").accept_line(), -- Allow accepting copilot with cmp open
-        }),
-        sources = cmp.config.sources({
-          { name = "nvim_lsp" },
-          { name = "luasnip" },
-          { name = "buffer" },
-          { name = "path" },
-        }),
-        sorting = defaults.sorting,
-      }
-    end
-  },
+  --     return {
+  --       completion = {
+  --         completeopt = "menu,menuone,noinsert",
+  --       },
+  --       snippet = {
+  --         expand = function(args)
+  --           require("luasnip").lsp_expand(args.body)
+  --         end,
+  --       },
+  --       mapping = cmp.mapping.preset.insert({
+  --         ["<C-n>"] = cmp.mapping.select_next_item({ behavior = cmp.SelectBehavior.Insert }),
+  --         ["<C-p>"] = cmp.mapping.select_prev_item({ behavior = cmp.SelectBehavior.Insert }),
+  --         ["<C-b>"] = cmp.mapping.scroll_docs(-4),
+  --         ["<C-f>"] = cmp.mapping.scroll_docs(4),
+  --         ["<C-Space>"] = cmp.mapping.complete(),
+  --         ["<C-e>"] = cmp.mapping.abort(),
+  --         ["<CR>"] = cmp.mapping.confirm({ select = true }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
+  --         ["<S-CR>"] = cmp.mapping.confirm({
+  --           behavior = cmp.ConfirmBehavior.Replace,
+  --           select = true,
+  --         }),                                                      -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
+  --         ["<C-f>"] = require("copilot.suggestion").accept_line(), -- Allow accepting copilot with cmp open
+  --       }),
+  --       sources = cmp.config.sources({
+  --         { name = "nvim_lsp" },
+  --         { name = "luasnip" },
+  --         { name = "buffer" },
+  --         { name = "path" },
+  --       }),
+  --       sorting = defaults.sorting,
+  --     }
+  --   end
+  -- },
 
   -- testing
   "vim-test/vim-test",
@@ -351,7 +380,36 @@ require("lazy").setup({
     event = { "BufReadPre", "BufNewFile" },
     dependencies = {
       { "folke/neodev.nvim", opts = {} },
-      "hrsh7th/cmp-nvim-lsp",
+      {
+        "ms-jpq/coq_nvim",
+        branch = "coq",
+        run = "python3 -m coq deps",
+        config = function()
+          vim.g.coq_settings = {
+            auto_start = "shut-up",
+            clients = {
+              tabnine = { enabled = true }
+            },
+            keymap = {
+              jump_to_mark = "" -- This defaults to <C-h> which we use to make switching buffers easier
+            },
+          }
+        end,
+        dependencies = {
+          "ms-jpq/coq.artifacts",
+          {
+            "ms-jpq/coq.thirdparty",
+            branch = "3p",
+            after = "coq_nvim",
+            config = function()
+              require("coq_3p") {
+                { src = "nvimlua", short_name = "nLUA" },
+                { src = "copilot", short_name = "COP", accept_key = "<c-f>" },
+              }
+            end
+          }
+        },
+      },
       "jose-elias-alvarez/typescript.nvim",
     },
     opts = {
@@ -377,6 +435,7 @@ require("lazy").setup({
         tailwindcss = {
           filetypes_exclude = { "markdown" },
         },
+        taplo = {},
         tsserver = {},
       },
       setup = {
@@ -458,12 +517,13 @@ require("lazy").setup({
       )
 
       local servers = opts.servers
-      local cmp_nvim_lsp = require("cmp_nvim_lsp")
+      local coq = require("coq")
+      coq.Now()
       local capabilities = vim.tbl_deep_extend(
         "force",
         {},
         vim.lsp.protocol.make_client_capabilities(),
-        cmp_nvim_lsp.default_capabilities(),
+        coq.lsp_ensure_capabilities({}),
         opts.capabilities
       )
 
