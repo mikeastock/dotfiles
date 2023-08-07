@@ -53,7 +53,6 @@ vim.cmd([[
 vim.opt.undodir = HOME .. "/.config/nvim/undo-dir"
 vim.opt.undofile = true
 
-
 -- Misc
 vim.cmd([[
 set virtualedit=insert
@@ -168,7 +167,7 @@ if not vim.loop.fs_stat(lazypath) then
     "clone",
     "--filter=blob:none",
     "https://github.com/folke/lazy.nvim.git",
-    "--branch=stable", -- latest stable release
+    "--branch=stable",     -- latest stable release
     lazypath,
   })
 end
@@ -208,7 +207,7 @@ require("lazy").setup({
   -- CSS Color Previews
   {
     "norcalli/nvim-colorizer.lua",
-    event = "VeryLazy",
+    event = "BufReadPre",
     opts = {},
   },
 
@@ -217,7 +216,7 @@ require("lazy").setup({
     setup = function()
       -- may set any options here
       vim.g.matchup_matchparen_offscreen = { method = "popup" }
-    end
+    end,
   },
 
   -- Autocomplete
@@ -374,42 +373,44 @@ require("lazy").setup({
     opts = { style = "moon" },
   },
 
+  -- Autocomplete
+  {
+    "ms-jpq/coq_nvim",
+    event = "InsertEnter",
+    branch = "coq",
+    run = "python3 -m coq deps",
+    config = function()
+      vim.g.coq_settings = {
+        auto_start = "shut-up",
+        clients = {
+          tabnine = { enabled = true },
+        },
+        keymap = {
+          jump_to_mark = "",           -- This defaults to <C-h> which we use to make switching buffers easier
+        },
+      }
+    end,
+    dependencies = {
+      "ms-jpq/coq.artifacts",
+      {
+        "ms-jpq/coq.thirdparty",
+        branch = "3p",
+        after = "coq_nvim",
+        config = function()
+          require("coq_3p")({
+            { src = "nvimlua", short_name = "nLUA" },
+            { src = "copilot", short_name = "COP", accept_key = "<c-f>" },
+          })
+        end,
+      },
+    },
+  },
   -- LSP
   {
     "neovim/nvim-lspconfig",
     event = { "BufReadPre", "BufNewFile" },
     dependencies = {
       { "folke/neodev.nvim", opts = {} },
-      {
-        "ms-jpq/coq_nvim",
-        branch = "coq",
-        run = "python3 -m coq deps",
-        config = function()
-          vim.g.coq_settings = {
-            auto_start = "shut-up",
-            clients = {
-              tabnine = { enabled = true }
-            },
-            keymap = {
-              jump_to_mark = "" -- This defaults to <C-h> which we use to make switching buffers easier
-            },
-          }
-        end,
-        dependencies = {
-          "ms-jpq/coq.artifacts",
-          {
-            "ms-jpq/coq.thirdparty",
-            branch = "3p",
-            after = "coq_nvim",
-            config = function()
-              require("coq_3p") {
-                { src = "nvimlua", short_name = "nLUA" },
-                { src = "copilot", short_name = "COP", accept_key = "<c-f>" },
-              }
-            end
-          }
-        },
-      },
       "jose-elias-alvarez/typescript.nvim",
     },
     opts = {
@@ -423,13 +424,13 @@ require("lazy").setup({
           settings = {
             Lua = {
               completion = {
-                callSnippet = "Replace"
+                callSnippet = "Replace",
               },
               diagnostics = {
                 globals = { "vim" },
               },
             },
-          }
+          },
         },
         ruby_ls = {},
         tailwindcss = {
@@ -465,7 +466,7 @@ require("lazy").setup({
               end)
             end
 
-            diagnostic_handler() -- to request diagnostics on buffer when first attaching
+            diagnostic_handler()             -- to request diagnostics on buffer when first attaching
 
             vim.api.nvim_buf_attach(buffer, false, {
               on_lines = function()
@@ -504,17 +505,17 @@ require("lazy").setup({
       },
     },
     config = function(_, opts)
-      local lspFormattingGroup = vim.api.nvim_create_augroup("LspFormatting", {});
-      vim.api.nvim_create_autocmd(
-        { "BufWritePre" },
-        {
-          pattern = "*",
-          callback = function()
-            vim.lsp.buf.format()
-          end,
-          group = lspFormattingGroup,
-        }
-      )
+      -- local lspFormattingGroup = vim.api.nvim_create_augroup("LspFormatting", {});
+      -- vim.api.nvim_create_autocmd(
+      --   { "BufWritePre" },
+      --   {
+      --     pattern = "*",
+      --     callback = function()
+      --       vim.lsp.buf.format()
+      --     end,
+      --     group = lspFormattingGroup,
+      --   }
+      -- )
 
       local servers = opts.servers
       local coq = require("coq")
@@ -528,11 +529,8 @@ require("lazy").setup({
       )
 
       local function setup(server)
-        local server_opts = vim.tbl_deep_extend(
-          "force",
-          { capabilities = vim.deepcopy(capabilities) },
-          servers[server] or {}
-        )
+        local server_opts =
+            vim.tbl_deep_extend("force", { capabilities = vim.deepcopy(capabilities) }, servers[server] or {})
 
         if opts.setup[server] then
           if opts.setup[server](server, server_opts) then
@@ -549,7 +547,41 @@ require("lazy").setup({
     end,
     lazy = false,
   },
-  "dense-analysis/ale",
+  {
+    "jose-elias-alvarez/null-ls.nvim",
+    event = "BufReadPre",
+    config = function()
+      local augroup = vim.api.nvim_create_augroup("LspFormatting", {})
+
+      local null_ls = require("null-ls")
+
+      null_ls.setup({
+        sources = {
+          -- null_ls.builtins.formatting.erb_lint,
+          null_ls.builtins.formatting.eslint_d,
+          null_ls.builtins.formatting.prettierd,
+          null_ls.builtins.formatting.rubocop,
+          null_ls.builtins.formatting.stylua,
+          null_ls.builtins.formatting.rustywind.with({
+            extra_filetypes = { "eruby" },
+          }),
+        },
+        on_attach = function(client, bufnr)
+          if client.supports_method("textDocument/formatting") then
+            vim.api.nvim_clear_autocmds({ group = augroup, buffer = bufnr })
+            vim.api.nvim_create_autocmd("BufWritePre", {
+              group = augroup,
+              buffer = bufnr,
+              callback = function()
+                vim.lsp.buf.format({ async = true })
+              end,
+            })
+          end
+        end,
+      })
+    end,
+    dependencies = { "nvim-lua/plenary.nvim" },
+  },
 
   {
     "folke/trouble.nvim",
@@ -620,7 +652,7 @@ augroup END
 --##############################################################################
 
 -- fuzzy finding plugin
-local fzf_actions = require "fzf-lua.actions"
+local fzf_actions = require("fzf-lua.actions")
 
 require("fzf-lua").setup({
   "max-perf",
@@ -632,38 +664,20 @@ require("fzf-lua").setup({
   actions = {
     files = {
       ["default"] = fzf_actions.file_edit,
-      ["ctrl-t"]  = fzf_actions.file_edit,
-      ["ctrl-s"]  = fzf_actions.file_split,
-      ["ctrl-x"]  = fzf_actions.file_split,
-      ["ctrl-v"]  = fzf_actions.file_vsplit,
+      ["ctrl-t"] = fzf_actions.file_edit,
+      ["ctrl-s"] = fzf_actions.file_split,
+      ["ctrl-x"] = fzf_actions.file_split,
+      ["ctrl-v"] = fzf_actions.file_vsplit,
     },
-  }
+  },
 })
-nmap(
-  "<Leader>f",
-  "<cmd>lua require('fzf-lua').files({ fzf_opts = { ['--layout'] = 'default' } })<CR>"
-)
+nmap("<Leader>f", "<cmd>lua require('fzf-lua').files({ fzf_opts = { ['--layout'] = 'default' } })<CR>")
 nmap("K", "<cmd>lua require('fzf-lua').grep_cword()<CR>")
-nmap(
-  "<C-t>",
-  "<cmd>lua require('fzf-lua').lsp_definitions()<CR>"
-)
-
---ALE
-vim.g.ale_fix_on_save = true
-vim.g.ale_linters = {
-  eruby = { "erblint" },
-  ruby = {},
-}
-vim.g.ale_fixers = {
-  eruby = { "erblint" },
-  ruby = {},
-}
+nmap("<C-t>", "<cmd>lua require('fzf-lua').lsp_definitions()<CR>")
 
 ----ArgWrap
 nmap("<Leader>a", "<cmd>ArgWrap<CR>")
 vim.g.argwrap_tail_comma = true
-
 
 ----replace "f" with 1-char Sneak
 nmap("f", "<Plug>Sneak_f")
