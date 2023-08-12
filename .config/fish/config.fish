@@ -76,8 +76,8 @@ end
 # Homebrew
 fish_add_path /opt/homebrew/bin
 
-# PostgreSQL 13
-fish_add_path /opt/homebrew/opt/postgresql@13/bin/
+# PostgreSQL 15
+fish_add_path /opt/homebrew/opt/postgresql@15/bin/
 
 # GNU sed
 fish_add_path /opt/homebrew/opt/gnu-sed/libexec/gnubin/

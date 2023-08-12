@@ -283,6 +283,10 @@ require("lazy").setup({
           })
         end,
       },
+      {
+        "ray-x/lsp_signature.nvim",
+        event = "VeryLazy",
+      },
     },
   },
 
@@ -294,11 +298,7 @@ require("lazy").setup({
       "jose-elias-alvarez/typescript.nvim",
     },
     opts = {
-      -- add any global capabilities here
-      capabilities = {},
-
       -- LSP Server Settings
-      ---@type lspconfig.options
       servers = {
         lua_ls = {
           settings = {
@@ -314,7 +314,39 @@ require("lazy").setup({
         },
         ruby_ls = {},
         tailwindcss = {
-          filetypes_exclude = { "markdown" },
+          filetypes = {
+            "css",
+            "eruby",
+            "html",
+            "javascript",
+            "javascriptreact",
+            "ruby",
+            "scss",
+            "typescript",
+            "typescriptreact",
+          },
+          {
+            tailwindCSS = {
+              classAttributes = {
+                "class",
+                "classes",
+                "className",
+                "class:list",
+                "classList",
+                "ngClass",
+              },
+              lint = {
+                cssConflict = "warning",
+                invalidApply = "error",
+                invalidConfigPath = "error",
+                invalidScreen = "error",
+                invalidTailwindDirective = "error",
+                invalidVariant = "error",
+                recommendedVariantOrder = "warning",
+              },
+              validate = true,
+            },
+          },
         },
         taplo = {},
         tsserver = {},
@@ -372,13 +404,6 @@ require("lazy").setup({
 
           return true
         end,
-        tailwindcss = function(_, opts)
-          local tw = require("lspconfig.server_configurations.tailwindcss")
-          --- @param ft string
-          opts.filetypes = vim.tbl_filter(function(ft)
-            return not vim.tbl_contains(opts.filetypes_exclude or {}, ft)
-          end, tw.default_config.filetypes)
-        end,
         tsserver = function(_, opts)
           local coq = require("coq")
           require("typescript").setup(coq.lsp_ensure_capabilities({ server = opts }))
@@ -399,13 +424,15 @@ require("lazy").setup({
       --   }
       -- )
 
-      local servers = opts.servers
       local coq = require("coq")
-      local capabilities = vim.tbl_deep_extend("force", vim.lsp.protocol.make_client_capabilities(), opts.capabilities)
+      local servers = opts.servers
 
       local function setup(server)
-        local server_opts =
-          vim.tbl_deep_extend("force", { capabilities = vim.deepcopy(capabilities) }, servers[server] or {})
+        local server_opts = vim.tbl_deep_extend(
+          "force",
+          { capabilities = vim.lsp.protocol.make_client_capabilities() },
+          servers[server] or {}
+        )
 
         if opts.setup[server] then
           if opts.setup[server](server, server_opts) then
