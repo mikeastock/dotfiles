@@ -89,10 +89,10 @@ set list
 set listchars=tab:·\ ,trail:█
 ]])
 
-vim.opt.mouse = ""        -- I HATE MICE
-vim.opt.gdefault = true   -- Assume the /g flag on :s substitutions to replace all matches in a line
+vim.opt.mouse = "" -- I HATE MICE
+vim.opt.gdefault = true -- Assume the /g flag on :s substitutions to replace all matches in a line
 vim.opt.shiftround = true -- When at 3 spaces and I hit >>, go to 4, not 5.
-vim.opt.showmode = false  -- Hide -- INSERT -- in cmdline for echodoc
+vim.opt.showmode = false -- Hide -- INSERT -- in cmdline for echodoc
 
 -- Color
 vim.opt.termguicolors = true
@@ -167,7 +167,7 @@ if not vim.loop.fs_stat(lazypath) then
     "clone",
     "--filter=blob:none",
     "https://github.com/folke/lazy.nvim.git",
-    "--branch=stable",     -- latest stable release
+    "--branch=stable", -- latest stable release
     lazypath,
   })
 end
@@ -265,7 +265,7 @@ require("lazy").setup({
           },
         },
         keymap = {
-          jump_to_mark = "",           -- This defaults to <C-h> which we use to make switching buffers easier
+          jump_to_mark = "", -- This defaults to <C-h> which we use to make switching buffers easier
         },
       }
       require("coq").Now()
@@ -346,7 +346,7 @@ require("lazy").setup({
               end)
             end
 
-            diagnostic_handler()             -- to request diagnostics on buffer when first attaching
+            diagnostic_handler() -- to request diagnostics on buffer when first attaching
 
             vim.api.nvim_buf_attach(buffer, false, {
               on_lines = function()
@@ -401,12 +401,11 @@ require("lazy").setup({
 
       local servers = opts.servers
       local coq = require("coq")
-      local capabilities =
-          vim.tbl_deep_extend("force", vim.lsp.protocol.make_client_capabilities(), opts.capabilities)
+      local capabilities = vim.tbl_deep_extend("force", vim.lsp.protocol.make_client_capabilities(), opts.capabilities)
 
       local function setup(server)
         local server_opts =
-            vim.tbl_deep_extend("force", { capabilities = vim.deepcopy(capabilities) }, servers[server] or {})
+          vim.tbl_deep_extend("force", { capabilities = vim.deepcopy(capabilities) }, servers[server] or {})
 
         if opts.setup[server] then
           if opts.setup[server](server, server_opts) then
@@ -422,41 +421,31 @@ require("lazy").setup({
       end
     end,
   },
+
+  -- Formatter
   {
-    "jose-elias-alvarez/null-ls.nvim",
-    event = "BufReadPre",
+    "mhartington/formatter.nvim",
     config = function()
-      local augroup = vim.api.nvim_create_augroup("LspFormatting", {})
-
-      local null_ls = require("null-ls")
-
-      null_ls.setup({
-        sources = {
-          -- null_ls.builtins.formatting.erb_lint,
-          null_ls.builtins.formatting.taplo,
-          null_ls.builtins.formatting.eslint_d,
-          null_ls.builtins.formatting.prettierd,
-          null_ls.builtins.formatting.rubocop,
-          null_ls.builtins.formatting.rustywind.with({
-            extra_filetypes = { "eruby" },
-          }),
-          null_ls.builtins.formatting.stylua,
+      local formatter = require("formatter")
+      formatter.setup({
+        logging = false,
+        filetype = {
+          javascript = { require("formatter.filetypes.javascript").prettierd },
+          typescript = { require("formatter.filetypes.typescript").prettierd },
+          lua = { require("formatter.filetypes.lua").stylua },
+          ruby = { require("formatter.filetypes.ruby").rubocop },
+          -- ruby = {
+          --   function()
+          --     return {
+          --       exe = "rubocop",
+          --       args = { "--auto-correct", "--stdin", "%:p" },
+          --       stdin = true,
+          --     }
+          --   end,
+          -- },
         },
-        on_attach = function(client, bufnr)
-          if client.supports_method("textDocument/formatting") then
-            vim.api.nvim_clear_autocmds({ group = augroup, buffer = bufnr })
-            vim.api.nvim_create_autocmd("BufWritePre", {
-              group = augroup,
-              buffer = bufnr,
-              callback = function()
-                vim.lsp.buf.format({ async = true })
-              end,
-            })
-          end
-        end,
       })
     end,
-    dependencies = { "nvim-lua/plenary.nvim" },
   },
 
   {
@@ -467,27 +456,27 @@ require("lazy").setup({
   -- Langauge specific
 
   -- JS
-  { "HerringtonDarkholme/yats.vim",           ft = "typescript" },
+  { "HerringtonDarkholme/yats.vim", ft = "typescript" },
   { "othree/javascript-libraries-syntax.vim", ft = "javascript" },
-  { "pangloss/vim-javascript",                ft = "javascript" },
+  { "pangloss/vim-javascript", ft = "javascript" },
 
   -- Ruby
-  { "Keithbsmiley/rspec.vim",                 ft = "ruby" },
-  { "tpope/vim-rails",                        ft = "ruby" },
-  { "vim-ruby/vim-ruby",                      ft = "ruby" },
+  { "Keithbsmiley/rspec.vim", ft = "ruby" },
+  { "tpope/vim-rails", ft = "ruby" },
+  { "vim-ruby/vim-ruby", ft = "ruby" },
 
   -- Elixir
-  { "elixir-lang/vim-elixir",                 ft = "elixir,eelixir" },
-  { "mhinz/vim-mix-format",                   ft = "elixir,eelixir" },
+  { "elixir-lang/vim-elixir", ft = "elixir,eelixir" },
+  { "mhinz/vim-mix-format", ft = "elixir,eelixir" },
 
   -- Misc
-  { "amadeus/vim-mjml",                       ft = "mjml" },
-  { "andys8/vim-elm-syntax",                  ft = "elm" },
-  { "dag/vim-fish",                           ft = "fish" },
-  { "fatih/vim-go",                           ft = "golang" },
-  { "hashivim/vim-terraform",                 ft = "terraform" },
-  { "jvirtanen/vim-hcl",                      ft = "hcl" },
-  { "rust-lang/rust.vim",                     ft = "rust" },
+  { "amadeus/vim-mjml", ft = "mjml" },
+  { "andys8/vim-elm-syntax", ft = "elm" },
+  { "dag/vim-fish", ft = "fish" },
+  { "fatih/vim-go", ft = "golang" },
+  { "hashivim/vim-terraform", ft = "terraform" },
+  { "jvirtanen/vim-hcl", ft = "hcl" },
+  { "rust-lang/rust.vim", ft = "rust" },
 })
 
 --##############################################################################
@@ -520,6 +509,11 @@ augroup END
 augroup gitCommit
   autocmd FileType gitcommit setlocal spell textwidth=72
   autocmd FileType *.md setlocal spell textwidth=80
+augroup END
+
+augroup FormatAutogroup
+  autocmd!
+  autocmd BufWritePost * FormatWrite
 augroup END
 ]])
 
