@@ -85,14 +85,14 @@ fish_add_path /opt/homebrew/opt/gnu-sed/libexec/gnubin/
 ####### Z Alt
 zoxide init fish | source
 
-###### ASDF
-source /opt/homebrew/opt/asdf/libexec/asdf.fish
+###### RTX (ASDF rust clone)
+rtx activate fish | source
 
-# Local bin dirs - Added after ASDF so that these take precedence
+###### quickenv
+
+# Local bin dirs - Added after RTX so that these take precedence
 fish_add_path ~/.bin
 fish_add_path ~/.local/bin
-# Workaround to add a relative dir to my path
-set PATH ./bin $PATH
 
 ###### History Search
 atuin init fish --disable-up-arrow | source
