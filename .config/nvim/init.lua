@@ -89,10 +89,13 @@ set list
 set listchars=tab:·\ ,trail:█
 ]])
 
-vim.opt.mouse = "" -- I HATE MICE
 vim.opt.gdefault = true -- Assume the /g flag on :s substitutions to replace all matches in a line
+vim.opt.grepformat = "%f:%l:%c:%m"
+vim.opt.grepprg = "rg --vimgrep"
+vim.opt.mouse = "" -- I HATE MICE
 vim.opt.shiftround = true -- When at 3 spaces and I hit >>, go to 4, not 5.
 vim.opt.showmode = false -- Hide -- INSERT -- in cmdline for echodoc
+vim.opt.splitkeep = "screen" -- Stable splits
 
 -- Color
 vim.opt.termguicolors = true
@@ -225,12 +228,16 @@ require("lazy").setup({
     event = "InsertEnter",
     config = function()
       require("copilot").setup({
-        -- suggestion = { enabled = false },
-        -- panel = { enabled = false },
+        panel = {
+          enabled = false,
+          auto_refresh = true,
+        },
         suggestion = {
           auto_trigger = true,
           keymap = {
             accept = "<C-f>",
+            next = "<C-n>",
+            prev = "<C-p>",
           },
         },
       })
@@ -240,6 +247,29 @@ require("lazy").setup({
   -- testing
   "vim-test/vim-test",
   "kassio/neoterm",
+  -- {
+  --   "nvim-neotest/neotest",
+  --   dependencies = {
+  --     "nvim-lua/plenary.nvim",
+  --     "zidhuss/neotest-minitest",
+  --   },
+  --   config = function()
+  --     require("neotest").setup({
+  --       adapters = {
+  --         require("neotest-minitest")({
+  --           test_cmd = function()
+  --             return vim.tbl_flatten({
+  --               "bundle",
+  --               "exec",
+  --               "rails",
+  --               "test",
+  --             })
+  --           end,
+  --         }),
+  --       },
+  --     })
+  --   end,
+  -- },
 
   -- colors
   "catppuccin/nvim",
@@ -253,7 +283,7 @@ require("lazy").setup({
   {
     "ms-jpq/coq_nvim",
     branch = "coq",
-    run = "python3 -m coq deps",
+    run = ":COQdeps",
     config = function()
       vim.g.coq_settings = {
         clients = {
@@ -581,9 +611,9 @@ nmap("f", "<Plug>Sneak_f")
 nmap("F", "<Plug>Sneak_F")
 
 -- Testing settings
+-- nmap("<Leader>s", "<cmd>lua require('neotest').run.run()<CR>")
 nmap("<Leader>s", ":TestNearest<CR>")
-nmap("<Leader>t", ":TestNearest<CR>")
-nmap("<Leader>T", ":TestFile<CR>")
+-- nmap("<Leader>r", "<cmd>lua require('neotest').run.run(vim.fn.expand('%'))<CR>")
 nmap("<Leader>r", ":TestFile<CR>")
 
 -- Make escape work in the Neovim terminal.
