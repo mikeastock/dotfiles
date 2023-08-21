@@ -92,9 +92,9 @@ set listchars=tab:·\ ,trail:█
 vim.opt.gdefault = true -- Assume the /g flag on :s substitutions to replace all matches in a line
 vim.opt.grepformat = "%f:%l:%c:%m"
 vim.opt.grepprg = "rg --vimgrep"
-vim.opt.mouse = "" -- I HATE MICE
-vim.opt.shiftround = true -- When at 3 spaces and I hit >>, go to 4, not 5.
-vim.opt.showmode = false -- Hide -- INSERT -- in cmdline for echodoc
+vim.opt.mouse = ""           -- I HATE MICE
+vim.opt.shiftround = true    -- When at 3 spaces and I hit >>, go to 4, not 5.
+vim.opt.showmode = false     -- Hide -- INSERT -- in cmdline for echodoc
 vim.opt.splitkeep = "screen" -- Stable splits
 
 -- Color
@@ -326,10 +326,12 @@ require("lazy").setup({
     dependencies = {
       { "folke/neodev.nvim", opts = {} },
       "jose-elias-alvarez/typescript.nvim",
+      "creativenull/efmls-configs-nvim",
     },
     opts = {
       -- LSP Server Settings
       servers = {
+        efm = {},
         lua_ls = {
           settings = {
             Lua = {
@@ -382,6 +384,26 @@ require("lazy").setup({
         tsserver = {},
       },
       setup = {
+        efm = function(_, _)
+          local eslint = require("efmls-configs.linters.eslint")
+          local prettier = require("efmls-configs.formatters.prettier")
+          local languages = {
+            typescript = { eslint, prettier },
+          }
+
+          local config = {
+            capabilities = vim.lsp.protocol.make_client_capabilities(),
+            init_options = { documentFormatting = true },
+            settings = {
+              rootMarkers = { ".git/" },
+              languages = languages,
+            }
+          }
+
+          require("lspconfig").efm.setup(config)
+
+          return true
+        end,
         ruby_ls = function(_, opts)
           _timers = {}
 
@@ -442,17 +464,17 @@ require("lazy").setup({
       },
     },
     config = function(_, opts)
-      -- local lspFormattingGroup = vim.api.nvim_create_augroup("LspFormatting", {});
-      -- vim.api.nvim_create_autocmd(
-      --   { "BufWritePre" },
-      --   {
-      --     pattern = "*",
-      --     callback = function()
-      --       vim.lsp.buf.format()
-      --     end,
-      --     group = lspFormattingGroup,
-      --   }
-      -- )
+      local lspFormattingGroup = vim.api.nvim_create_augroup("LspFormatting", {});
+      vim.api.nvim_create_autocmd(
+        { "BufWritePre" },
+        {
+          pattern = "*",
+          callback = function()
+            vim.lsp.buf.format()
+          end,
+          group = lspFormattingGroup,
+        }
+      )
 
       local coq = require("coq")
       local servers = opts.servers
@@ -480,30 +502,30 @@ require("lazy").setup({
   },
 
   -- Formatter
-  {
-    "mhartington/formatter.nvim",
-    config = function()
-      local formatter = require("formatter")
-      formatter.setup({
-        logging = false,
-        filetype = {
-          javascript = { require("formatter.filetypes.javascript").prettierd },
-          typescript = { require("formatter.filetypes.typescript").prettierd },
-          lua = { require("formatter.filetypes.lua").stylua },
-          ruby = { require("formatter.filetypes.ruby").rubocop },
-          -- ruby = {
-          --   function()
-          --     return {
-          --       exe = "rubocop",
-          --       args = { "--auto-correct", "--stdin", "%:p" },
-          --       stdin = true,
-          --     }
-          --   end,
-          -- },
-        },
-      })
-    end,
-  },
+  -- {
+  --   "mhartington/formatter.nvim",
+  --   config = function()
+  --     local formatter = require("formatter")
+  --     formatter.setup({
+  --       logging = false,
+  --       filetype = {
+  --         javascript = { require("formatter.filetypes.javascript").prettierd },
+  --         typescript = { require("formatter.filetypes.typescript").prettierd },
+  --         lua = { require("formatter.filetypes.lua").stylua },
+  --         ruby = { require("formatter.filetypes.ruby").rubocop },
+  --         -- ruby = {
+  --         --   function()
+  --         --     return {
+  --         --       exe = "rubocop",
+  --         --       args = { "--auto-correct", "--stdin", "%:p" },
+  --         --       stdin = true,
+  --         --     }
+  --         --   end,
+  --         -- },
+  --       },
+  --     })
+  --   end,
+  -- },
 
   {
     "folke/trouble.nvim",
@@ -513,27 +535,27 @@ require("lazy").setup({
   -- Langauge specific
 
   -- JS
-  { "HerringtonDarkholme/yats.vim", ft = "typescript" },
+  { "HerringtonDarkholme/yats.vim",           ft = "typescript" },
   { "othree/javascript-libraries-syntax.vim", ft = "javascript" },
-  { "pangloss/vim-javascript", ft = "javascript" },
+  { "pangloss/vim-javascript",                ft = "javascript" },
 
   -- Ruby
-  { "Keithbsmiley/rspec.vim", ft = "ruby" },
-  { "tpope/vim-rails", ft = "ruby" },
-  { "vim-ruby/vim-ruby", ft = "ruby" },
+  { "Keithbsmiley/rspec.vim",                 ft = "ruby" },
+  { "tpope/vim-rails",                        ft = "ruby" },
+  { "vim-ruby/vim-ruby",                      ft = "ruby" },
 
   -- Elixir
-  { "elixir-lang/vim-elixir", ft = "elixir,eelixir" },
-  { "mhinz/vim-mix-format", ft = "elixir,eelixir" },
+  { "elixir-lang/vim-elixir",                 ft = "elixir,eelixir" },
+  { "mhinz/vim-mix-format",                   ft = "elixir,eelixir" },
 
   -- Misc
-  { "amadeus/vim-mjml", ft = "mjml" },
-  { "andys8/vim-elm-syntax", ft = "elm" },
-  { "dag/vim-fish", ft = "fish" },
-  { "fatih/vim-go", ft = "golang" },
-  { "hashivim/vim-terraform", ft = "terraform" },
-  { "jvirtanen/vim-hcl", ft = "hcl" },
-  { "rust-lang/rust.vim", ft = "rust" },
+  { "amadeus/vim-mjml",                       ft = "mjml" },
+  { "andys8/vim-elm-syntax",                  ft = "elm" },
+  { "dag/vim-fish",                           ft = "fish" },
+  { "fatih/vim-go",                           ft = "golang" },
+  { "hashivim/vim-terraform",                 ft = "terraform" },
+  { "jvirtanen/vim-hcl",                      ft = "hcl" },
+  { "rust-lang/rust.vim",                     ft = "rust" },
 })
 
 --##############################################################################
@@ -566,11 +588,6 @@ augroup END
 augroup gitCommit
   autocmd FileType gitcommit setlocal spell textwidth=72
   autocmd FileType *.md setlocal spell textwidth=80
-augroup END
-
-augroup FormatAutogroup
-  autocmd!
-  autocmd BufWritePost * FormatWrite
 augroup END
 ]])
 
