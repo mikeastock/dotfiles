@@ -387,7 +387,19 @@ require("lazy").setup({
         efm = function(_, _)
           local eslint = require("efmls-configs.linters.eslint")
           local prettier = require("efmls-configs.formatters.prettier")
+
+          local dprint = require("efmls-configs.formatters.dprint")
+
+          local rustywind = {
+            -- lintCommand = "rustywind --check-formatted --stdin",
+            -- lintFormats = { "%f:%l:%c: %m" },
+            formatCommand = "rustywind --stdin",
+            formatStdin = true,
+          }
+
           local languages = {
+            eruby = { rustywind },
+            toml = { dprint },
             typescript = { eslint, prettier },
           }
 
@@ -397,7 +409,7 @@ require("lazy").setup({
             settings = {
               rootMarkers = { ".git/" },
               languages = languages,
-            }
+            },
           }
 
           require("lspconfig").efm.setup(config)
