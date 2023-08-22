@@ -388,18 +388,26 @@ require("lazy").setup({
           local eslint = require("efmls-configs.linters.eslint")
           local prettier = require("efmls-configs.formatters.prettier")
 
-          local dprint = require("efmls-configs.formatters.dprint")
+          local taplo = {
+            formatCommand = "taplo fmt -",
+            formatStdin = true,
+          }
 
           local rustywind = {
-            -- lintCommand = "rustywind --check-formatted --stdin",
-            -- lintFormats = { "%f:%l:%c: %m" },
             formatCommand = "rustywind --stdin",
             formatStdin = true,
           }
 
+          local erblint = {
+            lintDebounce = "2s",
+            lintCommand = "erb-lint --stdin ${INPUT} --format compact",
+            lintFormats = { "%f:%l:%c: %m" },
+            lintStdin = true,
+          }
+
           local languages = {
-            eruby = { rustywind },
-            toml = { dprint },
+            eruby = { erblint, rustywind },
+            toml = { taplo },
             typescript = { eslint, prettier },
           }
 
