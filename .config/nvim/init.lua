@@ -286,9 +286,6 @@ require("lazy").setup({
     run = ":COQdeps",
     config = function()
       vim.g.coq_settings = {
-        clients = {
-          tabnine = { enabled = true },
-        },
         display = {
           ghost_text = {
             enabled = false,
@@ -388,11 +385,6 @@ require("lazy").setup({
           local eslint = require("efmls-configs.linters.eslint")
           local prettier = require("efmls-configs.formatters.prettier")
 
-          local taplo = {
-            formatCommand = "taplo fmt -",
-            formatStdin = true,
-          }
-
           local rustywind = {
             formatCommand = "rustywind --stdin",
             formatStdin = true,
@@ -407,7 +399,7 @@ require("lazy").setup({
 
           local languages = {
             eruby = { erblint, rustywind },
-            toml = { taplo },
+            javascript = { eslint, prettier },
             typescript = { eslint, prettier },
           }
 
