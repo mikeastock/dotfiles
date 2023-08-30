@@ -401,6 +401,7 @@ require("lazy").setup({
             eruby = { erblint, rustywind },
             javascript = { eslint, prettier },
             typescript = { eslint, prettier },
+            typescriptreact = { eslint, prettier },
           }
 
           local config = {
