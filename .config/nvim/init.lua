@@ -281,7 +281,9 @@ require("lazy").setup({
       "L3MON4D3/LuaSnip",
       "hrsh7th/cmp-buffer",
       "hrsh7th/cmp-nvim-lsp",
+      "hrsh7th/cmp-nvim-lsp-signature-help",
       "hrsh7th/cmp-path",
+      "delphinus/cmp-ctags",
       "onsails/lspkind.nvim",
     },
     config = function()
@@ -305,7 +307,8 @@ require("lazy").setup({
         },
         sources = {
           { name = "nvim_lsp" },
-          { name = "vsnip" },
+          { name = "nvim_lsp_signature_help" },
+          { name = "ctags" },
           { name = "buffer" },
           { name = "path" },
         },
