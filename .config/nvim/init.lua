@@ -222,26 +222,6 @@ require("lazy").setup({
     end,
   },
 
-  {
-    "zbirenbaum/copilot.lua",
-    config = function()
-      require("copilot").setup({
-        panel = {
-          enabled = false,
-          auto_refresh = true,
-        },
-        suggestion = {
-          auto_trigger = true,
-          keymap = {
-            accept = "<C-f>",
-            next = "<C-n>",
-            prev = "<C-p>",
-          },
-        },
-      })
-    end,
-  },
-
   -- testing
   "vim-test/vim-test",
   "kassio/neoterm",
@@ -279,41 +259,83 @@ require("lazy").setup({
 
   -- Autocomplete
   {
-    "ms-jpq/coq_nvim",
-    branch = "coq",
-    run = ":COQdeps",
-    config = function()
-      vim.g.coq_settings = {
-        clients = {
-          lsp = {
-            resolve_timeout = 0.1 -- default is 0.06
-          },
-        },
-        display = {
-          ghost_text = {
-            enabled = false,
-          },
-        },
-        keymap = {
-          jump_to_mark = "", -- This defaults to <C-h> which we use to make switching buffers easier
-        },
-      }
-      require("coq").Now()
-    end,
+    "zbirenbaum/copilot-cmp",
     dependencies = {
-      {
-        "ms-jpq/coq.thirdparty",
-        branch = "3p",
-        after = "coq_nvim",
-        config = function()
-          require("coq_3p")({
-            { src = "nvimlua", short_name = "nLUA" },
-            -- { src = "copilot", short_name = "COP", accept_key = "<c-f>" },
-          })
-        end,
-      },
-      "ray-x/lsp_signature.nvim",
+      "zbirenbaum/copilot.lua",
+      config = function()
+        require("copilot").setup({
+          suggestion = { enabled = false },
+          panel = { enabled = false },
+        })
+      end,
     },
+    config = function()
+      require("copilot_cmp").setup()
+    end
+  },
+  {
+    "hrsh7th/nvim-cmp",
+    event = "InsertEnter",
+    dependencies = {
+      "L3MON4D3/LuaSnip",
+      "hrsh7th/cmp-buffer",
+      "hrsh7th/cmp-nvim-lsp",
+      "hrsh7th/cmp-path",
+      "onsails/lspkind.nvim",
+    },
+    config = function()
+      local cmp = require("cmp")
+      local lspkind = require("lspkind")
+
+      cmp.setup({
+        snippet = {
+          expand = function(args)
+            require("luasnip").lsp_expand(args.body)
+          end,
+        },
+        mapping = {
+          ["<C-d>"] = cmp.mapping.scroll_docs(-4),
+          ["<C-f>"] = cmp.mapping.scroll_docs(4),
+          ["<C-Space>"] = cmp.mapping.complete(),
+          ["<C-e>"] = cmp.mapping.close(),
+          ["<CR>"] = cmp.mapping.confirm({ select = true }),
+          ["<C-n>"] = cmp.mapping(cmp.mapping.select_next_item(), { "i", "s" }),
+          ["<C-p>"] = cmp.mapping(cmp.mapping.select_prev_item(), { "i", "s" }),
+        },
+        sources = {
+          { name = "copilot" },
+          { name = "nvim_lsp" },
+          { name = "vsnip" },
+          { name = "buffer" },
+          { name = "path" },
+        },
+        sorting = {
+          priority_weight = 2,
+          comparators = {
+            require("copilot_cmp.comparators").prioritize,
+
+            -- Below is the default comparitor list and order for nvim-cmp
+            cmp.config.compare.offset,
+            -- cmp.config.compare.scopes, --this is commented in nvim-cmp too
+            cmp.config.compare.exact,
+            cmp.config.compare.score,
+            cmp.config.compare.recently_used,
+            cmp.config.compare.locality,
+            cmp.config.compare.kind,
+            cmp.config.compare.sort_text,
+            cmp.config.compare.length,
+            cmp.config.compare.order,
+          },
+        },
+        formatting = {
+          format = lspkind.cmp_format({
+            mode = "symbol",
+            max_width = 50,
+            symbol_map = { Copilot = "" }
+          })
+        },
+      })
+    end,
   },
 
   -- LSP
@@ -417,61 +439,65 @@ require("lazy").setup({
 
           return true
         end,
-        ruby_ls = function(_, opts)
-          _timers = {}
+        -- ruby_ls = function(_, opts)
+        --   _timers = {}
 
-          local function setup_diagnostics(client, buffer)
-            if require("vim.lsp.diagnostic")._enable then
-              return
-            end
+        --   local function setup_diagnostics(client, buffer)
+        --     if require("vim.lsp.diagnostic")._enable then
+        --       return
+        --     end
 
-            local diagnostic_handler = function()
-              local params = vim.lsp.util.make_text_document_params(buffer)
-              client.request("textDocument/diagnostic", { textDocument = params }, function(err, result)
-                if err then
-                  local err_msg = string.format("diagnostics error - %s", vim.inspect(err))
-                  vim.lsp.log.error(err_msg)
-                end
-                if not result then
-                  return
-                end
-                vim.lsp.diagnostic.on_publish_diagnostics(
-                  nil,
-                  vim.tbl_extend("keep", params, { diagnostics = result.items }),
-                  { client_id = client.id }
-                )
-              end)
-            end
+        --     local diagnostic_handler = function()
+        --       local params = vim.lsp.util.make_text_document_params(buffer)
+        --       client.request("textDocument/diagnostic", { textDocument = params }, function(err, result)
+        --         if err then
+        --           local err_msg = string.format("diagnostics error - %s", vim.inspect(err))
+        --           vim.lsp.log.error(err_msg)
+        --         end
+        --         if not result then
+        --           return
+        --         end
+        --         vim.lsp.diagnostic.on_publish_diagnostics(
+        --           nil,
+        --           vim.tbl_extend("keep", params, { diagnostics = result.items }),
+        --           { client_id = client.id }
+        --         )
+        --       end)
+        --     end
 
-            diagnostic_handler() -- to request diagnostics on buffer when first attaching
+        --     diagnostic_handler() -- to request diagnostics on buffer when first attaching
 
-            vim.api.nvim_buf_attach(buffer, false, {
-              on_lines = function()
-                if _timers[buffer] then
-                  vim.fn.timer_stop(_timers[buffer])
-                end
-                _timers[buffer] = vim.fn.timer_start(200, diagnostic_handler)
-              end,
-              on_detach = function()
-                if _timers[buffer] then
-                  vim.fn.timer_stop(_timers[buffer])
-                end
-              end,
-            })
-          end
+        --     vim.api.nvim_buf_attach(buffer, false, {
+        --       on_lines = function()
+        --         if _timers[buffer] then
+        --           vim.fn.timer_stop(_timers[buffer])
+        --         end
+        --         _timers[buffer] = vim.fn.timer_start(200, diagnostic_handler)
+        --       end,
+        --       on_detach = function()
+        --         if _timers[buffer] then
+        --           vim.fn.timer_stop(_timers[buffer])
+        --         end
+        --       end,
+        --     })
+        --   end
 
-          local coq = require("coq")
-          require("lspconfig").ruby_ls.setup(coq.lsp_ensure_capabilities({
-            on_attach = function(client, buffer)
-              setup_diagnostics(client, buffer)
-            end,
-          }))
+        --   local capabilities = require("cmp_nvim_lsp").default_capabilities(vim.lsp.protocol.make_client_capabilities())
+        --   require("lspconfig").ruby_ls.setup({
+        --     capabilities = capabilities,
+        --     on_attach = function(client, buffer)
+        --       setup_diagnostics(client, buffer)
+        --     end,
+        --   })
 
-          return true
-        end,
+        --   return true
+        -- end,
         tsserver = function(_, opts)
-          local coq = require("coq")
-          require("typescript").setup(coq.lsp_ensure_capabilities({ server = opts }))
+          local capabilities = require("cmp_nvim_lsp").default_capabilities(vim.lsp.protocol.make_client_capabilities())
+          require("typescript").setup({
+            capabilities = capabilities,
+            server = opts,
+          })
           return true
         end,
       },
@@ -489,13 +515,13 @@ require("lazy").setup({
         }
       )
 
-      local coq = require("coq")
+      local capabilities = require("cmp_nvim_lsp").default_capabilities(vim.lsp.protocol.make_client_capabilities())
       local servers = opts.servers
 
       local function setup(server)
         local server_opts = vim.tbl_deep_extend(
           "force",
-          { capabilities = vim.lsp.protocol.make_client_capabilities() },
+          { capabilities = capabilities },
           servers[server] or {}
         )
 
@@ -505,7 +531,7 @@ require("lazy").setup({
           end
         end
 
-        require("lspconfig")[server].setup(coq.lsp_ensure_capabilities(server_opts))
+        require("lspconfig")[server].setup(server_opts)
       end
 
       for server, _ in pairs(servers) do
