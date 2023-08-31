@@ -224,8 +224,6 @@ require("lazy").setup({
 
   {
     "zbirenbaum/copilot.lua",
-    cmd = "Copilot",
-    event = "InsertEnter",
     config = function()
       require("copilot").setup({
         panel = {
@@ -286,6 +284,11 @@ require("lazy").setup({
     run = ":COQdeps",
     config = function()
       vim.g.coq_settings = {
+        clients = {
+          lsp = {
+            resolve_timeout = 0.1 -- default is 0.06
+          },
+        },
         display = {
           ghost_text = {
             enabled = false,
@@ -298,7 +301,6 @@ require("lazy").setup({
       require("coq").Now()
     end,
     dependencies = {
-      { "ms-jpq/coq.artifacts", branch = "artifacts" },
       {
         "ms-jpq/coq.thirdparty",
         branch = "3p",
@@ -306,14 +308,11 @@ require("lazy").setup({
         config = function()
           require("coq_3p")({
             { src = "nvimlua", short_name = "nLUA" },
-            { src = "copilot", short_name = "COP", accept_key = "<c-f>" },
+            -- { src = "copilot", short_name = "COP", accept_key = "<c-f>" },
           })
         end,
       },
-      {
-        "ray-x/lsp_signature.nvim",
-        event = "VeryLazy",
-      },
+      "ray-x/lsp_signature.nvim",
     },
   },
 
@@ -379,6 +378,7 @@ require("lazy").setup({
         },
         taplo = {},
         tsserver = {},
+        yamlls = {},
       },
       setup = {
         efm = function(_, _)
