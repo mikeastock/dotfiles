@@ -234,8 +234,8 @@ require("lazy").setup({
           auto_trigger = true,
           keymap = {
             accept = "<C-f>",
-            next = "<C-n>",
-            prev = "<C-p>",
+            next = "<C-[>",
+            prev = "<C-]>",
           },
         },
       })
@@ -277,268 +277,30 @@ require("lazy").setup({
     opts = { style = "moon" },
   },
 
-  -- Autocomplete
+  -- COC
   {
-    "ms-jpq/coq_nvim",
-    branch = "coq",
-    run = ":COQdeps",
+    "neoclide/coc.nvim",
+    branch = "release",
+    event = "VeryLazy",
     config = function()
-      vim.g.coq_settings = {
-        clients = {
-          lsp = {
-            resolve_timeout = 0.1 -- default is 0.06
-          },
-        },
-        display = {
-          ghost_text = {
-            enabled = false,
-          },
-        },
-        keymap = {
-          jump_to_mark = "", -- This defaults to <C-h> which we use to make switching buffers easier
-        },
-      }
-      require("coq").Now()
-    end,
-    dependencies = {
-      {
-        "ms-jpq/coq.thirdparty",
-        branch = "3p",
-        after = "coq_nvim",
-        config = function()
-          require("coq_3p")({
-            { src = "nvimlua", short_name = "nLUA" },
-            -- { src = "copilot", short_name = "COP", accept_key = "<c-f>" },
-          })
-        end,
-      },
-      "ray-x/lsp_signature.nvim",
-    },
-  },
+      vim.cmd([[
+      "COC
+      inoremap <expr> <cr> coc#pum#visible() ? coc#_select_confirm() : "\<CR>"
 
-  -- LSP
-  {
-    "neovim/nvim-lspconfig",
-    dependencies = {
-      { "folke/neodev.nvim", opts = {} },
-      "jose-elias-alvarez/typescript.nvim",
-      "creativenull/efmls-configs-nvim",
-    },
-    opts = {
-      -- LSP Server Settings
-      servers = {
-        efm = {},
-        lua_ls = {
-          settings = {
-            Lua = {
-              completion = {
-                callSnippet = "Replace",
-              },
-              diagnostics = {
-                globals = { "vim" },
-              },
-            },
-          },
-        },
-        ruby_ls = {},
-        tailwindcss = {
-          filetypes = {
-            "css",
-            "eruby",
-            "html",
-            "javascript",
-            "javascriptreact",
-            "ruby",
-            "scss",
-            "typescript",
-            "typescriptreact",
-          },
-          {
-            tailwindCSS = {
-              classAttributes = {
-                "class",
-                "classes",
-                "className",
-                "class:list",
-                "classList",
-                "ngClass",
-              },
-              lint = {
-                cssConflict = "warning",
-                invalidApply = "error",
-                invalidConfigPath = "error",
-                invalidScreen = "error",
-                invalidTailwindDirective = "error",
-                invalidVariant = "error",
-                recommendedVariantOrder = "warning",
-              },
-              validate = true,
-            },
-          },
-        },
-        taplo = {},
-        tsserver = {},
-        yamlls = {},
-      },
-      setup = {
-        efm = function(_, _)
-          local eslint = require("efmls-configs.linters.eslint")
-          local prettier = require("efmls-configs.formatters.prettier")
+      nmap <silent> gr <Plug>(coc-references)
+      nmap <silent> <F3> <Plug>(coc-rename)
 
-          local rustywind = {
-            formatCommand = "rustywind --stdin",
-            formatStdin = true,
-          }
+      " Find symbol of current document.
+      nnoremap <silent><nowait> <space>o  :<C-u>CocList outline<cr>
 
-          local erblint = {
-            lintDebounce = "2s",
-            lintCommand = "erb-lint --stdin ${INPUT} --format compact",
-            lintFormats = { "%f:%l:%c: %m" },
-            lintStdin = true,
-          }
+      nmap <silent> <F2> <Plug>(coc-diagnostic-next)
 
-          local languages = {
-            eruby = { erblint, rustywind },
-            javascript = { eslint, prettier },
-            typescript = { eslint, prettier },
-            typescriptreact = { eslint, prettier },
-          }
-
-          local config = {
-            capabilities = vim.lsp.protocol.make_client_capabilities(),
-            init_options = { documentFormatting = true },
-            settings = {
-              rootMarkers = { ".git/" },
-              languages = languages,
-            },
-          }
-
-          require("lspconfig").efm.setup(config)
-
-          return true
-        end,
-        ruby_ls = function(_, opts)
-          _timers = {}
-
-          local function setup_diagnostics(client, buffer)
-            if require("vim.lsp.diagnostic")._enable then
-              return
-            end
-
-            local diagnostic_handler = function()
-              local params = vim.lsp.util.make_text_document_params(buffer)
-              client.request("textDocument/diagnostic", { textDocument = params }, function(err, result)
-                if err then
-                  local err_msg = string.format("diagnostics error - %s", vim.inspect(err))
-                  vim.lsp.log.error(err_msg)
-                end
-                if not result then
-                  return
-                end
-                vim.lsp.diagnostic.on_publish_diagnostics(
-                  nil,
-                  vim.tbl_extend("keep", params, { diagnostics = result.items }),
-                  { client_id = client.id }
-                )
-              end)
-            end
-
-            diagnostic_handler() -- to request diagnostics on buffer when first attaching
-
-            vim.api.nvim_buf_attach(buffer, false, {
-              on_lines = function()
-                if _timers[buffer] then
-                  vim.fn.timer_stop(_timers[buffer])
-                end
-                _timers[buffer] = vim.fn.timer_start(200, diagnostic_handler)
-              end,
-              on_detach = function()
-                if _timers[buffer] then
-                  vim.fn.timer_stop(_timers[buffer])
-                end
-              end,
-            })
-          end
-
-          local coq = require("coq")
-          require("lspconfig").ruby_ls.setup(coq.lsp_ensure_capabilities({
-            on_attach = function(client, buffer)
-              setup_diagnostics(client, buffer)
-            end,
-          }))
-
-          return true
-        end,
-        tsserver = function(_, opts)
-          local coq = require("coq")
-          require("typescript").setup(coq.lsp_ensure_capabilities({ server = opts }))
-          return true
-        end,
-      },
-    },
-    config = function(_, opts)
-      local lspFormattingGroup = vim.api.nvim_create_augroup("LspFormatting", {});
-      vim.api.nvim_create_autocmd(
-        { "BufWritePre" },
-        {
-          pattern = "*",
-          callback = function()
-            vim.lsp.buf.format()
-          end,
-          group = lspFormattingGroup,
-        }
-      )
-
-      local coq = require("coq")
-      local servers = opts.servers
-
-      local function setup(server)
-        local server_opts = vim.tbl_deep_extend(
-          "force",
-          { capabilities = vim.lsp.protocol.make_client_capabilities() },
-          servers[server] or {}
-        )
-
-        if opts.setup[server] then
-          if opts.setup[server](server, server_opts) then
-            return
-          end
-        end
-
-        require("lspconfig")[server].setup(coq.lsp_ensure_capabilities(server_opts))
-      end
-
-      for server, _ in pairs(servers) do
-        setup(server)
-      end
+      let g:coc_filetype_map = {
+        \ 'rspec.ruby': 'ruby',
+        \ }
+      ]])
     end,
   },
-
-  -- Formatter
-  -- {
-  --   "mhartington/formatter.nvim",
-  --   config = function()
-  --     local formatter = require("formatter")
-  --     formatter.setup({
-  --       logging = false,
-  --       filetype = {
-  --         javascript = { require("formatter.filetypes.javascript").prettierd },
-  --         typescript = { require("formatter.filetypes.typescript").prettierd },
-  --         lua = { require("formatter.filetypes.lua").stylua },
-  --         ruby = { require("formatter.filetypes.ruby").rubocop },
-  --         -- ruby = {
-  --         --   function()
-  --         --     return {
-  --         --       exe = "rubocop",
-  --         --       args = { "--auto-correct", "--stdin", "%:p" },
-  --         --       stdin = true,
-  --         --     }
-  --         --   end,
-  --         -- },
-  --       },
-  --     })
-  --   end,
-  -- },
 
   {
     "folke/trouble.nvim",

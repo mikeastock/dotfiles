@@ -1,0 +1,44 @@
+{
+  "[elm][javascript][ruby][typescript][typescriptreact][yaml]": {
+    "coc.preferences.formatOnSave": true
+  },
+  "codeLens.enable": true,
+  "suggest.noselect": false,
+  "suggest.enablePreselect": false,
+  "languageserver": {
+    "terraform": {
+      "command": "terraform-ls",
+      "args": ["serve"],
+      "filetypes": ["terraform", "tf"],
+      "initializationOptions": {}
+    },
+    "ruby-lsp": {
+      "command": "ruby-lsp",
+      "initializationOptions": {
+        "experimentalFeaturesEnabled": false,
+        "enabledFeatures": [
+          "codeActions",
+          "diagnostics",
+          "documentHighlights",
+          "documentLink",
+          "documentSymbols",
+          "foldingRanges",
+          "formatting",
+          "hover",
+          "inlayHint",
+          "onTypeFormatting",
+          "selectionRanges",
+          "semanticHighlighting",
+          "completion"
+        ],
+        "formatter": "auto"
+      },
+      "filetypes": ["ruby"]
+    }
+  },
+  "prettier.printWidth": 90,
+  "tailwindCSS.experimental.classRegex": ["tw_w+s+=s+\"(.*)\""],
+  "tailwindCSS.includeLanguages": {
+    "ruby": "html"
+  }
+}
