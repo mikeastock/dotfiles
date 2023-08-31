@@ -259,19 +259,20 @@ require("lazy").setup({
 
   -- Autocomplete
   {
-    "zbirenbaum/copilot-cmp",
-    dependencies = {
-      "zbirenbaum/copilot.lua",
-      config = function()
-        require("copilot").setup({
-          suggestion = { enabled = false },
-          panel = { enabled = false },
-        })
-      end,
-    },
+    "zbirenbaum/copilot.lua",
     config = function()
-      require("copilot_cmp").setup()
-    end
+      require("copilot").setup({
+        panel = { enabled = false },
+        suggestion = {
+          auto_trigger = true,
+          keymap = {
+            accept = "<C-f>",
+            next = "<C-]>",
+            prev = "<C-[>",
+          },
+        },
+      })
+    end,
   },
   {
     "hrsh7th/nvim-cmp",
@@ -303,35 +304,16 @@ require("lazy").setup({
           ["<C-p>"] = cmp.mapping(cmp.mapping.select_prev_item(), { "i", "s" }),
         },
         sources = {
-          { name = "copilot" },
           { name = "nvim_lsp" },
           { name = "vsnip" },
           { name = "buffer" },
           { name = "path" },
         },
-        sorting = {
-          priority_weight = 2,
-          comparators = {
-            require("copilot_cmp.comparators").prioritize,
-
-            -- Below is the default comparitor list and order for nvim-cmp
-            cmp.config.compare.offset,
-            -- cmp.config.compare.scopes, --this is commented in nvim-cmp too
-            cmp.config.compare.exact,
-            cmp.config.compare.score,
-            cmp.config.compare.recently_used,
-            cmp.config.compare.locality,
-            cmp.config.compare.kind,
-            cmp.config.compare.sort_text,
-            cmp.config.compare.length,
-            cmp.config.compare.order,
-          },
-        },
         formatting = {
           format = lspkind.cmp_format({
             mode = "symbol",
             max_width = 50,
-            symbol_map = { Copilot = "" }
+            symbol_map = {}
           })
         },
       })
