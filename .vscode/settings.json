@@ -1,110 +1,99 @@
 {
-    "workbench.startupEditor": "newUntitledFile",
-    "editor.lineNumbers": "relative",
-    "editor.minimap.enabled": false,
-    "files.trimTrailingWhitespace": true,
-    "files.insertFinalNewline": true,
-    "files.trimFinalNewlines": true,
-    "vim.camelCaseMotion.enable": true,
-    "vim.leader": " ",
-    "vim.hlsearch": true,
-    "vim.normalModeKeyBindingsNonRecursive": [
+  "editor.fontFamily" : "Fira Code",
+  "editor.fontLigatures" : true,
+  "editor.accessibilitySupport" : "off",
+  "editor.lineNumbers" : "relative",
+  "editor.minimap.enabled" : false,
+  "files.insertFinalNewline" : true,
+  "files.trimFinalNewlines" : true,
+  "files.trimTrailingWhitespace" : true,
+  "workbench.colorTheme" : "Tokyo Night",
+  "[elm][ruby]" : {
+    "editor.formatOnSave" : true
+  },
+  "rubyLsp.formatter": "rubocop",
+  "rubyLsp.rubyVersionManager": "custom",
+  "rubyLsp.customRubyCommand":  "eval \"$(rtx env -s zsh)\"",// "rtx activate fish | source", // Instructions for zsh, change for bash or fish
+  "vim.leader" : " ",
+  "vim.visualModeKeyBindingsNonRecursive" : [
+    {
+      "commands" : [
+        "editor.action.sortLinesAscending"
+      ],
+      "before" : [
+        "g",
+        "s"
+      ]
+    }
+  ],
+  "vim.hlsearch" : true,
+  "vim.camelCaseMotion.enable" : true,
+  "vim.normalModeKeyBindingsNonRecursive" : [
+    {
+      "commands" : [
+        ":nohl"
+      ],
+      "before" : [
+        "enter"
+      ]
+    },
+    {
+      "commands" : [
+        "workbench.action.navigateLeft"
+      ],
+      "before" : [
+        "ctrl+h"
+      ]
+    },
+    {
+      "commands" : [
+        "workbench.action.navigateRight"
+      ],
+      "before" : [
+        "ctrl+l"
+      ]
+    },
+    {
+      "commands" : [
+        ":w"
+      ],
+      "before" : [
+        "<leader>",
+        "w"
+      ]
+    },
+    {
+      "commands" : [
+        ":q"
+      ],
+      "before" : [
+        "<leader>",
+        "q"
+      ]
+    },
+    {
+      "commands" : [
+        "workbench.files.action.focusOpenEditorsView"
+      ],
+      "before" : [
+        "<leader>",
+        "f"
+      ]
+    },
+    {
+      "commands" : [
         {
-            "before": [
-                "enter"
-            ],
-            "commands": [
-                ":nohl",
-            ]
-        },
-        {
-            "before": [
-                "ctrl+h",
-            ],
-            "commands": [
-                "workbench.action.navigateLeft"
-            ]
-        },
-        {
-            "before": [
-                "ctrl+l",
-            ],
-            "commands": [
-                "workbench.action.navigateRight"
-            ]
-        },
-        {
-            "before": [
-                "<leader>",
-                "w"
-            ],
-            "commands": [
-                ":w"
-            ]
-        },
-        {
-            "before": [
-                "<leader>",
-                "q"
-            ],
-            "commands": [
-                ":q"
-            ]
-        },
-        {
-            "before": [
-                "<leader>",
-                "f"
-            ],
-            "commands": [
-                "workbench.files.action.focusOpenEditorsView"
-            ]
-        },
-        {
-            "before": [
-                "<leader>",
-                "s"
-            ],
-            "commands": [
-                {
-                    "command": "workbench.action.tasks.runTask",
-                    "args": [
-                        "Run test case"
-                    ]
-                },
-            ]
-        },
-    ],
-    "vim.visualModeKeyBindingsNonRecursive": [
-        {
-            "before": [
-                "g",
-                "s"
-            ],
-            "commands": [
-                "editor.action.sortLinesAscending"
-            ]
+          "command" : "workbench.action.tasks.runTask",
+          "args" : [
+            "Run test case"
+          ]
         }
-    ],
-    "editor.fontSize": 14,
-    "editor.fontFamily": "Fira Code",
-    "editor.fontLigatures": true,
-    "window.zoomLevel": 0,
-    "ruby.useLanguageServer": true,
-    "ruby.lint": {
-        "rubocop": {
-            "useBundler": true,
-        },
-    },
-    "ruby.format": "rubocop",
-    "tabnine.disable_file_regex": [
-        ".elm"
-    ],
-    "[elm]": {
-        "editor.formatOnSave": true
-    },
-    "tabnine.experimentalAutoImports": true,
-    "explorer.confirmDelete": false,
-    "workbench.colorTheme": "Dracula",
-    "security.workspace.trust.untrustedFiles": "open"
+      ],
+      "before" : [
+        "<leader>",
+        "s"
+      ]
+    }
+  ],
+  "redhat.telemetry.enabled": false
 }
