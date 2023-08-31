@@ -222,26 +222,6 @@ require("lazy").setup({
     end,
   },
 
-  {
-    "zbirenbaum/copilot.lua",
-    config = function()
-      require("copilot").setup({
-        panel = {
-          enabled = false,
-          auto_refresh = true,
-        },
-        suggestion = {
-          auto_trigger = true,
-          keymap = {
-            accept = "<C-f>",
-            next = "<C-[>",
-            prev = "<C-]>",
-          },
-        },
-      })
-    end,
-  },
-
   -- testing
   "vim-test/vim-test",
   "kassio/neoterm",
@@ -301,10 +281,49 @@ require("lazy").setup({
       ]])
     end,
   },
-
   {
-    "folke/trouble.nvim",
-    dependencies = { "nvim-tree/nvim-web-devicons" },
+    "zbirenbaum/copilot.lua",
+    config = function()
+      require("copilot").setup({
+        panel = {
+          enabled = false,
+          auto_refresh = true,
+        },
+        suggestion = {
+          auto_trigger = true,
+          keymap = {
+            accept = "<C-f>",
+            next = "<C-[>",
+            prev = "<C-]>",
+          },
+        },
+      })
+    end,
+  },
+
+  -- Tree sitter
+  {
+    "nvim-treesitter/nvim-treesitter",
+    run = ":TSUpdate",
+    event = "BufRead",
+    config = function()
+      local configs = require("nvim-treesitter.configs")
+
+      configs.setup({
+        ensure_installed = {
+          "lua",
+          "javascript",
+          "html",
+          "css",
+          "typescript",
+          "tsx",
+          "ruby",
+        },
+        sync_install = false,
+        highlight = { enable = true },
+        indent = { enable = true },
+      })
+    end
   },
 
   -- Langauge specific
