@@ -1,11 +1,24 @@
 {
-  "[elm][javascript][ruby][typescript][typescriptreact][yaml][lua]": {
+  "[elm][javascript][eruby][ruby][typescript][typescriptreact][yaml][lua][json]": {
     "coc.preferences.formatOnSave": true
   },
   "codeLens.enable": true,
   "suggest.noselect": false,
   "suggest.enablePreselect": false,
   "languageserver": {
+    "efm": {
+      "command": "efm-langserver",
+      "args": [],
+      "filetypes": ["eruby"],
+      "initializationOptions": {
+        "documentFormatting": true,
+        "documentRangeFormatting": true,
+        "hover": true,
+        "documentSymbol": true,
+        "codeAction": true,
+        "completion": true
+      }
+    },
     "terraform": {
       "command": "terraform-ls",
       "args": ["serve"],

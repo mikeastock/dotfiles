@@ -178,7 +178,12 @@ vim.opt.rtp:prepend(lazypath)
 
 require("lazy").setup({
   -- fuzzy finding
-  "ibhagwan/fzf-lua",
+  {
+    "junegunn/fzf.vim",
+    run = ":call fzf#install()",
+    event = "VeryLazy",
+    dependencies = { "junegunn/fzf" },
+  },
 
   -- UI
   {
@@ -336,7 +341,7 @@ require("lazy").setup({
   -- Ruby
   { "Keithbsmiley/rspec.vim",                 ft = "ruby" },
   { "tpope/vim-rails",                        ft = "ruby" },
-  { "vim-ruby/vim-ruby",                      ft = "ruby" },
+  -- { "vim-ruby/vim-ruby",                      ft = "ruby" },
 
   -- Elixir
   { "elixir-lang/vim-elixir",                 ft = "elixir,eelixir" },
@@ -390,27 +395,8 @@ augroup END
 --##############################################################################
 
 -- fuzzy finding plugin
-local fzf_actions = require("fzf-lua.actions")
-
-require("fzf-lua").setup({
-  "max-perf",
-  files = {
-    fzf_opts = {
-      ["--history"] = vim.fn.stdpath("data") .. "/fzf-lua-files-history",
-    },
-  },
-  actions = {
-    files = {
-      ["default"] = fzf_actions.file_edit,
-      ["ctrl-t"] = fzf_actions.file_edit,
-      ["ctrl-s"] = fzf_actions.file_split,
-      ["ctrl-x"] = fzf_actions.file_split,
-      ["ctrl-v"] = fzf_actions.file_vsplit,
-    },
-  },
-})
-nmap("<Leader>f", "<cmd>lua require('fzf-lua').files({ fzf_opts = { ['--layout'] = 'default' } })<CR>")
-nmap("K", "<cmd>lua require('fzf-lua').grep_cword()<CR>")
+nmap("<Leader>f", "<cmd>:GFiles<CR>")
+nmap("K", "<cmd>:Rg<CR>")
 nmap("<C-t>", "<cmd>lua require('fzf-lua').lsp_definitions()<CR>")
 
 ----ArgWrap
