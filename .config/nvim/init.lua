@@ -181,8 +181,24 @@ require("lazy").setup({
   {
     "junegunn/fzf.vim",
     run = ":call fzf#install()",
-    event = "VeryLazy",
     dependencies = { "junegunn/fzf" },
+    config = function()
+      vim.cmd([[
+        let $FZF_DEFAULT_COMMAND = 'rg --hidden --glob "!**/.git/**" --files'
+
+        " Empty value to disable preview window altogether
+        let g:fzf_preview_window = []
+
+        " Enable per-command history.
+        " CTRL-N and CTRL-P will be automatically bound to next-history and
+        " previous-history instead of down and up. If you don't like the change,
+        " explicitly bind the keys to down and up in your $FZF_DEFAULT_OPTS.
+        let g:fzf_history_dir = '~/.local/share/fzf-history'
+      ]])
+
+      nmap("<Leader>f", ":Files<CR>")
+      nmap("K", ":Rg <C-R><C-W><CR>")
+    end
   },
 
   -- UI
@@ -393,11 +409,6 @@ augroup END
 --##############################################################################
 --# PLUGIN SETTINGS
 --##############################################################################
-
--- fuzzy finding plugin
-nmap("<Leader>f", "<cmd>:GFiles<CR>")
-nmap("K", "<cmd>:Rg<CR>")
-nmap("<C-t>", "<cmd>lua require('fzf-lua').lsp_definitions()<CR>")
 
 ----ArgWrap
 nmap("<Leader>a", "<cmd>ArgWrap<CR>")
