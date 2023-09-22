@@ -15,6 +15,18 @@
   "rubyLsp.rubyVersionManager": "custom",
   "rubyLsp.customRubyCommand":  "eval \"$(rtx env -s zsh)\"",// "rtx activate fish | source", // Instructions for zsh, change for bash or fish
   "vim.leader" : " ",
+  "vim.hlsearch" : true,
+  "vim.camelCaseMotion.enable" : true,
+  "vim.insertModeKeyBindingsNonRecursive": [
+    {
+      "commands": [
+        "github.copilot.insertSuggestion",
+      ],
+      "before": [
+        "ctrl-f",
+      ]
+    }
+  ],
   "vim.visualModeKeyBindingsNonRecursive" : [
     {
       "commands" : [
@@ -26,8 +38,6 @@
       ]
     }
   ],
-  "vim.hlsearch" : true,
-  "vim.camelCaseMotion.enable" : true,
   "vim.normalModeKeyBindingsNonRecursive" : [
     {
       "commands" : [
@@ -95,5 +105,5 @@
       ]
     }
   ],
-  "redhat.telemetry.enabled": false
+  "redhat.telemetry.enabled": false,
 }

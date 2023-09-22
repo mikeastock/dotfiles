@@ -9,7 +9,7 @@
     "efm": {
       "command": "efm-langserver",
       "args": [],
-      "filetypes": ["eruby"],
+      "filetypes": ["eruby", "ruby"],
       "initializationOptions": {
         "documentFormatting": true,
         "documentRangeFormatting": true,
