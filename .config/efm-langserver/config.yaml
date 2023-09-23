@@ -11,6 +11,10 @@ tools:
     format-stdin: true
     format-command: htmlbeautifier
 
+  tailwind-class-sort: &tailwind-class-sort
+    format-command: "rustywind --stdin"
+    format-stdin: true
+
   rubyfmt: &rubyfmt
     format-stdin: true
     format-command: rubyfmt
@@ -18,5 +22,8 @@ tools:
 languages:
   # ruby:
   #   - <<: *rubyfmt
+  html:
+    - <<: *tailwind-class-sort
   eruby:
     - <<: *eruby-erb
+    - <<: *tailwind-class-sort
