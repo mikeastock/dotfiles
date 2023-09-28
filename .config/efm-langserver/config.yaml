@@ -25,5 +25,5 @@ languages:
   html:
     - <<: *tailwind-class-sort
   eruby:
-    - <<: *eruby-erb
+    # - <<: *eruby-erb
     - <<: *tailwind-class-sort
