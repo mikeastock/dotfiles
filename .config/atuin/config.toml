@@ -24,7 +24,7 @@ key_path = "~/.key"
 sync_frequency = "5m"
 
 ## address of the sync server
-sync_address = "http://devmini.local:8888"
+sync_address = "http://stockpro.local:8888"
 
 ## which search mode to use
 ## possible values: prefix, fulltext, fuzzy
