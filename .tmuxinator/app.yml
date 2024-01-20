@@ -4,10 +4,4 @@ root: ./
 windows:
   - nvim: nvim
   - git:
-  - server:
-      layout: 7812,164x89,0,0[164x44,0,0,2,164x44,0,45{82x44,0,45,3,81x44,83,45[81x32,83,45,31,81x11,83,78,32]}]
-      panes:
-        - rails server
-        - be sidekiq
-        - npm start
-        - ngrok start app
+  - server: dev

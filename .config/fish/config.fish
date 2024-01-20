@@ -1,7 +1,7 @@
 ####### MISC CONFIG
 
 set -U fish_greeting
-set -gx EDITOR lvim
+set -gx EDITOR nvim
 set -gx ELM_WATCH_OPEN_EDITOR 'idea --line "$line" "$file"'
 
 # https://github.com/rails/rails/issues/38560
@@ -46,6 +46,7 @@ alias rk="rake"
 alias reset_elm="rm -f app/assets/javascripts/elm.js && rm -rf public/dist/assets && npm run build && rails assets:precompile"
 
 alias g="git"
+alias gad="git add -p"
 alias gap="git add -p"
 alias gc="git commit -v"
 alias gcd="git checkout develop"
@@ -85,12 +86,12 @@ fish_add_path /opt/homebrew/opt/gnu-sed/libexec/gnubin/
 ####### Z Alt
 zoxide init fish | source
 
-###### RTX (ASDF rust clone)
-rtx activate fish | source
+###### Mise (ASDF rust clone)
+mise activate fish | source
 
 ###### quickenv
 
-# Local bin dirs - Added after RTX so that these take precedence
+# Local bin dirs - Added after Mise so that these take precedence
 fish_add_path ~/.bin
 fish_add_path ~/.local/bin
 

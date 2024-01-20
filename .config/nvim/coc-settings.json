@@ -1,5 +1,5 @@
 {
-  "[elm][javascript][eruby][ruby][typescript][typescriptreact][yaml][lua][json]": {
+  "[elm][javascript][eruby][ruby][typescript][typescriptreact][yaml][lua][json][css]": {
     "coc.preferences.formatOnSave": true
   },
   "codeLens.enable": true,
@@ -9,7 +9,10 @@
     "efm": {
       "command": "efm-langserver",
       "args": [],
-      "filetypes": ["eruby", "ruby"],
+      "filetypes": [
+        "eruby",
+        "ruby"
+      ],
       "initializationOptions": {
         "documentFormatting": true,
         "documentRangeFormatting": true,
@@ -21,8 +24,13 @@
     },
     "terraform": {
       "command": "terraform-ls",
-      "args": ["serve"],
-      "filetypes": ["terraform", "tf"],
+      "args": [
+        "serve"
+      ],
+      "filetypes": [
+        "terraform",
+        "tf"
+      ],
       "initializationOptions": {}
     },
     "ruby-lsp": {
@@ -46,11 +54,18 @@
         ],
         "formatter": "auto"
       },
-      "filetypes": ["ruby"]
+      "filetypes": [
+        "ruby"
+      ]
     }
   },
   "prettier.printWidth": 90,
-  "tailwindCSS.experimental.classRegex": ["tw_w+s+=s+\"(.*)\""],
+  "css.lint.unknownAtRules": "ignore",
+  "tailwindCSS.experimental.classRegex": [
+    "tw_w+s+=s+\"(.*)\"",
+    "\\bclass\\s*:\\s*\\\"([_a-zA-Z0-9\\s\\-\\:\\/]+)\\\"",
+    "\\bclasses\\s*:\\s*\\\"([_a-zA-Z0-9\\s\\-\\:\\/]+)\\\""
+  ],
   "tailwindCSS.includeLanguages": {
     "ruby": "html"
   }

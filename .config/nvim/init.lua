@@ -158,7 +158,7 @@ vim.cmd.cabbrev({ "Qall", "qall" })
 vim.cmd.cabbrev({ "Wqall", "wqall" })
 
 vim.cmd([[
-let g:user_debugger_dictionary = { '\.rb' : 'binding.irb', '\.tsx' : 'debugger' }
+let g:user_debugger_dictionary = { '\.rb' : 'binding.pry', '\.tsx' : 'debugger' }
 ]])
 
 -- Plugins

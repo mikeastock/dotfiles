@@ -5,9 +5,3 @@ windows:
   - nvim: nvim
   - git:
   - server:
-      layout: 9b2d,120x71,0,0[120x33,0,0,2,120x27,0,34,3,120x9,0,62{60x9,0,62,4,59x9,61,62,5}]
-      panes:
-        - rails server
-        - be sidekiq
-        - ngrok start minio handover
-        - minio server ~/code/minio_data
