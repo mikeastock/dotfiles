@@ -177,6 +177,16 @@ end
 vim.opt.rtp:prepend(lazypath)
 
 require("lazy").setup({
+  {
+    "mrjones2014/legendary.nvim",
+    -- since legendary.nvim handles all your keymaps/commands,
+    -- its recommended to load legendary.nvim before other plugins
+    priority = 10000,
+    lazy = false,
+    -- sqlite is only needed if you want to use frecency sorting
+    -- dependencies = { 'kkharji/sqlite.lua' }
+  },
+
   -- fuzzy finding
   {
     "junegunn/fzf.vim",
@@ -230,9 +240,26 @@ require("lazy").setup({
 
   -- CSS Color Previews
   {
-    "norcalli/nvim-colorizer.lua",
-    event = "BufReadPre",
-    opts = {},
+    "NvChad/nvim-colorizer.lua", -- Highlight hex and rgb colors within Neovim
+    cmd = "ColorizerToggle",
+    init = function()
+      require("legendary").commands({
+        {
+          ":ColorizerToggle",
+          description = "Colorizer toggle",
+        },
+      })
+    end,
+    opts = {
+      filetypes = {
+        "css",
+        eruby = { mode = "foreground" },
+        html = { mode = "foreground" },
+        "lua",
+        "javascript",
+        "jsx",
+      },
+    },
   },
 
   {
