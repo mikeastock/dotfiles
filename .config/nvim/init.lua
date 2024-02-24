@@ -273,32 +273,32 @@ require("lazy").setup({
   -- testing
   "vim-test/vim-test",
   "kassio/neoterm",
-  {
-    "nvim-neotest/neotest",
-    dependencies = {
-      "nvim-lua/plenary.nvim",
-      "antoinemadec/FixCursorHold.nvim",
-      "nvim-treesitter/nvim-treesitter",
-      "zidhuss/neotest-minitest",
-    },
-    config = function()
-      require("neotest").setup({
-        default_strategy = "integrated",
-        adapters = {
-          require("neotest-minitest")({
-            test_cmd = function()
-              return vim.tbl_flatten({
-                "bundle",
-                "exec",
-                "rails",
-                "test",
-              })
-            end,
-          }),
-        },
-      })
-    end,
-  },
+  -- {
+  --   "nvim-neotest/neotest",
+  --   dependencies = {
+  --     "nvim-lua/plenary.nvim",
+  --     "antoinemadec/FixCursorHold.nvim",
+  --     "nvim-treesitter/nvim-treesitter",
+  --     "mikeastock/neotest-minitest",
+  --   },
+  --   config = function()
+  --     require("neotest").setup({
+  --       default_strategy = "integrated",
+  --       adapters = {
+  --         require("neotest-minitest")({
+  --           test_cmd = function()
+  --             return vim.tbl_flatten({
+  --               "bundle",
+  --               "exec",
+  --               "rails",
+  --               "test",
+  --             })
+  --           end,
+  --         }),
+  --       },
+  --     })
+  --   end,
+  -- },
 
   -- debugging
   {
@@ -606,12 +606,12 @@ nmap("f", "<Plug>Sneak_f")
 nmap("F", "<Plug>Sneak_F")
 
 -- Testing settings
-vim.keymap.set('n', '<Leader>s', function() require('neotest').run.run() end)
+-- vim.keymap.set('n', '<Leader>s', function() require('neotest').run.run() end)
 -- nmap("<Leader>s", "<cmd>lua require('neotest').run.run()<CR>")
--- nmap("<Leader>s", ":TestNearest<CR>")
-vim.keymap.set('n', '<Leader>r', function() require('neotest').run.run(vim.fn.expand('%')) end)
+nmap("<Leader>s", ":TestNearest<CR>")
+-- vim.keymap.set('n', '<Leader>r', function() require('neotest').run.run(vim.fn.expand('%')) end)
 -- nmap("<Leader>r", "<cmd>lua require('neotest').run.run(vim.fn.expand('%'))<CR>")
--- nmap("<Leader>r", ":TestFile<CR>")
+nmap("<Leader>r", ":TestFile<CR>")
 
 -- Make escape work in the Neovim terminal.
 tmap("<Esc>", "<C-\\><C-n>")
