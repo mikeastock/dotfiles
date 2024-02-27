@@ -12,6 +12,8 @@ $cmd_duration\
 $line_break\
 $character"""
 
+right_format = ""
+
 [directory]
 style = "blue"
 
