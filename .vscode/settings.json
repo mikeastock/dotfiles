@@ -13,7 +13,8 @@
   },
   "rubyLsp.formatter": "rubocop",
   "rubyLsp.rubyVersionManager": "custom",
-  "rubyLsp.customRubyCommand":  "eval \"$(rtx env -s zsh)\"",// "rtx activate fish | source", // Instructions for zsh, change for bash or fish
+  // "rubyLsp.customRubyCommand":  "eval \"$(rtx env -s zsh)\"",// "rtx activate fish | source", // Instructions for zsh, change for bash or fish
+  "rubyLsp.customRubyCommand":  "mise activate fish | source",
   "vim.leader" : " ",
   "vim.hlsearch" : true,
   "vim.camelCaseMotion.enable" : true,

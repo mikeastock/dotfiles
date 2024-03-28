@@ -46,4 +46,4 @@ SETUVAR fish_pager_color_selected_background:\x1d
 SETUVAR fish_pager_color_selected_completion:\x1d
 SETUVAR fish_pager_color_selected_description:\x1d
 SETUVAR fish_pager_color_selected_prefix:\x1d
-SETUVAR fish_user_paths:/Users/mikeastock/\x2elocal/bin\x1e/Users/mikeastock/\x2ebin\x1e/opt/homebrew/opt/postgresql\x4015/bin\x1e/Users/mikeastock/\x2ecargo/bin\x1e/opt/homebrew/opt/gnu\x2dsed/libexec/gnubin\x1e/Users/mikeastock/\x2easdf/shims\x1e/opt/homebrew/opt/asdf/libexec/bin\x1e/opt/homebrew/opt/postgresql\x4013/bin\x1e/Users/mikeastock/code/buildr/handover/bin\x1e/Users/mikeastock/code/buildr/export/bin\x1e/Users/mikeastock/code/buildr/app/bin\x1e/Users/mikeastock/code/buildr/bizops/bin\x1e/bin\x1e/Users/mikeastock/code/buildr/har_logger/bin\x1e/opt/homebrew/opt/postgresql\x4013\x2e6/bin\x1e/opt/homebrew/Cellar/fzf/0\x2e38\x2e0/bin\x1e/Users/mikeastock/\x2efzf/bin\x1e/opt/homebrew/bin\x1e/opt/homebrew/opt/fzf/bin
+SETUVAR fish_user_paths:/Users/mikeastock/\x2elocal/bin\x1e/opt/homebrew/opt/gnu\x2dsed/libexec/gnubin\x1e/opt/homebrew/opt/postgresql\x4015/bin\x1e/opt/homebrew/bin

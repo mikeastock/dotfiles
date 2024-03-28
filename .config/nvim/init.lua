@@ -271,7 +271,28 @@ require("lazy").setup({
   },
 
   -- testing
-  "vim-test/vim-test",
+  {
+    "vim-test/vim-test",
+    init = function()
+      vim.g["test#strategy"] = {
+        nearest = "neovim",
+        file = "dispatch",
+        suite = "basic",
+      }
+      vim.g["test#neovim#term_position"] = "botright"
+
+
+      -- vim.keymap.set('n', '<Leader>s', function() require('neotest').run.run() end)
+      -- nmap("<Leader>s", "<cmd>lua require('neotest').run.run()<CR>")
+      nmap("<Leader>s", ":TestNearest<CR>")
+      -- vim.keymap.set('n', '<Leader>r', function() require('neotest').run.run(vim.fn.expand('%')) end)
+      -- nmap("<Leader>r", "<cmd>lua require('neotest').run.run(vim.fn.expand('%'))<CR>")
+      nmap("<Leader>r", ":TestFile<CR>")
+
+      -- Make escape work in the Neovim terminal.
+      tmap("<Esc>", "<C-\\><C-n>")
+    end,
+  },
   "kassio/neoterm",
   -- {
   --   "nvim-neotest/neotest",
@@ -604,17 +625,6 @@ vim.g.argwrap_tail_comma = true
 ----replace "f" with 1-char Sneak
 nmap("f", "<Plug>Sneak_f")
 nmap("F", "<Plug>Sneak_F")
-
--- Testing settings
--- vim.keymap.set('n', '<Leader>s', function() require('neotest').run.run() end)
--- nmap("<Leader>s", "<cmd>lua require('neotest').run.run()<CR>")
-nmap("<Leader>s", ":TestNearest<CR>")
--- vim.keymap.set('n', '<Leader>r', function() require('neotest').run.run(vim.fn.expand('%')) end)
--- nmap("<Leader>r", "<cmd>lua require('neotest').run.run(vim.fn.expand('%'))<CR>")
-nmap("<Leader>r", ":TestFile<CR>")
-
--- Make escape work in the Neovim terminal.
-tmap("<Esc>", "<C-\\><C-n>")
 
 -- I like relative numbering when in normal mode.
 vim.cmd("autocmd TermOpen * setlocal conceallevel=0 colorcolumn=0 relativenumber")

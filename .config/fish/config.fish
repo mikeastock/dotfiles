@@ -92,7 +92,6 @@ mise activate fish | source
 ###### quickenv
 
 # Local bin dirs - Added after Mise so that these take precedence
-fish_add_path ~/.bin
 fish_add_path ~/.local/bin
 
 ###### History Search

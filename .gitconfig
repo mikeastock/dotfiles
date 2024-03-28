@@ -32,11 +32,11 @@
   excludesfile = /Users/mikeastock/.gitignore
 [color]
   ui = auto
-[color "diff-highlight"]
-  oldNormal = "red bold"
-  oldHighlight = "red bold 52"
-  newNormal = "green bold"
-  newHighlight = "green bold 22"
+; [color "diff-highlight"]
+;   oldNormal = "red bold"
+;   oldHighlight = "red bold 52"
+;   newNormal = "green bold"
+;   newHighlight = "green bold 22"
 [color "status"]
   added = yellow
   changed = green
@@ -48,8 +48,6 @@
 [branch "master"]
   remote = origin
   merge = refs/heads/master
-[diff]
-  tool = vimdiff
 [difftool]
   prompt = false
 [filter "lfs"]
@@ -70,3 +68,16 @@
 [merge]
 	conflictstyle = zdiff3
 	tool = meld
+
+[diff]
+  external = difft
+  tool = difftastic
+
+[difftool]
+  prompt = false
+
+[difftool "difftastic"]
+  cmd = difft "$LOCAL" "$REMOTE"
+
+[pager]
+  difftool = true
