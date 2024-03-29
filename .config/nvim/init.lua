@@ -96,6 +96,7 @@ vim.opt.mouse = ""           -- I HATE MICE
 vim.opt.shiftround = true    -- When at 3 spaces and I hit >>, go to 4, not 5.
 vim.opt.showmode = false     -- Hide -- INSERT -- in cmdline for echodoc
 vim.opt.splitkeep = "screen" -- Stable splits
+vim.g.python3_host_prog = "~/.local/share/mise/shims/python3"
 
 -- Color
 vim.opt.termguicolors = true
@@ -534,6 +535,7 @@ require("lazy").setup({
       ]])
     end,
   },
+  -- AI
   {
     "zbirenbaum/copilot.lua",
     config = function()
@@ -551,6 +553,27 @@ require("lazy").setup({
           },
         },
       })
+    end,
+  },
+  {
+    "madox2/vim-ai",
+    config = function()
+      vim.cmd([[
+      " complete text on the current line or in visual selection
+      "nnoremap <leader>a :AI<CR>
+      "xnoremap <leader>a :AI<CR>
+
+      " edit text with a custom prompt
+      "xnoremap <leader>s :AIEdit fix grammar and spelling<CR>
+      "nnoremap <leader>s :AIEdit fix grammar and spelling<CR>
+
+      " trigger chat
+      "xnoremap <leader>c :AIChat<CR>
+      "nnoremap <leader>c :AIChat<CR>
+
+      " redo last AI command
+      " nnoremap <leader>r :AIRedo<CR>
+      ]])
     end,
   },
 
