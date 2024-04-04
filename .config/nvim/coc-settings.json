@@ -39,7 +39,6 @@
         "experimentalFeaturesEnabled": false,
         "enabledFeatures": [
           "codeActions",
-          "diagnostics",
           "documentHighlights",
           "documentLink",
           "documentSymbols",
