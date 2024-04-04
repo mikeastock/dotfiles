@@ -219,7 +219,7 @@ require("lazy").setup({
     dependencies = { "junegunn/fzf" },
     config = function()
       vim.cmd([[
-        let $FZF_DEFAULT_COMMAND = 'rg --hidden --glob "!**/.git/**" --files'
+        let $FZF_DEFAULT_COMMAND = 'rg --hidden --glob "!**/.git/**" --glob "!elm/**/**" --files'
 
         " Empty value to disable preview window altogether
         let g:fzf_preview_window = []
