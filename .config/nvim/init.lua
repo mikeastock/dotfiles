@@ -246,11 +246,11 @@ require("lazy").setup({
 
   -- workflow
   "FooSoft/vim-argwrap",
-  {
-    "lewis6991/gitsigns.nvim",
-    event = "VeryLazy",
-    opts = {},
-  },
+  -- {
+  --   "lewis6991/gitsigns.nvim",
+  --   event = "VeryLazy",
+  --   opts = {},
+  -- },
 
   "ap/vim-buftabline",
   "junegunn/vim-easy-align",
