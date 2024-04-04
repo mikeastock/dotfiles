@@ -189,52 +189,52 @@ require("lazy").setup({
   -- },
 
   -- fuzzy finding
-  {
-    "nvim-telescope/telescope.nvim",
-    tag = "0.1.6",
-    dependencies = { "nvim-lua/plenary.nvim" },
-    config = function()
-      require("telescope").setup({
-        defaults = {
-          layout_config = {
-            prompt_position = "top",
-          },
-          mappings = {
-            i = {
-              ["<C-j>"] = require("telescope.actions").move_selection_next,
-              ["<C-k>"] = require("telescope.actions").move_selection_previous,
-            },
-          },
-        },
-      })
-
-      local builtin = require('telescope.builtin')
-      vim.keymap.set('n', '<leader>f', builtin.find_files, {})
-      vim.keymap.set('n', 'K', builtin.grep_string, {})
-    end,
-  },
   -- {
-  --   "junegunn/fzf.vim",
-  --   run = ":call fzf#install()",
-  --   dependencies = { "junegunn/fzf" },
+  --   "nvim-telescope/telescope.nvim",
+  --   tag = "0.1.6",
+  --   dependencies = { "nvim-lua/plenary.nvim" },
   --   config = function()
-  --     vim.cmd([[
-  --       let $FZF_DEFAULT_COMMAND = 'rg --hidden --glob "!**/.git/**" --files'
+  --     require("telescope").setup({
+  --       defaults = {
+  --         layout_config = {
+  --           prompt_position = "top",
+  --         },
+  --         mappings = {
+  --           i = {
+  --             ["<C-j>"] = require("telescope.actions").move_selection_next,
+  --             ["<C-k>"] = require("telescope.actions").move_selection_previous,
+  --           },
+  --         },
+  --       },
+  --     })
 
-  --       " Empty value to disable preview window altogether
-  --       let g:fzf_preview_window = []
-
-  --       " Enable per-command history.
-  --       " CTRL-N and CTRL-P will be automatically bound to next-history and
-  --       " previous-history instead of down and up. If you don't like the change,
-  --       " explicitly bind the keys to down and up in your $FZF_DEFAULT_OPTS.
-  --       let g:fzf_history_dir = '~/.local/share/fzf-history'
-  --     ]])
-
-  --     nmap("<Leader>f", ":Files<CR>")
-  --     nmap("K", ":Rg <C-R><C-W><CR>")
-  --   end
+  --     local builtin = require('telescope.builtin')
+  --     vim.keymap.set('n', '<leader>f', builtin.find_files, {})
+  --     vim.keymap.set('n', 'K', builtin.grep_string, {})
+  --   end,
   -- },
+  {
+    "junegunn/fzf.vim",
+    run = ":call fzf#install()",
+    dependencies = { "junegunn/fzf" },
+    config = function()
+      vim.cmd([[
+        let $FZF_DEFAULT_COMMAND = 'rg --hidden --glob "!**/.git/**" --files'
+
+        " Empty value to disable preview window altogether
+        let g:fzf_preview_window = []
+
+        " Enable per-command history.
+        " CTRL-N and CTRL-P will be automatically bound to next-history and
+        " previous-history instead of down and up. If you don't like the change,
+        " explicitly bind the keys to down and up in your $FZF_DEFAULT_OPTS.
+        let g:fzf_history_dir = '~/.local/share/fzf-history'
+      ]])
+
+      nmap("<Leader>f", ":Files<CR>")
+      nmap("K", ":Rg <C-R><C-W><CR>")
+    end
+  },
 
   -- UI
   {
