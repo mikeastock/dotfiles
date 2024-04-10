@@ -63,6 +63,7 @@
   "tailwindCSS.experimental.classRegex": [
     "tw_w+s+=s+\"(.*)\"",
     "\\bclass\\s*:\\s*\\\"([_a-zA-Z0-9\\s\\-\\:\\/]+)\\\"",
+    "\\btw_class\\s*:\\s*\\\"([_a-zA-Z0-9\\s\\-\\:\\/]+)\\\"",
     "\\bclasses\\s*:\\s*\\\"([_a-zA-Z0-9\\s\\-\\:\\/]+)\\\""
   ],
   "tailwindCSS.includeLanguages": {
