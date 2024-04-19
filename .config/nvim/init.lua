@@ -237,12 +237,12 @@ require("lazy").setup({
   },
 
   -- UI
-  {
-    "nvim-lualine/lualine.nvim",
-    dependencies = { "nvim-tree/nvim-web-devicons" },
-    event = "VeryLazy",
-    opts = {},
-  },
+  -- {
+  --   "nvim-lualine/lualine.nvim",
+  --   dependencies = { "nvim-tree/nvim-web-devicons" },
+  --   event = "VeryLazy",
+  --   opts = {},
+  -- },
 
   -- workflow
   "FooSoft/vim-argwrap",
@@ -257,7 +257,13 @@ require("lazy").setup({
   "justinmk/vim-sneak",
   "mikeastock/vim-infer-debugger",
   "pbrisbin/vim-mkdir",
-  "tpope/vim-abolish",
+  {
+    "tpope/vim-abolish",
+    setup = function()
+      vim.cmd([[
+      ]])
+    end,
+  },
   "tpope/vim-commentary",
   "tpope/vim-dispatch",
   "tpope/vim-fugitive",
