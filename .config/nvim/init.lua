@@ -510,7 +510,11 @@ require("lazy").setup({
   --},
 
   -- colors
-  -- "catppuccin/nvim",
+  {
+    "catppuccin/nvim",
+    name = "catppuccin",
+    priority = 1000
+  },
   {
     "folke/tokyonight.nvim",
     lazy = true,
@@ -543,24 +547,34 @@ require("lazy").setup({
   },
   -- AI
   {
-    "zbirenbaum/copilot.lua",
+    "supermaven-inc/supermaven-nvim",
     config = function()
-      require("copilot").setup({
-        panel = {
-          enabled = false,
-          auto_refresh = true,
-        },
-        suggestion = {
-          auto_trigger = true,
-          keymap = {
-            accept = "<C-f>",
-            next = "<C-[>",
-            prev = "<C-]>",
-          },
-        },
+      require("supermaven-nvim").setup({
+        keymaps = {
+          accept_suggestion = "<C-f>",
+        }
       })
     end,
   },
+  -- {
+  --   "zbirenbaum/copilot.lua",
+  --   config = function()
+  --     require("copilot").setup({
+  --       panel = {
+  --         enabled = false,
+  --         auto_refresh = true,
+  --       },
+  --       suggestion = {
+  --         auto_trigger = true,
+  --         keymap = {
+  --           accept = "<C-f>",
+  --           next = "<C-[>",
+  --           prev = "<C-]>",
+  --         },
+  --       },
+  --     })
+  --   end,
+  -- },
   -- {
   --   "madox2/vim-ai",
   --   config = function()
@@ -697,4 +711,5 @@ endfunction
 nmap("<Leader>n", ":call RenameFile()<CR>")
 
 -- LAST
-vim.cmd([[colorscheme tokyonight-night]])
+vim.cmd.colorscheme "tokyonight-night"
+-- vim.cmd.colorscheme "catppuccin-latte"
