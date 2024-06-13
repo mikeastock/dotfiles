@@ -19,6 +19,10 @@ tools:
     format-stdin: true
     format-command: rubyfmt
 
+  taplo: &taplo
+    format-stdin: true
+    format-command: "taplo fmt --option reorder_keys=true -"
+
 languages:
   # ruby:
   #   - <<: *rubyfmt
@@ -27,3 +31,5 @@ languages:
   eruby:
     # - <<: *eruby-erb
     - <<: *tailwind-class-sort
+  toml:
+    - <<: *taplo

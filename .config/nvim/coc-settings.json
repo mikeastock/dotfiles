@@ -1,5 +1,5 @@
 {
-  "[elm][javascript][eruby][ruby][typescript][typescriptreact][yaml][lua][json][css][python]": {
+  "[elm][javascript][eruby][ruby][typescript][typescriptreact][yaml][lua][json][css][python][toml]": {
     "coc.preferences.formatOnSave": true
   },
   "codeLens.enable": true,
@@ -11,7 +11,8 @@
       "args": [],
       "filetypes": [
         "eruby",
-        "ruby"
+        "ruby",
+        "toml"
       ],
       "initializationOptions": {
         "documentFormatting": true,
