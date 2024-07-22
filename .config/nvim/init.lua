@@ -264,7 +264,7 @@ require("lazy").setup({
       ]])
     end,
   },
-  "tpope/vim-commentary",
+  -- "tpope/vim-commentary",
   "tpope/vim-dispatch",
   "tpope/vim-fugitive",
   "tpope/vim-surround",
