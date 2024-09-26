@@ -6,13 +6,17 @@ log-file: /tmp/efm.log
 log-level: 1
 
 tools:
-  eruby-erb: &eruby-erb
-    format-debounce: 2s
-    format-stdin: true
-    format-command: htmlbeautifier
+  # eruby-erb: &eruby-erb
+  #   format-debounce: 2s
+  #   format-stdin: true
+  #   format-command: htmlbeautifier
 
-  tailwind-class-sort: &tailwind-class-sort
-    format-command: "rustywind --stdin"
+  # tailwind-class-sort: &tailwind-class-sort
+  #   format-command: "rustywind --stdin"
+  #   format-stdin: true
+
+  erb-format: &erb-format
+    format-command: "erb-format --stdin --print-width=80 --tailwind-output=/Users/mikeastock/code/buildr/app/app/assets/builds/application.css"
     format-stdin: true
 
   rubyfmt: &rubyfmt
@@ -27,9 +31,9 @@ languages:
   # ruby:
   #   - <<: *rubyfmt
   html:
-    - <<: *tailwind-class-sort
+    - <<: *erb-format
   eruby:
     # - <<: *eruby-erb
-    - <<: *tailwind-class-sort
+    - <<: *erb-format
   toml:
     - <<: *taplo
