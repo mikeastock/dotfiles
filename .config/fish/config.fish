@@ -68,6 +68,8 @@ alias gsu="git submodule update"
 alias s="git status"
 alias ci="git ci-status -v"
 
+alias tf="terraform"
+
 function fco -d "Fuzzy-find and checkout a branch"
   git branch --all | grep -v HEAD | string trim | fzf --header='[fuzzy:branch-checkout]' | xargs git checkout
 end
