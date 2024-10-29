@@ -644,7 +644,7 @@ require("lazy").setup({
   { "dag/vim-fish",                           ft = "fish" },
   { "fatih/vim-go",                           ft = "golang" },
   { "hashivim/vim-terraform",                 ft = "terraform" },
-  { "jvirtanen/vim-hcl",                      ft = "hcl" },
+  -- { "jvirtanen/vim-hcl",                      ft = "hcl" },
   { "rust-lang/rust.vim",                     ft = "rust" },
 })
 
