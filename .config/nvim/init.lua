@@ -607,21 +607,37 @@ require("lazy").setup({
 
   -- Ruby
   { "Keithbsmiley/rspec.vim",                 ft = "ruby" },
-  { "tpope/vim-rails",                        ft = "ruby" },
+  {
+    "tpope/vim-rails",
+    ft = "ruby",
+    config = function()
+      -- disable autocmd set filetype=eruby.yaml
+      vim.api.nvim_create_autocmd(
+        { "BufNewFile", "BufReadPost" },
+        {
+          pattern = { "*.yml,*.yaml" },
+          callback = function()
+            vim.bo.filetype = "yaml"
+          end
+
+        }
+      )
+    end
+  },
   -- { "vim-ruby/vim-ruby",                      ft = "ruby" },
 
   -- Elixir
-  { "elixir-lang/vim-elixir",                 ft = "elixir,eelixir" },
-  { "mhinz/vim-mix-format",                   ft = "elixir,eelixir" },
+  { "elixir-lang/vim-elixir", ft = "elixir,eelixir" },
+  { "mhinz/vim-mix-format",   ft = "elixir,eelixir" },
 
   -- Misc
-  { "amadeus/vim-mjml",                       ft = "mjml" },
-  { "andys8/vim-elm-syntax",                  ft = "elm" },
-  { "dag/vim-fish",                           ft = "fish" },
-  { "fatih/vim-go",                           ft = "golang" },
-  { "hashivim/vim-terraform",                 ft = "terraform" },
+  { "amadeus/vim-mjml",       ft = "mjml" },
+  { "andys8/vim-elm-syntax",  ft = "elm" },
+  { "dag/vim-fish",           ft = "fish" },
+  { "fatih/vim-go",           ft = "golang" },
+  { "hashivim/vim-terraform", ft = "terraform" },
   -- { "jvirtanen/vim-hcl",                      ft = "hcl" },
-  { "rust-lang/rust.vim",                     ft = "rust" },
+  { "rust-lang/rust.vim",     ft = "rust" },
 })
 
 --##############################################################################
