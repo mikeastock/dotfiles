@@ -269,30 +269,6 @@ require("lazy").setup({
   "tpope/vim-fugitive",
   "tpope/vim-surround",
 
-  -- CSS Color Previews
-  {
-    "NvChad/nvim-colorizer.lua", -- Highlight hex and rgb colors within Neovim
-    cmd = "ColorizerToggle",
-    -- init = function()
-    --   require("legendary").commands({
-    --     {
-    --       ":ColorizerToggle",
-    --       description = "Colorizer toggle",
-    --     },
-    --   })
-    -- end,
-    opts = {
-      filetypes = {
-        "css",
-        eruby = { mode = "foreground" },
-        html = { mode = "foreground" },
-        "lua",
-        "javascript",
-        "jsx",
-      },
-    },
-  },
-
   {
     "andymass/vim-matchup",
     setup = function()

@@ -26,6 +26,7 @@
 [push]
   default = current
 [core]
+  pager = delta
   editor = nvim
   excludesfile = /Users/mikeastock/.gitignore
 [color]
@@ -65,17 +66,10 @@
 	gpgsign = true
 [merge]
 	conflictstyle = zdiff3
-	tool = meld
 
-[diff]
-  ; external = difft
-  tool = difftastic
+[delta]
+  navigate = true    # use n and N to move between diff sections
 
-[difftool]
-  prompt = false
-
-[difftool "difftastic"]
-  cmd = difft "$LOCAL" "$REMOTE"
-
-[pager]
-  difftool = true
+  # delta detects terminal colors automatically; set one of these to disable auto-detection
+  # dark = true
+  # light = true
