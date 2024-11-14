@@ -612,16 +612,10 @@ require("lazy").setup({
     ft = "ruby",
     config = function()
       -- disable autocmd set filetype=eruby.yaml
-      vim.api.nvim_create_autocmd(
-        { "BufNewFile", "BufReadPost" },
-        {
-          pattern = { "*.yml,*.yaml" },
-          callback = function()
-            vim.bo.filetype = "yaml"
-          end
-
-        }
-      )
+      vim.api.nvim_create_autocmd("FileType", {
+        pattern = "eruby.yaml",
+        command = "set filetype=yaml",
+      })
     end
   },
   -- { "vim-ruby/vim-ruby",                      ft = "ruby" },
