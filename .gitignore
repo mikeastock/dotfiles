@@ -3,4 +3,5 @@
 .bin/*
 .config/fish/fish_plugins
 .config/fish/themes
+.config/nvim/undo-dir/*
 .vscode/extensions/
