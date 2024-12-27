@@ -9,11 +9,7 @@
     "efm": {
       "command": "efm-langserver",
       "args": [],
-      "filetypes": [
-        "eruby",
-        "ruby",
-        "toml"
-      ],
+      "filetypes": ["eruby", "ruby", "toml"],
       "initializationOptions": {
         "documentFormatting": true,
         "documentRangeFormatting": true,
@@ -25,14 +21,8 @@
     },
     "terraform": {
       "command": "terraform-ls",
-      "args": [
-        "serve"
-      ],
-      "filetypes": [
-        "hcl",
-        "terraform",
-        "tf"
-      ],
+      "args": ["serve"],
+      "filetypes": ["hcl", "terraform", "tf"],
       "initializationOptions": {},
       "settings": {}
     },
@@ -57,9 +47,12 @@
         ],
         "formatter": "auto"
       },
-      "filetypes": [
-        "ruby"
-      ]
+      "filetypes": ["ruby"]
+    },
+    "elmLS": {
+      "command": "elm-language-server",
+      "filetypes": ["elm"],
+      "rootPatterns": ["elm.json"]
     }
   },
   "tailwindCSS.experimental.classRegex": [
