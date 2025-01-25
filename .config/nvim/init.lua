@@ -522,6 +522,9 @@ require("lazy").setup({
     end,
   },
   -- AI
+  -- {
+  --   "ggml-org/llama.vim",
+  -- },
   {
     "supermaven-inc/supermaven-nvim",
     config = function()
