@@ -158,6 +158,10 @@ vim.cmd.cabbrev({ "WQ", "wq" })
 vim.cmd.cabbrev({ "Qall", "qall" })
 vim.cmd.cabbrev({ "Wqall", "wqall" })
 
+-- Some of tpope's vim-unimpaired mappings
+nmap("]q", "<cmd>:cnext<CR>")
+nmap("[q", "<cmd>:cprevious<CR>")
+
 vim.cmd([[
 let g:user_debugger_dictionary = { '\.rb' : 'binding.pry', '\.tsx' : 'debugger' }
 ]])
