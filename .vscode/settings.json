@@ -12,9 +12,12 @@
     "editor.formatOnSave" : true
   },
   "rubyLsp.formatter": "rubocop",
-  "rubyLsp.rubyVersionManager": "custom",
-  // "rubyLsp.customRubyCommand":  "eval \"$(rtx env -s zsh)\"",// "rtx activate fish | source", // Instructions for zsh, change for bash or fish
+  "rubyLsp.rubyVersionManager": {
+    "identifier": "mise"
+  },
   "rubyLsp.customRubyCommand":  "mise activate fish | source",
+  "rubyTestExplorer.minitestCommand": "PARALLEL_WORKERS=1 ./bin/rake",
+  "rubyTestExplorer.logpanel": true,
   "vim.leader" : " ",
   "vim.hlsearch" : true,
   "vim.camelCaseMotion.enable" : true,
@@ -113,4 +116,13 @@
     "markdown": false,
     "scminput": false
   },
+  "chat.commandCenter.enabled": false,
+  "roo-cline.allowedCommands": [
+    "npm test",
+    "npm install",
+    "tsc",
+    "git log",
+    "git diff",
+    "git show"
+  ],
 }
