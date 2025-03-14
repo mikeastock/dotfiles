@@ -74,6 +74,10 @@ function fco -d "Fuzzy-find and checkout a branch"
   git branch --all | grep -v HEAD | string trim | fzf --header='[fuzzy:branch-checkout]' | xargs git checkout
 end
 
+function ai -d "Claude"
+  SHELL=/bin/bash claude
+end
+
 ####### PATH SETUP
 
 # Homebrew
