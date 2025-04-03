@@ -249,7 +249,14 @@ require("lazy").setup({
   -- },
 
   -- workflow
-  "FooSoft/vim-argwrap",
+  {
+    "FooSoft/vim-argwrap",
+    setup = function()
+      nmap("<Leader>a", "<cmd>ArgWrap<CR>")
+      vim.g.argwrap_tail_comma = true
+    end,
+  },
+
   -- {
   --   "lewis6991/gitsigns.nvim",
   --   event = "VeryLazy",
@@ -258,7 +265,13 @@ require("lazy").setup({
 
   "ap/vim-buftabline",
   "junegunn/vim-easy-align",
-  "justinmk/vim-sneak",
+  {
+    "justinmk/vim-sneak",
+    setup = function()
+      nmap("f", "<Plug>Sneak_f")
+      nmap("F", "<Plug>Sneak_F")
+    end,
+  },
   "mikeastock/vim-infer-debugger",
   "pbrisbin/vim-mkdir",
   {
@@ -451,12 +464,12 @@ require("lazy").setup({
   -- Langauge specific
 
   -- JS
-  { "HerringtonDarkholme/yats.vim",           ft = "typescript" },
-  { "othree/javascript-libraries-syntax.vim", ft = "javascript" },
-  { "pangloss/vim-javascript",                ft = "javascript" },
+  -- { "HerringtonDarkholme/yats.vim",           ft = "typescript" },
+  -- { "othree/javascript-libraries-syntax.vim", ft = "javascript" },
+  -- { "pangloss/vim-javascript",                ft = "javascript" },
 
   -- Ruby
-  { "Keithbsmiley/rspec.vim",                 ft = "ruby" },
+  -- { "Keithbsmiley/rspec.vim", ft = "ruby" },
   {
     "tpope/vim-rails",
     ft = "ruby",
@@ -471,17 +484,17 @@ require("lazy").setup({
   -- { "vim-ruby/vim-ruby",                      ft = "ruby" },
 
   -- Elixir
-  { "elixir-lang/vim-elixir", ft = "elixir,eelixir" },
-  { "mhinz/vim-mix-format",   ft = "elixir,eelixir" },
+  -- { "elixir-lang/vim-elixir", ft = "elixir,eelixir" },
+  -- { "mhinz/vim-mix-format",   ft = "elixir,eelixir" },
 
   -- Misc
-  { "amadeus/vim-mjml",       ft = "mjml" },
-  { "andys8/vim-elm-syntax",  ft = "elm" },
-  { "dag/vim-fish",           ft = "fish" },
-  { "fatih/vim-go",           ft = "golang" },
-  { "hashivim/vim-terraform", ft = "terraform" },
+  -- { "amadeus/vim-mjml",       ft = "mjml" },
+  -- { "andys8/vim-elm-syntax",  ft = "elm" },
+  -- { "dag/vim-fish",           ft = "fish" },
+  -- { "fatih/vim-go",           ft = "golang" },
+  -- { "hashivim/vim-terraform", ft = "terraform" },
   -- { "jvirtanen/vim-hcl",                      ft = "hcl" },
-  { "rust-lang/rust.vim",     ft = "rust" },
+  -- { "rust-lang/rust.vim",     ft = "rust" },
 })
 
 --##############################################################################
@@ -516,18 +529,6 @@ augroup gitCommit
   autocmd FileType *.md setlocal spell textwidth=80
 augroup END
 ]])
-
---##############################################################################
---# PLUGIN SETTINGS
---##############################################################################
-
-----ArgWrap
-nmap("<Leader>a", "<cmd>ArgWrap<CR>")
-vim.g.argwrap_tail_comma = true
-
-----replace "f" with 1-char Sneak
-nmap("f", "<Plug>Sneak_f")
-nmap("F", "<Plug>Sneak_F")
 
 -- I like relative numbering when in normal mode.
 vim.cmd("autocmd TermOpen * setlocal conceallevel=0 colorcolumn=0 relativenumber")
