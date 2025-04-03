@@ -267,7 +267,9 @@ require("lazy").setup({
   --   opts = {},
   -- },
 
-  "ap/vim-buftabline",
+  -- "ap/vim-buftabline",
+  "vimoxide/vim-tabline",
+
   "junegunn/vim-easy-align",
   {
     "justinmk/vim-sneak",
