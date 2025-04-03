@@ -73,3 +73,8 @@
   # delta detects terminal colors automatically; set one of these to disable auto-detection
   # dark = true
   # light = true
+
+[filter "sqlite3"]
+    clean = "f() { tmpfile=$(mktemp); cat - > $tmpfile; sqlite3 $tmpfile .dump; rm $tmpfile; }; f"
+    smudge = "f() { tmpfile=$(mktemp); sqlite3 $tmpfile; cat $tmpfile; rm $tmpfile; }; f"
+    required = true

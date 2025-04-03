@@ -83,6 +83,9 @@ end
 # Homebrew
 fish_add_path /opt/homebrew/bin
 
+# Direnv
+direnv hook fish | source
+
 # PostgreSQL 15
 fish_add_path /opt/homebrew/opt/postgresql@15/bin/
 
@@ -92,8 +95,8 @@ fish_add_path /opt/homebrew/opt/gnu-sed/libexec/gnubin/
 ####### Z Alt
 zoxide init fish | source
 
-###### Mise (ASDF rust clone)
-mise activate fish | source
+###### ASDF
+set -gx --prepend PATH "$HOME/.asdf/shims"
 
 ###### quickenv
 
