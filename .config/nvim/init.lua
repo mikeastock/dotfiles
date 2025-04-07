@@ -267,9 +267,6 @@ require("lazy").setup({
   --   opts = {},
   -- },
 
-  -- "ap/vim-buftabline",
-  "vimoxide/vim-tabline",
-
   "junegunn/vim-easy-align",
   {
     "justinmk/vim-sneak",
@@ -552,6 +549,72 @@ function! RenameFile()
 endfunction
 ]])
 nmap("<Leader>n", ":call RenameFile()<CR>")
+
+-- Configure Tabline
+-- Function to create a bufferline that only shows full paths for duplicated filenames
+function _G.MyBufferline()
+  local s = ''
+  local current = vim.fn.bufnr('%')
+  local buffers = vim.fn.getbufinfo({ buflisted = 1 })
+
+  -- First, collect all filenames to check for duplicates
+  local filename_counts = {}
+  local duplicate_files = {}
+
+  -- Count occurrences of each filename
+  for _, buf in ipairs(buffers) do
+    local name = buf.name ~= '' and vim.fn.fnamemodify(buf.name, ":t") or '[No Name]'
+    filename_counts[name] = (filename_counts[name] or 0) + 1
+
+    -- If we've seen this name more than once, mark it as a duplicate
+    if filename_counts[name] > 1 then
+      duplicate_files[name] = true
+    end
+  end
+
+  -- Now build the bufferline
+  for _, buf in ipairs(buffers) do
+    -- Select the highlighting
+    if buf.bufnr == current then
+      s = s .. '%#TabLineSel#'
+    else
+      s = s .. '%#TabLine#'
+    end
+
+    -- Get the buffer name
+    local name
+    if buf.name ~= '' then
+      local basename = vim.fn.fnamemodify(buf.name, ":t")
+
+      -- Show full path only for files with duplicate names
+      if duplicate_files[basename] then
+        name = vim.fn.fnamemodify(buf.name, ":~:.")
+      else
+        name = basename
+      end
+    else
+      name = '[No Name]'
+    end
+
+    s = s .. ' ' .. name
+
+    -- Add modified indicator
+    if buf.changed == 1 then
+      s = s .. ' [+]'
+    end
+
+    s = s .. ' '
+  end
+
+  -- Fill the rest of the tabline
+  s = s .. '%#TabLineFill#'
+
+  return s
+end
+
+-- Set the tabline to use our custom function
+vim.opt.showtabline = 2 -- Always show tabline
+vim.opt.tabline = "%!v:lua.MyBufferline()"
 
 -- LAST
 vim.cmd.colorscheme "tokyonight-night"
