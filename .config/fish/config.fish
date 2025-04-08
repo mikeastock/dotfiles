@@ -98,7 +98,8 @@ zoxide init fish | source
 ###### ASDF
 set -gx --prepend PATH "$HOME/.asdf/shims"
 
-###### quickenv
+###### Orbstack
+source ~/.orbstack/shell/init2.fish 2>/dev/null || :
 
 # Local bin dirs - Added after Mise so that these take precedence
 fish_add_path ~/.local/bin
