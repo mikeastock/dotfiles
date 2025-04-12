@@ -78,6 +78,23 @@ function ai -d "Claude"
   SHELL=/bin/bash claude
 end
 
+function ssm-connect
+  if test (count $argv) -lt 1
+    echo "Usage: ssm-connect INSTANCE_ID [PROFILE]"
+    echo "Default profile is buildr-app-prod"
+    return 1
+  end
+
+  set instance_id $argv[1]
+  set profile "buildr-app-prod"
+
+  if test (count $argv) -gt 1
+    set profile $argv[2]
+  end
+
+  aws --profile $profile ssm start-session --region us-east-1 --target $instance_id
+end
+
 ####### PATH SETUP
 
 # Homebrew

@@ -11,12 +11,12 @@ tools:
   #   format-stdin: true
   #   format-command: htmlbeautifier
 
-  # tailwind-class-sort: &tailwind-class-sort
-  #   format-command: "rustywind --stdin"
-  #   format-stdin: true
+  tailwind-class-sort: &tailwind-class-sort
+    format-command: "rustywind --stdin"
+    format-stdin: true
 
   erb-format: &erb-format
-    format-command: "erb-format --stdin --print-width=80 --tailwind-output=/Users/mikeastock/code/buildr/app/app/assets/builds/application.css"
+    format-command: "erb-format --stdin --print-width=80 --no-split-classes"
     format-stdin: true
 
   rubyfmt: &rubyfmt
@@ -31,9 +31,10 @@ languages:
   # ruby:
   #   - <<: *rubyfmt
   html:
+    - <<: *tailwind-class-sort
     - <<: *erb-format
   eruby:
-    # - <<: *eruby-erb
+    - <<: *tailwind-class-sort
     - <<: *erb-format
   toml:
     - <<: *taplo
