@@ -36,5 +36,7 @@ languages:
   eruby:
     - <<: *tailwind-class-sort
     - <<: *erb-format
+  typescriptreact:
+    - <<: *tailwind-class-sort
   toml:
     - <<: *taplo

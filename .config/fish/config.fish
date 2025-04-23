@@ -75,6 +75,7 @@ function fco -d "Fuzzy-find and checkout a branch"
 end
 
 function ai -d "Claude"
+  # ANTHROPIC_BASE_URL=http://localhost:8082
   SHELL=/bin/bash claude
 end
 
