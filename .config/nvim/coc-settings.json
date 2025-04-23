@@ -9,7 +9,7 @@
     "efm": {
       "command": "efm-langserver",
       "args": [],
-      "filetypes": ["eruby", "ruby", "toml"],
+      "filetypes": ["eruby", "ruby", "toml", "typescriptreact"],
       "initializationOptions": {
         "documentFormatting": true,
         "documentRangeFormatting": true,
