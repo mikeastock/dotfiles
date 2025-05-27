@@ -1,5 +1,5 @@
 {
-  "[elm][javascript][eruby][ruby][typescript][typescriptreact][lua][json][css][python][toml][hcl][terraform][tf]": {
+  "[elm][javascript][eruby][ruby][typescript][typescriptreact][tsx][lua][json][css][python][toml][hcl][terraform][tf]": {
     "coc.preferences.formatOnSave": true
   },
   "codeLens.enable": true,
@@ -9,7 +9,14 @@
     "efm": {
       "command": "efm-langserver",
       "args": [],
-      "filetypes": ["eruby", "ruby", "toml", "typescriptreact"],
+      "filetypes": [
+        "eruby",
+        "ruby",
+        "toml",
+        "typescript",
+        "typescriptreact",
+        "tsx"
+      ],
       "initializationOptions": {
         "documentFormatting": true,
         "documentRangeFormatting": true,

@@ -45,6 +45,7 @@ alias m="migrate"
 alias rk="rake"
 alias reset_elm="rm -f app/assets/javascripts/elm.js && rm -rf public/dist/assets && npm run build && rails assets:precompile"
 
+# Git
 alias g="git"
 alias gad="git add -p"
 alias gap="git add -p"
@@ -67,8 +68,11 @@ alias gst="git status"
 alias gsu="git submodule update"
 alias s="git status"
 alias ci="git ci-status -v"
+alias glist="git for-each-ref --sort=-committerdate refs/heads/ --format='%(committerdate:short) %(refname:short)' | head -n 10"
 
 alias tf="terraform"
+
+alias n="pnpm"
 
 function fco -d "Fuzzy-find and checkout a branch"
   git branch --all | grep -v HEAD | string trim | fzf --header='[fuzzy:branch-checkout]' | xargs git checkout
@@ -101,13 +105,13 @@ end
 # Homebrew
 fish_add_path /opt/homebrew/bin
 
-# Direnv
+####### Direnv
 direnv hook fish | source
 
-# PostgreSQL 15
+####### Postgres 15
 fish_add_path /opt/homebrew/opt/postgresql@15/bin/
 
-# GNU sed
+####### GNU sed
 fish_add_path /opt/homebrew/opt/gnu-sed/libexec/gnubin/
 
 ####### Z Alt
