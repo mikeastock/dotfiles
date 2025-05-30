@@ -74,7 +74,7 @@
   # dark = true
   # light = true
 
-[filter "sqlite3"]
+[filter "sqlite3tosql"]
     clean = "f() { tmpfile=$(mktemp); cat - > $tmpfile; sqlite3 $tmpfile .dump; rm $tmpfile; }; f"
     smudge = "f() { tmpfile=$(mktemp); sqlite3 $tmpfile; cat $tmpfile; rm $tmpfile; }; f"
     required = true

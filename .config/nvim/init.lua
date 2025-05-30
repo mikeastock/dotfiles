@@ -166,6 +166,11 @@ vim.cmd([[
 let g:user_debugger_dictionary = { '\.rb' : 'binding.pry', '\.tsx' : 'debugger' }
 ]])
 
+-- Disable default omni completion in sql files
+vim.cmd([[
+let g:ftplugin_sql_omni_key = '<C-j>'
+]])
+
 -- Plugins
 
 -- Bootstrap lazy.nvim
@@ -186,318 +191,321 @@ end
 vim.opt.rtp:prepend(lazypath)
 
 require("lazy").setup({
-  -- {
-  --   "mrjones2014/legendary.nvim",
-  --   -- since legendary.nvim handles all your keymaps/commands,
-  --   -- its recommended to load legendary.nvim before other plugins
-  --   priority = 10000,
-  --   lazy = false,
-  --   -- sqlite is only needed if you want to use frecency sorting
-  --   -- dependencies = { 'kkharji/sqlite.lua' }
-  -- },
+  spec = {
+    -- {
+    --   "mrjones2014/legendary.nvim",
+    --   -- since legendary.nvim handles all your keymaps/commands,
+    --   -- its recommended to load legendary.nvim before other plugins
+    --   priority = 10000,
+    --   lazy = false,
+    --   -- sqlite is only needed if you want to use frecency sorting
+    --   -- dependencies = { 'kkharji/sqlite.lua' }
+    -- },
 
-  -- fuzzy finding
-  -- {
-  --   "nvim-telescope/telescope.nvim",
-  --   tag = "0.1.6",
-  --   dependencies = { "nvim-lua/plenary.nvim" },
-  --   config = function()
-  --     require("telescope").setup({
-  --       defaults = {
-  --         layout_config = {
-  --           prompt_position = "top",
-  --         },
-  --         mappings = {
-  --           i = {
-  --             ["<C-j>"] = require("telescope.actions").move_selection_next,
-  --             ["<C-k>"] = require("telescope.actions").move_selection_previous,
-  --           },
-  --         },
-  --       },
-  --     })
+    -- fuzzy finding
+    -- {
+    --   "nvim-telescope/telescope.nvim",
+    --   tag = "0.1.6",
+    --   dependencies = { "nvim-lua/plenary.nvim" },
+    --   config = function()
+    --     require("telescope").setup({
+    --       defaults = {
+    --         layout_config = {
+    --           prompt_position = "top",
+    --         },
+    --         mappings = {
+    --           i = {
+    --             ["<C-j>"] = require("telescope.actions").move_selection_next,
+    --             ["<C-k>"] = require("telescope.actions").move_selection_previous,
+    --           },
+    --         },
+    --       },
+    --     })
 
-  --     local builtin = require('telescope.builtin')
-  --     vim.keymap.set('n', '<leader>f', builtin.find_files, {})
-  --     vim.keymap.set('n', 'K', builtin.grep_string, {})
-  --   end,
-  -- },
-  {
-    "junegunn/fzf.vim",
-    run = ":call fzf#install()",
-    dependencies = { "junegunn/fzf" },
-    config = function()
-      vim.cmd([[
-        let $FZF_DEFAULT_COMMAND = 'rg --hidden --glob "!**/.git/**" --files'
+    --     local builtin = require('telescope.builtin')
+    --     vim.keymap.set('n', '<leader>f', builtin.find_files, {})
+    --     vim.keymap.set('n', 'K', builtin.grep_string, {})
+    --   end,
+    -- },
+    {
+      "junegunn/fzf.vim",
+      run = ":call fzf#install()",
+      dependencies = { "junegunn/fzf" },
+      config = function()
+        vim.cmd([[
+          let $FZF_DEFAULT_COMMAND = 'rg --hidden --glob "!**/.git/**" --files'
 
-        " Empty value to disable preview window altogether
-        let g:fzf_preview_window = []
+          " Empty value to disable preview window altogether
+          let g:fzf_preview_window = []
 
-        " Enable per-command history.
-        " CTRL-N and CTRL-P will be automatically bound to next-history and
-        " previous-history instead of down and up. If you don't like the change,
-        " explicitly bind the keys to down and up in your $FZF_DEFAULT_OPTS.
-        let g:fzf_history_dir = '~/.local/share/fzf-history'
-      ]])
+          " Enable per-command history.
+          " CTRL-N and CTRL-P will be automatically bound to next-history and
+          " previous-history instead of down and up. If you don't like the change,
+          " explicitly bind the keys to down and up in your $FZF_DEFAULT_OPTS.
+          let g:fzf_history_dir = '~/.local/share/fzf-history'
+        ]])
 
-      nmap("<Leader>f", ":Files<CR>")
-      nmap("K", ":Rg <C-R><C-W><CR>")
-    end
-  },
+        nmap("<Leader>f", ":Files<CR>")
+        nmap("K", ":Rg <C-R><C-W><CR>")
+      end
+    },
 
-  -- UI
-  -- {
-  --   "nvim-lualine/lualine.nvim",
-  --   dependencies = { "nvim-tree/nvim-web-devicons" },
-  --   event = "VeryLazy",
-  --   opts = {},
-  -- },
+    -- UI
+    -- {
+    --   "nvim-lualine/lualine.nvim",
+    --   dependencies = { "nvim-tree/nvim-web-devicons" },
+    --   event = "VeryLazy",
+    --   opts = {},
+    -- },
 
-  -- workflow
-  {
-    "FooSoft/vim-argwrap",
-    config = function()
-      nmap("<Leader>a", "<cmd>ArgWrap<CR>")
-      vim.g.argwrap_tail_comma = true
-    end,
-  },
+    -- workflow
+    {
+      "FooSoft/vim-argwrap",
+      config = function()
+        nmap("<Leader>a", "<cmd>ArgWrap<CR>")
+        vim.g.argwrap_tail_comma = true
+      end,
+    },
 
-  -- {
-  --   "lewis6991/gitsigns.nvim",
-  --   event = "VeryLazy",
-  --   opts = {},
-  -- },
+    -- {
+    --   "lewis6991/gitsigns.nvim",
+    --   event = "VeryLazy",
+    --   opts = {},
+    -- },
 
-  "junegunn/vim-easy-align",
-  {
-    "justinmk/vim-sneak",
-    config = function()
-      nmap("f", "<Plug>Sneak_f")
-      nmap("F", "<Plug>Sneak_F")
-    end,
-  },
-  "mikeastock/vim-infer-debugger",
-  "pbrisbin/vim-mkdir",
-  {
-    "tpope/vim-abolish",
-    setup = function()
-      vim.cmd([[
-      ]])
-    end,
-  },
-  -- "tpope/vim-commentary",
-  "tpope/vim-dispatch",
-  "tpope/vim-fugitive",
-  "tpope/vim-surround",
+    "junegunn/vim-easy-align",
+    {
+      "justinmk/vim-sneak",
+      config = function()
+        nmap("f", "<Plug>Sneak_f")
+        nmap("F", "<Plug>Sneak_F")
+      end,
+    },
+    "mikeastock/vim-infer-debugger",
+    "pbrisbin/vim-mkdir",
+    {
+      "tpope/vim-abolish",
+      setup = function()
+        vim.cmd([[
+        ]])
+      end,
+    },
+    -- "tpope/vim-commentary",
+    "tpope/vim-dispatch",
+    "tpope/vim-fugitive",
+    "tpope/vim-surround",
 
-  {
-    "andymass/vim-matchup",
-    setup = function()
-      -- may set any options here
-      vim.g.matchup_matchparen_offscreen = { method = "popup" }
-    end,
-  },
+    {
+      "andymass/vim-matchup",
+      setup = function()
+        -- may set any options here
+        vim.g.matchup_matchparen_offscreen = { method = "popup" }
+      end,
+    },
 
-  -- testing
-  {
-    "vim-test/vim-test",
-    init = function()
-      vim.g["test#strategy"] = {
-        nearest = "basic",
-        file = "basic",
-        suite = "dispatch",
-      }
-      -- vim.g["test#neovim#term_position"] = "botright"
-
-
-      -- vim.keymap.set('n', '<Leader>s', function() require('neotest').run.run() end)
-      -- nmap("<Leader>s", "<cmd>lua require('neotest').run.run()<CR>")
-      nmap("<Leader>s", ":TestNearest<CR>")
-      -- vim.keymap.set('n', '<Leader>r', function() require('neotest').run.run(vim.fn.expand('%')) end)
-      -- nmap("<Leader>r", "<cmd>lua require('neotest').run.run(vim.fn.expand('%'))<CR>")
-      nmap("<Leader>r", ":TestFile<CR>")
-
-      -- Make escape work in the Neovim terminal.
-      tmap("<Esc>", "<C-\\><C-n>")
-    end,
-  },
-  -- "kassio/neoterm",
-  -- {
-  --   "nvim-neotest/neotest",
-  --   dependencies = {
-  --     "nvim-lua/plenary.nvim",
-  --     "antoinemadec/FixCursorHold.nvim",
-  --     "nvim-treesitter/nvim-treesitter",
-  --     "mikeastock/neotest-minitest",
-  --   },
-  --   config = function()
-  --     require("neotest").setup({
-  --       default_strategy = "integrated",
-  --       adapters = {
-  --         require("neotest-minitest")({
-  --           test_cmd = function()
-  --             return vim.tbl_flatten({
-  --               "bundle",
-  --               "exec",
-  --               "rails",
-  --               "test",
-  --             })
-  --           end,
-  --         }),
-  --       },
-  --     })
-  --   end,
-  -- },
-
-  -- colors
-  {
-    "catppuccin/nvim",
-    name = "catppuccin",
-    priority = 1000
-  },
-  {
-    "folke/tokyonight.nvim",
-    lazy = true,
-    opts = { style = "moon" },
-  },
-
-  -- COC
-  {
-    "neoclide/coc.nvim",
-    branch = "release",
-    event = "VeryLazy",
-    config = function()
-      vim.cmd([[
-      "COC
-      inoremap <expr> <cr> coc#pum#visible() ? coc#_select_confirm() : "\<CR>"
-
-      nmap <silent> gr <Plug>(coc-references)
-      nmap <silent> <F3> <Plug>(coc-rename)
-
-      " Find symbol of current document.
-      nnoremap <silent><nowait> <space>o  :<C-u>CocList outline<cr>
-
-      nmap <silent> <F2> <Plug>(coc-diagnostic-next)
-
-      let g:coc_filetype_map = {
-        \ 'rspec.ruby': 'ruby',
-        \ }
-      ]])
-    end,
-  },
-  -- AI
-  -- {
-  --   "ggml-org/llama.vim",
-  -- },
-  {
-    "supermaven-inc/supermaven-nvim",
-    config = function()
-      require("supermaven-nvim").setup({
-        keymaps = {
-          accept_suggestion = "<C-f>",
+    -- testing
+    {
+      "vim-test/vim-test",
+      init = function()
+        vim.g["test#strategy"] = {
+          nearest = "basic",
+          file = "basic",
+          suite = "dispatch",
         }
-      })
-    end,
+        -- vim.g["test#neovim#term_position"] = "botright"
+
+
+        -- vim.keymap.set('n', '<Leader>s', function() require('neotest').run.run() end)
+        -- nmap("<Leader>s", "<cmd>lua require('neotest').run.run()<CR>")
+        nmap("<Leader>s", ":TestNearest<CR>")
+        -- vim.keymap.set('n', '<Leader>r', function() require('neotest').run.run(vim.fn.expand('%')) end)
+        -- nmap("<Leader>r", "<cmd>lua require('neotest').run.run(vim.fn.expand('%'))<CR>")
+        nmap("<Leader>r", ":TestFile<CR>")
+
+        -- Make escape work in the Neovim terminal.
+        tmap("<Esc>", "<C-\\><C-n>")
+      end,
+    },
+    -- "kassio/neoterm",
+    -- {
+    --   "nvim-neotest/neotest",
+    --   dependencies = {
+    --     "nvim-lua/plenary.nvim",
+    --     "antoinemadec/FixCursorHold.nvim",
+    --     "nvim-treesitter/nvim-treesitter",
+    --     "mikeastock/neotest-minitest",
+    --   },
+    --   config = function()
+    --     require("neotest").setup({
+    --       default_strategy = "integrated",
+    --       adapters = {
+    --         require("neotest-minitest")({
+    --           test_cmd = function()
+    --             return vim.tbl_flatten({
+    --               "bundle",
+    --               "exec",
+    --               "rails",
+    --               "test",
+    --             })
+    --           end,
+    --         }),
+    --       },
+    --     })
+    --   end,
+    -- },
+
+    -- colors
+    {
+      "catppuccin/nvim",
+      name = "catppuccin",
+      priority = 1000
+    },
+    {
+      "folke/tokyonight.nvim",
+      lazy = true,
+      opts = { style = "moon" },
+    },
+
+    -- COC
+    {
+      "neoclide/coc.nvim",
+      branch = "release",
+      event = "VeryLazy",
+      config = function()
+        vim.cmd([[
+        "COC
+        inoremap <expr> <cr> coc#pum#visible() ? coc#_select_confirm() : "\<CR>"
+
+        nmap <silent> gr <Plug>(coc-references)
+        nmap <silent> <F3> <Plug>(coc-rename)
+
+        " Find symbol of current document.
+        nnoremap <silent><nowait> <space>o  :<C-u>CocList outline<cr>
+
+        nmap <silent> <F2> <Plug>(coc-diagnostic-next)
+
+        let g:coc_filetype_map = {
+          \ 'rspec.ruby': 'ruby',
+          \ }
+        ]])
+      end,
+    },
+    -- AI
+    -- {
+    --   "ggml-org/llama.vim",
+    -- },
+    {
+      "supermaven-inc/supermaven-nvim",
+      config = function()
+        require("supermaven-nvim").setup({
+          keymaps = {
+            accept_suggestion = "<C-f>",
+          }
+        })
+      end,
+    },
+    -- {
+    --   "zbirenbaum/copilot.lua",
+    --   config = function()
+    --     require("copilot").setup({
+    --       panel = {
+    --         enabled = false,
+    --         auto_refresh = true,
+    --       },
+    --       suggestion = {
+    --         auto_trigger = true,
+    --         keymap = {
+    --           accept = "<C-f>",
+    --           next = "<C-[>",
+    --           prev = "<C-]>",
+    --         },
+    --       },
+    --     })
+    --   end,
+    -- },
+    -- {
+    --   "madox2/vim-ai",
+    --   config = function()
+    --     vim.cmd([[
+    --     " complete text on the current line or in visual selection
+    --     "nnoremap <leader>a :AI<CR>
+    --     "xnoremap <leader>a :AI<CR>
+
+    --     " edit text with a custom prompt
+    --     "xnoremap <leader>s :AIEdit fix grammar and spelling<CR>
+    --     "nnoremap <leader>s :AIEdit fix grammar and spelling<CR>
+
+    --     " trigger chat
+    --     "xnoremap <leader>c :AIChat<CR>
+    --     "nnoremap <leader>c :AIChat<CR>
+
+    --     " redo last AI command
+    --     " nnoremap <leader>r :AIRedo<CR>
+    --     ]])
+    --   end,
+    -- },
+
+    -- Tree sitter
+    {
+      "nvim-treesitter/nvim-treesitter",
+      run = ":TSUpdate",
+      event = "BufRead",
+      config = function()
+        local configs = require("nvim-treesitter.configs")
+
+        configs.setup({
+          ensure_installed = {
+            "lua",
+            "javascript",
+            "html",
+            "css",
+            "typescript",
+            "tsx",
+            "ruby",
+          },
+          sync_install = false,
+          highlight = { enable = true },
+          indent = { enable = true },
+        })
+      end
+    },
+
+    -- Langauge specific
+
+    -- JS
+    -- { "HerringtonDarkholme/yats.vim",           ft = "typescript" },
+    -- { "othree/javascript-libraries-syntax.vim", ft = "javascript" },
+    -- { "pangloss/vim-javascript",                ft = "javascript" },
+
+    -- Ruby
+    -- { "Keithbsmiley/rspec.vim", ft = "ruby" },
+    {
+      "tpope/vim-rails",
+      ft = "ruby",
+      config = function()
+        -- disable autocmd set filetype=eruby.yaml
+        vim.api.nvim_create_autocmd("FileType", {
+          pattern = "eruby.yaml",
+          command = "set filetype=yaml",
+        })
+      end
+    },
+    -- { "vim-ruby/vim-ruby",                      ft = "ruby" },
+
+    -- Elixir
+    -- { "elixir-lang/vim-elixir", ft = "elixir,eelixir" },
+    -- { "mhinz/vim-mix-format",   ft = "elixir,eelixir" },
+
+    -- Misc
+    -- { "amadeus/vim-mjml",       ft = "mjml" },
+    -- { "andys8/vim-elm-syntax",  ft = "elm" },
+    -- { "dag/vim-fish",           ft = "fish" },
+    -- { "fatih/vim-go",           ft = "golang" },
+    -- { "hashivim/vim-terraform", ft = "terraform" },
+    -- { "jvirtanen/vim-hcl",                      ft = "hcl" },
+    -- { "rust-lang/rust.vim",     ft = "rust" },
   },
-  -- {
-  --   "zbirenbaum/copilot.lua",
-  --   config = function()
-  --     require("copilot").setup({
-  --       panel = {
-  --         enabled = false,
-  --         auto_refresh = true,
-  --       },
-  --       suggestion = {
-  --         auto_trigger = true,
-  --         keymap = {
-  --           accept = "<C-f>",
-  --           next = "<C-[>",
-  --           prev = "<C-]>",
-  --         },
-  --       },
-  --     })
-  --   end,
-  -- },
-  -- {
-  --   "madox2/vim-ai",
-  --   config = function()
-  --     vim.cmd([[
-  --     " complete text on the current line or in visual selection
-  --     "nnoremap <leader>a :AI<CR>
-  --     "xnoremap <leader>a :AI<CR>
-
-  --     " edit text with a custom prompt
-  --     "xnoremap <leader>s :AIEdit fix grammar and spelling<CR>
-  --     "nnoremap <leader>s :AIEdit fix grammar and spelling<CR>
-
-  --     " trigger chat
-  --     "xnoremap <leader>c :AIChat<CR>
-  --     "nnoremap <leader>c :AIChat<CR>
-
-  --     " redo last AI command
-  --     " nnoremap <leader>r :AIRedo<CR>
-  --     ]])
-  --   end,
-  -- },
-
-  -- Tree sitter
-  {
-    "nvim-treesitter/nvim-treesitter",
-    run = ":TSUpdate",
-    event = "BufRead",
-    config = function()
-      local configs = require("nvim-treesitter.configs")
-
-      configs.setup({
-        ensure_installed = {
-          "lua",
-          "javascript",
-          "html",
-          "css",
-          "typescript",
-          "tsx",
-          "ruby",
-        },
-        sync_install = false,
-        highlight = { enable = true },
-        indent = { enable = true },
-      })
-    end
-  },
-
-  -- Langauge specific
-
-  -- JS
-  -- { "HerringtonDarkholme/yats.vim",           ft = "typescript" },
-  -- { "othree/javascript-libraries-syntax.vim", ft = "javascript" },
-  -- { "pangloss/vim-javascript",                ft = "javascript" },
-
-  -- Ruby
-  -- { "Keithbsmiley/rspec.vim", ft = "ruby" },
-  {
-    "tpope/vim-rails",
-    ft = "ruby",
-    config = function()
-      -- disable autocmd set filetype=eruby.yaml
-      vim.api.nvim_create_autocmd("FileType", {
-        pattern = "eruby.yaml",
-        command = "set filetype=yaml",
-      })
-    end
-  },
-  -- { "vim-ruby/vim-ruby",                      ft = "ruby" },
-
-  -- Elixir
-  -- { "elixir-lang/vim-elixir", ft = "elixir,eelixir" },
-  -- { "mhinz/vim-mix-format",   ft = "elixir,eelixir" },
-
-  -- Misc
-  -- { "amadeus/vim-mjml",       ft = "mjml" },
-  -- { "andys8/vim-elm-syntax",  ft = "elm" },
-  -- { "dag/vim-fish",           ft = "fish" },
-  -- { "fatih/vim-go",           ft = "golang" },
-  -- { "hashivim/vim-terraform", ft = "terraform" },
-  -- { "jvirtanen/vim-hcl",                      ft = "hcl" },
-  -- { "rust-lang/rust.vim",     ft = "rust" },
+  checker = { enabled = true },
 })
 
 --##############################################################################

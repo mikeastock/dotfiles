@@ -28,8 +28,14 @@
     },
     "terraform": {
       "command": "terraform-ls",
-      "args": ["serve"],
-      "filetypes": ["hcl", "terraform", "tf"],
+      "args": [
+        "serve"
+      ],
+      "filetypes": [
+        "hcl",
+        "terraform",
+        "tf"
+      ],
       "initializationOptions": {},
       "settings": {}
     },
@@ -54,12 +60,18 @@
         ],
         "formatter": "auto"
       },
-      "filetypes": ["ruby"]
+      "filetypes": [
+        "ruby"
+      ]
     },
     "elmLS": {
       "command": "elm-language-server",
-      "filetypes": ["elm"],
-      "rootPatterns": ["elm.json"]
+      "filetypes": [
+        "elm"
+      ],
+      "rootPatterns": [
+        "elm.json"
+      ]
     }
   },
   "tailwindCSS.experimental.classRegex": [
@@ -70,5 +82,9 @@
   ],
   "tailwindCSS.includeLanguages": {
     "ruby": "html"
-  }
+  },
+  "python.formatting.provider": "ruff",
+  "pyright.inlayHints.functionReturnTypes": false,
+  "pyright.inlayHints.variableTypes": false,
+  "pyright.inlayHints.parameterTypes": false
 }
