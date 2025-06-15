@@ -78,11 +78,6 @@ function fco -d "Fuzzy-find and checkout a branch"
   git branch --all | grep -v HEAD | string trim | fzf --header='[fuzzy:branch-checkout]' | xargs git checkout
 end
 
-function ai -d "Claude"
-  # ANTHROPIC_BASE_URL=http://localhost:8082
-  SHELL=/bin/bash claude
-end
-
 function ssm-connect
   if test (count $argv) -lt 1
     echo "Usage: ssm-connect INSTANCE_ID [PROFILE]"
@@ -98,6 +93,14 @@ function ssm-connect
   end
 
   aws --profile $profile ssm start-session --region us-east-1 --target $instance_id
+end
+
+####### AI CONFIG
+
+alias claude="/Users/mikeastock/.asdf/installs/nodejs/22.14.0/bin/claude"
+function ai -d "Claude using Bash"
+  # ANTHROPIC_BASE_URL=http://localhost:8082
+  SHELL=/bin/bash claude
 end
 
 ####### PATH SETUP
