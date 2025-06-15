@@ -390,7 +390,6 @@ require("lazy").setup({
     --   lazy = true,
     --   opts = { style = "moon" },
     -- },
->>>>>>> 916ccb3 (Update plugins and theme)
 
     -- COC
     {
