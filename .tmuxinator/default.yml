@@ -1,0 +1,7 @@
+name: default
+root: ./
+
+windows:
+  - nvim: nvim
+  - git:
+  - server:
