@@ -354,17 +354,43 @@ require("lazy").setup({
     --   end,
     -- },
 
-    -- colors
+    -- colors/themes
     {
-      "catppuccin/nvim",
-      name = "catppuccin",
-      priority = 1000
+      "lmantw/themify.nvim",
+      lazy = false,
+      priority = 999,
+      config = function()
+        require("themify").setup({
+          "catppuccin/nvim",
+          "folke/tokyonight.nvim",
+          "ellisonleao/gruvbox.nvim",
+          "sainnhe/everforest",
+          "shaunsingh/nord.nvim",
+          "EdenEast/nightfox.nvim",
+          "neanias/everforest-nvim",
+          "rebelot/kanagawa.nvim",
+          "nyoom-engineering/oxocarbon.nvim",
+          "jacoborus/tender.vim",
+          "scottmckendry/cyberdream.nvim",
+          "olimorris/onedarkpro.nvim",
+          "zenbones-theme/zenbones.nvim",
+        })
+      end,
+      dependencies = {
+        "rktjmp/lush.nvim", -- Used by zenbones theme
+      },
     },
-    {
-      "folke/tokyonight.nvim",
-      lazy = true,
-      opts = { style = "moon" },
-    },
+    -- {
+    --   "catppuccin/nvim",
+    --   name = "catppuccin",
+    --   priority = 1000
+    -- },
+    -- {
+    --   "folke/tokyonight.nvim",
+    --   lazy = true,
+    --   opts = { style = "moon" },
+    -- },
+>>>>>>> 916ccb3 (Update plugins and theme)
 
     -- COC
     {
@@ -505,7 +531,6 @@ require("lazy").setup({
     -- { "jvirtanen/vim-hcl",                      ft = "hcl" },
     -- { "rust-lang/rust.vim",     ft = "rust" },
   },
-  checker = { enabled = true },
 })
 
 --##############################################################################
@@ -625,6 +650,6 @@ vim.opt.showtabline = 2 -- Always show tabline
 vim.opt.tabline = "%!v:lua.MyBufferline()"
 
 -- LAST
-vim.cmd.colorscheme "tokyonight-night"
+-- vim.cmd.colorscheme "tokyonight-night"
 -- vim.cmd.colorscheme "tokyonight-day"
 -- vim.cmd.colorscheme "catppuccin-latte"
