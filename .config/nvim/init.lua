@@ -113,6 +113,7 @@ nmap("<Leader>gb", "<cmd>Git blame<CR>")
 nmap("<Leader>l", "<cmd>Lines<CR>")
 nmap("<Leader>P", "<cmd>call AddDebugger('O')<CR>")
 nmap("<Leader>p", "<cmd>call AddDebugger('o')<CR>")
+nmap("<Leader>yf", "<cmd>let @+=expand('%')<CR>") -- Copy path to clipboard
 
 -- Force close current buffer
 vim.cmd([[
