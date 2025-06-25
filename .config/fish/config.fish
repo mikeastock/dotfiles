@@ -97,7 +97,6 @@ end
 
 ####### AI CONFIG
 
-alias claude="/Users/mikeastock/.asdf/installs/nodejs/22.14.0/bin/claude"
 function ai -d "Claude using Bash"
   # ANTHROPIC_BASE_URL=http://localhost:8082
   SHELL=/bin/bash claude

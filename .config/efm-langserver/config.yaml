@@ -6,11 +6,6 @@ log-file: /tmp/efm.log
 log-level: 1
 
 tools:
-  # eruby-erb: &eruby-erb
-  #   format-debounce: 2s
-  #   format-stdin: true
-  #   format-command: htmlbeautifier
-
   tailwind-class-sort: &tailwind-class-sort
     format-command: "rustywind --stdin"
     format-stdin: true
@@ -30,17 +25,20 @@ tools:
 languages:
   # ruby:
   #   - <<: *rubyfmt
+
   html:
     - <<: *tailwind-class-sort
     - <<: *erb-format
+
   eruby:
     - <<: *tailwind-class-sort
     - <<: *erb-format
+
   typescript:
     - <<: *tailwind-class-sort
-    # - <<: *biome
+
   typescriptreact:
     - <<: *tailwind-class-sort
-    # - <<: *biome
+
   toml:
     - <<: *taplo
