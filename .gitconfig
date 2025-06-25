@@ -13,7 +13,7 @@
   st = status
   br = branch --sort=-committerdate
   df = diff --color
-  dfom = diff main --color
+  dfom = diff origin/main --color
   pl = pull
   p = push
   ad = add --patch
