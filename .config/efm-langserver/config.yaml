@@ -6,10 +6,6 @@ log-file: /tmp/efm.log
 log-level: 1
 
 tools:
-  tailwind-class-sort: &tailwind-class-sort
-    format-command: "rustywind --stdin"
-    format-stdin: true
-
   erb-format: &erb-format
     format-command: "erb-format --stdin --print-width=80 --no-split-classes"
     format-stdin: true
@@ -27,18 +23,10 @@ languages:
   #   - <<: *rubyfmt
 
   html:
-    - <<: *tailwind-class-sort
     - <<: *erb-format
 
   eruby:
-    - <<: *tailwind-class-sort
     - <<: *erb-format
-
-  typescript:
-    - <<: *tailwind-class-sort
-
-  typescriptreact:
-    - <<: *tailwind-class-sort
 
   toml:
     - <<: *taplo
