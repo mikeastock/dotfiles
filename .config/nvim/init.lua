@@ -645,6 +645,41 @@ function _G.MyBufferline()
   return s
 end
 
+-- Auto-format tailwindcss classes using rustywind
+vim.api.nvim_create_autocmd("BufWritePost", {
+  group = vim.api.nvim_create_augroup("RustywindAutoFormat", { clear = true }),
+  pattern = { "*.html", "*.css", "*.js", "*.jsx", "*.ts", "*.tsx", "*.vue", "*.svelte" },
+  callback = function()
+    -- Get current buffer content
+    local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+    local content = table.concat(lines, "\n")
+
+    -- Run rustywind with stdin, redirecting stderr to /dev/null
+    local formatted = vim.fn.system('rustywind --stdin 2>/dev/null', content)
+
+    -- Check for errors (non-zero exit code)
+    if vim.v.shell_error ~= 0 then
+      return
+    end
+
+    -- Strip any trailing newline from formatted output
+    formatted = formatted:gsub("\n$", "")
+
+    -- Only update if content changed (ignoring trailing newline differences)
+    if formatted ~= content:gsub("\n$", "") then
+      -- Save cursor position
+      local view = vim.fn.winsaveview()
+
+      -- Replace buffer content
+      local new_lines = vim.split(formatted, "\n", { plain = true })
+      vim.api.nvim_buf_set_lines(0, 0, -1, false, new_lines)
+
+      -- Restore cursor position
+      vim.fn.winrestview(view)
+    end
+  end,
+})
+
 -- Set the tabline to use our custom function
 vim.opt.showtabline = 2 -- Always show tabline
 vim.opt.tabline = "%!v:lua.MyBufferline()"
