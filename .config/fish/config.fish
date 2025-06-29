@@ -71,8 +71,8 @@ alias ci="git ci-status -v"
 alias glist="git for-each-ref --sort=-committerdate refs/heads/ --format='%(committerdate:short) %(refname:short)' | head -n 10"
 
 alias tf="terraform"
-
 alias n="pnpm"
+alias gt="gtree"
 
 function fco -d "Fuzzy-find and checkout a branch"
   git branch --all | grep -v HEAD | string trim | fzf --header='[fuzzy:branch-checkout]' | xargs git checkout
