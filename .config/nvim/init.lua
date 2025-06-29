@@ -451,6 +451,8 @@ require("lazy").setup({
 						python = { "isort", "black" },
 						rust = { "rustfmt", lsp_format = "fallback" },
 						typescript = { "biome", "biome-check", "biome-organize-imports", "rustywind" },
+						typescriptreact = { "biome", "biome-check", "biome-organize-imports", "rustywind" },
+						toml = { "taplo" },
 					},
 					format_on_save = {
 						-- These options will be passed to conform.format()
