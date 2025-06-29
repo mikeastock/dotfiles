@@ -1,7 +1,8 @@
 {
-  "coc.nvim": { "branch": "release", "commit": "4fee4938afa69843a3c147f9fdb453de67a1a7a2" },
-  "fzf": { "branch": "master", "commit": "0c00b203e61bffbadbc499cbf68af6f89a5a3e29" },
-  "fzf.vim": { "branch": "master", "commit": "98dcd77a189a8a87052c20d1be8082aea60101b7" },
+  "coc.nvim": { "branch": "release", "commit": "355b32d98ddef402a3903a3985cbde2b0cfa91cf" },
+  "conform.nvim": { "branch": "master", "commit": "8132ec733eed3bf415b97b76797ca41b59f51d7d" },
+  "fzf": { "branch": "master", "commit": "b99cb6323fef55ceb458528250e3b26149f1b5b5" },
+  "fzf.vim": { "branch": "master", "commit": "3725f364ccd25b85a91970720ba9bc2931861910" },
   "lazy.nvim": { "branch": "main", "commit": "6c3bda4aca61a13a9c63f1c1d1b16b9d3be90d7a" },
   "lush.nvim": { "branch": "main", "commit": "45a79ec4acb5af783a6a29673a999ce37f00497e" },
   "nvim-treesitter": { "branch": "master", "commit": "42fc28ba918343ebfd5565147a42a26580579482" },
@@ -11,12 +12,12 @@
   "vim-argwrap": { "branch": "master", "commit": "f3e26a5ad249d09467804b92e760d08b1cc457a1" },
   "vim-dispatch": { "branch": "master", "commit": "a2ff28abdb2d89725192db5b8562977d392a4d3f" },
   "vim-easy-align": { "branch": "master", "commit": "9815a55dbcd817784458df7a18acacc6f82b1241" },
-  "vim-fugitive": { "branch": "master", "commit": "4a745ea72fa93bb15dd077109afbb3d1809383f2" },
+  "vim-fugitive": { "branch": "master", "commit": "593f831d6f6d779cbabb70a4d1e6b1b1936a88af" },
   "vim-infer-debugger": { "branch": "master", "commit": "1a462ae76e5f4f3a559a8010c1c1d39be938af5e" },
   "vim-matchup": { "branch": "master", "commit": "c478d4a72bbf397eff42743198f1939f6a264736" },
   "vim-mkdir": { "branch": "master", "commit": "f0ba7a7dc190a0cedf1d827958c99f3718109cf0" },
   "vim-rails": { "branch": "master", "commit": "b0a5c76f86ea214ade36ab0b811e730c3f0add67" },
   "vim-sneak": { "branch": "master", "commit": "18b1faf020e6a66c1ce09b3ff5e6b6feb182973b" },
   "vim-surround": { "branch": "master", "commit": "3d188ed2113431cf8dac77be61b842acb64433d9" },
-  "vim-test": { "branch": "master", "commit": "62a13a84671829ecd5db1438aaec4903c964ff2e" }
+  "vim-test": { "branch": "master", "commit": "fc80488d509e8cab635bb3b6c75f9946f562e21e" }
 }
