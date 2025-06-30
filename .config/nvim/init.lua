@@ -7,27 +7,27 @@ HOME = os.getenv("HOME")
 
 -- HELPER FUNCTIONS
 function map(mode, shortcut, command)
-	vim.api.nvim_set_keymap(mode, shortcut, command, { noremap = true, silent = true })
+  vim.api.nvim_set_keymap(mode, shortcut, command, { noremap = true, silent = true })
 end
 
 function nmap(shortcut, command)
-	map("n", shortcut, command)
+  map("n", shortcut, command)
 end
 
 function imap(shortcut, command)
-	map("i", shortcut, command)
+  map("i", shortcut, command)
 end
 
 function vmap(shortcut, command)
-	map("v", shortcut, command)
+  map("v", shortcut, command)
 end
 
 function cmap(shortcut, command)
-	map("c", shortcut, command)
+  map("c", shortcut, command)
 end
 
 function tmap(shortcut, command)
-	map("t", shortcut, command)
+  map("t", shortcut, command)
 end
 
 -- Global options
@@ -177,53 +177,53 @@ let g:ftplugin_sql_omni_key = '<C-j>'
 -- Bootstrap lazy.nvim
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not (vim.uv or vim.loop).fs_stat(lazypath) then
-	local lazyrepo = "https://github.com/folke/lazy.nvim.git"
-	local out = vim.fn.system({ "git", "clone", "--filter=blob:none", "--branch=stable", lazyrepo, lazypath })
-	if vim.v.shell_error ~= 0 then
-		vim.api.nvim_echo({
-			{ "Failed to clone lazy.nvim:\n", "ErrorMsg" },
-			{ out, "WarningMsg" },
-			{ "\nPress any key to exit..." },
-		}, true, {})
-		vim.fn.getchar()
-		os.exit(1)
-	end
+  local lazyrepo = "https://github.com/folke/lazy.nvim.git"
+  local out = vim.fn.system({ "git", "clone", "--filter=blob:none", "--branch=stable", lazyrepo, lazypath })
+  if vim.v.shell_error ~= 0 then
+    vim.api.nvim_echo({
+      { "Failed to clone lazy.nvim:\n", "ErrorMsg" },
+      { out, "WarningMsg" },
+      { "\nPress any key to exit..." },
+    }, true, {})
+    vim.fn.getchar()
+    os.exit(1)
+  end
 end
 vim.opt.rtp:prepend(lazypath)
 
 require("lazy").setup({
-	spec = {
-		-- fuzzy finding
-		-- {
-		--   "nvim-telescope/telescope.nvim",
-		--   tag = "0.1.6",
-		--   dependencies = { "nvim-lua/plenary.nvim" },
-		--   config = function()
-		--     require("telescope").setup({
-		--       defaults = {
-		--         layout_config = {
-		--           prompt_position = "top",
-		--         },
-		--         mappings = {
-		--           i = {
-		--             ["<C-j>"] = require("telescope.actions").move_selection_next,
-		--             ["<C-k>"] = require("telescope.actions").move_selection_previous,
-		--           },
-		--         },
-		--       },
-		--     })
+  spec = {
+    -- fuzzy finding
+    -- {
+    --   "nvim-telescope/telescope.nvim",
+    --   tag = "0.1.6",
+    --   dependencies = { "nvim-lua/plenary.nvim" },
+    --   config = function()
+    --     require("telescope").setup({
+    --       defaults = {
+    --         layout_config = {
+    --           prompt_position = "top",
+    --         },
+    --         mappings = {
+    --           i = {
+    --             ["<C-j>"] = require("telescope.actions").move_selection_next,
+    --             ["<C-k>"] = require("telescope.actions").move_selection_previous,
+    --           },
+    --         },
+    --       },
+    --     })
 
-		--     local builtin = require('telescope.builtin')
-		--     vim.keymap.set('n', '<leader>f', builtin.find_files, {})
-		--     vim.keymap.set('n', 'K', builtin.grep_string, {})
-		--   end,
-		-- },
-		{
-			"junegunn/fzf.vim",
-			run = ":call fzf#install()",
-			dependencies = { "junegunn/fzf" },
-			config = function()
-				vim.cmd([[
+    --     local builtin = require('telescope.builtin')
+    --     vim.keymap.set('n', '<leader>f', builtin.find_files, {})
+    --     vim.keymap.set('n', 'K', builtin.grep_string, {})
+    --   end,
+    -- },
+    {
+      "junegunn/fzf.vim",
+      run = ":call fzf#install()",
+      dependencies = { "junegunn/fzf" },
+      config = function()
+        vim.cmd([[
           let $FZF_DEFAULT_COMMAND = 'rg --hidden --glob "!**/.git/**" --files'
 
           " Empty value to disable preview window altogether
@@ -236,152 +236,152 @@ require("lazy").setup({
           let g:fzf_history_dir = '~/.local/share/fzf-history'
         ]])
 
-				nmap("<Leader>f", ":Files<CR>")
-				nmap("K", ":Rg <C-R><C-W><CR>")
-			end,
-		},
+        nmap("<Leader>f", ":Files<CR>")
+        nmap("K", ":Rg <C-R><C-W><CR>")
+      end,
+    },
 
-		-- UI
+    -- UI
 
-		-- workflow
-		{
-			"FooSoft/vim-argwrap",
-			config = function()
-				nmap("<Leader>a", "<cmd>ArgWrap<CR>")
-				vim.g.argwrap_tail_comma = true
-			end,
-		},
+    -- workflow
+    {
+      "FooSoft/vim-argwrap",
+      config = function()
+        nmap("<Leader>a", "<cmd>ArgWrap<CR>")
+        vim.g.argwrap_tail_comma = true
+      end,
+    },
 
-		-- {
-		--   "lewis6991/gitsigns.nvim",
-		--   event = "VeryLazy",
-		--   opts = {},
-		-- },
+    -- {
+    --   "lewis6991/gitsigns.nvim",
+    --   event = "VeryLazy",
+    --   opts = {},
+    -- },
 
-		"junegunn/vim-easy-align",
-		{
-			"justinmk/vim-sneak",
-			config = function()
-				nmap("f", "<Plug>Sneak_f")
-				nmap("F", "<Plug>Sneak_F")
-			end,
-		},
-		"mikeastock/vim-infer-debugger",
-		"pbrisbin/vim-mkdir",
-		{
-			"tpope/vim-abolish",
-			setup = function()
-				vim.cmd([[
+    "junegunn/vim-easy-align",
+    {
+      "justinmk/vim-sneak",
+      config = function()
+        nmap("f", "<Plug>Sneak_f")
+        nmap("F", "<Plug>Sneak_F")
+      end,
+    },
+    "mikeastock/vim-infer-debugger",
+    "pbrisbin/vim-mkdir",
+    {
+      "tpope/vim-abolish",
+      setup = function()
+        vim.cmd([[
         ]])
-			end,
-		},
-		-- "tpope/vim-commentary",
-		"tpope/vim-dispatch",
-		"tpope/vim-fugitive",
-		"tpope/vim-surround",
+      end,
+    },
+    -- "tpope/vim-commentary",
+    "tpope/vim-dispatch",
+    "tpope/vim-fugitive",
+    "tpope/vim-surround",
 
-		{
-			"andymass/vim-matchup",
-			setup = function()
-				-- may set any options here
-				vim.g.matchup_matchparen_offscreen = { method = "popup" }
-			end,
-		},
+    {
+      "andymass/vim-matchup",
+      setup = function()
+        -- may set any options here
+        vim.g.matchup_matchparen_offscreen = { method = "popup" }
+      end,
+    },
 
-		-- testing
-		{
-			"vim-test/vim-test",
-			init = function()
-				vim.g["test#strategy"] = {
-					nearest = "basic",
-					file = "basic",
-					suite = "dispatch",
-				}
-				-- vim.g["test#neovim#term_position"] = "botright"
+    -- testing
+    {
+      "vim-test/vim-test",
+      init = function()
+        vim.g["test#strategy"] = {
+          nearest = "basic",
+          file = "basic",
+          suite = "dispatch",
+        }
+        -- vim.g["test#neovim#term_position"] = "botright"
 
-				-- vim.keymap.set('n', '<Leader>s', function() require('neotest').run.run() end)
-				-- nmap("<Leader>s", "<cmd>lua require('neotest').run.run()<CR>")
-				nmap("<Leader>s", ":TestNearest<CR>")
-				-- vim.keymap.set('n', '<Leader>r', function() require('neotest').run.run(vim.fn.expand('%')) end)
-				-- nmap("<Leader>r", "<cmd>lua require('neotest').run.run(vim.fn.expand('%'))<CR>")
-				nmap("<Leader>r", ":TestFile<CR>")
+        -- vim.keymap.set('n', '<Leader>s', function() require('neotest').run.run() end)
+        -- nmap("<Leader>s", "<cmd>lua require('neotest').run.run()<CR>")
+        nmap("<Leader>s", ":TestNearest<CR>")
+        -- vim.keymap.set('n', '<Leader>r', function() require('neotest').run.run(vim.fn.expand('%')) end)
+        -- nmap("<Leader>r", "<cmd>lua require('neotest').run.run(vim.fn.expand('%'))<CR>")
+        nmap("<Leader>r", ":TestFile<CR>")
 
-				-- Make escape work in the Neovim terminal.
-				tmap("<Esc>", "<C-\\><C-n>")
-			end,
-		},
-		-- "kassio/neoterm",
-		-- {
-		--   "nvim-neotest/neotest",
-		--   dependencies = {
-		--     "nvim-lua/plenary.nvim",
-		--     "antoinemadec/FixCursorHold.nvim",
-		--     "nvim-treesitter/nvim-treesitter",
-		--     "mikeastock/neotest-minitest",
-		--   },
-		--   config = function()
-		--     require("neotest").setup({
-		--       default_strategy = "integrated",
-		--       adapters = {
-		--         require("neotest-minitest")({
-		--           test_cmd = function()
-		--             return vim.tbl_flatten({
-		--               "bundle",
-		--               "exec",
-		--               "rails",
-		--               "test",
-		--             })
-		--           end,
-		--         }),
-		--       },
-		--     })
-		--   end,
-		-- },
+        -- Make escape work in the Neovim terminal.
+        tmap("<Esc>", "<C-\\><C-n>")
+      end,
+    },
+    -- "kassio/neoterm",
+    -- {
+    --   "nvim-neotest/neotest",
+    --   dependencies = {
+    --     "nvim-lua/plenary.nvim",
+    --     "antoinemadec/FixCursorHold.nvim",
+    --     "nvim-treesitter/nvim-treesitter",
+    --     "mikeastock/neotest-minitest",
+    --   },
+    --   config = function()
+    --     require("neotest").setup({
+    --       default_strategy = "integrated",
+    --       adapters = {
+    --         require("neotest-minitest")({
+    --           test_cmd = function()
+    --             return vim.tbl_flatten({
+    --               "bundle",
+    --               "exec",
+    --               "rails",
+    --               "test",
+    --             })
+    --           end,
+    --         }),
+    --       },
+    --     })
+    --   end,
+    -- },
 
-		-- colors/themes
-		{
-			"lmantw/themify.nvim",
-			lazy = false,
-			priority = 999,
-			config = function()
-				require("themify").setup({
-					"catppuccin/nvim",
-					"folke/tokyonight.nvim",
-					"ellisonleao/gruvbox.nvim",
-					"sainnhe/everforest",
-					"shaunsingh/nord.nvim",
-					"EdenEast/nightfox.nvim",
-					"neanias/everforest-nvim",
-					"rebelot/kanagawa.nvim",
-					"nyoom-engineering/oxocarbon.nvim",
-					"jacoborus/tender.vim",
-					"scottmckendry/cyberdream.nvim",
-					"olimorris/onedarkpro.nvim",
-					"zenbones-theme/zenbones.nvim",
-				})
-			end,
-			dependencies = {
-				"rktjmp/lush.nvim", -- Used by zenbones theme
-			},
-		},
-		-- {
-		--   "catppuccin/nvim",
-		--   name = "catppuccin",
-		--   priority = 1000
-		-- },
-		-- {
-		--   "folke/tokyonight.nvim",
-		--   lazy = true,
-		--   opts = { style = "moon" },
-		-- },
+    -- colors/themes
+    {
+      "lmantw/themify.nvim",
+      lazy = false,
+      priority = 999,
+      config = function()
+        require("themify").setup({
+          "catppuccin/nvim",
+          "folke/tokyonight.nvim",
+          "ellisonleao/gruvbox.nvim",
+          "sainnhe/everforest",
+          "shaunsingh/nord.nvim",
+          "EdenEast/nightfox.nvim",
+          "neanias/everforest-nvim",
+          "rebelot/kanagawa.nvim",
+          "nyoom-engineering/oxocarbon.nvim",
+          "jacoborus/tender.vim",
+          "scottmckendry/cyberdream.nvim",
+          "olimorris/onedarkpro.nvim",
+          "zenbones-theme/zenbones.nvim",
+        })
+      end,
+      dependencies = {
+        "rktjmp/lush.nvim", -- Used by zenbones theme
+      },
+    },
+    -- {
+    --   "catppuccin/nvim",
+    --   name = "catppuccin",
+    --   priority = 1000
+    -- },
+    -- {
+    --   "folke/tokyonight.nvim",
+    --   lazy = true,
+    --   opts = { style = "moon" },
+    -- },
 
-		-- COC
-		{
-			"neoclide/coc.nvim",
-			branch = "release",
-			event = "VeryLazy",
-			config = function()
-				vim.cmd([[
+    -- COC
+    {
+      "neoclide/coc.nvim",
+      branch = "release",
+      event = "VeryLazy",
+      config = function()
+        vim.cmd([[
         "COC
         inoremap <expr> <cr> coc#pum#visible() ? coc#_select_confirm() : "\<CR>"
 
@@ -397,107 +397,129 @@ require("lazy").setup({
           \ 'rspec.ruby': 'ruby',
           \ }
         ]])
-			end,
-		},
-		-- AI
-		-- {
-		--   "ggml-org/llama.vim",
-		-- },
-		{
-			"supermaven-inc/supermaven-nvim",
-			config = function()
-				require("supermaven-nvim").setup({
-					keymaps = {
-						accept_suggestion = "<C-f>",
-					},
-				})
-			end,
-		},
+      end,
+    },
+    -- AI
+    -- {
+    --   "ggml-org/llama.vim",
+    -- },
+    {
+      "supermaven-inc/supermaven-nvim",
+      config = function()
+        require("supermaven-nvim").setup({
+          keymaps = {
+            accept_suggestion = "<C-f>",
+          },
+        })
+      end,
+    },
 
-		-- Tree sitter
-		{
-			"nvim-treesitter/nvim-treesitter",
-			run = ":TSUpdate",
-			event = "BufRead",
-			config = function()
-				local configs = require("nvim-treesitter.configs")
+    -- Tree sitter
+    {
+      "nvim-treesitter/nvim-treesitter",
+      run = ":TSUpdate",
+      event = "BufRead",
+      config = function()
+        local configs = require("nvim-treesitter.configs")
 
-				configs.setup({
-					ensure_installed = {
-						"lua",
-						"javascript",
-						"html",
-						"css",
-						"typescript",
-						"tsx",
-						"ruby",
-					},
-					sync_install = false,
-					highlight = { enable = true },
-					indent = { enable = true },
-				})
-			end,
-		},
+        configs.setup({
+          ensure_installed = {
+            "lua",
+            "javascript",
+            "html",
+            "css",
+            "typescript",
+            "tsx",
+            "ruby",
+          },
+          sync_install = false,
+          highlight = { enable = true },
+          indent = { enable = true },
+        })
+      end,
+    },
 
-		-- Formatting
-		{
-			"stevearc/conform.nvim",
-			config = function()
-				require("conform").setup({
-					formatters_by_ft = {
-						eruby = { "erb_format", "rustywind" },
-						javascript = { "biome", "biome-check", "biome-organize-imports", "rustywind" },
-						lua = { "stylua" },
-						python = { "isort", "black" },
-						rust = { "rustfmt", lsp_format = "fallback" },
-						typescript = { "biome", "biome-check", "biome-organize-imports", "rustywind" },
-						typescriptreact = { "biome", "biome-check", "biome-organize-imports", "rustywind" },
-						toml = { "taplo" },
-					},
-					format_on_save = {
-						-- These options will be passed to conform.format()
-						timeout_ms = 500,
-						lsp_format = "fallback",
-					},
-				})
-			end,
-		},
+    -- Formatting
+    {
+      "stevearc/conform.nvim",
+      config = function()
+        -- Command to enable/disable autoformat-on-save
+        vim.api.nvim_create_user_command("FormatDisable", function(args)
+          if args.bang then
+            -- FormatDisable! will disable formatting just for this buffer
+            vim.b.disable_autoformat = true
+          else
+            vim.g.disable_autoformat = true
+          end
+        end, {
+          desc = "Disable autoformat-on-save",
+          bang = true,
+        })
+        vim.api.nvim_create_user_command("FormatEnable", function()
+          vim.b.disable_autoformat = false
+          vim.g.disable_autoformat = false
+        end, {
+          desc = "Re-enable autoformat-on-save",
+        })
 
-		-- Langauge specific
+        require("conform").setup({
+          formatters_by_ft = {
+            eruby = { "erb_format", "rustywind" },
+            javascript = { "biome", "biome-check", "biome-organize-imports", "rustywind" },
+            lua = { "stylua" },
+            python = { "isort", "black" },
+            -- ruby = { "syntax_tree", " rubocop" },
+            rust = { "rustfmt", lsp_format = "fallback" },
+            toml = { "taplo" },
+            typescript = { "biome", "biome-check", "biome-organize-imports", "rustywind" },
+            typescriptreact = { "biome", "biome-check", "biome-organize-imports", "rustywind" },
+          },
+          format_on_save = function(bufnr)
+            -- Disable with a global or buffer-local variable
+            if vim.g.disable_autoformat or vim.b[bufnr].disable_autoformat then
+              return
+            end
+            return { timeout_ms = 500, lsp_format = "fallback" }
+          end,
+        })
+      end,
+    },
 
-		-- JS
-		-- { "HerringtonDarkholme/yats.vim",           ft = "typescript" },
-		-- { "othree/javascript-libraries-syntax.vim", ft = "javascript" },
-		-- { "pangloss/vim-javascript",                ft = "javascript" },
+    -- Langauge specific
 
-		-- Ruby
-		-- { "Keithbsmiley/rspec.vim", ft = "ruby" },
-		{
-			"tpope/vim-rails",
-			ft = "ruby",
-			config = function()
-				-- disable autocmd set filetype=eruby.yaml
-				vim.api.nvim_create_autocmd("FileType", {
-					pattern = "eruby.yaml",
-					command = "set filetype=yaml",
-				})
-			end,
-		},
-		-- { "vim-ruby/vim-ruby",                      ft = "ruby" },
+    -- JS
+    -- { "HerringtonDarkholme/yats.vim",           ft = "typescript" },
+    -- { "othree/javascript-libraries-syntax.vim", ft = "javascript" },
+    -- { "pangloss/vim-javascript",                ft = "javascript" },
 
-		-- Elixir
-		-- { "elixir-lang/vim-elixir", ft = "elixir,eelixir" },
-		-- { "mhinz/vim-mix-format",   ft = "elixir,eelixir" },
+    -- Ruby
+    -- { "Keithbsmiley/rspec.vim", ft = "ruby" },
+    {
+      "tpope/vim-rails",
+      ft = "ruby",
+      config = function()
+        -- disable autocmd set filetype=eruby.yaml
+        vim.api.nvim_create_autocmd("FileType", {
+          pattern = "eruby.yaml",
+          command = "set filetype=yaml",
+        })
+      end,
+    },
+    -- { "vim-ruby/vim-ruby",                      ft = "ruby" },
 
-		-- Misc
-		-- { "amadeus/vim-mjml",       ft = "mjml" },
-		-- { "andys8/vim-elm-syntax",  ft = "elm" },
-		-- { "dag/vim-fish",           ft = "fish" },
-		-- { "fatih/vim-go",           ft = "golang" },
-		-- { "hashivim/vim-terraform", ft = "terraform" },
-		-- { "jvirtanen/vim-hcl",                      ft = "hcl" },
-		-- { "rust-lang/rust.vim",     ft = "rust" },
-	},
+    -- Elixir
+    -- { "elixir-lang/vim-elixir", ft = "elixir,eelixir" },
+    -- { "mhinz/vim-mix-format",   ft = "elixir,eelixir" },
+
+    -- Misc
+    -- { "amadeus/vim-mjml",       ft = "mjml" },
+    -- { "andys8/vim-elm-syntax",  ft = "elm" },
+    -- { "dag/vim-fish",           ft = "fish" },
+    -- { "fatih/vim-go",           ft = "golang" },
+    -- { "hashivim/vim-terraform", ft = "terraform" },
+    -- { "jvirtanen/vim-hcl",                      ft = "hcl" },
+    -- { "rust-lang/rust.vim",     ft = "rust" },
+  },
 })
 
 --##############################################################################
@@ -553,63 +575,63 @@ nmap("<Leader>n", ":call RenameFile()<CR>")
 -- Configure Tabline
 -- Function to create a bufferline that only shows full paths for duplicated filenames
 function _G.MyBufferline()
-	local s = ""
-	local current = vim.fn.bufnr("%")
-	local buffers = vim.fn.getbufinfo({ buflisted = 1 })
+  local s = ""
+  local current = vim.fn.bufnr("%")
+  local buffers = vim.fn.getbufinfo({ buflisted = 1 })
 
-	-- First, collect all filenames to check for duplicates
-	local filename_counts = {}
-	local duplicate_files = {}
+  -- First, collect all filenames to check for duplicates
+  local filename_counts = {}
+  local duplicate_files = {}
 
-	-- Count occurrences of each filename
-	for _, buf in ipairs(buffers) do
-		local name = buf.name ~= "" and vim.fn.fnamemodify(buf.name, ":t") or "[No Name]"
-		filename_counts[name] = (filename_counts[name] or 0) + 1
+  -- Count occurrences of each filename
+  for _, buf in ipairs(buffers) do
+    local name = buf.name ~= "" and vim.fn.fnamemodify(buf.name, ":t") or "[No Name]"
+    filename_counts[name] = (filename_counts[name] or 0) + 1
 
-		-- If we've seen this name more than once, mark it as a duplicate
-		if filename_counts[name] > 1 then
-			duplicate_files[name] = true
-		end
-	end
+    -- If we've seen this name more than once, mark it as a duplicate
+    if filename_counts[name] > 1 then
+      duplicate_files[name] = true
+    end
+  end
 
-	-- Now build the bufferline
-	for _, buf in ipairs(buffers) do
-		-- Select the highlighting
-		if buf.bufnr == current then
-			s = s .. "%#TabLineSel#"
-		else
-			s = s .. "%#TabLine#"
-		end
+  -- Now build the bufferline
+  for _, buf in ipairs(buffers) do
+    -- Select the highlighting
+    if buf.bufnr == current then
+      s = s .. "%#TabLineSel#"
+    else
+      s = s .. "%#TabLine#"
+    end
 
-		-- Get the buffer name
-		local name
-		if buf.name ~= "" then
-			local basename = vim.fn.fnamemodify(buf.name, ":t")
+    -- Get the buffer name
+    local name
+    if buf.name ~= "" then
+      local basename = vim.fn.fnamemodify(buf.name, ":t")
 
-			-- Show full path only for files with duplicate names
-			if duplicate_files[basename] then
-				name = vim.fn.fnamemodify(buf.name, ":~:.")
-			else
-				name = basename
-			end
-		else
-			name = "[No Name]"
-		end
+      -- Show full path only for files with duplicate names
+      if duplicate_files[basename] then
+        name = vim.fn.fnamemodify(buf.name, ":~:.")
+      else
+        name = basename
+      end
+    else
+      name = "[No Name]"
+    end
 
-		s = s .. " " .. name
+    s = s .. " " .. name
 
-		-- Add modified indicator
-		if buf.changed == 1 then
-			s = s .. " [+]"
-		end
+    -- Add modified indicator
+    if buf.changed == 1 then
+      s = s .. " [+]"
+    end
 
-		s = s .. " "
-	end
+    s = s .. " "
+  end
 
-	-- Fill the rest of the tabline
-	s = s .. "%#TabLineFill#"
+  -- Fill the rest of the tabline
+  s = s .. "%#TabLineFill#"
 
-	return s
+  return s
 end
 
 -- Set the tabline to use our custom function
