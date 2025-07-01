@@ -383,7 +383,7 @@ require("lazy").setup({
       config = function()
         vim.cmd([[
         "COC
-        inoremap <expr> <cr> coc#pum#visible() ? coc#_select_confirm() : "\<CR>"
+        inoremap <expr> <cr> coc#pum#visible() ? coc#pum#confirm() : "\<CR>"
 
         nmap <silent> gr <Plug>(coc-references)
         nmap <silent> <F3> <Plug>(coc-rename)
@@ -461,25 +461,6 @@ require("lazy").setup({
         end, {
           desc = "Re-enable autoformat-on-save",
         })
-
-        -- Override biome-organize-imports as it currently passes --assist-enabled=false which is incorrect
-        -- https://github.com/stevearc/conform.nvim/pull/734
-        local util = require("conform.util")
-        require("conform").formatters["biome-organize-imports"] = {
-          inherit = false,
-          command = util.from_node_modules("biome"),
-          stdin = true,
-          args = {
-            "check",
-            "--write",
-            "--formatter-enabled=false",
-            "--linter-enabled=false",
-            "--organize-imports-enabled=true",
-            "--assists-enabled=true",
-            "--stdin-file-path",
-            "$FILENAME",
-          },
-        }
 
         require("conform").setup({
           formatters_by_ft = {
