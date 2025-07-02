@@ -1,7 +1,7 @@
 {
-  "coc.nvim": { "branch": "release", "commit": "355b32d98ddef402a3903a3985cbde2b0cfa91cf" },
-  "conform.nvim": { "branch": "master", "commit": "8132ec733eed3bf415b97b76797ca41b59f51d7d" },
-  "fzf": { "branch": "master", "commit": "b99cb6323fef55ceb458528250e3b26149f1b5b5" },
+  "coc.nvim": { "branch": "release", "commit": "72bb402f09230efb27d6500986ff85fd09dd4c4c" },
+  "conform.nvim": { "branch": "master", "commit": "f54259518695178168fbad442468e25f121230d4" },
+  "fzf": { "branch": "master", "commit": "976001e47459973b5e72565f3047cc9d9e20241d" },
   "fzf.vim": { "branch": "master", "commit": "3725f364ccd25b85a91970720ba9bc2931861910" },
   "lazy.nvim": { "branch": "main", "commit": "6c3bda4aca61a13a9c63f1c1d1b16b9d3be90d7a" },
   "lush.nvim": { "branch": "main", "commit": "45a79ec4acb5af783a6a29673a999ce37f00497e" },
