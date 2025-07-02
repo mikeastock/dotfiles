@@ -4,6 +4,4 @@ root: <%= args[2] || "~/code/buildr/app" %>
 on_project_first_start: pnpm install
 
 windows:
-  - nvim: nvim
-  - git:
-  - server:
+  - ai: claude
