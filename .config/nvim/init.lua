@@ -491,11 +491,6 @@ require("lazy").setup({
       "neovim/nvim-lspconfig",
       config = function()
         vim.lsp.enable("ruby_lsp")
-        -- vim.lsp.config("ruby_lsp", {
-        --   settings = {
-        --     ruby_lsp = {
-        --   },
-        -- })
 
         vim.diagnostic.config({
           virtual_lines = {
