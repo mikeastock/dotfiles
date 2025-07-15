@@ -417,8 +417,9 @@ require("lazy").setup({
     -- Tree sitter
     {
       "nvim-treesitter/nvim-treesitter",
-      run = ":TSUpdate",
-      event = "BufRead",
+      branch = "master",
+      lazy = false,
+      build = ":TSUpdate",
       config = function()
         local configs = require("nvim-treesitter.configs")
 
@@ -490,6 +491,17 @@ require("lazy").setup({
       "neovim/nvim-lspconfig",
       config = function()
         vim.lsp.enable("ruby_lsp")
+        -- vim.lsp.config("ruby_lsp", {
+        --   settings = {
+        --     ruby_lsp = {
+        --   },
+        -- })
+
+        vim.diagnostic.config({
+          virtual_lines = {
+            current_line = true,
+          },
+        })
       end,
     },
 
