@@ -71,7 +71,7 @@ alias ci="git ci-status -v"
 alias glist="git for-each-ref --sort=-committerdate refs/heads/ --format='%(committerdate:short) %(refname:short)' | head -n 10"
 
 alias tf="terraform"
-alias n="pnpm"
+alias n="corepack pnpm"
 alias gt="gtree"
 
 function fco -d "Fuzzy-find and checkout a branch"
@@ -95,13 +95,6 @@ function ssm-connect
   aws --profile $profile ssm start-session --region us-east-1 --target $instance_id
 end
 
-####### AI CONFIG
-
-function ai -d "Claude using Bash"
-  # ANTHROPIC_BASE_URL=http://localhost:8082
-  SHELL=/bin/bash claude
-end
-
 ####### PATH SETUP
 
 # Homebrew
@@ -121,6 +114,8 @@ zoxide init fish | source
 
 ###### ASDF
 set -gx --prepend PATH "$HOME/.asdf/shims"
+# Setup after ASDF as we prefer using the local version of claude
+alias claude="/Users/mikeastock/.claude/local/claude"
 
 ###### Orbstack
 source ~/.orbstack/shell/init2.fish 2>/dev/null || :

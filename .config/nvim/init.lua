@@ -485,6 +485,14 @@ require("lazy").setup({
       end,
     },
 
+    -- LSP
+    {
+      "neovim/nvim-lspconfig",
+      config = function()
+        vim.lsp.enable("ruby_lsp")
+      end,
+    },
+
     -- Langauge specific
 
     -- JS
