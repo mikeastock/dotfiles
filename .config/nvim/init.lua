@@ -375,30 +375,30 @@ require("lazy").setup({
     --   opts = { style = "moon" },
     -- },
 
-    -- COC
-    {
-      "neoclide/coc.nvim",
-      branch = "release",
-      event = "VeryLazy",
-      config = function()
-        vim.cmd([[
-        "COC
-        inoremap <expr> <cr> coc#pum#visible() ? coc#pum#confirm() : "\<CR>"
-
-        nmap <silent> gr <Plug>(coc-references)
-        nmap <silent> <F3> <Plug>(coc-rename)
-
-        " Find symbol of current document.
-        nnoremap <silent><nowait> <space>o  :<C-u>CocList outline<cr>
-
-        nmap <silent> <F2> <Plug>(coc-diagnostic-next)
-
-        let g:coc_filetype_map = {
-          \ 'rspec.ruby': 'ruby',
-          \ }
-        ]])
-      end,
-    },
+    -- -- COC
+    -- {
+    --   "neoclide/coc.nvim",
+    --   branch = "release",
+    --   event = "VeryLazy",
+    --   config = function()
+    --     vim.cmd([[
+    --     "COC
+    --     inoremap <expr> <cr> coc#pum#visible() ? coc#pum#confirm() : "\<CR>"
+    --
+    --     nmap <silent> gr <Plug>(coc-references)
+    --     nmap <silent> <F3> <Plug>(coc-rename)
+    --
+    --     " Find symbol of current document.
+    --     nnoremap <silent><nowait> <space>o  :<C-u>CocList outline<cr>
+    --
+    --     nmap <silent> <F2> <Plug>(coc-diagnostic-next)
+    --
+    --     let g:coc_filetype_map = {
+    --       \ 'rspec.ruby': 'ruby',
+    --       \ }
+    --     ]])
+    --   end,
+    -- },
     -- AI
     -- {
     --   "ggml-org/llama.vim",
@@ -468,7 +468,7 @@ require("lazy").setup({
             eruby = { "erb_format", "rustywind" },
             javascript = { "biome", "biome-check", "biome-organize-imports", "rustywind" },
             lua = { "stylua" },
-            python = { "isort", "black" },
+            python = { "ruff" },
             -- ruby = { "syntax_tree", " rubocop" },
             rust = { "rustfmt", lsp_format = "fallback" },
             toml = { "taplo" },
@@ -491,6 +491,8 @@ require("lazy").setup({
       "neovim/nvim-lspconfig",
       config = function()
         vim.lsp.enable("ruby_lsp")
+        vim.lsp.enable("ts_ls")
+        vim.lsp.enable("tailwindcss")
 
         vim.diagnostic.config({
           virtual_lines = {
