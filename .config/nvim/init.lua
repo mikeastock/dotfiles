@@ -468,7 +468,7 @@ require("lazy").setup({
             eruby = { "erb_format", "rustywind" },
             javascript = { "biome", "biome-check", "biome-organize-imports", "rustywind" },
             lua = { "stylua" },
-            python = { "ruff" },
+            python = { "ruff_fix", "ruff_format", "ruff_organize_imports" },
             -- ruby = { "syntax_tree", " rubocop" },
             rust = { "rustfmt", lsp_format = "fallback" },
             toml = { "taplo" },
