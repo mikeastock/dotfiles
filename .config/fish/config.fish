@@ -116,6 +116,10 @@ zoxide init fish | source
 set -gx --prepend PATH "$HOME/.asdf/shims"
 # Setup after ASDF as we prefer using the local version of claude
 alias claude="/Users/mikeastock/.claude/local/claude"
+alias codex="codex -m gpt-5 -c model_reasoning_effort='high'"
+
+###### rv (Like uv but for Ruby)
+# rv shell init fish | source
 
 ###### Orbstack
 source ~/.orbstack/shell/init2.fish 2>/dev/null || :
