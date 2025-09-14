@@ -100,9 +100,6 @@ end
 # Homebrew
 fish_add_path /opt/homebrew/bin
 
-####### Direnv
-direnv hook fish | source
-
 ####### Postgres 15
 fish_add_path /opt/homebrew/opt/postgresql@15/bin/
 
