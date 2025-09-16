@@ -97,13 +97,15 @@ end
 
 ####### PATH SETUP
 
+####### Homebrew
+fish_add_path /opt/homebrew/bin
+
+####### Mise
+mise activate fish | source
+
 # Local bin dirs - Added after Mise so that these take precedence
 fish_add_path ~/.local/bin
 alias claude="/Users/mikeastock/.claude/local/claude"
-alias codex="codex -m gpt-5 -c model_reasoning_effort='high'"
-
-# Homebrew
-fish_add_path /opt/homebrew/bin
 
 ####### Postgres 15
 fish_add_path /opt/homebrew/opt/postgresql@15/bin/
