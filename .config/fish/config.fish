@@ -97,6 +97,11 @@ end
 
 ####### PATH SETUP
 
+# Local bin dirs - Added after Mise so that these take precedence
+fish_add_path ~/.local/bin
+alias claude="/Users/mikeastock/.claude/local/claude"
+alias codex="codex -m gpt-5 -c model_reasoning_effort='high'"
+
 # Homebrew
 fish_add_path /opt/homebrew/bin
 
@@ -109,20 +114,11 @@ fish_add_path /opt/homebrew/opt/gnu-sed/libexec/gnubin/
 ####### Z Alt
 zoxide init fish | source
 
-###### ASDF
-set -gx --prepend PATH "$HOME/.asdf/shims"
-# Setup after ASDF as we prefer using the local version of claude
-alias claude="/Users/mikeastock/.claude/local/claude"
-alias codex="codex -m gpt-5 -c model_reasoning_effort='high'"
-
 ###### rv (Like uv but for Ruby)
 # rv shell init fish | source
 
 ###### Orbstack
 source ~/.orbstack/shell/init2.fish 2>/dev/null || :
-
-# Local bin dirs - Added after Mise so that these take precedence
-fish_add_path ~/.local/bin
 
 ###### History Search
 atuin init fish --disable-up-arrow | source
