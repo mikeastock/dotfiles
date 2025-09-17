@@ -107,8 +107,8 @@ mise activate fish | source
 fish_add_path ~/.local/bin
 alias claude="/Users/mikeastock/.claude/local/claude"
 
-####### Postgres 15
-fish_add_path /opt/homebrew/opt/postgresql@15/bin/
+####### Postgres 17
+fish_add_path /opt/homebrew/opt/postgresql@17/bin/
 
 ####### GNU sed
 fish_add_path /opt/homebrew/opt/gnu-sed/libexec/gnubin/
