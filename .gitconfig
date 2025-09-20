@@ -26,7 +26,6 @@
 [push]
   default = current
 [core]
-  pager = delta
   editor = nvim
   excludesfile = /Users/mikeastock/.gitignore
 [color]
@@ -66,13 +65,6 @@
 	gpgsign = true
 [merge]
 	conflictstyle = zdiff3
-
-[delta]
-  navigate = true    # use n and N to move between diff sections
-
-  # delta detects terminal colors automatically; set one of these to disable auto-detection
-  # dark = true
-  # light = true
 
 [filter "sqlite3tosql"]
     clean = "f() { tmpfile=$(mktemp); cat - > $tmpfile; sqlite3 $tmpfile .dump; rm $tmpfile; }; f"
