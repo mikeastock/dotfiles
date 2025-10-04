@@ -252,12 +252,6 @@ require("lazy").setup({
       end,
     },
 
-    -- {
-    --   "lewis6991/gitsigns.nvim",
-    --   event = "VeryLazy",
-    --   opts = {},
-    -- },
-
     "junegunn/vim-easy-align",
     {
       "justinmk/vim-sneak",
@@ -310,65 +304,13 @@ require("lazy").setup({
         tmap("<Esc>", "<C-\\><C-n>")
       end,
     },
-    -- "kassio/neoterm",
-    -- {
-    --   "nvim-neotest/neotest",
-    --   dependencies = {
-    --     "nvim-lua/plenary.nvim",
-    --     "antoinemadec/FixCursorHold.nvim",
-    --     "nvim-treesitter/nvim-treesitter",
-    --     "mikeastock/neotest-minitest",
-    --   },
-    --   config = function()
-    --     require("neotest").setup({
-    --       default_strategy = "integrated",
-    --       adapters = {
-    --         require("neotest-minitest")({
-    --           test_cmd = function()
-    --             return vim.tbl_flatten({
-    --               "bundle",
-    --               "exec",
-    --               "rails",
-    --               "test",
-    --             })
-    --           end,
-    --         }),
-    --       },
-    --     })
-    --   end,
-    -- },
 
     -- colors/themes
     {
-      "lmantw/themify.nvim",
-      lazy = false,
-      priority = 999,
-      config = function()
-        require("themify").setup({
-          "catppuccin/nvim",
-          "folke/tokyonight.nvim",
-          "ellisonleao/gruvbox.nvim",
-          "sainnhe/everforest",
-          "shaunsingh/nord.nvim",
-          "EdenEast/nightfox.nvim",
-          "neanias/everforest-nvim",
-          "rebelot/kanagawa.nvim",
-          "nyoom-engineering/oxocarbon.nvim",
-          "jacoborus/tender.vim",
-          "scottmckendry/cyberdream.nvim",
-          "olimorris/onedarkpro.nvim",
-          "zenbones-theme/zenbones.nvim",
-        })
-      end,
-      dependencies = {
-        "rktjmp/lush.nvim", -- Used by zenbones theme
-      },
+      "catppuccin/nvim",
+      name = "catppuccin",
+      priority = 1000,
     },
-    -- {
-    --   "catppuccin/nvim",
-    --   name = "catppuccin",
-    --   priority = 1000
-    -- },
     -- {
     --   "folke/tokyonight.nvim",
     --   lazy = true,
@@ -659,4 +601,4 @@ vim.opt.tabline = "%!v:lua.MyBufferline()"
 -- LAST
 -- vim.cmd.colorscheme "tokyonight-night"
 -- vim.cmd.colorscheme "tokyonight-day"
--- vim.cmd.colorscheme "catppuccin-latte"
+vim.cmd.colorscheme "catppuccin-mocha"
