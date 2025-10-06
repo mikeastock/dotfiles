@@ -435,7 +435,15 @@ require("lazy").setup({
         vim.lsp.enable("ruby_lsp")
         vim.lsp.enable("ts_ls")
         vim.lsp.enable("tailwindcss")
-        vim.lsp.enable("basedpyright")
+        vim.lsp.enable("ty")
+
+        vim.lsp.config("ty", {
+          settings = {
+            ty = {
+              diagnosticMode = "workspace",
+            },
+          },
+        })
 
         vim.diagnostic.config({
           virtual_lines = {
