@@ -23,6 +23,7 @@
   pim = pull --no-rebase origin main
   d = diff
   lc = log -n 1
+  wt = worktree
 [push]
   default = current
 [core]

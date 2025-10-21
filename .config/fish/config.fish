@@ -107,6 +107,10 @@ mise activate fish | source
 fish_add_path ~/.local/bin
 alias claude="/Users/mikeastock/.claude/local/claude"
 
+####### Claude Code Superpowers
+# https://github.com/obra/superpowers
+fish_add_path ~/.config/superpowers/skills/skills/using-skills/
+
 ####### Postgres 17
 fish_add_path /opt/homebrew/opt/postgresql@17/bin/
 
