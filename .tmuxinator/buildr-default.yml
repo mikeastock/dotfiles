@@ -1,0 +1,7 @@
+name: dev
+root: ./
+
+windows:
+  - nvim: nvim
+  - git:
+  - server: rails server
