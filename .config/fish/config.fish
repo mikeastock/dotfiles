@@ -101,6 +101,7 @@ end
 fish_add_path /opt/homebrew/bin
 
 ####### Mise
+set -g MISE_FISH_AUTO_ACTIVATE 0
 mise activate fish | source
 
 # Local bin dirs - Added after Mise so that these take precedence

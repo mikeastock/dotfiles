@@ -260,6 +260,7 @@ require("lazy").setup({
         nmap("F", "<Plug>Sneak_F")
       end,
     },
+    "unblevable/quick-scope",
     "mikeastock/vim-infer-debugger",
     "pbrisbin/vim-mkdir",
     {
