@@ -134,7 +134,11 @@ endfunction
 call MapCR()
 ]])
 
-vmap("<Enter>", "<cmd>EasyAlign<CR>")
+-- vmap("<Enter>", "<cmd>EasyAlign<CR>")
+vim.cmd([[
+  nmap ga <Plug>(EasyAlign)
+  xmap ga <Plug>(EasyAlign)
+]])
 
 -- more natural movement with wrap on
 nmap("j", "gj")
@@ -260,7 +264,7 @@ require("lazy").setup({
         nmap("F", "<Plug>Sneak_F")
       end,
     },
-    "unblevable/quick-scope",
+    -- "unblevable/quick-scope",
     "mikeastock/vim-infer-debugger",
     "pbrisbin/vim-mkdir",
     {

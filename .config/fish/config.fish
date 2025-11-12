@@ -121,9 +121,6 @@ fish_add_path /opt/homebrew/opt/gnu-sed/libexec/gnubin/
 ####### Z Alt
 zoxide init fish | source
 
-###### rv (Like uv but for Ruby)
-# rv shell init fish | source
-
 ###### Orbstack
 source ~/.orbstack/shell/init2.fish 2>/dev/null || :
 
