@@ -394,9 +394,11 @@ require("lazy").setup({
             python = { "ruff_fix", "ruff_format", "ruff_organize_imports" },
             -- ruby = { "syntax_tree", " rubocop" },
             rust = { "rustfmt", lsp_format = "fallback" },
-            toml = { "taplo" },
+            toml = { "taplo", "pyproject-fmt" },
             typescript = { "biome", "biome-check", "biome-organize-imports", "rustywind" },
             typescriptreact = { "biome", "biome-check", "biome-organize-imports", "rustywind" },
+            terraform = { "terraform_fmt" },
+            ["terraform-vars"] = { "terraform_fmt" },
           },
           format_on_save = function(bufnr)
             -- Disable with a global or buffer-local variable
@@ -416,6 +418,7 @@ require("lazy").setup({
         vim.lsp.enable("ruby_lsp")
         vim.lsp.enable("ts_ls")
         vim.lsp.enable("tailwindcss")
+        vim.lsp.enable("ruff")
         vim.lsp.enable("ty")
 
         vim.lsp.config("ty", {
