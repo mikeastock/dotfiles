@@ -106,7 +106,7 @@ mise activate fish | source
 
 # Local bin dirs - Added after Mise so that these take precedence
 fish_add_path ~/.local/bin
-alias claude="/Users/mikeastock/.claude/local/claude"
+alias claude="/Users/mikeastock/.claude/local/claude --allow-dangerously-skip-permissions"
 
 ####### Claude Code Superpowers
 # https://github.com/obra/superpowers
