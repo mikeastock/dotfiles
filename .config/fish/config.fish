@@ -28,7 +28,7 @@ alias mkdir="mkdir -p"
 alias vim="nvim"
 
 alias h="heroku"
-alias hc="heroku run CONSOLE_USER=mike rails console"
+alias hc="heroku run env CONSOLE_USER=mike bin/rails console"
 
 # tmux
 alias mux="tmuxinator"
@@ -106,7 +106,7 @@ mise activate fish | source
 
 # Local bin dirs - Added after Mise so that these take precedence
 fish_add_path ~/.local/bin
-alias claude="/Users/mikeastock/.claude/local/claude --allow-dangerously-skip-permissions"
+alias claude="claude --allow-dangerously-skip-permissions"
 
 ####### Claude Code Superpowers
 # https://github.com/obra/superpowers
