@@ -348,13 +348,14 @@ require("lazy").setup({
 
         configs.setup({
           ensure_installed = {
-            "lua",
-            "javascript",
-            "html",
+            "astro",
             "css",
-            "typescript",
-            "tsx",
+            "html",
+            "javascript",
+            "lua",
             "ruby",
+            "tsx",
+            "typescript",
           },
           sync_install = false,
           highlight = { enable = true },
@@ -391,6 +392,7 @@ require("lazy").setup({
             ["terraform-vars"] = { "terraform_fmt" },
             eruby = { "erb_format", "rustywind" },
             go = { "gofmt" },
+            astro = { "biome", "biome-check", "biome-organize-imports" },
             javascript = { "biome", "biome-check", "biome-organize-imports", "rustywind" },
             lua = { "stylua" },
             python = { "ruff_fix", "ruff_format", "ruff_organize_imports" },
@@ -415,6 +417,7 @@ require("lazy").setup({
     {
       "neovim/nvim-lspconfig",
       config = function()
+        vim.lsp.enable("astro")
         vim.lsp.enable("gopls")
         vim.lsp.enable("ruby_lsp")
         vim.lsp.enable("ruff")

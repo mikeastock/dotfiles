@@ -53,6 +53,7 @@ alias gc="git commit -v"
 alias gcd="git checkout develop"
 alias gcm="git checkout main"
 alias co="git checkout"
+alias br="git branch --sort=-committerdate"
 alias gf="git-flow"
 alias gp="git push -u"
 alias gpl="git pull"
@@ -75,7 +76,7 @@ alias n="corepack pnpm"
 alias gt="gtree"
 
 function fco -d "Fuzzy-find and checkout a branch"
-  git branch --all | grep -v HEAD | string trim | fzf --header='[fuzzy:branch-checkout]' | xargs git checkout
+  git branch --all --sort=-committerdate | grep -v HEAD | string trim | fzf --header='[fuzzy:branch-checkout]' | xargs git checkout
 end
 
 function ssm-connect
@@ -111,6 +112,9 @@ alias claude="claude --allow-dangerously-skip-permissions"
 ####### Claude Code Superpowers
 # https://github.com/obra/superpowers
 fish_add_path ~/.config/superpowers/skills/skills/using-skills/
+
+####### Amp
+fish_add_path $HOME/.amp/bin
 
 ####### Postgres 17
 fish_add_path /opt/homebrew/opt/postgresql@17/bin/
