@@ -1,0 +1,12 @@
+# Superpowers skills to install (one per line)
+# Remove this file to install all skills from the plugin
+brainstorming
+dispatching-parallel-agents
+executing-plans
+subagent-driven-development
+systematic-debugging
+test-driven-development
+using-superpowers
+verification-before-completion
+writing-plans
+writing-skills

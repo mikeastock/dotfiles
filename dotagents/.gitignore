@@ -1,0 +1,3 @@
+# Build output (generated during make install)
+build/claude/
+build/pi/

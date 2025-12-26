@@ -1,8 +1,11 @@
 # Agents Makefile
 # Installs skills and custom tools for AI coding agents
 #
-# Note: Pi Coding Agent automatically reads Codex skills from ~/.codex/skills,
-# so we only install skills there. Tools are Pi-specific.
+# Skills are built from:
+#   1. plugins/<name>/skills/ (git submodules, filtered by <name>-enabled.txt if present)
+#   2. skills/ (your custom skills)
+#
+# Overrides in skill-overrides/<skill>-<agent>.md are prepended during build.
 
 # Installation directories
 PI_TOOLS_DIR := $(HOME)/.pi/agent/tools
@@ -11,9 +14,15 @@ CODEX_SKILLS_DIR := $(HOME)/.codex/skills
 
 # Source directories
 SKILLS_SRC := $(CURDIR)/skills
+PLUGINS_DIR := $(CURDIR)/plugins
+OVERRIDES_DIR := $(CURDIR)/skill-overrides
 TOOLS_SRC := $(CURDIR)/tools
+BUILD_DIR := $(CURDIR)/build
 
-.PHONY: all install install-skills install-tools install-claude install-codex clean help
+# Agents that get skills installed
+AGENTS := claude pi
+
+.PHONY: all install install-skills install-tools clean help build plugin-update
 
 all: help
 
@@ -22,64 +31,153 @@ help:
 	@echo ""
 	@echo "Usage:"
 	@echo "  make install         Install skills and tools for all agents"
-	@echo "  make install-skills  Install skills only (Claude Code, Codex CLI, Pi via Codex)"
+	@echo "  make install-skills  Install skills only (Claude Code, Pi agent)"
 	@echo "  make install-tools   Install custom tools only (Pi agent)"
-	@echo "  make install-claude  Install skills for Claude Code"
-	@echo "  make install-codex   Install skills for Codex CLI (also used by Pi agent)"
-	@echo "  make clean           Remove all installed skills and tools"
+	@echo "  make build           Build skills with overrides (without installing)"
+	@echo "  make plugin-update   Update all plugin submodules to latest"
+	@echo "  make clean           Remove all installed skills, tools, and build artifacts"
 	@echo "  make help            Show this help message"
 
 install: install-skills install-tools
 	@echo "✓ All skills and tools installed"
 
-install-skills: install-claude install-codex
-	@echo "✓ Skills installed for all agents"
+install-skills: build
+	@echo "Installing skills for Claude Code..."
+	@mkdir -p $(CLAUDE_SKILLS_DIR)
+	@for skill in $(BUILD_DIR)/claude/*/; do \
+		if [ -d "$$skill" ]; then \
+			skill_name=$$(basename "$$skill"); \
+			echo "  → $$skill_name"; \
+			rm -rf "$(CLAUDE_SKILLS_DIR)/$$skill_name"; \
+			ln -s "$$skill" "$(CLAUDE_SKILLS_DIR)/$$skill_name"; \
+		fi \
+	done
+	@echo "✓ Claude Code skills installed to $(CLAUDE_SKILLS_DIR)"
+	@echo ""
+	@echo "Installing skills for Pi agent (via Codex)..."
+	@mkdir -p $(CODEX_SKILLS_DIR)
+	@for skill in $(BUILD_DIR)/pi/*/; do \
+		if [ -d "$$skill" ]; then \
+			skill_name=$$(basename "$$skill"); \
+			echo "  → $$skill_name"; \
+			rm -rf "$(CODEX_SKILLS_DIR)/$$skill_name"; \
+			ln -s "$$skill" "$(CODEX_SKILLS_DIR)/$$skill_name"; \
+		fi \
+	done
+	@echo "✓ Pi agent skills installed to $(CODEX_SKILLS_DIR)"
 
 install-tools:
 	@echo "Installing custom tools for Pi agent..."
 	@mkdir -p $(PI_TOOLS_DIR)
-	@for tool in $(TOOLS_SRC)/pi/*/; do \
-		tool_name=$$(basename "$$tool"); \
-		echo "  → $$tool_name"; \
-		rm -rf "$(PI_TOOLS_DIR)/$$tool_name"; \
-		ln -s "$$tool" "$(PI_TOOLS_DIR)/$$tool_name"; \
-	done
+	@if [ -d "$(TOOLS_SRC)/pi" ]; then \
+		for tool in $(TOOLS_SRC)/pi/*/; do \
+			if [ -d "$$tool" ]; then \
+				tool_name=$$(basename "$$tool"); \
+				echo "  → $$tool_name"; \
+				rm -rf "$(PI_TOOLS_DIR)/$$tool_name"; \
+				ln -s "$$tool" "$(PI_TOOLS_DIR)/$$tool_name"; \
+			fi \
+		done; \
+	fi
 	@echo "✓ Pi tools installed to $(PI_TOOLS_DIR)"
 
-# Claude Code
-install-claude:
-	@echo "Installing skills for Claude Code..."
-	@mkdir -p $(CLAUDE_SKILLS_DIR)
-	@for skill in $(SKILLS_SRC)/*/; do \
-		skill_name=$$(basename "$$skill"); \
-		echo "  → $$skill_name"; \
-		rm -rf "$(CLAUDE_SKILLS_DIR)/$$skill_name"; \
-		ln -s "$$skill" "$(CLAUDE_SKILLS_DIR)/$$skill_name"; \
+# Build skills with overrides applied
+build:
+	@echo "Building skills..."
+	@rm -rf $(BUILD_DIR)/claude $(BUILD_DIR)/pi
+	@mkdir -p $(BUILD_DIR)/claude $(BUILD_DIR)/pi
+	@# Process each plugin
+	@for plugin_dir in $(PLUGINS_DIR)/*/; do \
+		if [ -d "$$plugin_dir/skills" ]; then \
+			plugin_name=$$(basename "$$plugin_dir"); \
+			enabled_file="$(PLUGINS_DIR)/$${plugin_name}-enabled.txt"; \
+			for skill_dir in $$plugin_dir/skills/*/; do \
+				if [ -d "$$skill_dir" ]; then \
+					skill_name=$$(basename "$$skill_dir"); \
+					if [ -f "$$enabled_file" ]; then \
+						if ! grep -q "^$$skill_name$$" "$$enabled_file"; then \
+							continue; \
+						fi; \
+					fi; \
+					for agent in $(AGENTS); do \
+						mkdir -p "$(BUILD_DIR)/$$agent/$$skill_name"; \
+						override_file="$(OVERRIDES_DIR)/$${skill_name}-$${agent}.md"; \
+						if [ -f "$$override_file" ]; then \
+							cat "$$override_file" "$$skill_dir/SKILL.md" > "$(BUILD_DIR)/$$agent/$$skill_name/SKILL.md"; \
+						else \
+							cp "$$skill_dir/SKILL.md" "$(BUILD_DIR)/$$agent/$$skill_name/SKILL.md"; \
+						fi; \
+						for extra in $$skill_dir/*; do \
+							if [ "$$(basename $$extra)" != "SKILL.md" ] && [ -e "$$extra" ]; then \
+								cp -r "$$extra" "$(BUILD_DIR)/$$agent/$$skill_name/"; \
+							fi; \
+						done; \
+					done; \
+					echo "  → $$skill_name (from $$plugin_name)"; \
+				fi; \
+			done; \
+		fi; \
 	done
-	@echo "✓ Claude Code skills installed to $(CLAUDE_SKILLS_DIR)"
-
-# Codex CLI (also used by Pi Coding Agent)
-install-codex:
-	@echo "Installing skills for Codex CLI (also used by Pi agent)..."
-	@mkdir -p $(CODEX_SKILLS_DIR)
-	@for skill in $(SKILLS_SRC)/*/; do \
-		skill_name=$$(basename "$$skill"); \
-		echo "  → $$skill_name"; \
-		rm -rf "$(CODEX_SKILLS_DIR)/$$skill_name"; \
-		ln -s "$$skill" "$(CODEX_SKILLS_DIR)/$$skill_name"; \
-	done
-	@echo "✓ Codex CLI skills installed to $(CODEX_SKILLS_DIR)"
+	@# Process custom skills
+	@if [ -d "$(SKILLS_SRC)" ]; then \
+		for skill_dir in $(SKILLS_SRC)/*/; do \
+			if [ -d "$$skill_dir" ]; then \
+				skill_name=$$(basename "$$skill_dir"); \
+				for agent in $(AGENTS); do \
+					mkdir -p "$(BUILD_DIR)/$$agent/$$skill_name"; \
+					override_file="$(OVERRIDES_DIR)/$${skill_name}-$${agent}.md"; \
+					if [ -f "$$override_file" ]; then \
+						cat "$$override_file" "$$skill_dir/SKILL.md" > "$(BUILD_DIR)/$$agent/$$skill_name/SKILL.md"; \
+					else \
+						cp "$$skill_dir/SKILL.md" "$(BUILD_DIR)/$$agent/$$skill_name/SKILL.md"; \
+					fi; \
+					for extra in $$skill_dir/*; do \
+						if [ "$$(basename $$extra)" != "SKILL.md" ] && [ -e "$$extra" ]; then \
+							cp -r "$$extra" "$(BUILD_DIR)/$$agent/$$skill_name/"; \
+						fi; \
+					done; \
+				done; \
+				echo "  → $$skill_name (custom)"; \
+			fi; \
+		done; \
+	fi
+	@echo "✓ Skills built to $(BUILD_DIR)"
 
 # Clean up
 clean:
 	@echo "Removing installed skills and tools..."
-	@for skill in $(SKILLS_SRC)/*/; do \
-		skill_name=$$(basename "$$skill"); \
-		rm -rf "$(CLAUDE_SKILLS_DIR)/$$skill_name"; \
-		rm -rf "$(CODEX_SKILLS_DIR)/$$skill_name"; \
-	done
-	@for tool in $(TOOLS_SRC)/pi/*/; do \
-		tool_name=$$(basename "$$tool"); \
-		rm -rf "$(PI_TOOLS_DIR)/$$tool_name"; \
-	done
+	@rm -rf $(BUILD_DIR)/claude $(BUILD_DIR)/pi
+	@# Clean Claude skills
+	@if [ -d "$(BUILD_DIR)" ]; then \
+		for skill in $(BUILD_DIR)/claude/*/; do \
+			if [ -d "$$skill" ]; then \
+				skill_name=$$(basename "$$skill"); \
+				rm -rf "$(CLAUDE_SKILLS_DIR)/$$skill_name"; \
+			fi \
+		done; \
+	fi
+	@# Clean Codex/Pi skills
+	@if [ -d "$(BUILD_DIR)" ]; then \
+		for skill in $(BUILD_DIR)/pi/*/; do \
+			if [ -d "$$skill" ]; then \
+				skill_name=$$(basename "$$skill"); \
+				rm -rf "$(CODEX_SKILLS_DIR)/$$skill_name"; \
+			fi \
+		done; \
+	fi
+	@# Clean Pi tools
+	@if [ -d "$(TOOLS_SRC)/pi" ]; then \
+		for tool in $(TOOLS_SRC)/pi/*/; do \
+			if [ -d "$$tool" ]; then \
+				tool_name=$$(basename "$$tool"); \
+				rm -rf "$(PI_TOOLS_DIR)/$$tool_name"; \
+			fi \
+		done; \
+	fi
 	@echo "✓ Cleaned up installed skills and tools"
+
+# Update all plugin submodules
+plugin-update:
+	@echo "Updating plugin submodules..."
+	@git submodule update --remote --merge
+	@echo "✓ Plugins updated"

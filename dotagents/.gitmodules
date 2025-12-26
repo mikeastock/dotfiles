@@ -1,0 +1,6 @@
+[submodule "plugins/dev-browser"]
+	path = plugins/dev-browser
+	url = https://github.com/SawyerHood/dev-browser.git
+[submodule "plugins/superpowers"]
+	path = plugins/superpowers
+	url = https://github.com/obra/superpowers.git
