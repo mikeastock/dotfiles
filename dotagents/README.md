@@ -86,9 +86,10 @@ agents/
 │   │   └── SKILL.md
 │   └── ...
 ├── tools/
-│   ├── question/
-│   │   └── index.ts
-│   └── ...
+│   └── pi/
+│       ├── question/
+│       │   └── index.ts
+│       └── ...
 ├── Makefile
 └── README.md
 ```

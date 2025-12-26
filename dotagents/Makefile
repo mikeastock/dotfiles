@@ -38,11 +38,11 @@ install-skills: install-claude install-codex
 install-tools:
 	@echo "Installing custom tools for Pi agent..."
 	@mkdir -p $(PI_TOOLS_DIR)
-	@for tool in $(TOOLS_SRC)/*/; do \
+	@for tool in $(TOOLS_SRC)/pi/*/; do \
 		tool_name=$$(basename "$$tool"); \
 		echo "  → $$tool_name"; \
 		rm -rf "$(PI_TOOLS_DIR)/$$tool_name"; \
-		cp -r "$$tool" "$(PI_TOOLS_DIR)/$$tool_name"; \
+		ln -s "$$tool" "$(PI_TOOLS_DIR)/$$tool_name"; \
 	done
 	@echo "✓ Pi tools installed to $(PI_TOOLS_DIR)"
 
@@ -54,7 +54,7 @@ install-claude:
 		skill_name=$$(basename "$$skill"); \
 		echo "  → $$skill_name"; \
 		rm -rf "$(CLAUDE_SKILLS_DIR)/$$skill_name"; \
-		cp -r "$$skill" "$(CLAUDE_SKILLS_DIR)/$$skill_name"; \
+		ln -s "$$skill" "$(CLAUDE_SKILLS_DIR)/$$skill_name"; \
 	done
 	@echo "✓ Claude Code skills installed to $(CLAUDE_SKILLS_DIR)"
 
@@ -66,7 +66,7 @@ install-codex:
 		skill_name=$$(basename "$$skill"); \
 		echo "  → $$skill_name"; \
 		rm -rf "$(CODEX_SKILLS_DIR)/$$skill_name"; \
-		cp -r "$$skill" "$(CODEX_SKILLS_DIR)/$$skill_name"; \
+		ln -s "$$skill" "$(CODEX_SKILLS_DIR)/$$skill_name"; \
 	done
 	@echo "✓ Codex CLI skills installed to $(CODEX_SKILLS_DIR)"
 
@@ -78,7 +78,7 @@ clean:
 		rm -rf "$(CLAUDE_SKILLS_DIR)/$$skill_name"; \
 		rm -rf "$(CODEX_SKILLS_DIR)/$$skill_name"; \
 	done
-	@for tool in $(TOOLS_SRC)/*/; do \
+	@for tool in $(TOOLS_SRC)/pi/*/; do \
 		tool_name=$$(basename "$$tool"); \
 		rm -rf "$(PI_TOOLS_DIR)/$$tool_name"; \
 	done
