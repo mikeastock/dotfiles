@@ -103,7 +103,7 @@ build:
 						mkdir -p "$(BUILD_DIR)/$$agent/$$skill_name"; \
 						override_file="$(OVERRIDES_DIR)/$${skill_name}-$${agent}.md"; \
 						if [ -f "$$override_file" ]; then \
-							cat "$$override_file" "$$skill_dir/SKILL.md" > "$(BUILD_DIR)/$$agent/$$skill_name/SKILL.md"; \
+							cat "$$skill_dir/SKILL.md" "$$override_file" > "$(BUILD_DIR)/$$agent/$$skill_name/SKILL.md"; \
 						else \
 							cp "$$skill_dir/SKILL.md" "$(BUILD_DIR)/$$agent/$$skill_name/SKILL.md"; \
 						fi; \
@@ -127,7 +127,7 @@ build:
 					mkdir -p "$(BUILD_DIR)/$$agent/$$skill_name"; \
 					override_file="$(OVERRIDES_DIR)/$${skill_name}-$${agent}.md"; \
 					if [ -f "$$override_file" ]; then \
-						cat "$$override_file" "$$skill_dir/SKILL.md" > "$(BUILD_DIR)/$$agent/$$skill_name/SKILL.md"; \
+						cat "$$skill_dir/SKILL.md" "$$override_file" > "$(BUILD_DIR)/$$agent/$$skill_name/SKILL.md"; \
 					else \
 						cp "$$skill_dir/SKILL.md" "$(BUILD_DIR)/$$agent/$$skill_name/SKILL.md"; \
 					fi; \
@@ -146,23 +146,26 @@ build:
 # Clean up
 clean:
 	@echo "Removing installed skills and tools..."
-	@rm -rf $(BUILD_DIR)/claude $(BUILD_DIR)/pi
-	@# Clean Claude skills
-	@if [ -d "$(BUILD_DIR)" ]; then \
-		for skill in $(BUILD_DIR)/claude/*/; do \
-			if [ -d "$$skill" ]; then \
-				skill_name=$$(basename "$$skill"); \
-				rm -rf "$(CLAUDE_SKILLS_DIR)/$$skill_name"; \
-			fi \
+	@# Clean Claude skills (symlinks pointing to build/claude)
+	@if [ -d "$(CLAUDE_SKILLS_DIR)" ]; then \
+		for link in $(CLAUDE_SKILLS_DIR)/*/; do \
+			if [ -L "$${link%/}" ]; then \
+				target=$$(readlink "$${link%/}"); \
+				if echo "$$target" | grep -q "$(BUILD_DIR)/claude"; then \
+					rm -f "$${link%/}"; \
+				fi; \
+			fi; \
 		done; \
 	fi
-	@# Clean Codex/Pi skills
-	@if [ -d "$(BUILD_DIR)" ]; then \
-		for skill in $(BUILD_DIR)/pi/*/; do \
-			if [ -d "$$skill" ]; then \
-				skill_name=$$(basename "$$skill"); \
-				rm -rf "$(CODEX_SKILLS_DIR)/$$skill_name"; \
-			fi \
+	@# Clean Codex/Pi skills (symlinks pointing to build/pi)
+	@if [ -d "$(CODEX_SKILLS_DIR)" ]; then \
+		for link in $(CODEX_SKILLS_DIR)/*/; do \
+			if [ -L "$${link%/}" ]; then \
+				target=$$(readlink "$${link%/}"); \
+				if echo "$$target" | grep -q "$(BUILD_DIR)/pi"; then \
+					rm -f "$${link%/}"; \
+				fi; \
+			fi; \
 		done; \
 	fi
 	@# Clean Pi tools
@@ -174,6 +177,8 @@ clean:
 			fi \
 		done; \
 	fi
+	@# Remove build directory
+	@rm -rf $(BUILD_DIR)/claude $(BUILD_DIR)/pi
 	@echo "✓ Cleaned up installed skills and tools"
 
 # Update all plugin submodules
