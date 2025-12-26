@@ -5,9 +5,9 @@
 # so we only install skills there. Tools are Pi-specific.
 
 # Installation directories
-PI_TOOLS_DIR := ~/.pi/agent/tools
-CLAUDE_SKILLS_DIR := ~/.claude/skills
-CODEX_SKILLS_DIR := ~/.codex/skills
+PI_TOOLS_DIR := $(HOME)/.pi/agent/tools
+CLAUDE_SKILLS_DIR := $(HOME)/.claude/skills
+CODEX_SKILLS_DIR := $(HOME)/.codex/skills
 
 # Source directories
 SKILLS_SRC := $(CURDIR)/skills
