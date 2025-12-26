@@ -15,7 +15,7 @@ TOOLS_SRC := $(CURDIR)/tools
 
 .PHONY: all install install-skills install-tools install-claude install-codex clean help
 
-all: install
+all: help
 
 help:
 	@echo "Agents - Skills and Tools Installer"
