@@ -4,3 +4,6 @@
 [submodule "plugins/superpowers"]
 	path = plugins/superpowers
 	url = https://github.com/obra/superpowers.git
+[submodule "plugins/anthropic-skills"]
+	path = plugins/anthropic-skills
+	url = https://github.com/anthropics/skills.git

@@ -24,6 +24,8 @@ make clean           Remove all installed skills, tools, and build artifacts
 ```
 agents/
 ├── plugins/
+│   ├── anthropic-skills/             # git submodule (github.com/anthropics/skills)
+│   ├── anthropic-skills-enabled.txt  # which skills to install (optional)
 │   ├── superpowers/                  # git submodule (github.com/obra/superpowers)
 │   ├── superpowers-enabled.txt       # which skills to install (optional)
 │   ├── dev-browser/                  # git submodule (github.com/SawyerHood/dev-browser)
@@ -49,6 +51,7 @@ Skills are pulled from git submodules in `plugins/`. Each plugin can have an opt
 
 | Plugin | Source | Description |
 |--------|--------|-------------|
+| `anthropic-skills` | [anthropics/skills](https://github.com/anthropics/skills) | Official Anthropic skills for documents, design, etc. |
 | `superpowers` | [obra/superpowers](https://github.com/obra/superpowers) | Workflow skills for brainstorming, debugging, TDD, etc. |
 | `dev-browser` | [SawyerHood/dev-browser](https://github.com/SawyerHood/dev-browser) | Browser automation skill |
 
@@ -81,6 +84,12 @@ Example: `skill-overrides/brainstorming-claude.md` is prepended to the brainstor
 | `verification-before-completion` | Requires running verification before making success claims |
 | `writing-plans` | Use when you have requirements for a multi-step task |
 | `writing-skills` | Use when creating or editing skills |
+
+### From anthropic-skills
+
+| Skill | Description |
+|-------|-------------|
+| `frontend-design` | Design and build frontend UIs with Tailwind CSS |
 
 ### From dev-browser
 
