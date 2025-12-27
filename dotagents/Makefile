@@ -11,6 +11,7 @@
 PI_TOOLS_DIR := $(HOME)/.pi/agent/tools
 CLAUDE_SKILLS_DIR := $(HOME)/.claude/skills
 CODEX_SKILLS_DIR := $(HOME)/.codex/skills
+PI_SKILLS_DIR := $(HOME)/.pi/agent/skills
 
 # Source directories
 SKILLS_SRC := $(CURDIR)/skills
@@ -54,7 +55,7 @@ install-skills: build
 	done
 	@echo "✓ Claude Code skills installed to $(CLAUDE_SKILLS_DIR)"
 	@echo ""
-	@echo "Installing skills for Pi agent (via Codex)..."
+	@echo "Installing skills for Codex CLI..."
 	@mkdir -p $(CODEX_SKILLS_DIR)
 	@for skill in $(BUILD_DIR)/pi/*/; do \
 		if [ -d "$$skill" ]; then \
@@ -64,7 +65,19 @@ install-skills: build
 			ln -s "$$skill" "$(CODEX_SKILLS_DIR)/$$skill_name"; \
 		fi \
 	done
-	@echo "✓ Pi agent skills installed to $(CODEX_SKILLS_DIR)"
+	@echo "✓ Codex CLI skills installed to $(CODEX_SKILLS_DIR)"
+	@echo ""
+	@echo "Installing skills for Pi agent..."
+	@mkdir -p $(PI_SKILLS_DIR)
+	@for skill in $(BUILD_DIR)/pi/*/; do \
+		if [ -d "$$skill" ]; then \
+			skill_name=$$(basename "$$skill"); \
+			echo "  → $$skill_name"; \
+			rm -rf "$(PI_SKILLS_DIR)/$$skill_name"; \
+			ln -s "$$skill" "$(PI_SKILLS_DIR)/$$skill_name"; \
+		fi \
+	done
+	@echo "✓ Pi agent skills installed to $(PI_SKILLS_DIR)"
 
 install-tools:
 	@echo "Installing custom tools for Pi agent..."
@@ -157,9 +170,20 @@ clean:
 			fi; \
 		done; \
 	fi
-	@# Clean Codex/Pi skills (symlinks pointing to build/pi)
+	@# Clean Codex skills (symlinks pointing to build/pi)
 	@if [ -d "$(CODEX_SKILLS_DIR)" ]; then \
 		for link in $(CODEX_SKILLS_DIR)/*/; do \
+			if [ -L "$${link%/}" ]; then \
+				target=$$(readlink "$${link%/}"); \
+				if echo "$$target" | grep -q "$(BUILD_DIR)/pi"; then \
+					rm -f "$${link%/}"; \
+				fi; \
+			fi; \
+		done; \
+	fi
+	@# Clean Pi skills (symlinks pointing to build/pi)
+	@if [ -d "$(PI_SKILLS_DIR)" ]; then \
+		for link in $(PI_SKILLS_DIR)/*/; do \
 			if [ -L "$${link%/}" ]; then \
 				target=$$(readlink "$${link%/}"); \
 				if echo "$$target" | grep -q "$(BUILD_DIR)/pi"; then \

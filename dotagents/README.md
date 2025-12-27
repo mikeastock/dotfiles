@@ -108,11 +108,26 @@ Skills follow the [Agent Skills standard](https://agentskills.io/specification) 
 
 ### Skill Locations
 
-| Agent | User Skills | Project Skills |
-|-------|-------------|----------------|
-| Pi Coding Agent | `~/.codex/skills/**/SKILL.md` | `.pi/skills/**/SKILL.md` |
-| Claude Code | `~/.claude/skills/*/SKILL.md` | `.claude/skills/*/SKILL.md` |
-| Codex CLI | `~/.codex/skills/**/SKILL.md` | - |
+Skills are installed to:
+
+| Agent | Location |
+|-------|----------|
+| Claude Code | `~/.claude/skills/` |
+| Codex CLI | `~/.codex/skills/` |
+| Pi Coding Agent | `~/.pi/agent/skills/` |
+
+Since skills are installed to all three locations, disable Claude and Codex skill loading in Pi to avoid duplicate skill warnings. Add this to `~/.pi/agent/settings.json`:
+
+```json
+{
+  "skills": {
+    "enableClaudeUser": false,
+    "enableCodexUser": false
+  }
+}
+```
+
+See Pi's [skills documentation](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent/docs/skills.md) for all available options.
 
 ## What are Custom Tools?
 
