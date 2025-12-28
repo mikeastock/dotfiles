@@ -12,11 +12,12 @@ make install
 This builds skills (applying overrides) and installs them for all supported agents. See `make help` for more options:
 
 ```
-make install           Install skills and tools for all agents
+make install           Install skills, tools, and hooks for all agents
 make install-skills    Install skills only (Claude Code, Pi agent)
 make install-tools     Install custom tools only (Pi agent)
+make install-hooks     Install hooks only (Pi agent)
 make build             Build skills with overrides (without installing)
-make clean             Remove all installed skills, tools, and build artifacts
+make clean             Remove all installed skills, tools, hooks, and build artifacts
 make pi-skills-config  Configure Pi agent to use only Pi-specific skills
 ```
 
@@ -39,6 +40,10 @@ agents/
 ├── tools/
 │   └── pi/
 │       └── question/
+├── hooks/
+│   └── pi/
+│       ├── confirm-destructive/
+│       └── protected-paths/
 ├── tests/                            # test suite
 │   ├── test-helpers.sh               # shared test utilities
 │   ├── test-make.sh                  # Makefile tests
@@ -115,6 +120,13 @@ Example: `skill-overrides/brainstorming-claude.md` is prepended to the brainstor
 |------|-------|-------------|
 | `question` | Pi | Let the LLM ask the user a question with selectable options |
 
+## Available Hooks
+
+| Hook | Agent | Description |
+|------|-------|-------------|
+| `confirm-destructive` | Pi | Prompts for confirmation before destructive session actions (macOS only) |
+| `protected-paths` | Pi | Blocks write and edit operations to protected paths (.env, .git/, node_modules/) |
+
 ## What are Skills?
 
 Skills are specialized instruction sets that guide AI agents through specific tasks and workflows. Each skill provides structured guidance for a particular type of work.
@@ -163,6 +175,22 @@ Custom tools extend the built-in toolset and are called by the LLM directly. The
 | Agent | User Tools | Project Tools |
 |-------|------------|---------------|
 | Pi Coding Agent | `~/.pi/agent/tools/*/index.ts` | `.pi/tools/*/index.ts` |
+
+## What are Hooks?
+
+Hooks are event listeners that intercept and can modify agent behavior. They can block operations, add logging, enforce policies, or extend functionality.
+
+> **Note:** Hooks are currently only supported by Pi Coding Agent.
+
+Hooks are TypeScript modules that export a default function taking a `HookAPI` object. They can listen to events like `tool_call` and return actions like `{ block: true, reason: "..." }`.
+
+See Pi's [hooks documentation](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent#hooks) for details.
+
+### Hook Locations
+
+| Agent | User Hooks | Project Hooks |
+|-------|------------|---------------|
+| Pi Coding Agent | `~/.pi/agent/hooks/*/index.ts` | `.pi/hooks/*/index.ts` |
 
 ## References
 

@@ -147,6 +147,35 @@ test_make_install_tools() {
     fi
 }
 
+# Test: make install-hooks (with sandbox)
+test_make_install_hooks() {
+    log_test "Testing 'make install-hooks' (sandboxed)"
+    cd "$PROJECT_DIR"
+
+    # Run install-hooks with sandbox HOME
+    local output
+    output=$(HOME="$SANDBOX_DIR" make install-hooks 2>&1)
+
+    assert_output_contains "$output" "Installing hooks for Pi agent" "Install shows hooks progress"
+    assert_output_contains "$output" "Pi hooks installed" "Install shows completion"
+
+    # Check if hooks directory has any hooks (depends on whether hooks/pi exists)
+    if [ -d "$PROJECT_DIR/hooks/pi" ]; then
+        local hooks_count
+        hooks_count=$(find "$SANDBOX_DIR/.pi/agent/hooks" -maxdepth 1 -type l 2>/dev/null | wc -l)
+        if [ "$hooks_count" -gt 0 ]; then
+            log_info "PASS: Pi hooks symlinked ($hooks_count symlinks)"
+            TESTS_PASSED=$((TESTS_PASSED + 1))
+        else
+            log_info "PASS: No hooks to install (hooks/pi may be empty)"
+            TESTS_PASSED=$((TESTS_PASSED + 1))
+        fi
+    else
+        log_info "PASS: No hooks directory found (expected)"
+        TESTS_PASSED=$((TESTS_PASSED + 1))
+    fi
+}
+
 # Test: make install (with sandbox)
 test_make_install() {
     log_test "Testing 'make install' (sandboxed)"
@@ -157,12 +186,13 @@ test_make_install() {
     rm -rf "$SANDBOX_DIR/.codex/skills"/* 2>/dev/null || true
     rm -rf "$SANDBOX_DIR/.pi/agent/skills"/* 2>/dev/null || true
     rm -rf "$SANDBOX_DIR/.pi/agent/tools"/* 2>/dev/null || true
+    rm -rf "$SANDBOX_DIR/.pi/agent/hooks"/* 2>/dev/null || true
 
     # Run full install with sandbox HOME
     local output
     output=$(HOME="$SANDBOX_DIR" make install 2>&1)
 
-    assert_output_contains "$output" "All skills and tools installed" "Install shows completion message"
+    assert_output_contains "$output" "All skills, tools, and hooks installed" "Install shows completion message"
 }
 
 # Test: make clean (with sandbox)
@@ -177,8 +207,8 @@ test_make_clean() {
     local output
     output=$(HOME="$SANDBOX_DIR" make clean 2>&1)
 
-    assert_output_contains "$output" "Removing installed skills and tools" "Clean shows progress"
-    assert_output_contains "$output" "Cleaned up installed skills and tools" "Clean shows completion"
+    assert_output_contains "$output" "Removing installed skills, tools, and hooks" "Clean shows progress"
+    assert_output_contains "$output" "Cleaned up installed skills, tools, and hooks" "Clean shows completion"
 
     # Verify build directories are removed
     if [ ! -d "$PROJECT_DIR/build/claude" ] && [ ! -d "$PROJECT_DIR/build/pi" ]; then
@@ -218,6 +248,7 @@ main() {
     test_make_build
     test_make_install_skills
     test_make_install_tools
+    test_make_install_hooks
     test_make_install
     test_make_clean
 

@@ -9,6 +9,7 @@
 
 # Installation directories
 PI_TOOLS_DIR := $(HOME)/.pi/agent/tools
+PI_HOOKS_DIR := $(HOME)/.pi/agent/hooks
 CLAUDE_SKILLS_DIR := $(HOME)/.claude/skills
 CODEX_SKILLS_DIR := $(HOME)/.codex/skills
 PI_SKILLS_DIR := $(HOME)/.pi/agent/skills
@@ -18,12 +19,13 @@ SKILLS_SRC := $(CURDIR)/skills
 PLUGINS_DIR := $(CURDIR)/plugins
 OVERRIDES_DIR := $(CURDIR)/skill-overrides
 TOOLS_SRC := $(CURDIR)/tools
+HOOKS_SRC := $(CURDIR)/hooks
 BUILD_DIR := $(CURDIR)/build
 
 # Agents that get skills installed
 AGENTS := claude pi
 
-.PHONY: all install install-skills install-tools clean help build plugin-update pi-skills-config
+.PHONY: all install install-skills install-tools install-hooks clean help build plugin-update pi-skills-config
 
 all: help
 
@@ -31,17 +33,18 @@ help:
 	@echo "Agents - Skills and Tools Installer"
 	@echo ""
 	@echo "Usage:"
-	@echo "  make install         Install skills and tools for all agents"
+	@echo "  make install         Install skills, tools, and hooks for all agents"
 	@echo "  make install-skills  Install skills only (Claude Code, Pi agent)"
 	@echo "  make install-tools   Install custom tools only (Pi agent)"
+	@echo "  make install-hooks   Install hooks only (Pi agent)"
 	@echo "  make build           Build skills with overrides (without installing)"
 	@echo "  make plugin-update   Update all plugin submodules to latest"
-	@echo "  make clean           Remove all installed skills, tools, and build artifacts"
+	@echo "  make clean           Remove all installed skills, tools, hooks, and build artifacts"
 	@echo "  make pi-skills-config  Configure Pi agent to use only Pi-specific skills"
 	@echo "  make help            Show this help message"
 
-install: install-skills install-tools
-	@echo "✓ All skills and tools installed"
+install: install-skills install-tools install-hooks
+	@echo "✓ All skills, tools, and hooks installed"
 
 install-skills: build
 	@echo "Installing skills for Claude Code..."
@@ -94,6 +97,21 @@ install-tools:
 		done; \
 	fi
 	@echo "✓ Pi tools installed to $(PI_TOOLS_DIR)"
+
+install-hooks:
+	@echo "Installing hooks for Pi agent..."
+	@mkdir -p $(PI_HOOKS_DIR)
+	@if [ -d "$(HOOKS_SRC)/pi" ]; then \
+		for hook in $(HOOKS_SRC)/pi/*/; do \
+			if [ -d "$$hook" ]; then \
+				hook_name=$$(basename "$$hook"); \
+				echo "  → $$hook_name"; \
+				rm -rf "$(PI_HOOKS_DIR)/$$hook_name"; \
+				ln -s "$$hook" "$(PI_HOOKS_DIR)/$$hook_name"; \
+			fi \
+		done; \
+	fi
+	@echo "✓ Pi hooks installed to $(PI_HOOKS_DIR)"
 
 # Build skills with overrides applied
 build:
@@ -159,7 +177,7 @@ build:
 
 # Clean up
 clean:
-	@echo "Removing installed skills and tools..."
+	@echo "Removing installed skills, tools, and hooks..."
 	@# Clean Claude skills (symlinks pointing to build/claude)
 	@if [ -d "$(CLAUDE_SKILLS_DIR)" ]; then \
 		for link in $(CLAUDE_SKILLS_DIR)/*/; do \
@@ -202,9 +220,18 @@ clean:
 			fi \
 		done; \
 	fi
+	@# Clean Pi hooks
+	@if [ -d "$(HOOKS_SRC)/pi" ]; then \
+		for hook in $(HOOKS_SRC)/pi/*/; do \
+			if [ -d "$$hook" ]; then \
+				hook_name=$$(basename "$$hook"); \
+				rm -rf "$(PI_HOOKS_DIR)/$$hook_name"; \
+			fi \
+		done; \
+	fi
 	@# Remove build directory
 	@rm -rf $(BUILD_DIR)/claude $(BUILD_DIR)/pi
-	@echo "✓ Cleaned up installed skills and tools"
+	@echo "✓ Cleaned up installed skills, tools, and hooks"
 
 # Update all plugin submodules
 plugin-update:

@@ -241,6 +241,7 @@ setup_sandbox() {
     mkdir -p "$SANDBOX_DIR/.codex/skills"
     mkdir -p "$SANDBOX_DIR/.pi/agent/skills"
     mkdir -p "$SANDBOX_DIR/.pi/agent/tools"
+    mkdir -p "$SANDBOX_DIR/.pi/agent/hooks"
 
     log_info "Sandbox directories created"
 }
