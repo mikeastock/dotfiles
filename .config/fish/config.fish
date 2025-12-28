@@ -96,6 +96,15 @@ function ssm-connect
   aws --profile $profile ssm start-session --region us-east-1 --target $instance_id
 end
 
+function orb -d "OrbStack wrapper with auto-cd to relative path in ~/code"
+  if test (count $argv) -eq 0; or test "$argv[1]" = "shell"
+    set mac_pwd (pwd)
+    command orb run -s "MAC_PWD='$mac_pwd' bash -li"
+  else
+    command orb $argv
+  end
+end
+
 ####### PATH SETUP
 
 ####### Homebrew

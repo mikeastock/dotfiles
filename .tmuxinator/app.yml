@@ -4,4 +4,4 @@ root: ./
 windows:
   - nvim: nvim
   - git:
-  - server: dev
+  - server: ./bin/dev-tmux
