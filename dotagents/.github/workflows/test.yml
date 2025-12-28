@@ -17,5 +17,5 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Run Makefile tests
-        run: ./scripts/test-make.sh
+      - name: Run all tests
+        run: ./tests/run-all.sh

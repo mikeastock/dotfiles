@@ -3,154 +3,15 @@
 # Test script for Makefile commands
 # Creates a sandbox filesystem to test installations without affecting real agent directories
 #
-# Usage: ./scripts/test-make.sh
+# Usage: ./tests/test-make.sh
 #
 
-set -euo pipefail
-
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
-
-# Track test results
-TESTS_PASSED=0
-TESTS_FAILED=0
-
-# Get the directory where the script is located
+# Source shared test helpers
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-
-# Sandbox directory for testing
-SANDBOX_DIR=""
-
-# Cleanup function
-cleanup() {
-    if [ -n "$SANDBOX_DIR" ] && [ -d "$SANDBOX_DIR" ]; then
-        echo -e "\n${YELLOW}Cleaning up sandbox directory...${NC}"
-        rm -rf "$SANDBOX_DIR"
-    fi
-}
+source "$SCRIPT_DIR/test-helpers.sh"
 
 # Set trap for cleanup on exit
 trap cleanup EXIT
-
-# Logging functions
-log_info() {
-    echo -e "${GREEN}[INFO]${NC} $1"
-}
-
-log_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
-}
-
-log_test() {
-    echo -e "\n${YELLOW}[TEST]${NC} $1"
-}
-
-# Test assertion functions
-assert_success() {
-    local description="$1"
-    shift
-    if "$@"; then
-        log_info "PASS: $description"
-        TESTS_PASSED=$((TESTS_PASSED + 1))
-        return 0
-    else
-        log_error "FAIL: $description"
-        TESTS_FAILED=$((TESTS_FAILED + 1))
-        return 1
-    fi
-}
-
-assert_file_exists() {
-    local file="$1"
-    local description="${2:-File exists: $file}"
-    if [ -e "$file" ]; then
-        log_info "PASS: $description"
-        TESTS_PASSED=$((TESTS_PASSED + 1))
-        return 0
-    else
-        log_error "FAIL: $description (file not found: $file)"
-        TESTS_FAILED=$((TESTS_FAILED + 1))
-        return 1
-    fi
-}
-
-assert_dir_exists() {
-    local dir="$1"
-    local description="${2:-Directory exists: $dir}"
-    if [ -d "$dir" ]; then
-        log_info "PASS: $description"
-        TESTS_PASSED=$((TESTS_PASSED + 1))
-        return 0
-    else
-        log_error "FAIL: $description (directory not found: $dir)"
-        TESTS_FAILED=$((TESTS_FAILED + 1))
-        return 1
-    fi
-}
-
-assert_symlink_exists() {
-    local link="$1"
-    local description="${2:-Symlink exists: $link}"
-    if [ -L "$link" ]; then
-        log_info "PASS: $description"
-        TESTS_PASSED=$((TESTS_PASSED + 1))
-        return 0
-    else
-        log_error "FAIL: $description (symlink not found: $link)"
-        TESTS_FAILED=$((TESTS_FAILED + 1))
-        return 1
-    fi
-}
-
-assert_output_contains() {
-    local output="$1"
-    local expected="$2"
-    local description="${3:-Output contains expected text}"
-    if echo "$output" | grep -q "$expected"; then
-        log_info "PASS: $description"
-        TESTS_PASSED=$((TESTS_PASSED + 1))
-        return 0
-    else
-        log_error "FAIL: $description (expected: '$expected')"
-        TESTS_FAILED=$((TESTS_FAILED + 1))
-        return 1
-    fi
-}
-
-# Setup sandbox environment
-setup_sandbox() {
-    log_info "Setting up sandbox environment..."
-
-    # Create temporary directory for sandbox HOME
-    SANDBOX_DIR=$(mktemp -d)
-    log_info "Sandbox HOME: $SANDBOX_DIR"
-
-    # Create agent directories in sandbox
-    mkdir -p "$SANDBOX_DIR/.claude/skills"
-    mkdir -p "$SANDBOX_DIR/.codex/skills"
-    mkdir -p "$SANDBOX_DIR/.pi/agent/skills"
-    mkdir -p "$SANDBOX_DIR/.pi/agent/tools"
-
-    log_info "Sandbox directories created"
-}
-
-# Initialize git submodules if needed
-init_submodules() {
-    log_info "Checking git submodules..."
-    cd "$PROJECT_DIR"
-
-    # Check if submodules are initialized
-    if [ ! -d "$PROJECT_DIR/plugins/superpowers/skills" ]; then
-        log_info "Initializing git submodules..."
-        git submodule update --init --recursive
-    else
-        log_info "Git submodules already initialized"
-    fi
-}
 
 # Test: make help
 test_make_help() {
@@ -338,25 +199,6 @@ test_make_all() {
     output=$(make all 2>&1)
 
     assert_output_contains "$output" "Agents - Skills and Tools Installer" "'make all' shows help"
-}
-
-# Print test summary
-print_summary() {
-    echo -e "\n${YELLOW}========================================${NC}"
-    echo -e "${YELLOW}Test Summary${NC}"
-    echo -e "${YELLOW}========================================${NC}"
-    echo -e "${GREEN}Passed:${NC} $TESTS_PASSED"
-    echo -e "${RED}Failed:${NC} $TESTS_FAILED"
-    echo -e "${YELLOW}Total:${NC}  $((TESTS_PASSED + TESTS_FAILED))"
-    echo -e "${YELLOW}========================================${NC}"
-
-    if [ "$TESTS_FAILED" -gt 0 ]; then
-        echo -e "${RED}Some tests failed!${NC}"
-        return 1
-    else
-        echo -e "${GREEN}All tests passed!${NC}"
-        return 0
-    fi
 }
 
 # Main

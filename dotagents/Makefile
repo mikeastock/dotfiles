@@ -23,7 +23,7 @@ BUILD_DIR := $(CURDIR)/build
 # Agents that get skills installed
 AGENTS := claude pi
 
-.PHONY: all install install-skills install-tools clean help build plugin-update
+.PHONY: all install install-skills install-tools clean help build plugin-update pi-skills-config
 
 all: help
 
@@ -37,6 +37,7 @@ help:
 	@echo "  make build           Build skills with overrides (without installing)"
 	@echo "  make plugin-update   Update all plugin submodules to latest"
 	@echo "  make clean           Remove all installed skills, tools, and build artifacts"
+	@echo "  make pi-skills-config  Configure Pi agent to use only Pi-specific skills"
 	@echo "  make help            Show this help message"
 
 install: install-skills install-tools
@@ -210,3 +211,28 @@ plugin-update:
 	@echo "Updating plugin submodules..."
 	@git submodule update --remote --merge
 	@echo "✓ Plugins updated"
+
+# Pi skills configuration directory
+PI_SETTINGS_DIR := $(HOME)/.pi/agent
+PI_SETTINGS_FILE := $(PI_SETTINGS_DIR)/settings.json
+
+# Configure Pi agent skills settings
+# Disables Claude and Codex skill sources to avoid duplicates when using this repo
+pi-skills-config:
+	@echo "Configuring Pi agent skills settings..."
+	@mkdir -p $(PI_SETTINGS_DIR)
+	@if [ ! -f "$(PI_SETTINGS_FILE)" ]; then \
+		echo '{}' > "$(PI_SETTINGS_FILE)"; \
+	fi
+	@if command -v jq >/dev/null 2>&1; then \
+		jq '.skills.enableClaudeUser = false | .skills.enableCodexUser = false' \
+			"$(PI_SETTINGS_FILE)" > "$(PI_SETTINGS_FILE).tmp" && \
+			mv "$(PI_SETTINGS_FILE).tmp" "$(PI_SETTINGS_FILE)"; \
+		echo "✓ Pi agent settings updated: $(PI_SETTINGS_FILE)"; \
+		echo "  skills.enableClaudeUser = false"; \
+		echo "  skills.enableCodexUser = false"; \
+	else \
+		echo "Error: jq is required but not installed."; \
+		echo "Install with: brew install jq (macOS) or apt install jq (Linux)"; \
+		exit 1; \
+	fi

@@ -12,11 +12,12 @@ make install
 This builds skills (applying overrides) and installs them for all supported agents. See `make help` for more options:
 
 ```
-make install         Install skills and tools for all agents
-make install-skills  Install skills only (Claude Code, Pi agent)
-make install-tools   Install custom tools only (Pi agent)
-make build           Build skills with overrides (without installing)
-make clean           Remove all installed skills, tools, and build artifacts
+make install           Install skills and tools for all agents
+make install-skills    Install skills only (Claude Code, Pi agent)
+make install-tools     Install custom tools only (Pi agent)
+make build             Build skills with overrides (without installing)
+make clean             Remove all installed skills, tools, and build artifacts
+make pi-skills-config  Configure Pi agent to use only Pi-specific skills
 ```
 
 ## Structure
@@ -38,6 +39,11 @@ agents/
 ├── tools/
 │   └── pi/
 │       └── question/
+├── tests/                            # test suite
+│   ├── test-helpers.sh               # shared test utilities
+│   ├── test-make.sh                  # Makefile tests
+│   ├── test-pi-skills-config.sh      # pi-skills-config tests
+│   └── run-all.sh                    # run all tests
 ├── build/                            # generated during install
 │   ├── claude/
 │   └── pi/
@@ -125,7 +131,13 @@ Skills are installed to:
 | Codex CLI | `~/.codex/skills/` |
 | Pi Coding Agent | `~/.pi/agent/skills/` |
 
-Since skills are installed to all three locations, disable Claude and Codex skill loading in Pi to avoid duplicate skill warnings. Add this to `~/.pi/agent/settings.json`:
+Since skills are installed to all three locations, disable Claude and Codex skill loading in Pi to avoid duplicate skill warnings:
+
+```bash
+make pi-skills-config
+```
+
+This uses `jq` to update `~/.pi/agent/settings.json` with:
 
 ```json
 {
@@ -135,6 +147,8 @@ Since skills are installed to all three locations, disable Claude and Codex skil
   }
 }
 ```
+
+The command preserves any existing settings in the file. Requires `jq` to be installed (`brew install jq` on macOS or `apt install jq` on Linux).
 
 See Pi's [skills documentation](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent/docs/skills.md) for all available options.
 
