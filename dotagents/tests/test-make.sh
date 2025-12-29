@@ -86,34 +86,34 @@ test_make_install_skills() {
     assert_output_contains "$output" "Installing skills for Claude Code" "Install shows Claude progress"
     assert_output_contains "$output" "Installing skills for Pi agent" "Install shows Pi progress"
 
-    # Check symlinks were created in sandbox
+    # Check directories were created in sandbox
     local claude_skills_count
-    claude_skills_count=$(find "$SANDBOX_DIR/.claude/skills" -maxdepth 1 -type l 2>/dev/null | wc -l)
+    claude_skills_count=$(find "$SANDBOX_DIR/.claude/skills" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
     if [ "$claude_skills_count" -gt 0 ]; then
-        log_info "PASS: Claude skills symlinked ($claude_skills_count symlinks)"
+        log_info "PASS: Claude skills installed ($claude_skills_count directories)"
         TESTS_PASSED=$((TESTS_PASSED + 1))
     else
-        log_error "FAIL: No Claude skills symlinked"
+        log_error "FAIL: No Claude skills installed"
         TESTS_FAILED=$((TESTS_FAILED + 1))
     fi
 
     local pi_skills_count
-    pi_skills_count=$(find "$SANDBOX_DIR/.pi/agent/skills" -maxdepth 1 -type l 2>/dev/null | wc -l)
+    pi_skills_count=$(find "$SANDBOX_DIR/.pi/agent/skills" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
     if [ "$pi_skills_count" -gt 0 ]; then
-        log_info "PASS: Pi skills symlinked ($pi_skills_count symlinks)"
+        log_info "PASS: Pi skills installed ($pi_skills_count directories)"
         TESTS_PASSED=$((TESTS_PASSED + 1))
     else
-        log_error "FAIL: No Pi skills symlinked"
+        log_error "FAIL: No Pi skills installed"
         TESTS_FAILED=$((TESTS_FAILED + 1))
     fi
 
     local codex_skills_count
-    codex_skills_count=$(find "$SANDBOX_DIR/.codex/skills" -maxdepth 1 -type l 2>/dev/null | wc -l)
+    codex_skills_count=$(find "$SANDBOX_DIR/.codex/skills" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
     if [ "$codex_skills_count" -gt 0 ]; then
-        log_info "PASS: Codex skills symlinked ($codex_skills_count symlinks)"
+        log_info "PASS: Codex skills installed ($codex_skills_count directories)"
         TESTS_PASSED=$((TESTS_PASSED + 1))
     else
-        log_error "FAIL: No Codex skills symlinked"
+        log_error "FAIL: No Codex skills installed"
         TESTS_FAILED=$((TESTS_FAILED + 1))
     fi
 }
@@ -133,9 +133,9 @@ test_make_install_tools() {
     # Check if tools directory has any tools (depends on whether tools/pi exists)
     if [ -d "$PROJECT_DIR/tools/pi" ]; then
         local tools_count
-        tools_count=$(find "$SANDBOX_DIR/.pi/agent/tools" -maxdepth 1 -type l 2>/dev/null | wc -l)
+        tools_count=$(find "$SANDBOX_DIR/.pi/agent/tools" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
         if [ "$tools_count" -gt 0 ]; then
-            log_info "PASS: Pi tools symlinked ($tools_count symlinks)"
+            log_info "PASS: Pi tools installed ($tools_count directories)"
             TESTS_PASSED=$((TESTS_PASSED + 1))
         else
             log_info "PASS: No tools to install (tools/pi may be empty)"
@@ -162,9 +162,9 @@ test_make_install_hooks() {
     # Check if hooks directory has any hooks (depends on whether hooks/pi exists)
     if [ -d "$PROJECT_DIR/hooks/pi" ]; then
         local hooks_count
-        hooks_count=$(find "$SANDBOX_DIR/.pi/agent/hooks" -maxdepth 1 -type l 2>/dev/null | wc -l)
+        hooks_count=$(find "$SANDBOX_DIR/.pi/agent/hooks" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
         if [ "$hooks_count" -gt 0 ]; then
-            log_info "PASS: Pi hooks symlinked ($hooks_count symlinks)"
+            log_info "PASS: Pi hooks installed ($hooks_count directories)"
             TESTS_PASSED=$((TESTS_PASSED + 1))
         else
             log_info "PASS: No hooks to install (hooks/pi may be empty)"

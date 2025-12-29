@@ -54,7 +54,7 @@ install-skills: build
 			skill_name=$$(basename "$$skill"); \
 			echo "  → $$skill_name"; \
 			rm -rf "$(CLAUDE_SKILLS_DIR)/$$skill_name"; \
-			ln -s "$$skill" "$(CLAUDE_SKILLS_DIR)/$$skill_name"; \
+			cp -r "$$skill" "$(CLAUDE_SKILLS_DIR)/$$skill_name"; \
 		fi \
 	done
 	@echo "✓ Claude Code skills installed to $(CLAUDE_SKILLS_DIR)"
@@ -66,7 +66,7 @@ install-skills: build
 			skill_name=$$(basename "$$skill"); \
 			echo "  → $$skill_name"; \
 			rm -rf "$(CODEX_SKILLS_DIR)/$$skill_name"; \
-			ln -s "$$skill" "$(CODEX_SKILLS_DIR)/$$skill_name"; \
+			cp -r "$$skill" "$(CODEX_SKILLS_DIR)/$$skill_name"; \
 		fi \
 	done
 	@echo "✓ Codex CLI skills installed to $(CODEX_SKILLS_DIR)"
@@ -78,7 +78,7 @@ install-skills: build
 			skill_name=$$(basename "$$skill"); \
 			echo "  → $$skill_name"; \
 			rm -rf "$(PI_SKILLS_DIR)/$$skill_name"; \
-			ln -s "$$skill" "$(PI_SKILLS_DIR)/$$skill_name"; \
+			cp -r "$$skill" "$(PI_SKILLS_DIR)/$$skill_name"; \
 		fi \
 	done
 	@echo "✓ Pi agent skills installed to $(PI_SKILLS_DIR)"
@@ -92,7 +92,7 @@ install-tools:
 				tool_name=$$(basename "$$tool"); \
 				echo "  → $$tool_name"; \
 				rm -rf "$(PI_TOOLS_DIR)/$$tool_name"; \
-				ln -s "$$tool" "$(PI_TOOLS_DIR)/$$tool_name"; \
+				cp -r "$$tool" "$(PI_TOOLS_DIR)/$$tool_name"; \
 			fi \
 		done; \
 	fi
@@ -107,7 +107,7 @@ install-hooks:
 				hook_name=$$(basename "$$hook"); \
 				echo "  → $$hook_name"; \
 				rm -rf "$(PI_HOOKS_DIR)/$$hook_name"; \
-				ln -s "$$hook" "$(PI_HOOKS_DIR)/$$hook_name"; \
+				cp -r "$$hook" "$(PI_HOOKS_DIR)/$$hook_name"; \
 			fi \
 		done; \
 	fi
@@ -178,37 +178,31 @@ build:
 # Clean up
 clean:
 	@echo "Removing installed skills, tools, and hooks..."
-	@# Clean Claude skills (symlinks pointing to build/claude)
-	@if [ -d "$(CLAUDE_SKILLS_DIR)" ]; then \
-		for link in $(CLAUDE_SKILLS_DIR)/*/; do \
-			if [ -L "$${link%/}" ]; then \
-				target=$$(readlink "$${link%/}"); \
-				if echo "$$target" | grep -q "$(BUILD_DIR)/claude"; then \
-					rm -f "$${link%/}"; \
-				fi; \
-			fi; \
+	@# Clean Claude skills (copied from build/claude)
+	@if [ -d "$(BUILD_DIR)/claude" ]; then \
+		for skill in $(BUILD_DIR)/claude/*/; do \
+			if [ -d "$$skill" ]; then \
+				skill_name=$$(basename "$$skill"); \
+				rm -rf "$(CLAUDE_SKILLS_DIR)/$$skill_name"; \
+			fi \
 		done; \
 	fi
-	@# Clean Codex skills (symlinks pointing to build/pi)
-	@if [ -d "$(CODEX_SKILLS_DIR)" ]; then \
-		for link in $(CODEX_SKILLS_DIR)/*/; do \
-			if [ -L "$${link%/}" ]; then \
-				target=$$(readlink "$${link%/}"); \
-				if echo "$$target" | grep -q "$(BUILD_DIR)/pi"; then \
-					rm -f "$${link%/}"; \
-				fi; \
-			fi; \
+	@# Clean Codex skills (copied from build/pi)
+	@if [ -d "$(BUILD_DIR)/pi" ]; then \
+		for skill in $(BUILD_DIR)/pi/*/; do \
+			if [ -d "$$skill" ]; then \
+				skill_name=$$(basename "$$skill"); \
+				rm -rf "$(CODEX_SKILLS_DIR)/$$skill_name"; \
+			fi \
 		done; \
 	fi
-	@# Clean Pi skills (symlinks pointing to build/pi)
-	@if [ -d "$(PI_SKILLS_DIR)" ]; then \
-		for link in $(PI_SKILLS_DIR)/*/; do \
-			if [ -L "$${link%/}" ]; then \
-				target=$$(readlink "$${link%/}"); \
-				if echo "$$target" | grep -q "$(BUILD_DIR)/pi"; then \
-					rm -f "$${link%/}"; \
-				fi; \
-			fi; \
+	@# Clean Pi skills (copied from build/pi)
+	@if [ -d "$(BUILD_DIR)/pi" ]; then \
+		for skill in $(BUILD_DIR)/pi/*/; do \
+			if [ -d "$$skill" ]; then \
+				skill_name=$$(basename "$$skill"); \
+				rm -rf "$(PI_SKILLS_DIR)/$$skill_name"; \
+			fi \
 		done; \
 	fi
 	@# Clean Pi tools
