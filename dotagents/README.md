@@ -38,7 +38,7 @@ agents/
 │   └── brainstorming-pi.md
 ├── tools/
 │   └── pi/
-│       └── question/
+│       └── AskUserQuestion/
 ├── hooks/
 │   └── pi/
 │       ├── confirm-destructive/
@@ -117,7 +117,7 @@ Example: `skill-overrides/brainstorming-claude.md` is prepended to the brainstor
 
 | Tool | Agent | Description |
 |------|-------|-------------|
-| `question` | Pi | Let the LLM ask the user a question with selectable options |
+| `AskUserQuestion` | Pi | Ask the user a question and let them pick from options or enter a custom response |
 
 ## Available Hooks
 

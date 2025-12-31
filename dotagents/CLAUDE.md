@@ -127,6 +127,7 @@ Fetch the latest documentation from [Pi Coding Agent](https://github.com/badlogi
 2. Create `skills/<skill-name>/SKILL.md` following the specification
 3. Add any supporting files to the same directory
 4. Run `make install` to build and install
+5. Update README.md: add to "Custom Skills" table and directory structure
 
 ### Adding a Skill Override
 1. Create `skill-overrides/<skill-name>-<agent>.md` (agent: `claude` or `pi`)
@@ -136,11 +137,13 @@ Fetch the latest documentation from [Pi Coding Agent](https://github.com/badlogi
 1. Fetch the [Pi Coding Agent documentation](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent) for the current tool API
 2. Create `tools/pi/<tool-name>/index.ts` following the documentation
 3. Run `make install-tools`
+4. Update README.md: add to "Available Tools" table and directory structure
 
 ### Adding a Hook (Pi only)
 1. Fetch the [Pi Coding Agent documentation](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent) for the current hook API
 2. Create `hooks/pi/<hook-name>/index.ts` following the documentation
 3. Run `make install-hooks`
+4. Update README.md: add to "Available Hooks" table and directory structure
 
 ### Adding a New Plugin
 1. Add submodule: `git submodule add <url> plugins/<name>`
@@ -153,3 +156,4 @@ Fetch the latest documentation from [Pi Coding Agent](https://github.com/badlogi
 - The `build/` directory is regenerated on each build
 - Running `make clean` removes both installed files and build artifacts
 - Use `make pi-skills-config` after installation to prevent duplicate skill warnings in Pi when using Claude/Codex skill directories
+- **Keep README.md up to date**: When adding, removing, or renaming skills, tools, or hooks, update the corresponding tables and directory structure in README.md
