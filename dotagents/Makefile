@@ -25,7 +25,7 @@ BUILD_DIR := $(CURDIR)/build
 # Agents that get skills installed
 AGENTS := claude pi
 
-.PHONY: all install install-skills install-tools install-hooks clean help build plugin-update pi-skills-config
+.PHONY: all install install-skills install-tools install-hooks clean help build submodule-init plugin-update pi-skills-config
 
 all: help
 
@@ -33,7 +33,7 @@ help:
 	@echo "Agents - Skills and Tools Installer"
 	@echo ""
 	@echo "Usage:"
-	@echo "  make install         Install skills, tools, and hooks for all agents"
+	@echo "  make install         Initialize submodules and install skills, tools, and hooks"
 	@echo "  make install-skills  Install skills only (Claude Code, Pi agent)"
 	@echo "  make install-tools   Install custom tools only (Pi agent)"
 	@echo "  make install-hooks   Install hooks only (Pi agent)"
@@ -43,8 +43,14 @@ help:
 	@echo "  make pi-skills-config  Configure Pi agent to use only Pi-specific skills"
 	@echo "  make help            Show this help message"
 
-install: install-skills install-tools install-hooks
+install: submodule-init install-skills install-tools install-hooks
 	@echo "✓ All skills, tools, and hooks installed"
+
+# Initialize git submodules
+submodule-init:
+	@echo "Initializing git submodules..."
+	@git submodule update --init --recursive
+	@echo "✓ Submodules initialized"
 
 install-skills: build
 	@echo "Installing skills for Claude Code..."

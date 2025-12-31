@@ -5,14 +5,13 @@ This repository contains reusable skills and custom tools for AI coding agents i
 ## Installation
 
 ```bash
-git submodule update --init --recursive
 make install
 ```
 
-This builds skills (applying overrides) and installs them for all supported agents. See `make help` for more options:
+This initializes submodules, builds skills (applying overrides), and installs them for all supported agents. See `make help` for more options:
 
 ```
-make install           Install skills, tools, and hooks for all agents
+make install           Initialize submodules and install skills, tools, and hooks
 make install-skills    Install skills only (Claude Code, Pi agent)
 make install-tools     Install custom tools only (Pi agent)
 make install-hooks     Install hooks only (Pi agent)
