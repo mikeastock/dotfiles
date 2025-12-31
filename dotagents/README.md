@@ -194,6 +194,7 @@ See Pi's [hooks documentation](https://github.com/badlogic/pi-mono/tree/main/pac
 
 ## References
 
+- [Claude Code Skills Documentation](https://docs.anthropic.com/en/docs/claude-code/skills)
 - [Pi Coding Agent Documentation](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent)
 - [Codex CLI Skills Documentation](https://developers.openai.com/codex/skills)
 - [Agent Skills Specification](https://agentskills.io/specification)
