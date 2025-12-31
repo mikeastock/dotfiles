@@ -2,7 +2,7 @@
  * AskUserQuestion Tool - Let the LLM ask the user a question with options
  */
 
-import type { CustomTool, CustomToolFactory } from "@mariozechner/pi-coding-agent";
+import type { CustomAgentTool, CustomToolFactory, RenderResultOptions } from "@mariozechner/pi-coding-agent";
 import { Text } from "@mariozechner/pi-tui";
 import { Type } from "@sinclair/typebox";
 
@@ -22,13 +22,13 @@ const QuestionParams = Type.Object({
 });
 
 const factory: CustomToolFactory = (pi) => {
-	const tool: CustomTool<typeof QuestionParams, QuestionDetails> = {
+	const tool: CustomAgentTool<typeof QuestionParams, QuestionDetails> = {
 		name: "AskUserQuestion",
 		label: "Ask User Question",
 		description: "Ask the user a question and let them pick from options. Use when you need user input to proceed.",
 		parameters: QuestionParams,
 
-		async execute(_toolCallId, params, _onUpdate, _ctx, _signal) {
+		async execute(_toolCallId, params, _signal, _onUpdate) {
 			if (!pi.hasUI) {
 				return {
 					content: [{ type: "text", text: "Error: UI not available (running in non-interactive mode)" }],
@@ -61,7 +61,7 @@ const factory: CustomToolFactory = (pi) => {
 			if (answer === CUSTOM_OPTION) {
 				const customAnswer = await pi.ui.input("Enter your response", "Type your answer here...");
 
-				if (customAnswer === undefined || customAnswer.trim() === "") {
+				if (customAnswer === undefined || customAnswer === null || customAnswer.trim() === "") {
 					return {
 						content: [{ type: "text", text: "User cancelled the custom response" }],
 						details: { question: params.question, options: params.options, answer: null },
@@ -80,7 +80,7 @@ const factory: CustomToolFactory = (pi) => {
 			};
 		},
 
-		renderCall(args, theme) {
+		renderCall(args: { question: string; options?: string[]; allowCustom?: boolean }, theme: Parameters<NonNullable<CustomAgentTool['renderCall']>>[1]) {
 			let text = theme.fg("toolTitle", theme.bold("Ask User Question ")) + theme.fg("muted", args.question);
 			if (args.options?.length) {
 				text += `\n${theme.fg("dim", `  Options: ${args.options.join(", ")}`)}`;
@@ -91,11 +91,11 @@ const factory: CustomToolFactory = (pi) => {
 			return new Text(text, 0, 0);
 		},
 
-		renderResult(result, _options, theme) {
+		renderResult(result: { content: Array<{ type: string; text?: string }>; details?: QuestionDetails }, _options: RenderResultOptions, theme: Parameters<NonNullable<CustomAgentTool['renderCall']>>[1]) {
 			const { details } = result;
 			if (!details) {
 				const text = result.content[0];
-				return new Text(text?.type === "text" ? text.text : "", 0, 0);
+				return new Text(text?.type === "text" ? (text.text ?? "") : "", 0, 0);
 			}
 
 			if (details.answer === null) {

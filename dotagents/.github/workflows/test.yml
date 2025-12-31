@@ -1,4 +1,4 @@
-name: Test Makefile
+name: Test
 
 on:
   push:
@@ -13,9 +13,18 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: recursive
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: 'pnpm'
 
       - name: Run all tests
         run: ./tests/run-all.sh
