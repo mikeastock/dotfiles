@@ -7,3 +7,6 @@
 [submodule "plugins/anthropic-skills"]
 	path = plugins/anthropic-skills
 	url = https://github.com/anthropics/skills.git
+[submodule "plugins/compound-engineering"]
+	path = plugins/compound-engineering
+	url = https://github.com/EveryInc/compound-engineering-plugin

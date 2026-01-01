@@ -124,7 +124,7 @@ build:
 	@echo "Building skills..."
 	@rm -rf $(BUILD_DIR)/claude $(BUILD_DIR)/pi
 	@mkdir -p $(BUILD_DIR)/claude $(BUILD_DIR)/pi
-	@# Process each plugin
+	@# Process each plugin (standard structure: plugins/<name>/skills/)
 	@for plugin_dir in $(PLUGINS_DIR)/*/; do \
 		if [ -d "$$plugin_dir/skills" ]; then \
 			plugin_name=$$(basename "$$plugin_dir"); \
@@ -155,6 +155,40 @@ build:
 				fi; \
 			done; \
 		fi; \
+	done
+	@# Process marketplace-style plugins (nested: plugins/<name>/plugins/<subplugin>/skills/)
+	@for plugin_dir in $(PLUGINS_DIR)/*/; do \
+		plugin_name=$$(basename "$$plugin_dir"); \
+		enabled_file="$(PLUGINS_DIR)/$${plugin_name}-enabled.txt"; \
+		for subplugin_dir in $$plugin_dir/plugins/*/; do \
+			if [ -d "$$subplugin_dir/skills" ]; then \
+				for skill_dir in $$subplugin_dir/skills/*/; do \
+					if [ -d "$$skill_dir" ]; then \
+						skill_name=$$(basename "$$skill_dir"); \
+						if [ -f "$$enabled_file" ]; then \
+							if ! grep -q "^$$skill_name$$" "$$enabled_file"; then \
+								continue; \
+							fi; \
+						fi; \
+						for agent in $(AGENTS); do \
+							mkdir -p "$(BUILD_DIR)/$$agent/$$skill_name"; \
+							override_file="$(OVERRIDES_DIR)/$${skill_name}-$${agent}.md"; \
+							if [ -f "$$override_file" ]; then \
+								cat "$$skill_dir/SKILL.md" "$$override_file" > "$(BUILD_DIR)/$$agent/$$skill_name/SKILL.md"; \
+							else \
+								cp "$$skill_dir/SKILL.md" "$(BUILD_DIR)/$$agent/$$skill_name/SKILL.md"; \
+							fi; \
+							for extra in $$skill_dir/*; do \
+								if [ "$$(basename $$extra)" != "SKILL.md" ] && [ -e "$$extra" ]; then \
+									cp -r "$$extra" "$(BUILD_DIR)/$$agent/$$skill_name/"; \
+								fi; \
+							done; \
+						done; \
+						echo "  → $$skill_name (from $$plugin_name)"; \
+					fi; \
+				done; \
+			fi; \
+		done; \
 	done
 	@# Process custom skills
 	@if [ -d "$(SKILLS_SRC)" ]; then \
