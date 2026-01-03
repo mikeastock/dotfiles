@@ -56,11 +56,11 @@ class Plugin:
     name: str
     url: str
     skills_path: list[str] = field(default_factory=lambda: ["skills/*"])
-    skills: list[str] | None = None  # None = all
+    skills: list[str] = field(default_factory=list)  # Empty = none, ["*"] = all
     hooks_path: list[str] = field(default_factory=lambda: ["pi-hooks/*.ts"])
-    hooks: list[str] | None = None
+    hooks: list[str] = field(default_factory=list)  # Empty = none, ["*"] = all
     tools_path: list[str] = field(default_factory=lambda: ["tools/*"])
-    tools: list[str] | None = None
+    tools: list[str] = field(default_factory=list)  # Empty = none, ["*"] = all
     alias: str | None = None
 
     @classmethod
@@ -73,15 +73,23 @@ class Plugin:
                 return [p]
             return list(p)
 
+        def normalize_items(items) -> list[str]:
+            """Normalize item list: missing key -> empty list, string -> list."""
+            if items is None:
+                return []
+            if isinstance(items, str):
+                return [items]
+            return list(items)
+
         return cls(
             name=name,
             url=data["url"],
             skills_path=normalize_path(data.get("skills_path", "skills/*")),
-            skills=data.get("skills"),
+            skills=normalize_items(data.get("skills")),
             hooks_path=normalize_path(data.get("hooks_path", "pi-hooks/*.ts")),
-            hooks=data.get("hooks"),
+            hooks=normalize_items(data.get("hooks")),
             tools_path=normalize_path(data.get("tools_path", "tools/*")),
-            tools=data.get("tools"),
+            tools=normalize_items(data.get("tools")),
             alias=data.get("alias"),
         )
 
@@ -130,6 +138,11 @@ def discover_items(plugin: Plugin, item_type: str) -> list[tuple[str, Path]]:
     Discover skills/hooks/tools from a plugin.
 
     Returns list of (item_name, item_path) tuples.
+
+    The enabled list controls which items are included:
+    - Empty list [] = no items
+    - ["*"] = all items (wildcard)
+    - ["item1", "item2"] = only specified items
     """
     plugin_dir = PLUGINS_DIR / plugin.name
     if not plugin_dir.exists():
@@ -147,9 +160,12 @@ def discover_items(plugin: Plugin, item_type: str) -> list[tuple[str, Path]]:
     else:
         raise ValueError(f"Unknown item type: {item_type}")
 
-    if enabled is not None and len(enabled) == 0:
-        # Explicitly disabled (empty list)
+    # Empty list means nothing enabled
+    if len(enabled) == 0:
         return []
+
+    # Check for wildcard (all items)
+    include_all = "*" in enabled
 
     items = []
     for path in glob_paths(plugin_dir, patterns):
@@ -160,8 +176,8 @@ def discover_items(plugin: Plugin, item_type: str) -> list[tuple[str, Path]]:
         else:
             continue
 
-        # Apply filter if specified
-        if enabled is not None and name not in enabled:
+        # Apply filter: include if wildcard or name is in enabled list
+        if not include_all and name not in enabled:
             continue
 
         # Apply alias prefix if specified

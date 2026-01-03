@@ -60,11 +60,11 @@ Files in `skill-overrides/<skill>-<agent>.md` are **appended** to the skill's SK
 All plugin configuration is in `plugins.toml`. Each plugin can specify:
 - `url` - Git repository URL (required)
 - `skills_path` - Glob pattern to find skills (default: `skills/*`)
-- `skills` - List of skills to install (omit for all, empty list for none)
+- `skills` - List of skills to install: `["*"]` for all, `["a", "b"]` for specific, `[]` or omit for none
 - `hooks_path` - Glob pattern to find hooks (default: `pi-hooks/*.ts`)
-- `hooks` - List of hooks to install (omit for all)
+- `hooks` - List of hooks to install: `["*"]` for all, `["a", "b"]` for specific, `[]` or omit for none
 - `tools_path` - Glob pattern to find tools (default: `tools/*`)
-- `tools` - List of tools to install (omit for all)
+- `tools` - List of tools to install: `["*"]` for all, `["a", "b"]` for specific, `[]` or omit for none
 - `alias` - Optional prefix to prevent name collisions
 
 ## Development Workflow
@@ -163,7 +163,7 @@ Fetch the latest documentation from [Pi Coding Agent](https://github.com/badlogi
    ```toml
    [plugin-name]
    url = "https://github.com/owner/repo"
-   skills = ["skill-one", "skill-two"]  # or omit for all
+   skills = ["*"]  # Use ["*"] for all, or list specific skills
    ```
 3. Run `make install`
 
