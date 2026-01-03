@@ -2,12 +2,12 @@
  * Confirm Destructive Actions Hook (macOS only)
  *
  * Prompts for confirmation before destructive session actions (clear, switch, branch).
- * Demonstrates how to cancel session events using the before_* variants.
+ * Demonstrates how to cancel session events using the before_* events.
  *
  * This hook only runs on macOS.
  */
 
-import type { HookAPI } from "@mariozechner/pi-coding-agent/hooks";
+import type { HookAPI, SessionBeforeSwitchEvent, SessionMessageEntry } from "@mariozechner/pi-coding-agent";
 
 export default function (pi: HookAPI) {
 	// Only run on macOS
@@ -15,11 +15,10 @@ export default function (pi: HookAPI) {
 		return;
 	}
 
-	pi.on("session", async (event, ctx) => {
-		// Only handle before_* events (the ones that can be cancelled)
-		if (event.reason === "before_new") {
-			if (!ctx.hasUI) return;
+	pi.on("session_before_switch", async (event: SessionBeforeSwitchEvent, ctx) => {
+		if (!ctx.hasUI) return;
 
+		if (event.reason === "new") {
 			const confirmed = await ctx.ui.confirm(
 				"Clear session?",
 				"This will delete all messages in the current session.",
@@ -29,39 +28,39 @@ export default function (pi: HookAPI) {
 				ctx.ui.notify("Clear cancelled", "info");
 				return { cancel: true };
 			}
+			return;
 		}
 
-		if (event.reason === "before_switch") {
-			if (!ctx.hasUI) return;
+		// reason === "resume" - check if there are unsaved changes (messages since last assistant response)
+		const entries = ctx.sessionManager.getEntries();
+		const hasUnsavedWork = entries.some(
+			(e): e is SessionMessageEntry => e.type === "message" && e.message.role === "user",
+		);
 
-			// Check if there are unsaved changes (messages since last assistant response)
-			const hasUnsavedWork = event.entries.some((e) => e.type === "message" && e.message.role === "user");
+		if (hasUnsavedWork) {
+			const confirmed = await ctx.ui.confirm(
+				"Switch session?",
+				"You have messages in the current session. Switch anyway?",
+			);
 
-			if (hasUnsavedWork) {
-				const confirmed = await ctx.ui.confirm(
-					"Switch session?",
-					"You have messages in the current session. Switch anyway?",
-				);
-
-				if (!confirmed) {
-					ctx.ui.notify("Switch cancelled", "info");
-					return { cancel: true };
-				}
-			}
-		}
-
-		if (event.reason === "before_branch") {
-			if (!ctx.hasUI) return;
-
-			const choice = await ctx.ui.select(`Branch from turn ${event.targetTurnIndex}?`, [
-				"Yes, create branch",
-				"No, stay in current session",
-			]);
-
-			if (choice !== "Yes, create branch") {
-				ctx.ui.notify("Branch cancelled", "info");
+			if (!confirmed) {
+				ctx.ui.notify("Switch cancelled", "info");
 				return { cancel: true };
 			}
+		}
+	});
+
+	pi.on("session_before_branch", async (event, ctx) => {
+		if (!ctx.hasUI) return;
+
+		const choice = await ctx.ui.select(`Branch from entry ${event.entryId.slice(0, 8)}?`, [
+			"Yes, create branch",
+			"No, stay in current session",
+		]);
+
+		if (choice !== "Yes, create branch") {
+			ctx.ui.notify("Branch cancelled", "info");
+			return { cancel: true };
 		}
 	});
 }
