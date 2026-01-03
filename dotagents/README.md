@@ -30,7 +30,9 @@ agents/
 │   ├── superpowers/                  # git submodule (github.com/obra/superpowers)
 │   ├── superpowers-enabled.txt       # which skills to install (optional)
 │   ├── dev-browser/                  # git submodule (github.com/SawyerHood/dev-browser)
-│   └── dev-browser-enabled.txt       # which skills to install (optional)
+│   ├── dev-browser-enabled.txt       # which skills to install (optional)
+│   ├── agent-stuff/                  # git submodule (github.com/mitsuhiko/agent-stuff)
+│   └── agent-stuff-hooks-enabled.txt # which hooks to install (optional)
 ├── skills/                           # custom skills
 │   └── fetching-buildkite-failures/
 ├── skill-overrides/                  # agent-specific prepends
@@ -57,13 +59,18 @@ agents/
 
 ## Plugins
 
-Skills are pulled from git submodules in `plugins/`. Each plugin can have an optional `<name>-enabled.txt` file listing which skills to install (one per line). If the file is missing, all skills from that plugin are installed.
+Skills and hooks are pulled from git submodules in `plugins/`. Each plugin can have optional filter files:
+- `<name>-enabled.txt` - which skills to install (one per line)
+- `<name>-hooks-enabled.txt` - which hooks to install (one per line)
+
+If no filter file exists, all items from that plugin are installed.
 
 | Plugin | Source | Description |
 |--------|--------|-------------|
 | `anthropic-skills` | [anthropics/skills](https://github.com/anthropics/skills) | Official Anthropic skills for documents, design, etc. |
 | `superpowers` | [obra/superpowers](https://github.com/obra/superpowers) | Workflow skills for brainstorming, debugging, TDD, etc. |
 | `dev-browser` | [SawyerHood/dev-browser](https://github.com/SawyerHood/dev-browser) | Browser automation skill |
+| `agent-stuff` | [mitsuhiko/agent-stuff](https://github.com/mitsuhiko/agent-stuff) | Pi hooks for Q&A extraction and more |
 
 ### Updating Plugins
 
@@ -120,6 +127,14 @@ Example: `skill-overrides/brainstorming-claude.md` is prepended to the brainstor
 | `AskUserQuestion` | Pi | Ask the user a question and let them pick from options or enter a custom response |
 
 ## Available Hooks
+
+### From agent-stuff
+
+| Hook | Agent | Description |
+|------|-------|-------------|
+| `answer` | Pi | Extracts questions from assistant responses into interactive Q&A with custom TUI |
+
+### Custom Hooks
 
 | Hook | Agent | Description |
 |------|-------|-------------|

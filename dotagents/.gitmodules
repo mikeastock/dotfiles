@@ -10,3 +10,6 @@
 [submodule "plugins/compound-engineering"]
 	path = plugins/compound-engineering
 	url = https://github.com/EveryInc/compound-engineering-plugin
+[submodule "plugins/agent-stuff"]
+	path = plugins/agent-stuff
+	url = https://github.com/mitsuhiko/agent-stuff

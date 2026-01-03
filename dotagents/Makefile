@@ -107,11 +107,33 @@ install-tools:
 install-hooks:
 	@echo "Installing hooks for Pi agent..."
 	@mkdir -p $(PI_HOOKS_DIR)
+	@# Install hooks from plugins (flat .ts files in pi-hooks/)
+	@for plugin_dir in $(PLUGINS_DIR)/*/; do \
+		if [ -d "$$plugin_dir/pi-hooks" ]; then \
+			plugin_name=$$(basename "$$plugin_dir"); \
+			enabled_file="$(PLUGINS_DIR)/$${plugin_name}-hooks-enabled.txt"; \
+			for hook_file in $$plugin_dir/pi-hooks/*.ts; do \
+				if [ -f "$$hook_file" ]; then \
+					hook_name=$$(basename "$$hook_file" .ts); \
+					if [ -f "$$enabled_file" ]; then \
+						if ! grep -q "^$$hook_name$$" "$$enabled_file"; then \
+							continue; \
+						fi; \
+					fi; \
+					echo "  → $$hook_name (from $$plugin_name)"; \
+					rm -rf "$(PI_HOOKS_DIR)/$$hook_name"; \
+					mkdir -p "$(PI_HOOKS_DIR)/$$hook_name"; \
+					cp "$$hook_file" "$(PI_HOOKS_DIR)/$$hook_name/index.ts"; \
+				fi \
+			done; \
+		fi; \
+	done
+	@# Install custom hooks (directory structure with index.ts)
 	@if [ -d "$(HOOKS_SRC)/pi" ]; then \
 		for hook in $(HOOKS_SRC)/pi/*/; do \
 			if [ -d "$$hook" ]; then \
 				hook_name=$$(basename "$$hook"); \
-				echo "  → $$hook_name"; \
+				echo "  → $$hook_name (custom)"; \
 				rm -rf "$(PI_HOOKS_DIR)/$$hook_name"; \
 				cp -r "$$hook" "$(PI_HOOKS_DIR)/$$hook_name"; \
 			fi \
@@ -254,7 +276,18 @@ clean:
 			fi \
 		done; \
 	fi
-	@# Clean Pi hooks
+	@# Clean Pi hooks from plugins
+	@for plugin_dir in $(PLUGINS_DIR)/*/; do \
+		if [ -d "$$plugin_dir/pi-hooks" ]; then \
+			for hook_file in $$plugin_dir/pi-hooks/*.ts; do \
+				if [ -f "$$hook_file" ]; then \
+					hook_name=$$(basename "$$hook_file" .ts); \
+					rm -rf "$(PI_HOOKS_DIR)/$$hook_name"; \
+				fi \
+			done; \
+		fi; \
+	done
+	@# Clean custom Pi hooks
 	@if [ -d "$(HOOKS_SRC)/pi" ]; then \
 		for hook in $(HOOKS_SRC)/pi/*/; do \
 			if [ -d "$$hook" ]; then \
