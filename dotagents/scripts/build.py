@@ -47,7 +47,7 @@ INSTALL_PATHS = {
     },
 }
 
-AGENTS = ["claude", "pi"]  # Agents that get skill builds
+AGENTS = ["claude", "codex", "pi"]  # Agents that get skill builds
 
 
 @dataclass
@@ -272,9 +272,8 @@ def install_skills():
         if "skills" not in paths:
             continue
 
-        # Determine source: claude uses claude build, others use pi build
-        source_agent = "claude" if agent == "claude" else "pi"
-        source = BUILD_DIR / source_agent
+        # Each agent uses its own build directory
+        source = BUILD_DIR / agent
 
         if not source.exists():
             continue
@@ -400,8 +399,7 @@ def clean(plugins: dict[str, Plugin]):
     # Clean skills from all agents
     for agent, paths in INSTALL_PATHS.items():
         if "skills" in paths:
-            source_agent = "claude" if agent == "claude" else "pi"
-            source = BUILD_DIR / source_agent
+            source = BUILD_DIR / agent
             if source.exists():
                 for skill_dir in source.iterdir():
                     if skill_dir.is_dir():
