@@ -13,3 +13,6 @@
 [submodule "plugins/agent-stuff"]
 	path = plugins/agent-stuff
 	url = https://github.com/mitsuhiko/agent-stuff
+[submodule "plugins/pi-interview-tool"]
+	path = plugins/pi-interview-tool
+	url = https://github.com/nicobailon/pi-interview-tool

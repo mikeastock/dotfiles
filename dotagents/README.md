@@ -35,7 +35,8 @@ agents/
 │   ├── superpowers/                  # git submodule (github.com/obra/superpowers)
 │   ├── dev-browser/                  # git submodule (github.com/SawyerHood/dev-browser)
 │   ├── compound-engineering/         # git submodule (github.com/EveryInc/compound-engineering-plugin)
-│   └── agent-stuff/                  # git submodule (github.com/mitsuhiko/agent-stuff)
+│   ├── agent-stuff/                  # git submodule (github.com/mitsuhiko/agent-stuff)
+│   └── pi-interview-tool/            # git submodule (github.com/nicobailon/pi-interview-tool)
 ├── skills/                           # custom skills
 │   └── fetching-buildkite-failures/
 ├── skill-overrides/                  # agent-specific appends
@@ -160,6 +161,14 @@ Example: `skill-overrides/brainstorming-pi.md` is appended to the brainstorming 
 | `fetching-buildkite-failures` | Fetches build results from Buildkite and helps diagnose CI failures |
 
 ## Available Tools
+
+### From pi-interview-tool
+
+| Tool | Agent | Description |
+|------|-------|-------------|
+| `pi-interview-tool` | Pi | Interactive web-based form for gathering user responses to clarification questions |
+
+### Custom Tools
 
 | Tool | Agent | Description |
 |------|-------|-------------|

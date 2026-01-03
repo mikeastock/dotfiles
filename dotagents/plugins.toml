@@ -42,3 +42,8 @@ hooks = ["answer"]
 [dev-browser]
 url = "https://github.com/SawyerHood/dev-browser"
 # No skills list = install all skills from this plugin
+
+[pi-interview-tool]
+url = "https://github.com/nicobailon/pi-interview-tool"
+skills = []  # No skills from this plugin
+tools_path = "."  # Tool files are at root level

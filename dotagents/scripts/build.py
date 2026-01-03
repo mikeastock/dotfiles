@@ -113,8 +113,11 @@ def glob_paths(base: Path, patterns: list[str]) -> list[Path]:
     """Find all paths matching glob patterns."""
     results = []
     for pattern in patterns:
+        # Special case: "." means the base directory itself (for root-level tools)
+        if pattern == ".":
+            results.append(base)
         # Handle ** patterns
-        if "**" in pattern:
+        elif "**" in pattern:
             results.extend(base.glob(pattern))
         else:
             # For patterns like "skills/*", we want directories
