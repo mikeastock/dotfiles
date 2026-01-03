@@ -2,6 +2,11 @@
 
 This repository contains reusable skills and custom tools for AI coding agents including [Pi Coding Agent](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent), Claude Code, and [Codex CLI](https://github.com/openai/codex).
 
+## Requirements
+
+- Python 3.11+ (uses `tomllib` from stdlib)
+- Git (for submodule management)
+
 ## Installation
 
 ```bash
@@ -12,7 +17,7 @@ This initializes submodules, builds skills (applying overrides), and installs th
 
 ```
 make install           Initialize submodules and install skills, tools, and hooks
-make install-skills    Install skills only (Claude Code, Pi agent)
+make install-skills    Install skills only (Claude Code, Codex, Pi agent)
 make install-tools     Install custom tools only (Pi agent)
 make install-hooks     Install hooks only (Pi agent)
 make build             Build skills with overrides (without installing)
@@ -24,18 +29,16 @@ make pi-skills-config  Configure Pi agent to use only Pi-specific skills
 
 ```
 agents/
+├── plugins.toml                      # plugin configuration
 ├── plugins/
 │   ├── anthropic-skills/             # git submodule (github.com/anthropics/skills)
-│   ├── anthropic-skills-enabled.txt  # which skills to install (optional)
 │   ├── superpowers/                  # git submodule (github.com/obra/superpowers)
-│   ├── superpowers-enabled.txt       # which skills to install (optional)
 │   ├── dev-browser/                  # git submodule (github.com/SawyerHood/dev-browser)
-│   ├── dev-browser-enabled.txt       # which skills to install (optional)
-│   ├── agent-stuff/                  # git submodule (github.com/mitsuhiko/agent-stuff)
-│   └── agent-stuff-hooks-enabled.txt # which hooks to install (optional)
+│   ├── compound-engineering/         # git submodule (github.com/EveryInc/compound-engineering-plugin)
+│   └── agent-stuff/                  # git submodule (github.com/mitsuhiko/agent-stuff)
 ├── skills/                           # custom skills
 │   └── fetching-buildkite-failures/
-├── skill-overrides/                  # agent-specific prepends
+├── skill-overrides/                  # agent-specific appends
 │   ├── brainstorming-claude.md
 │   └── brainstorming-pi.md
 ├── tools/
@@ -45,11 +48,13 @@ agents/
 │   └── pi/
 │       ├── confirm-destructive/
 │       └── protected-paths/
+├── scripts/
+│   └── build.py                      # Python build system
 ├── tests/                            # test suite
-│   ├── test-helpers.sh               # shared test utilities
-│   ├── test-make.sh                  # Makefile tests
-│   ├── test-pi-skills-config.sh      # pi-skills-config tests
-│   └── run-all.sh                    # run all tests
+│   ├── test-helpers.sh
+│   ├── test-make.sh
+│   ├── test-pi-skills-config.sh
+│   └── run-all.sh
 ├── build/                            # generated during install
 │   ├── claude/
 │   └── pi/
@@ -57,33 +62,61 @@ agents/
 └── README.md
 ```
 
-## Plugins
+## Configuration
 
-Skills and hooks are pulled from git submodules in `plugins/`. Each plugin can have optional filter files:
-- `<name>-enabled.txt` - which skills to install (one per line)
-- `<name>-hooks-enabled.txt` - which hooks to install (one per line)
+All plugin configuration is in `plugins.toml`:
 
-If no filter file exists, all items from that plugin are installed.
+```toml
+[superpowers]
+url = "https://github.com/obra/superpowers"
+skills = [
+    "brainstorming",
+    "systematic-debugging",
+    "test-driven-development",
+]
 
-| Plugin | Source | Description |
-|--------|--------|-------------|
-| `anthropic-skills` | [anthropics/skills](https://github.com/anthropics/skills) | Official Anthropic skills for documents, design, etc. |
-| `superpowers` | [obra/superpowers](https://github.com/obra/superpowers) | Workflow skills for brainstorming, debugging, TDD, etc. |
-| `dev-browser` | [SawyerHood/dev-browser](https://github.com/SawyerHood/dev-browser) | Browser automation skill |
-| `agent-stuff` | [mitsuhiko/agent-stuff](https://github.com/mitsuhiko/agent-stuff) | Pi hooks for Q&A extraction and more |
+[agent-stuff]
+url = "https://github.com/mitsuhiko/agent-stuff"
+skills = []  # No skills from this plugin
+hooks = ["answer"]
+
+[compound-engineering]
+url = "https://github.com/EveryInc/compound-engineering-plugin"
+skills_path = "plugins/*/skills/*"  # Custom path for nested structure
+skills = ["dspy-ruby"]
+
+[dev-browser]
+url = "https://github.com/SawyerHood/dev-browser"
+# No skills list = install all skills from this plugin
+```
+
+### Configuration Options
+
+Each plugin supports these options:
+
+| Option | Description |
+|--------|-------------|
+| `url` | Git repository URL (required) |
+| `skills_path` | Glob pattern to find skills (default: `skills/*`) |
+| `skills` | List of skills to install, or omit for all |
+| `hooks_path` | Glob pattern to find hooks (default: `pi-hooks/*.ts`) |
+| `hooks` | List of hooks to install, or omit for all |
+| `tools_path` | Glob pattern to find tools (default: `tools/*`) |
+| `tools` | List of tools to install, or omit for all |
+| `alias` | Optional prefix to prevent name collisions |
 
 ### Updating Plugins
 
 ```bash
-git submodule update --remote --merge
+make plugin-update
 make install
 ```
 
 ## Skill Overrides
 
-Override files in `skill-overrides/<skill>-<agent>.md` are prepended to skills during build. This allows agent-specific customizations without modifying upstream skills.
+Override files in `skill-overrides/<skill>-<agent>.md` are appended to skills during build. This allows agent-specific customizations without modifying upstream skills.
 
-Example: `skill-overrides/brainstorming-claude.md` is prepended to the brainstorming skill when building for Claude Code.
+Example: `skill-overrides/brainstorming-pi.md` is appended to the brainstorming skill when building for Pi agent.
 
 ## Available Skills
 
@@ -107,6 +140,12 @@ Example: `skill-overrides/brainstorming-claude.md` is prepended to the brainstor
 | Skill | Description |
 |-------|-------------|
 | `frontend-design` | Design and build frontend UIs with Tailwind CSS |
+
+### From compound-engineering
+
+| Skill | Description |
+|-------|-------------|
+| `dspy-ruby` | DSPy patterns for Ruby development |
 
 ### From dev-browser
 

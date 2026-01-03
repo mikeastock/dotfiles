@@ -25,6 +25,7 @@ test_make_help() {
     assert_output_contains "$output" "make install" "Help shows install command"
     assert_output_contains "$output" "make build" "Help shows build command"
     assert_output_contains "$output" "make clean" "Help shows clean command"
+    assert_output_contains "$output" "plugins.toml" "Help mentions config file"
 }
 
 # Test: make build
@@ -39,8 +40,8 @@ test_make_build() {
     local output
     output=$(make build 2>&1)
 
-    assert_output_contains "$output" "Building skills..." "Build shows progress"
-    assert_output_contains "$output" "Skills built to" "Build shows completion"
+    assert_output_contains "$output" "Building skills" "Build shows progress"
+    assert_output_contains "$output" "Built" "Build shows completion"
 
     # Check build directories were created
     assert_dir_exists "$PROJECT_DIR/build/claude" "Build created claude directory"
@@ -83,8 +84,7 @@ test_make_install_skills() {
     local output
     output=$(HOME="$SANDBOX_DIR" make install-skills 2>&1)
 
-    assert_output_contains "$output" "Installing skills for Claude Code" "Install shows Claude progress"
-    assert_output_contains "$output" "Installing skills for Pi agent" "Install shows Pi progress"
+    assert_output_contains "$output" "Installing skills" "Install shows progress"
 
     # Check directories were created in sandbox
     local claude_skills_count
@@ -127,8 +127,8 @@ test_make_install_tools() {
     local output
     output=$(HOME="$SANDBOX_DIR" make install-tools 2>&1)
 
-    assert_output_contains "$output" "Installing custom tools for Pi agent" "Install shows tools progress"
-    assert_output_contains "$output" "Pi tools installed" "Install shows completion"
+    assert_output_contains "$output" "Installing tools" "Install shows tools progress"
+    assert_output_contains "$output" "Installed" "Install shows completion"
 
     # Check if tools directory has any tools (depends on whether tools/pi exists)
     if [ -d "$PROJECT_DIR/tools/pi" ]; then
@@ -156,22 +156,18 @@ test_make_install_hooks() {
     local output
     output=$(HOME="$SANDBOX_DIR" make install-hooks 2>&1)
 
-    assert_output_contains "$output" "Installing hooks for Pi agent" "Install shows hooks progress"
-    assert_output_contains "$output" "Pi hooks installed" "Install shows completion"
+    assert_output_contains "$output" "Installing hooks" "Install shows hooks progress"
+    assert_output_contains "$output" "Installed" "Install shows completion"
 
-    # Check if hooks directory has any hooks (depends on whether hooks/pi exists)
-    if [ -d "$PROJECT_DIR/hooks/pi" ]; then
-        local hooks_count
-        hooks_count=$(find "$SANDBOX_DIR/.pi/agent/hooks" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
-        if [ "$hooks_count" -gt 0 ]; then
-            log_info "PASS: Pi hooks installed ($hooks_count directories)"
-            TESTS_PASSED=$((TESTS_PASSED + 1))
-        else
-            log_info "PASS: No hooks to install (hooks/pi may be empty)"
-            TESTS_PASSED=$((TESTS_PASSED + 1))
-        fi
+    # Check if hooks directory has any hooks
+    local hooks_count
+    hooks_count=$(find "$SANDBOX_DIR/.pi/agent/hooks" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
+    if [ "$hooks_count" -gt 0 ]; then
+        log_info "PASS: Pi hooks installed ($hooks_count directories)"
+        TESTS_PASSED=$((TESTS_PASSED + 1))
     else
-        log_info "PASS: No hooks directory found (expected)"
+        # May have no hooks configured in plugins.toml
+        log_info "PASS: No hooks to install (may be expected)"
         TESTS_PASSED=$((TESTS_PASSED + 1))
     fi
 }
@@ -207,8 +203,7 @@ test_make_clean() {
     local output
     output=$(HOME="$SANDBOX_DIR" make clean 2>&1)
 
-    assert_output_contains "$output" "Removing installed skills, tools, and hooks" "Clean shows progress"
-    assert_output_contains "$output" "Cleaned up installed skills, tools, and hooks" "Clean shows completion"
+    assert_output_contains "$output" "Cleaning" "Clean shows progress"
 
     # Verify build directories are removed
     if [ ! -d "$PROJECT_DIR/build/claude" ] && [ ! -d "$PROJECT_DIR/build/pi" ]; then
@@ -231,6 +226,25 @@ test_make_all() {
     assert_output_contains "$output" "Agents - Skills and Tools Installer" "'make all' shows help"
 }
 
+# Test: plugins.toml exists and is valid
+test_plugins_toml() {
+    log_test "Testing plugins.toml configuration"
+    cd "$PROJECT_DIR"
+
+    assert_file_exists "$PROJECT_DIR/plugins.toml" "plugins.toml exists"
+
+    # Check Python can parse it
+    local output
+    output=$(python3 -c "import tomllib; tomllib.load(open('plugins.toml', 'rb')); print('valid')" 2>&1)
+    if [[ "$output" == *"valid"* ]]; then
+        log_info "PASS: plugins.toml is valid TOML"
+        TESTS_PASSED=$((TESTS_PASSED + 1))
+    else
+        log_error "FAIL: plugins.toml is not valid TOML: $output"
+        TESTS_FAILED=$((TESTS_FAILED + 1))
+    fi
+}
+
 # Main
 main() {
     echo -e "${YELLOW}========================================${NC}"
@@ -245,6 +259,7 @@ main() {
     # Run tests
     test_make_help
     test_make_all
+    test_plugins_toml
     test_make_build
     test_make_install_skills
     test_make_install_tools

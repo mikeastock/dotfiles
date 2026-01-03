@@ -1,0 +1,44 @@
+# plugins.toml - Plugin configuration for AI agent skills, tools, and hooks
+#
+# Each plugin is a table with:
+#   url          - Git repository URL (required)
+#   skills_path  - Glob pattern(s) to find skills (default: "skills/*")
+#   skills       - List of skills to install (omit for all)
+#   hooks_path   - Glob pattern(s) to find hooks (default: "pi-hooks/*.ts")
+#   hooks        - List of hooks to install (omit for all)
+#   tools_path   - Glob pattern(s) to find tools (default: "tools/*")
+#   tools        - List of tools to install (omit for all)
+#   alias        - Optional prefix to prevent name collisions
+
+[superpowers]
+url = "https://github.com/obra/superpowers"
+skills = [
+    "brainstorming",
+    "dispatching-parallel-agents",
+    "executing-plans",
+    "subagent-driven-development",
+    "systematic-debugging",
+    "test-driven-development",
+    "using-superpowers",
+    "verification-before-completion",
+    "writing-plans",
+    "writing-skills",
+]
+
+[anthropic-skills]
+url = "https://github.com/anthropics/skills"
+skills = ["frontend-design"]
+
+[compound-engineering]
+url = "https://github.com/EveryInc/compound-engineering-plugin"
+skills_path = "plugins/*/skills/*"
+skills = ["dspy-ruby"]
+
+[agent-stuff]
+url = "https://github.com/mitsuhiko/agent-stuff"
+skills = []  # No skills from this plugin
+hooks = ["answer"]
+
+[dev-browser]
+url = "https://github.com/SawyerHood/dev-browser"
+# No skills list = install all skills from this plugin

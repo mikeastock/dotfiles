@@ -15,16 +15,18 @@ Skills are specialized instruction sets that guide AI agents through specific ta
 
 ```
 agents/
+├── plugins.toml                    # Plugin configuration (URLs, enabled items, paths)
 ├── plugins/                        # Git submodules (skill sources)
 │   ├── anthropic-skills/           # github.com/anthropics/skills
 │   ├── superpowers/                # github.com/obra/superpowers
 │   ├── dev-browser/                # github.com/SawyerHood/dev-browser
-│   ├── <name>-enabled.txt          # Filter which skills to install
+│   ├── compound-engineering/       # github.com/EveryInc/compound-engineering-plugin
+│   └── agent-stuff/                # github.com/mitsuhiko/agent-stuff
 ├── skills/                         # Custom skills (local)
 │   └── <skill-name>/
 │       ├── SKILL.md                # Skill definition (YAML frontmatter + markdown)
 │       └── <additional files>      # Supporting scripts/resources
-├── skill-overrides/                # Agent-specific prepends
+├── skill-overrides/                # Agent-specific appends
 │   └── <skill>-<agent>.md          # Appended to SKILL.md during build
 ├── tools/                          # Custom tools (Pi only)
 │   └── pi/
@@ -32,6 +34,8 @@ agents/
 ├── hooks/                          # Event hooks (Pi only)
 │   └── pi/
 │       └── <hook-name>/index.ts
+├── scripts/
+│   └── build.py                    # Python build system (requires Python 3.11+)
 ├── tests/                          # Test suite
 │   ├── test-helpers.sh             # Shared test utilities
 │   ├── test-make.sh                # Makefile tests
@@ -52,8 +56,16 @@ Skills follow the [Agent Skills specification](https://agentskills.io/specificat
 ### Skill Overrides
 Files in `skill-overrides/<skill>-<agent>.md` are **appended** to the skill's SKILL.md during build. This allows agent-specific customizations without modifying upstream skills.
 
-### Enabled Files
-Files like `plugins/<name>-enabled.txt` list which skills to install (one per line). If the file is missing, all skills from that plugin are installed.
+### Plugin Configuration
+All plugin configuration is in `plugins.toml`. Each plugin can specify:
+- `url` - Git repository URL (required)
+- `skills_path` - Glob pattern to find skills (default: `skills/*`)
+- `skills` - List of skills to install (omit for all, empty list for none)
+- `hooks_path` - Glob pattern to find hooks (default: `pi-hooks/*.ts`)
+- `hooks` - List of hooks to install (omit for all)
+- `tools_path` - Glob pattern to find tools (default: `tools/*`)
+- `tools` - List of tools to install (omit for all)
+- `alias` - Optional prefix to prevent name collisions
 
 ## Development Workflow
 
@@ -147,7 +159,12 @@ Fetch the latest documentation from [Pi Coding Agent](https://github.com/badlogi
 
 ### Adding a New Plugin
 1. Add submodule: `git submodule add <url> plugins/<name>`
-2. Optionally create `plugins/<name>-enabled.txt` to filter skills
+2. Add plugin configuration to `plugins.toml`:
+   ```toml
+   [plugin-name]
+   url = "https://github.com/owner/repo"
+   skills = ["skill-one", "skill-two"]  # or omit for all
+   ```
 3. Run `make install`
 
 ## Important Notes
@@ -157,3 +174,4 @@ Fetch the latest documentation from [Pi Coding Agent](https://github.com/badlogi
 - Running `make clean` removes both installed files and build artifacts
 - Use `make pi-skills-config` after installation to prevent duplicate skill warnings in Pi when using Claude/Codex skill directories
 - **Keep README.md up to date**: When adding, removing, or renaming skills, tools, or hooks, update the corresponding tables and directory structure in README.md
+- **Requires Python 3.11+** for the build system (uses `tomllib` from stdlib)
