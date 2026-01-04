@@ -105,6 +105,21 @@ function orb -d "OrbStack wrapper with auto-cd to relative path in ~/code"
   end
 end
 
+function orb-codex -d "Run codex --yolo in OrbStack at current directory"
+  set mac_pwd (pwd)
+  command orb run -s "MAC_PWD='$mac_pwd' fish -lc 'codex --yolo'"
+end
+
+function orb-pi -d "Run pi in OrbStack at current directory"
+  set mac_pwd (pwd)
+  command orb run -s "MAC_PWD='$mac_pwd' fish -lc 'pi'"
+end
+
+function orb-claude -d "Run claude in OrbStack at current directory"
+  set mac_pwd (pwd)
+  command orb run -s "MAC_PWD='$mac_pwd' fish -lc 'claude --allow-dangerously-skip-permissions'"
+end
+
 ####### PATH SETUP
 
 ####### Homebrew
