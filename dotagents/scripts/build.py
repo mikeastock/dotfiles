@@ -16,6 +16,14 @@ from dataclasses import dataclass, field
 from fnmatch import fnmatch
 from pathlib import Path
 
+
+def remove_path(path: Path) -> None:
+    """Remove a path, handling both symlinks and directories."""
+    if path.is_symlink():
+        path.unlink()
+    elif path.exists():
+        shutil.rmtree(path)
+
 if sys.version_info < (3, 11):
     sys.exit("Error: Python 3.11+ required (for tomllib)")
 
@@ -285,8 +293,7 @@ def install_skills():
         for skill_dir in sorted(source.iterdir()):
             if skill_dir.is_dir():
                 dest_skill = dest / skill_dir.name
-                if dest_skill.exists():
-                    shutil.rmtree(dest_skill)
+                remove_path(dest_skill)
                 shutil.copytree(skill_dir, dest_skill)
                 count += 1
 
@@ -310,8 +317,7 @@ def install_hooks(plugins: dict[str, Plugin]):
                 continue
 
             dest_hook = dest / name
-            if dest_hook.exists():
-                shutil.rmtree(dest_hook)
+            remove_path(dest_hook)
             dest_hook.mkdir(parents=True)
 
             # Hooks are .ts files, need to be wrapped in directory with index.ts
@@ -333,8 +339,7 @@ def install_hooks(plugins: dict[str, Plugin]):
                     print(f"    Warning: Custom hook '{name}' conflicts with plugin hook")
 
                 dest_hook = dest / name
-                if dest_hook.exists():
-                    shutil.rmtree(dest_hook)
+                remove_path(dest_hook)
                 shutil.copytree(hook_dir, dest_hook)
 
                 print(f"  {name} (custom)")
@@ -360,8 +365,7 @@ def install_tools(plugins: dict[str, Plugin]):
                 continue
 
             dest_tool = dest / name
-            if dest_tool.exists():
-                shutil.rmtree(dest_tool)
+            remove_path(dest_tool)
 
             if path.is_dir():
                 shutil.copytree(path, dest_tool)
@@ -382,8 +386,7 @@ def install_tools(plugins: dict[str, Plugin]):
                     print(f"    Warning: Custom tool '{name}' conflicts with plugin tool")
 
                 dest_tool = dest / name
-                if dest_tool.exists():
-                    shutil.rmtree(dest_tool)
+                remove_path(dest_tool)
                 shutil.copytree(tool_dir, dest_tool)
 
                 print(f"  {name} (custom)")
@@ -404,8 +407,8 @@ def clean(plugins: dict[str, Plugin]):
                 for skill_dir in source.iterdir():
                     if skill_dir.is_dir():
                         installed = paths["skills"] / skill_dir.name
-                        if installed.exists():
-                            shutil.rmtree(installed)
+                        if installed.exists() or installed.is_symlink():
+                            remove_path(installed)
                             print(f"  Removed skill: {skill_dir.name} from {agent}")
 
     # Clean hooks
@@ -413,8 +416,8 @@ def clean(plugins: dict[str, Plugin]):
     for plugin in plugins.values():
         for name, _ in discover_items(plugin, "hooks"):
             installed = hooks_dest / name
-            if installed.exists():
-                shutil.rmtree(installed)
+            if installed.exists() or installed.is_symlink():
+                remove_path(installed)
                 print(f"  Removed hook: {name}")
 
     # Custom hooks
@@ -423,8 +426,8 @@ def clean(plugins: dict[str, Plugin]):
         for hook_dir in custom_hooks.iterdir():
             if hook_dir.is_dir():
                 installed = hooks_dest / hook_dir.name
-                if installed.exists():
-                    shutil.rmtree(installed)
+                if installed.exists() or installed.is_symlink():
+                    remove_path(installed)
                     print(f"  Removed hook: {hook_dir.name}")
 
     # Clean tools
@@ -432,8 +435,8 @@ def clean(plugins: dict[str, Plugin]):
     for plugin in plugins.values():
         for name, _ in discover_items(plugin, "tools"):
             installed = tools_dest / name
-            if installed.exists():
-                shutil.rmtree(installed)
+            if installed.exists() or installed.is_symlink():
+                remove_path(installed)
                 print(f"  Removed tool: {name}")
 
     # Custom tools
@@ -442,8 +445,8 @@ def clean(plugins: dict[str, Plugin]):
         for tool_dir in custom_tools.iterdir():
             if tool_dir.is_dir():
                 installed = tools_dest / tool_dir.name
-                if installed.exists():
-                    shutil.rmtree(installed)
+                if installed.exists() or installed.is_symlink():
+                    remove_path(installed)
                     print(f"  Removed tool: {tool_dir.name}")
 
     # Clean build directory
