@@ -10,6 +10,11 @@ help:
 	@echo "  brew            Install Homebrew and packages"
 	@echo "  macos-defaults  Set macOS defaults"
 	@echo "  help            Show this help message"
+	@echo ""
+	@echo "Options:"
+	@echo "  DOTFILES_DIR    Override dotfiles source directory"
+	@echo "                  Default: ~/icloud-drive/dotfiles"
+	@echo "                  Example: make all DOTFILES_DIR=~/code/dotfiles"
 
 .PHONY: all
 all: icloud-link home-symlinks config-symlinks brew macos-defaults
