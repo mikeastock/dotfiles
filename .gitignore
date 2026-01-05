@@ -8,3 +8,6 @@
 .config/fish/themes
 .config/fish/completions
 .config/fish/fish_variables
+
+# Plugin lock files (machine-specific)
+**/lazy-lock.json
