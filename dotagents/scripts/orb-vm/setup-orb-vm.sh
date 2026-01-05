@@ -430,7 +430,7 @@ run_in_vm 'chmod 600 ~/.ssh/config'
 # ===========================================
 echo "Writing pnpm config..."
 write_file '~/.config/pnpm/rc' << 'PNPMRC'
-virtual-store-dir-suffix=.linux
+virtual-store-dir=node_modules/.pnpm.linux
 PNPMRC
 
 # ===========================================

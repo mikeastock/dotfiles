@@ -59,7 +59,7 @@ MAC_PWD=/Users/mikeastock/code/buildr/app
 | `~/.bashrc.orb-setup` | Bash equivalent (sourced from .bashrc) |
 | `/etc/profile.d/z-restrict-mac-access.sh` | Mount /code, block Mac paths |
 | `/etc/profile.d/bundler.sh` | Ruby bundler config (BUNDLE_PATH=../vendor/bundle) |
-| `~/.config/pnpm/rc` | pnpm config (virtual-store-dir-suffix=.linux) |
+| `~/.config/pnpm/rc` | pnpm config (virtual-store-dir=node_modules/.pnpm.linux) |
 | `~/.gitconfig` | Git aliases, colors, pull rebase, rerere |
 | `~/.ssh/config` | Uses OrbStack's host SSH agent forwarding |
 | `~/.config/mise/config.toml` | Runtime versions (node, ruby, python, go, etc.) |
@@ -111,10 +111,12 @@ This creates Linux venvs in `.venv-linux/` instead of `.venv/`, so Mac uses `.ve
 Set via `~/.config/pnpm/rc`:
 
 ```ini
-virtual-store-dir-suffix=.linux
+virtual-store-dir=node_modules/.pnpm.linux
 ```
 
-This appends `.linux` to pnpm's virtual store directory, creating `node_modules/.pnpm.linux/` instead of `node_modules/.pnpm/`. The `node_modules/` symlinks point to the platform-appropriate store.
+This sets pnpm's virtual store directory to `node_modules/.pnpm.linux/` instead of the default `node_modules/.pnpm/`. The `node_modules/` symlinks point to the platform-appropriate store.
+
+**Note:** We use `virtual-store-dir` instead of `virtual-store-dir-suffix` because the suffix option wasn't being applied correctly in practice.
 
 ### Summary
 
