@@ -108,7 +108,7 @@ This creates Linux venvs in `.venv-linux/` instead of `.venv/`, so Mac uses `.ve
 
 ### Node.js (pnpm)
 
-Set via `~/.npmrc`:
+Set via `~/.config/pnpm/rc`:
 
 ```ini
 virtual-store-dir-suffix=.linux
