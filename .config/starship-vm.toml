@@ -1,0 +1,39 @@
+# Starship config for OrbStack VM
+# Based on main config but with VM indicator
+
+add_newline = false
+
+format = """
+$custom\
+$username\
+$hostname\
+$directory\
+$git_branch\
+$git_state\
+$git_status\
+$cmd_duration\
+$line_break\
+$character"""
+
+right_format = ""
+
+[custom.vm]
+command = "echo 🐧"
+when = "true"
+format = "[$output]($style) "
+style = "bright-cyan"
+
+[directory]
+style = "blue"
+
+[character]
+success_symbol = "[❯](purple)"
+error_symbol = "[❯](red)"
+vicmd_symbol = "[❮](green)"
+
+[cmd_duration]
+format = "[$duration]($style) "
+style = "yellow"
+
+[line_break]
+disabled = true

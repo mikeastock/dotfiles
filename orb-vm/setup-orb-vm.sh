@@ -151,7 +151,8 @@ create_symlink '~/.dotfiles/.config/fish/functions' '~/.config/fish/functions'
 create_symlink '~/.dotfiles/.config/fish/completions' '~/.config/fish/completions'
 
 # Symlink individual files
-create_symlink '~/.dotfiles/.config/starship.toml' '~/.config/starship.toml'
+# Use VM-specific starship config (shows VM indicator)
+create_symlink '~/.dotfiles/.config/starship-vm.toml' '~/.config/starship.toml'
 create_symlink '~/.dotfiles/.tmux.conf' '~/.tmux.conf'
 create_symlink '~/.dotfiles/.gitignore' '~/.gitignore'
 create_symlink '~/.dotfiles/.psqlrc' '~/.psqlrc'
