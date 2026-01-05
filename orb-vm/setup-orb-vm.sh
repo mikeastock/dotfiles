@@ -480,12 +480,13 @@ SSHCONFIG
 run_in_vm 'chmod 600 ~/.ssh/config'
 
 # ===========================================
-# pnpm configuration (isolated node_modules for Linux)
+# npmrc configuration (isolated pnpm store for Linux)
 # ===========================================
-echo "Writing pnpm config..."
-write_file '~/.config/pnpm/rc' << 'PNPMRC'
-virtual-store-dir=node_modules/.pnpm.linux
-PNPMRC
+echo "Writing npmrc..."
+write_file '~/.npmrc' << 'NPMRC'
+store-dir=${HOME}/.pnpm-store/${PNPM_OS:-linux}-${PNPM_ARCH:-arm64}
+virtual-store-dir=node_modules/.pnpm-${PNPM_OS:-linux}-${PNPM_ARCH:-arm64}
+NPMRC
 
 # ===========================================
 # Mise configuration
@@ -660,7 +661,7 @@ echo "    - /etc/profile.d/01-locale-fix.sh (UTF-8 locale)"
 echo ""
 echo "  Tool configs:"
 echo "    - ~/.ssh/config (OrbStack host SSH agent)"
-echo "    - ~/.config/pnpm/rc (pnpm virtual-store-dir=node_modules/.pnpm.linux)"
+echo "    - ~/.npmrc (pnpm store isolation for Linux)"
 echo "    - ~/.config/mise/config.toml (node, ruby, python, go, deno, rust)"
 echo "    - ~/.claude/settings.json + statusline-git.sh (Claude Code)"
 echo "    - ~/.pi/agent/settings.json (pi coding agent)"
