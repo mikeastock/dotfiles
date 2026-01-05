@@ -60,16 +60,26 @@ INSTALL_PATHS = {
 AGENTS = ["claude", "codex", "pi"]  # Agents that get skill builds
 
 
+def plugin_dir_name(name: str) -> str:
+    """Convert plugin name (owner/repo) to directory name (owner-repo)."""
+    return name.replace("/", "-")
+
+
 @dataclass
 class Plugin:
     """Configuration for a single plugin."""
-    name: str
+    name: str  # Fully qualified name: owner/repo
     url: str
     skills_path: list[str] = field(default_factory=lambda: ["skills/*"])
     skills: list[str] = field(default_factory=list)  # Empty = none, ["*"] = all
     extensions_path: list[str] = field(default_factory=lambda: ["extensions/*.ts"])
     extensions: list[str] = field(default_factory=list)  # Empty = none, ["*"] = all
     alias: str | None = None
+
+    @property
+    def dir_name(self) -> str:
+        """Directory name for this plugin (owner-repo format)."""
+        return plugin_dir_name(self.name)
 
     @classmethod
     def from_dict(cls, name: str, data: dict) -> "Plugin":
@@ -150,7 +160,7 @@ def discover_items(plugin: Plugin, item_type: str) -> list[tuple[str, Path]]:
     - ["*"] = all items (wildcard)
     - ["item1", "item2"] = only specified items
     """
-    plugin_dir = PLUGINS_DIR / plugin.name
+    plugin_dir = PLUGINS_DIR / plugin.dir_name
     if not plugin_dir.exists():
         return []
 

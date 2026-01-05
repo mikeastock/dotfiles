@@ -1,14 +1,16 @@
 # plugins.toml - Plugin configuration for AI agent skills and extensions
 #
-# Each plugin is a table with:
+# Each plugin is a table with fully qualified name (owner/repo):
 #   url             - Git repository URL (required)
 #   skills_path     - Glob pattern(s) to find skills (default: "skills/*")
 #   skills          - List of skills to install: ["*"] for all, [] or omit for none
 #   extensions_path - Glob pattern(s) to find extensions (default: "extensions/*.ts")
 #   extensions      - List of extensions to install: ["*"] for all, [] or omit for none
 #   alias           - Optional prefix to prevent name collisions
+#
+# Plugin directories use hyphen separator: owner/repo -> plugins/owner-repo/
 
-[superpowers]
+["obra/superpowers"]
 url = "https://github.com/obra/superpowers"
 skills = [
     "brainstorming",
@@ -23,28 +25,28 @@ skills = [
     "writing-skills",
 ]
 
-[anthropic-skills]
+["anthropics/skills"]
 url = "https://github.com/anthropics/skills"
 skills = ["frontend-design"]
 
-[compound-engineering]
+["EveryInc/compound-engineering-plugin"]
 url = "https://github.com/EveryInc/compound-engineering-plugin"
 skills_path = "plugins/*/skills/*"
 skills = ["dspy-ruby"]
 
-[agent-stuff]
+["mitsuhiko/agent-stuff"]
 url = "https://github.com/mitsuhiko/agent-stuff"
 extensions = ["answer"]
 
-[dev-browser]
+["SawyerHood/dev-browser"]
 url = "https://github.com/SawyerHood/dev-browser"
 skills = ["*"]  # Install all skills from this plugin
 
-[pi-interview-tool]
+["nicobailon/pi-interview-tool"]
 url = "https://github.com/nicobailon/pi-interview-tool"
 extensions_path = "."  # Extension files are at root level
 extensions = ["*"]  # Install all extensions from this plugin
 
-[agent-scripts]
+["steipete/agent-scripts"]
 url = "https://github.com/steipete/agent-scripts"
 skills = ["create-cli"]

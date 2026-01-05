@@ -16,12 +16,12 @@ Skills are specialized instruction sets that guide AI agents through specific ta
 ```
 agents/
 ├── plugins.toml                    # Plugin configuration (URLs, enabled items, paths)
-├── plugins/                        # Git submodules (skill sources)
-│   ├── anthropic-skills/           # github.com/anthropics/skills
-│   ├── superpowers/                # github.com/obra/superpowers
-│   ├── dev-browser/                # github.com/SawyerHood/dev-browser
-│   ├── compound-engineering/       # github.com/EveryInc/compound-engineering-plugin
-│   └── agent-stuff/                # github.com/mitsuhiko/agent-stuff
+├── plugins/                        # Git submodules (skill sources, owner-repo format)
+│   ├── anthropics-skills/          # github.com/anthropics/skills
+│   ├── obra-superpowers/           # github.com/obra/superpowers
+│   ├── SawyerHood-dev-browser/     # github.com/SawyerHood/dev-browser
+│   ├── EveryInc-compound-engineering-plugin/  # github.com/EveryInc/compound-engineering-plugin
+│   └── mitsuhiko-agent-stuff/      # github.com/mitsuhiko/agent-stuff
 ├── skills/                         # Custom skills (local)
 │   └── <skill-name>/
 │       ├── SKILL.md                # Skill definition (YAML frontmatter + markdown)
@@ -55,7 +55,9 @@ Skills follow the [Agent Skills specification](https://agentskills.io/specificat
 Files in `skill-overrides/<skill>-<agent>.md` are **appended** to the skill's SKILL.md during build. This allows agent-specific customizations without modifying upstream skills.
 
 ### Plugin Configuration
-All plugin configuration is in `plugins.toml`. Each plugin can specify:
+All plugin configuration is in `plugins.toml`. Plugins use fully qualified names (`owner/repo`) as table keys. The corresponding directory uses hyphen separator: `owner/repo` → `plugins/owner-repo/`.
+
+Each plugin can specify:
 - `url` - Git repository URL (required)
 - `skills_path` - Glob pattern to find skills (default: `skills/*`)
 - `skills` - List of skills to install: `["*"]` for all, `["a", "b"]` for specific, `[]` or omit for none
@@ -149,10 +151,10 @@ Extensions use the unified `ExtensionAPI` which provides:
 4. Update README.md: add to "Available Extensions" table and directory structure
 
 ### Adding a New Plugin
-1. Add submodule: `git submodule add <url> plugins/<name>`
+1. Add submodule: `git submodule add <url> plugins/<owner>-<repo>`
 2. Add plugin configuration to `plugins.toml`:
    ```toml
-   [plugin-name]
+   ["owner/repo"]
    url = "https://github.com/owner/repo"
    skills = ["*"]  # Use ["*"] for all, or list specific skills
    ```
