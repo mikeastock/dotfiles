@@ -393,6 +393,7 @@ write_file '~/.gitconfig' << 'GITCONFIG'
   default = current
 [core]
   editor = nvim
+  excludesfile = ~/.gitignore
 [color]
   ui = auto
 [color "status"]
