@@ -22,6 +22,23 @@ if ! orb list | grep -q "^$MACHINE.*running"; then
     exit 1
 fi
 
+# ===========================================
+# Fetch secrets from 1Password
+# ===========================================
+echo "Fetching secrets from 1Password..."
+if ! command -v op &> /dev/null; then
+    echo "Error: 1Password CLI (op) is not installed"
+    echo "Install with: brew install 1password-cli"
+    exit 1
+fi
+
+# Fetch secrets (will prompt for authentication if needed)
+ANTHROPIC_OAUTH_TOKEN=$(op read "op://Private/Anthropic OAuth Token/credential")
+CEREBRAS_API_KEY=$(op read "op://Private/Cerebras API Key/credential")
+BUILDKITE_API_TOKEN=$(op read "op://Private/Buildkite API Token/credential")
+
+echo "Secrets fetched successfully"
+
 # Helper function to run commands in VM
 run_in_vm() {
     orb run -m "$MACHINE" -s "$1"
@@ -57,7 +74,7 @@ write_file_sudo() {
 # Fish shell configuration
 # ===========================================
 echo "Writing fish config..."
-write_file '~/.config/fish/config.fish' << 'FISH_CONFIG'
+write_file '~/.config/fish/config.fish' << FISH_CONFIG
 if status is-interactive
     # ===========================================
     # Auto-cd based on MAC_PWD from orb function
@@ -66,35 +83,29 @@ if status is-interactive
     set -l TARGET_MOUNT "/code"
 
     if set -q MAC_PWD
-        if string match -q "$MAC_CODE_BASE/*" $MAC_PWD
-            set -l RELATIVE_PATH (string replace "$MAC_CODE_BASE/" "" $MAC_PWD)
-            set -l TARGET_DIR "$TARGET_MOUNT/$RELATIVE_PATH"
-            if test -d "$TARGET_DIR"
-                cd "$TARGET_DIR"
+        if string match -q "\$MAC_CODE_BASE/*" \$MAC_PWD
+            set -l RELATIVE_PATH (string replace "\$MAC_CODE_BASE/" "" \$MAC_PWD)
+            set -l TARGET_DIR "\$TARGET_MOUNT/\$RELATIVE_PATH"
+            if test -d "\$TARGET_DIR"
+                cd "\$TARGET_DIR"
             else
-                cd "$TARGET_MOUNT" 2>/dev/null; or true
+                cd "\$TARGET_MOUNT" 2>/dev/null; or true
             end
-        else if test "$MAC_PWD" = "$MAC_CODE_BASE"
-            cd "$TARGET_MOUNT"
+        else if test "\$MAC_PWD" = "\$MAC_CODE_BASE"
+            cd "\$TARGET_MOUNT"
         else
-            cd "$TARGET_MOUNT" 2>/dev/null; or true
+            cd "\$TARGET_MOUNT" 2>/dev/null; or true
         end
     else
-        cd "$TARGET_MOUNT" 2>/dev/null; or true
+        cd "\$TARGET_MOUNT" 2>/dev/null; or true
     end
 
     # ===========================================
-    # API Keys (loaded from environment or defaults)
+    # API Keys (from 1Password)
     # ===========================================
-    if set -q ANTHROPIC_OAUTH_TOKEN
-        set -gx ANTHROPIC_OAUTH_TOKEN $ANTHROPIC_OAUTH_TOKEN
-    end
-    if set -q CEREBRAS_API_KEY
-        set -gx CEREBRAS_API_KEY $CEREBRAS_API_KEY
-    end
-    if set -q BUILDKITE_API_TOKEN
-        set -gx BUILDKITE_API_TOKEN $BUILDKITE_API_TOKEN
-    end
+    set -gx ANTHROPIC_OAUTH_TOKEN "$ANTHROPIC_OAUTH_TOKEN"
+    set -gx CEREBRAS_API_KEY "$CEREBRAS_API_KEY"
+    set -gx BUILDKITE_API_TOKEN "$BUILDKITE_API_TOKEN"
     set -gx BUILDKITE_ORGANIZATION_SLUG buildr
 
     # ===========================================
@@ -119,19 +130,19 @@ if status is-interactive
     # pnpm
     # ===========================================
     set -gx PNPM_HOME "/home/mikeastock/.local/share/pnpm"
-    fish_add_path $PNPM_HOME
+    fish_add_path \$PNPM_HOME
 
     # ===========================================
     # bun
     # ===========================================
-    set -gx BUN_INSTALL "$HOME/.bun"
-    fish_add_path $BUN_INSTALL/bin
+    set -gx BUN_INSTALL "\$HOME/.bun"
+    fish_add_path \$BUN_INSTALL/bin
 
     # ===========================================
     # Mise activation
     # ===========================================
-    if test -f $HOME/.local/bin/mise
-        $HOME/.local/bin/mise activate fish | source
+    if test -f \$HOME/.local/bin/mise
+        \$HOME/.local/bin/mise activate fish | source
     end
 
     # ===========================================
@@ -144,22 +155,22 @@ if status is-interactive
     # ===========================================
     # Aliases (matching Mac config)
     # ===========================================
-    
+
     # CLI tools with special flags
     alias claude="claude --dangerously-skip-permissions"
     alias codex="codex --yolo"
-    
+
     # Package managers
     alias n="pnpm"
     alias b="bundle"
     alias be="bundle exec"
-    
+
     # Rails
     alias r="bin/rails"
     alias migrate="bin/rails db:migrate"
     alias m="migrate"
     alias rk="rake"
-    
+
     # Git
     alias g="git"
     alias gad="git add -p"
@@ -179,7 +190,7 @@ if status is-interactive
     alias gs="git status"
     alias gst="git status"
     alias s="git status"
-    
+
     # Unix enhancements
     alias ...="../.."
     alias l="ls -lah"
