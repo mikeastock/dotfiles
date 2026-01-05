@@ -1,7 +1,6 @@
 [user]
   name = Michael Stock
   email = mikeastock@gmail.com
-	signingkey = ~/.ssh/id_ed25519.pub
 [alias]
   co = checkout
   oc = checkout
@@ -60,10 +59,6 @@
 	enabled = true
 [init]
 	defaultBranch = main
-[gpg]
-	format = ssh
-[commit]
-	gpgsign = true
 [merge]
 	conflictstyle = zdiff3
 

@@ -122,8 +122,12 @@ end
 
 ####### PATH SETUP
 
-####### Homebrew
-fish_add_path /opt/homebrew/bin
+####### Homebrew (macOS) / Linuxbrew (Linux)
+if test -d /opt/homebrew
+    fish_add_path /opt/homebrew/bin
+else if test -d /home/linuxbrew/.linuxbrew
+    eval (/home/linuxbrew/.linuxbrew/bin/brew shellenv)
+end
 
 ####### Mise
 set -g MISE_FISH_AUTO_ACTIVATE 0
@@ -140,20 +144,30 @@ fish_add_path ~/.config/superpowers/skills/skills/using-skills/
 ####### Amp
 fish_add_path $HOME/.amp/bin
 
-####### Postgres 17
-fish_add_path /opt/homebrew/opt/postgresql@17/bin/
+####### Postgres 17 (macOS only)
+if test -d /opt/homebrew/opt/postgresql@17/bin
+    fish_add_path /opt/homebrew/opt/postgresql@17/bin/
+end
 
-####### GNU sed
-fish_add_path /opt/homebrew/opt/gnu-sed/libexec/gnubin/
+####### GNU sed (macOS only)
+if test -d /opt/homebrew/opt/gnu-sed/libexec/gnubin
+    fish_add_path /opt/homebrew/opt/gnu-sed/libexec/gnubin/
+end
 
-####### Z Alt
-zoxide init fish | source
+####### Z Alt (zoxide)
+if type -q zoxide
+    zoxide init fish | source
+end
 
 ###### Orbstack
 source ~/.orbstack/shell/init2.fish 2>/dev/null || :
 
-###### History Search
-atuin init fish --disable-up-arrow | source
+###### History Search (atuin)
+if type -q atuin
+    atuin init fish --disable-up-arrow | source
+end
 
-####### PROMPT CONFIG
-starship init fish | source
+####### PROMPT CONFIG (starship)
+if type -q starship
+    starship init fish | source
+end
