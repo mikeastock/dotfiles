@@ -1,3 +1,16 @@
+.PHONY: help
+help:
+	@echo "Usage: make [target]"
+	@echo ""
+	@echo "Targets:"
+	@echo "  all             Run all setup tasks (symlinks, brew, macos-defaults)"
+	@echo "  icloud-link     Create iCloud drive symlink"
+	@echo "  home-symlinks   Symlink dotfiles to home directory"
+	@echo "  config-symlinks Symlink .config files and directories"
+	@echo "  brew            Install Homebrew and packages"
+	@echo "  macos-defaults  Set macOS defaults"
+	@echo "  help            Show this help message"
+
 .PHONY: all
 all: icloud-link home-symlinks config-symlinks brew macos-defaults
 
