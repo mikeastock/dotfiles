@@ -40,7 +40,7 @@ agents/
 ├── skills/                           # custom skills
 │   └── fetching-buildkite-failures/
 ├── commands/                         # slash commands (Claude Code, Codex)
-│   └── semantic-commit.md
+│   └── commit.md
 ├── skill-overrides/                  # agent-specific appends
 │   ├── brainstorming-claude.md
 │   └── brainstorming-pi.md
@@ -163,7 +163,7 @@ Example: `skill-overrides/brainstorming-pi.md` is appended to the brainstorming 
 
 | Command | Description |
 |---------|-------------|
-| `/semantic-commit` | Create a semantic commit following Conventional Commits specification |
+| `/commit` | Create a semantic commit following Conventional Commits specification |
 
 ## Available Extensions
 

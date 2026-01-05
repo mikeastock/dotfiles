@@ -67,7 +67,7 @@ If arguments are provided: `$ARGUMENTS`
 
 ## Examples
 
-- `/semantic-commit` - Analyze changes and auto-generate appropriate commit
-- `/semantic-commit feat` - Create a feature commit with auto-generated message
-- `/semantic-commit fix auth` - Create a fix commit with "auth" scope
-- `/semantic-commit feat api add user authentication endpoint` - Full specification
+- `/commit` - Analyze changes and auto-generate appropriate commit
+- `/commit feat` - Create a feature commit with auto-generated message
+- `/commit fix auth` - Create a fix commit with "auth" scope
+- `/commit feat api add user authentication endpoint` - Full specification
