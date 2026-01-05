@@ -21,7 +21,7 @@ test_make_help() {
     local output
     output=$(make help 2>&1)
 
-    assert_output_contains "$output" "Agents - Skills and Tools Installer" "Help shows title"
+    assert_output_contains "$output" "Agents - Skills and Extensions Installer" "Help shows title"
     assert_output_contains "$output" "make install" "Help shows install command"
     assert_output_contains "$output" "make build" "Help shows build command"
     assert_output_contains "$output" "make clean" "Help shows clean command"
@@ -118,56 +118,27 @@ test_make_install_skills() {
     fi
 }
 
-# Test: make install-tools (with sandbox)
-test_make_install_tools() {
-    log_test "Testing 'make install-tools' (sandboxed)"
+# Test: make install-extensions (with sandbox)
+test_make_install_extensions() {
+    log_test "Testing 'make install-extensions' (sandboxed)"
     cd "$PROJECT_DIR"
 
-    # Run install-tools with sandbox HOME
+    # Run install-extensions with sandbox HOME
     local output
-    output=$(HOME="$SANDBOX_DIR" make install-tools 2>&1)
+    output=$(HOME="$SANDBOX_DIR" make install-extensions 2>&1)
 
-    assert_output_contains "$output" "Installing tools" "Install shows tools progress"
+    assert_output_contains "$output" "Installing extensions" "Install shows extensions progress"
     assert_output_contains "$output" "Installed" "Install shows completion"
 
-    # Check if tools directory has any tools (depends on whether tools/pi exists)
-    if [ -d "$PROJECT_DIR/tools/pi" ]; then
-        local tools_count
-        tools_count=$(find "$SANDBOX_DIR/.pi/agent/tools" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
-        if [ "$tools_count" -gt 0 ]; then
-            log_info "PASS: Pi tools installed ($tools_count directories)"
-            TESTS_PASSED=$((TESTS_PASSED + 1))
-        else
-            log_info "PASS: No tools to install (tools/pi may be empty)"
-            TESTS_PASSED=$((TESTS_PASSED + 1))
-        fi
-    else
-        log_info "PASS: No tools directory found (expected)"
-        TESTS_PASSED=$((TESTS_PASSED + 1))
-    fi
-}
-
-# Test: make install-hooks (with sandbox)
-test_make_install_hooks() {
-    log_test "Testing 'make install-hooks' (sandboxed)"
-    cd "$PROJECT_DIR"
-
-    # Run install-hooks with sandbox HOME
-    local output
-    output=$(HOME="$SANDBOX_DIR" make install-hooks 2>&1)
-
-    assert_output_contains "$output" "Installing hooks" "Install shows hooks progress"
-    assert_output_contains "$output" "Installed" "Install shows completion"
-
-    # Check if hooks directory has any hooks
-    local hooks_count
-    hooks_count=$(find "$SANDBOX_DIR/.pi/agent/hooks" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
-    if [ "$hooks_count" -gt 0 ]; then
-        log_info "PASS: Pi hooks installed ($hooks_count directories)"
+    # Check if extensions directory has any extensions
+    local extensions_count
+    extensions_count=$(find "$SANDBOX_DIR/.pi/agent/extensions" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
+    if [ "$extensions_count" -gt 0 ]; then
+        log_info "PASS: Pi extensions installed ($extensions_count directories)"
         TESTS_PASSED=$((TESTS_PASSED + 1))
     else
-        # May have no hooks configured in plugins.toml
-        log_info "PASS: No hooks to install (may be expected)"
+        # May have no extensions configured in plugins.toml
+        log_info "PASS: No extensions to install (may be expected)"
         TESTS_PASSED=$((TESTS_PASSED + 1))
     fi
 }
@@ -181,14 +152,13 @@ test_make_install() {
     rm -rf "$SANDBOX_DIR/.claude/skills"/* 2>/dev/null || true
     rm -rf "$SANDBOX_DIR/.codex/skills"/* 2>/dev/null || true
     rm -rf "$SANDBOX_DIR/.pi/agent/skills"/* 2>/dev/null || true
-    rm -rf "$SANDBOX_DIR/.pi/agent/tools"/* 2>/dev/null || true
-    rm -rf "$SANDBOX_DIR/.pi/agent/hooks"/* 2>/dev/null || true
+    rm -rf "$SANDBOX_DIR/.pi/agent/extensions"/* 2>/dev/null || true
 
     # Run full install with sandbox HOME
     local output
     output=$(HOME="$SANDBOX_DIR" make install 2>&1)
 
-    assert_output_contains "$output" "All skills, tools, and hooks installed" "Install shows completion message"
+    assert_output_contains "$output" "All skills and extensions installed" "Install shows completion message"
 }
 
 # Test: make clean (with sandbox)
@@ -223,7 +193,7 @@ test_make_all() {
     local output
     output=$(make all 2>&1)
 
-    assert_output_contains "$output" "Agents - Skills and Tools Installer" "'make all' shows help"
+    assert_output_contains "$output" "Agents - Skills and Extensions Installer" "'make all' shows help"
 }
 
 # Test: plugins.toml exists and is valid
@@ -262,8 +232,7 @@ main() {
     test_plugins_toml
     test_make_build
     test_make_install_skills
-    test_make_install_tools
-    test_make_install_hooks
+    test_make_install_extensions
     test_make_install
     test_make_clean
 

@@ -1,5 +1,5 @@
 # Agents Makefile
-# Installs skills, tools, and hooks for AI coding agents
+# Installs skills and extensions for AI coding agents
 #
 # Configuration is in plugins.toml. Run `make install` to build and install.
 # Requires Python 3.11+ (uses tomllib from stdlib).
@@ -11,23 +11,22 @@ BUILD_SCRIPT := $(CURDIR)/scripts/build.py
 PI_SETTINGS_DIR := $(HOME)/.pi/agent
 PI_SETTINGS_FILE := $(PI_SETTINGS_DIR)/settings.json
 
-.PHONY: all install install-skills install-tools install-hooks build clean help submodule-init plugin-update pi-skills-config check-python
+.PHONY: all install install-skills install-extensions build clean help submodule-init plugin-update pi-skills-config check-python
 
 all: help
 
 help:
-	@echo "Agents - Skills and Tools Installer"
+	@echo "Agents - Skills and Extensions Installer"
 	@echo ""
 	@echo "Usage:"
-	@echo "  make install           Initialize submodules and install skills, tools, and hooks"
-	@echo "  make install-skills    Install skills only (Claude Code, Codex, Pi agent)"
-	@echo "  make install-tools     Install custom tools only (Pi agent)"
-	@echo "  make install-hooks     Install hooks only (Pi agent)"
-	@echo "  make build             Build skills with overrides (without installing)"
-	@echo "  make plugin-update     Update all plugin submodules to latest"
-	@echo "  make clean             Remove all installed skills, tools, hooks, and build artifacts"
-	@echo "  make pi-skills-config  Configure Pi agent to use only Pi-specific skills"
-	@echo "  make help              Show this help message"
+	@echo "  make install             Initialize submodules and install skills and extensions"
+	@echo "  make install-skills      Install skills only (Claude Code, Codex, Pi agent)"
+	@echo "  make install-extensions  Install extensions only (Pi agent)"
+	@echo "  make build               Build skills with overrides (without installing)"
+	@echo "  make plugin-update       Update all plugin submodules to latest"
+	@echo "  make clean               Remove all installed skills, extensions, and build artifacts"
+	@echo "  make pi-skills-config    Configure Pi agent to use only Pi-specific skills"
+	@echo "  make help                Show this help message"
 	@echo ""
 	@echo "Configuration: plugins.toml"
 
@@ -37,7 +36,7 @@ check-python:
 
 install: check-python
 	@$(PYTHON) $(BUILD_SCRIPT) install
-	@echo "All skills, tools, and hooks installed"
+	@echo "All skills and extensions installed"
 
 submodule-init:
 	@$(PYTHON) $(BUILD_SCRIPT) submodule-init
@@ -48,11 +47,8 @@ build: check-python
 install-skills: check-python
 	@$(PYTHON) $(BUILD_SCRIPT) install-skills
 
-install-tools: check-python
-	@$(PYTHON) $(BUILD_SCRIPT) install-tools
-
-install-hooks: check-python
-	@$(PYTHON) $(BUILD_SCRIPT) install-hooks
+install-extensions: check-python
+	@$(PYTHON) $(BUILD_SCRIPT) install-extensions
 
 clean: check-python
 	@$(PYTHON) $(BUILD_SCRIPT) clean

@@ -4,7 +4,7 @@ This file provides guidance for AI assistants working with this codebase.
 
 ## Project Overview
 
-This repository manages reusable skills, custom tools, and hooks for AI coding agents including:
+This repository manages reusable skills and extensions for AI coding agents including:
 - **Claude Code** (Anthropic)
 - **Pi Coding Agent** (badlogic)
 - **Codex CLI** (OpenAI)
@@ -28,18 +28,16 @@ agents/
 │       └── <additional files>      # Supporting scripts/resources
 ├── skill-overrides/                # Agent-specific appends
 │   └── <skill>-<agent>.md          # Appended to SKILL.md during build
-├── tools/                          # Custom tools (Pi only)
+├── extensions/                     # Custom extensions (Pi only)
 │   └── pi/
-│       └── <tool-name>/index.ts
-├── hooks/                          # Event hooks (Pi only)
-│   └── pi/
-│       └── <hook-name>/index.ts
+│       └── <extension-name>/index.ts
 ├── scripts/
 │   └── build.py                    # Python build system (requires Python 3.11+)
 ├── tests/                          # Test suite
 │   ├── test-helpers.sh             # Shared test utilities
 │   ├── test-make.sh                # Makefile tests
 │   ├── test-pi-skills-config.sh    # Pi config tests
+│   ├── test-pi-extensions.sh       # Pi extensions type-check tests
 │   └── run-all.sh                  # Run all tests
 ├── build/                          # Generated during build (gitignored)
 │   ├── claude/                     # Skills built for Claude Code
@@ -61,10 +59,8 @@ All plugin configuration is in `plugins.toml`. Each plugin can specify:
 - `url` - Git repository URL (required)
 - `skills_path` - Glob pattern to find skills (default: `skills/*`)
 - `skills` - List of skills to install: `["*"]` for all, `["a", "b"]` for specific, `[]` or omit for none
-- `hooks_path` - Glob pattern to find hooks (default: `pi-hooks/*.ts`)
-- `hooks` - List of hooks to install: `["*"]` for all, `["a", "b"]` for specific, `[]` or omit for none
-- `tools_path` - Glob pattern to find tools (default: `tools/*`)
-- `tools` - List of tools to install: `["*"]` for all, `["a", "b"]` for specific, `[]` or omit for none
+- `extensions_path` - Glob pattern to find extensions (default: `extensions/*.ts`)
+- `extensions` - List of extensions to install: `["*"]` for all, `["a", "b"]` for specific, `[]` or omit for none
 - `alias` - Optional prefix to prevent name collisions
 
 ## Development Workflow
@@ -78,11 +74,10 @@ make install
 ### Common Commands
 | Command | Description |
 |---------|-------------|
-| `make install` | Build and install skills, tools, hooks for all agents |
+| `make install` | Build and install skills and extensions for all agents |
 | `make build` | Build skills to `build/` without installing |
 | `make install-skills` | Install skills only |
-| `make install-tools` | Install Pi tools only |
-| `make install-hooks` | Install Pi hooks only |
+| `make install-extensions` | Install Pi extensions only |
 | `make clean` | Remove all installed artifacts and build directory |
 | `make plugin-update` | Update all plugin submodules to latest |
 | `make pi-skills-config` | Configure Pi to use only its own skills (avoid duplicates) |
@@ -92,6 +87,7 @@ make install
 ./tests/run-all.sh          # Run all tests
 ./tests/test-make.sh        # Test Makefile commands
 ./tests/test-pi-skills-config.sh  # Test Pi config command
+./tests/test-pi-extensions.sh     # Test Pi extensions type-checking
 ```
 
 Tests use a sandbox environment (temporary HOME directory) to avoid affecting real agent installations. The test framework provides assertion helpers in `tests/test-helpers.sh`.
@@ -107,15 +103,16 @@ GitHub Actions runs `./tests/run-all.sh` on push/PR to main/master branches.
 - Document prerequisites, step-by-step processes, and common mistakes
 - Reference related skills when appropriate
 
-### Custom Tools (TypeScript - Pi only)
-Location: `tools/pi/<tool-name>/index.ts`
+### Extensions (TypeScript - Pi only)
+Location: `extensions/pi/<extension-name>/index.ts`
 
-Fetch the latest documentation from [Pi Coding Agent](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent) for current tool API and format requirements.
+Fetch the latest documentation from [Pi Coding Agent extensions](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/extensions.md) for current extension API and format requirements.
 
-### Hooks (TypeScript - Pi only)
-Location: `hooks/pi/<hook-name>/index.ts`
-
-Fetch the latest documentation from [Pi Coding Agent](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent) for current hook API and format requirements.
+Extensions use the unified `ExtensionAPI` which provides:
+- Event subscriptions via `pi.on("event_name", handler)`
+- Tool registration via `pi.registerTool({ ... })`
+- Command registration via `pi.registerCommand("name", { ... })`
+- UI interactions via `pi.ui.select()`, `pi.ui.confirm()`, etc.
 
 ### Test Scripts (Bash)
 - Source `test-helpers.sh` for shared utilities
@@ -126,11 +123,11 @@ Fetch the latest documentation from [Pi Coding Agent](https://github.com/badlogi
 
 ## Installation Locations
 
-| Agent | Skills | Tools | Hooks |
-|-------|--------|-------|-------|
-| Claude Code | `~/.claude/skills/` | N/A | N/A |
-| Codex CLI | `~/.codex/skills/` | N/A | N/A |
-| Pi Agent | `~/.pi/agent/skills/` | `~/.pi/agent/tools/` | `~/.pi/agent/hooks/` |
+| Agent | Skills | Extensions |
+|-------|--------|------------|
+| Claude Code | `~/.claude/skills/` | N/A |
+| Codex CLI | `~/.codex/skills/` | N/A |
+| Pi Agent | `~/.pi/agent/skills/` | `~/.pi/agent/extensions/` |
 
 ## Adding New Content
 
@@ -145,17 +142,11 @@ Fetch the latest documentation from [Pi Coding Agent](https://github.com/badlogi
 1. Create `skill-overrides/<skill-name>-<agent>.md` (agent: `claude` or `pi`)
 2. Content will be appended to the skill during build
 
-### Adding a Custom Tool (Pi only)
-1. Fetch the [Pi Coding Agent documentation](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent) for the current tool API
-2. Create `tools/pi/<tool-name>/index.ts` following the documentation
-3. Run `make install-tools`
-4. Update README.md: add to "Available Tools" table and directory structure
-
-### Adding a Hook (Pi only)
-1. Fetch the [Pi Coding Agent documentation](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent) for the current hook API
-2. Create `hooks/pi/<hook-name>/index.ts` following the documentation
-3. Run `make install-hooks`
-4. Update README.md: add to "Available Hooks" table and directory structure
+### Adding an Extension (Pi only)
+1. Fetch the [Pi Coding Agent extensions documentation](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/extensions.md) for the current API
+2. Create `extensions/pi/<extension-name>/index.ts` following the documentation
+3. Run `make install-extensions`
+4. Update README.md: add to "Available Extensions" table and directory structure
 
 ### Adding a New Plugin
 1. Add submodule: `git submodule add <url> plugins/<name>`
@@ -173,5 +164,5 @@ Fetch the latest documentation from [Pi Coding Agent](https://github.com/badlogi
 - The `build/` directory is regenerated on each build
 - Running `make clean` removes both installed files and build artifacts
 - Use `make pi-skills-config` after installation to prevent duplicate skill warnings in Pi when using Claude/Codex skill directories
-- **Keep README.md up to date**: When adding, removing, or renaming skills, tools, or hooks, update the corresponding tables and directory structure in README.md
+- **Keep README.md up to date**: When adding, removing, or renaming skills or extensions, update the corresponding tables and directory structure in README.md
 - **Requires Python 3.11+** for the build system (uses `tomllib` from stdlib)

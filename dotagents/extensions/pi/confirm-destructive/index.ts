@@ -1,15 +1,15 @@
 /**
- * Confirm Destructive Actions Hook (macOS only)
+ * Confirm Destructive Actions Extension (macOS only)
  *
  * Prompts for confirmation before destructive session actions (clear, switch, branch).
  * Demonstrates how to cancel session events using the before_* events.
  *
- * This hook only runs on macOS.
+ * This extension only runs on macOS.
  */
 
-import type { HookAPI, SessionBeforeSwitchEvent, SessionMessageEntry } from "@mariozechner/pi-coding-agent";
+import type { ExtensionAPI, SessionBeforeSwitchEvent, SessionMessageEntry } from "@mariozechner/pi-coding-agent";
 
-export default function (pi: HookAPI) {
+export default function (pi: ExtensionAPI) {
 	// Only run on macOS
 	if (process.platform !== "darwin") {
 		return;

@@ -1,14 +1,12 @@
-# plugins.toml - Plugin configuration for AI agent skills, tools, and hooks
+# plugins.toml - Plugin configuration for AI agent skills and extensions
 #
 # Each plugin is a table with:
-#   url          - Git repository URL (required)
-#   skills_path  - Glob pattern(s) to find skills (default: "skills/*")
-#   skills       - List of skills to install: ["*"] for all, [] or omit for none
-#   hooks_path   - Glob pattern(s) to find hooks (default: "pi-hooks/*.ts")
-#   hooks        - List of hooks to install: ["*"] for all, [] or omit for none
-#   tools_path   - Glob pattern(s) to find tools (default: "tools/*")
-#   tools        - List of tools to install: ["*"] for all, [] or omit for none
-#   alias        - Optional prefix to prevent name collisions
+#   url             - Git repository URL (required)
+#   skills_path     - Glob pattern(s) to find skills (default: "skills/*")
+#   skills          - List of skills to install: ["*"] for all, [] or omit for none
+#   extensions_path - Glob pattern(s) to find extensions (default: "extensions/*.ts")
+#   extensions      - List of extensions to install: ["*"] for all, [] or omit for none
+#   alias           - Optional prefix to prevent name collisions
 
 [superpowers]
 url = "https://github.com/obra/superpowers"
@@ -36,7 +34,7 @@ skills = ["dspy-ruby"]
 
 [agent-stuff]
 url = "https://github.com/mitsuhiko/agent-stuff"
-hooks = ["answer"]
+extensions = ["answer"]
 
 [dev-browser]
 url = "https://github.com/SawyerHood/dev-browser"
@@ -44,5 +42,5 @@ skills = ["*"]  # Install all skills from this plugin
 
 [pi-interview-tool]
 url = "https://github.com/nicobailon/pi-interview-tool"
-tools_path = "."  # Tool files are at root level
-tools = ["*"]  # Install all tools from this plugin
+extensions_path = "."  # Extension files are at root level
+extensions = ["*"]  # Install all extensions from this plugin

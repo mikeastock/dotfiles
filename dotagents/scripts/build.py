@@ -2,7 +2,7 @@
 """
 Build system for AI agent plugins.
 
-Reads plugins.toml and builds/installs skills, hooks, and tools for
+Reads plugins.toml and builds/installs skills and extensions for
 Claude Code, Codex CLI, and Pi Agent.
 
 Requires Python 3.11+ (uses tomllib from stdlib).
@@ -33,8 +33,7 @@ import tomllib
 ROOT = Path(__file__).parent.parent
 PLUGINS_DIR = ROOT / "plugins"
 SKILLS_DIR = ROOT / "skills"
-TOOLS_DIR = ROOT / "tools"
-HOOKS_DIR = ROOT / "hooks"
+EXTENSIONS_DIR = ROOT / "extensions"
 OVERRIDES_DIR = ROOT / "skill-overrides"
 BUILD_DIR = ROOT / "build"
 CONFIG_FILE = ROOT / "plugins.toml"
@@ -50,8 +49,7 @@ INSTALL_PATHS = {
     },
     "pi": {
         "skills": HOME / ".pi" / "agent" / "skills",
-        "tools": HOME / ".pi" / "agent" / "tools",
-        "hooks": HOME / ".pi" / "agent" / "hooks",
+        "extensions": HOME / ".pi" / "agent" / "extensions",
     },
 }
 
@@ -65,10 +63,8 @@ class Plugin:
     url: str
     skills_path: list[str] = field(default_factory=lambda: ["skills/*"])
     skills: list[str] = field(default_factory=list)  # Empty = none, ["*"] = all
-    hooks_path: list[str] = field(default_factory=lambda: ["pi-hooks/*.ts"])
-    hooks: list[str] = field(default_factory=list)  # Empty = none, ["*"] = all
-    tools_path: list[str] = field(default_factory=lambda: ["tools/*"])
-    tools: list[str] = field(default_factory=list)  # Empty = none, ["*"] = all
+    extensions_path: list[str] = field(default_factory=lambda: ["extensions/*.ts"])
+    extensions: list[str] = field(default_factory=list)  # Empty = none, ["*"] = all
     alias: str | None = None
 
     @classmethod
@@ -94,10 +90,8 @@ class Plugin:
             url=data["url"],
             skills_path=normalize_path(data.get("skills_path", "skills/*")),
             skills=normalize_items(data.get("skills")),
-            hooks_path=normalize_path(data.get("hooks_path", "pi-hooks/*.ts")),
-            hooks=normalize_items(data.get("hooks")),
-            tools_path=normalize_path(data.get("tools_path", "tools/*")),
-            tools=normalize_items(data.get("tools")),
+            extensions_path=normalize_path(data.get("extensions_path", "extensions/*.ts")),
+            extensions=normalize_items(data.get("extensions")),
             alias=data.get("alias"),
         )
 
@@ -129,7 +123,7 @@ def glob_paths(base: Path, patterns: list[str]) -> list[Path]:
     """Find all paths matching glob patterns."""
     results = []
     for pattern in patterns:
-        # Special case: "." means the base directory itself (for root-level tools)
+        # Special case: "." means the base directory itself (for root-level extensions)
         if pattern == ".":
             results.append(base)
         # Handle ** patterns
@@ -143,7 +137,7 @@ def glob_paths(base: Path, patterns: list[str]) -> list[Path]:
 
 def discover_items(plugin: Plugin, item_type: str) -> list[tuple[str, Path]]:
     """
-    Discover skills/hooks/tools from a plugin.
+    Discover skills/extensions from a plugin.
 
     Returns list of (item_name, item_path) tuples.
 
@@ -159,12 +153,9 @@ def discover_items(plugin: Plugin, item_type: str) -> list[tuple[str, Path]]:
     if item_type == "skills":
         patterns = plugin.skills_path
         enabled = plugin.skills
-    elif item_type == "hooks":
-        patterns = plugin.hooks_path
-        enabled = plugin.hooks
-    elif item_type == "tools":
-        patterns = plugin.tools_path
-        enabled = plugin.tools
+    elif item_type == "extensions":
+        patterns = plugin.extensions_path
+        enabled = plugin.extensions
     else:
         raise ValueError(f"Unknown item type: {item_type}")
 
@@ -300,99 +291,52 @@ def install_skills():
         print(f"  {agent}: {count} skills -> {dest}")
 
 
-def install_hooks(plugins: dict[str, Plugin]):
-    """Install hooks from plugins and custom hooks directory."""
-    print("Installing hooks...")
+def install_extensions(plugins: dict[str, Plugin]):
+    """Install extensions from plugins and custom extensions directory."""
+    print("Installing extensions...")
 
-    dest = INSTALL_PATHS["pi"]["hooks"]
+    dest = INSTALL_PATHS["pi"]["extensions"]
     dest.mkdir(parents=True, exist_ok=True)
 
     installed = set()
 
-    # Hooks from plugins
+    # Extensions from plugins
     for plugin in plugins.values():
-        for name, path in discover_items(plugin, "hooks"):
+        for name, path in discover_items(plugin, "extensions"):
             if name in installed:
-                print(f"    Warning: Hook '{name}' already exists, skipping duplicate from {plugin.name}")
+                print(f"    Warning: Extension '{name}' already exists, skipping duplicate from {plugin.name}")
                 continue
 
-            dest_hook = dest / name
-            remove_path(dest_hook)
-            dest_hook.mkdir(parents=True)
+            dest_ext = dest / name
+            remove_path(dest_ext)
+            dest_ext.mkdir(parents=True)
 
-            # Hooks are .ts files, need to be wrapped in directory with index.ts
+            # Extensions are .ts files, need to be wrapped in directory with index.ts
             if path.is_file():
-                shutil.copy(path, dest_hook / "index.ts")
+                shutil.copy(path, dest_ext / "index.ts")
             else:
-                shutil.copytree(path, dest_hook, dirs_exist_ok=True)
+                shutil.copytree(path, dest_ext, dirs_exist_ok=True)
 
             print(f"  {name} (from {plugin.name})")
             installed.add(name)
 
-    # Custom hooks
-    custom_hooks = HOOKS_DIR / "pi"
-    if custom_hooks.exists():
-        for hook_dir in sorted(custom_hooks.iterdir()):
-            if hook_dir.is_dir():
-                name = hook_dir.name
+    # Custom extensions
+    custom_extensions = EXTENSIONS_DIR / "pi"
+    if custom_extensions.exists():
+        for ext_dir in sorted(custom_extensions.iterdir()):
+            if ext_dir.is_dir():
+                name = ext_dir.name
                 if name in installed:
-                    print(f"    Warning: Custom hook '{name}' conflicts with plugin hook")
+                    print(f"    Warning: Custom extension '{name}' conflicts with plugin extension")
 
-                dest_hook = dest / name
-                remove_path(dest_hook)
-                shutil.copytree(hook_dir, dest_hook)
+                dest_ext = dest / name
+                remove_path(dest_ext)
+                shutil.copytree(ext_dir, dest_ext)
 
                 print(f"  {name} (custom)")
                 installed.add(name)
 
-    print(f"  Installed {len(installed)} hooks to {dest}")
-
-
-def install_tools(plugins: dict[str, Plugin]):
-    """Install tools from plugins and custom tools directory."""
-    print("Installing tools...")
-
-    dest = INSTALL_PATHS["pi"]["tools"]
-    dest.mkdir(parents=True, exist_ok=True)
-
-    installed = set()
-
-    # Tools from plugins
-    for plugin in plugins.values():
-        for name, path in discover_items(plugin, "tools"):
-            if name in installed:
-                print(f"    Warning: Tool '{name}' already exists, skipping duplicate from {plugin.name}")
-                continue
-
-            dest_tool = dest / name
-            remove_path(dest_tool)
-
-            if path.is_dir():
-                shutil.copytree(path, dest_tool)
-            else:
-                dest_tool.mkdir(parents=True)
-                shutil.copy(path, dest_tool / "index.ts")
-
-            print(f"  {name} (from {plugin.name})")
-            installed.add(name)
-
-    # Custom tools
-    custom_tools = TOOLS_DIR / "pi"
-    if custom_tools.exists():
-        for tool_dir in sorted(custom_tools.iterdir()):
-            if tool_dir.is_dir():
-                name = tool_dir.name
-                if name in installed:
-                    print(f"    Warning: Custom tool '{name}' conflicts with plugin tool")
-
-                dest_tool = dest / name
-                remove_path(dest_tool)
-                shutil.copytree(tool_dir, dest_tool)
-
-                print(f"  {name} (custom)")
-                installed.add(name)
-
-    print(f"  Installed {len(installed)} tools to {dest}")
+    print(f"  Installed {len(installed)} extensions to {dest}")
 
 
 def clean(plugins: dict[str, Plugin]):
@@ -411,43 +355,24 @@ def clean(plugins: dict[str, Plugin]):
                             remove_path(installed)
                             print(f"  Removed skill: {skill_dir.name} from {agent}")
 
-    # Clean hooks
-    hooks_dest = INSTALL_PATHS["pi"]["hooks"]
+    # Clean extensions
+    ext_dest = INSTALL_PATHS["pi"]["extensions"]
     for plugin in plugins.values():
-        for name, _ in discover_items(plugin, "hooks"):
-            installed = hooks_dest / name
+        for name, _ in discover_items(plugin, "extensions"):
+            installed = ext_dest / name
             if installed.exists() or installed.is_symlink():
                 remove_path(installed)
-                print(f"  Removed hook: {name}")
+                print(f"  Removed extension: {name}")
 
-    # Custom hooks
-    custom_hooks = HOOKS_DIR / "pi"
-    if custom_hooks.exists():
-        for hook_dir in custom_hooks.iterdir():
-            if hook_dir.is_dir():
-                installed = hooks_dest / hook_dir.name
+    # Custom extensions
+    custom_extensions = EXTENSIONS_DIR / "pi"
+    if custom_extensions.exists():
+        for ext_dir in custom_extensions.iterdir():
+            if ext_dir.is_dir():
+                installed = ext_dest / ext_dir.name
                 if installed.exists() or installed.is_symlink():
                     remove_path(installed)
-                    print(f"  Removed hook: {hook_dir.name}")
-
-    # Clean tools
-    tools_dest = INSTALL_PATHS["pi"]["tools"]
-    for plugin in plugins.values():
-        for name, _ in discover_items(plugin, "tools"):
-            installed = tools_dest / name
-            if installed.exists() or installed.is_symlink():
-                remove_path(installed)
-                print(f"  Removed tool: {name}")
-
-    # Custom tools
-    custom_tools = TOOLS_DIR / "pi"
-    if custom_tools.exists():
-        for tool_dir in custom_tools.iterdir():
-            if tool_dir.is_dir():
-                installed = tools_dest / tool_dir.name
-                if installed.exists() or installed.is_symlink():
-                    remove_path(installed)
-                    print(f"  Removed tool: {tool_dir.name}")
+                    print(f"  Removed extension: {ext_dir.name}")
 
     # Clean build directory
     if BUILD_DIR.exists():
@@ -459,7 +384,7 @@ def clean(plugins: dict[str, Plugin]):
 
 def main():
     parser = argparse.ArgumentParser(description="Build and install AI agent plugins")
-    parser.add_argument("command", choices=["build", "install", "install-skills", "install-tools", "install-hooks", "clean", "submodule-init"],
+    parser.add_argument("command", choices=["build", "install", "install-skills", "install-extensions", "clean", "submodule-init"],
                         help="Command to run")
     args = parser.parse_args()
 
@@ -473,16 +398,13 @@ def main():
         init_submodules()
         build_skills(plugins)
         install_skills()
-        install_tools(plugins)
-        install_hooks(plugins)
+        install_extensions(plugins)
         print("\nAll done!")
     elif args.command == "install-skills":
         build_skills(plugins)
         install_skills()
-    elif args.command == "install-tools":
-        install_tools(plugins)
-    elif args.command == "install-hooks":
-        install_hooks(plugins)
+    elif args.command == "install-extensions":
+        install_extensions(plugins)
     elif args.command == "clean":
         clean(plugins)
 

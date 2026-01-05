@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
 #
-# Test Pi tools by type-checking them against the latest Pi package
+# Test Pi extensions by type-checking them against the latest Pi package
 #
-# Usage: ./tests/test-pi-tools.sh
+# Usage: ./tests/test-pi-extensions.sh
 #
 
 source "$(dirname "$0")/test-helpers.sh"
 
 trap cleanup EXIT
 
-log_info "Testing Pi tools type-checking..."
+log_info "Testing Pi extensions type-checking..."
 
-# Check if there are any Pi tools to test
-PI_TOOLS_DIR="$PROJECT_DIR/tools/pi"
-if [ ! -d "$PI_TOOLS_DIR" ] || [ -z "$(ls -A "$PI_TOOLS_DIR" 2>/dev/null)" ]; then
-    log_info "No Pi tools found in $PI_TOOLS_DIR, skipping type-check"
+# Check if there are any Pi extensions to test
+PI_EXTENSIONS_DIR="$PROJECT_DIR/extensions/pi"
+if [ ! -d "$PI_EXTENSIONS_DIR" ] || [ -z "$(ls -A "$PI_EXTENSIONS_DIR" 2>/dev/null)" ]; then
+    log_info "No Pi extensions found in $PI_EXTENSIONS_DIR, skipping type-check"
     print_summary
     exit 0
 fi
@@ -46,7 +46,7 @@ else
 fi
 
 # Run type-check
-log_test "Type-checking Pi tools..."
+log_test "Type-checking Pi extensions..."
 TYPECHECK_OUTPUT=$(pnpm run typecheck 2>&1) || true
 
 if echo "$TYPECHECK_OUTPUT" | grep -q "error TS"; then

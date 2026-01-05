@@ -1,6 +1,6 @@
 # Agents
 
-This repository contains reusable skills and custom tools for AI coding agents including [Pi Coding Agent](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent), Claude Code, and [Codex CLI](https://github.com/openai/codex).
+This repository contains reusable skills and extensions for AI coding agents including [Pi Coding Agent](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent), Claude Code, and [Codex CLI](https://github.com/openai/codex).
 
 ## Requirements
 
@@ -16,13 +16,12 @@ make install
 This initializes submodules, builds skills (applying overrides), and installs them for all supported agents. See `make help` for more options:
 
 ```
-make install           Initialize submodules and install skills, tools, and hooks
-make install-skills    Install skills only (Claude Code, Codex, Pi agent)
-make install-tools     Install custom tools only (Pi agent)
-make install-hooks     Install hooks only (Pi agent)
-make build             Build skills with overrides (without installing)
-make clean             Remove all installed skills, tools, hooks, and build artifacts
-make pi-skills-config  Configure Pi agent to use only Pi-specific skills
+make install             Initialize submodules and install skills and extensions
+make install-skills      Install skills only (Claude Code, Codex, Pi agent)
+make install-extensions  Install extensions only (Pi agent)
+make build               Build skills with overrides (without installing)
+make clean               Remove all installed skills, extensions, and build artifacts
+make pi-skills-config    Configure Pi agent to use only Pi-specific skills
 ```
 
 ## Structure
@@ -42,11 +41,9 @@ agents/
 ├── skill-overrides/                  # agent-specific appends
 │   ├── brainstorming-claude.md
 │   └── brainstorming-pi.md
-├── tools/
+├── extensions/
 │   └── pi/
-│       └── AskUserQuestion/
-├── hooks/
-│   └── pi/
+│       ├── AskUserQuestion/
 │       ├── confirm-destructive/
 │       └── protected-paths/
 ├── scripts/
@@ -55,6 +52,7 @@ agents/
 │   ├── test-helpers.sh
 │   ├── test-make.sh
 │   ├── test-pi-skills-config.sh
+│   ├── test-pi-extensions.sh
 │   └── run-all.sh
 ├── build/                            # generated during install
 │   ├── claude/
@@ -79,7 +77,7 @@ skills = [
 [agent-stuff]
 url = "https://github.com/mitsuhiko/agent-stuff"
 skills = []  # No skills from this plugin
-hooks = ["answer"]
+extensions = ["answer"]
 
 [compound-engineering]
 url = "https://github.com/EveryInc/compound-engineering-plugin"
@@ -88,7 +86,7 @@ skills = ["dspy-ruby"]
 
 [dev-browser]
 url = "https://github.com/SawyerHood/dev-browser"
-# No skills list = install all skills from this plugin
+skills = ["*"]  # Install all skills from this plugin
 ```
 
 ### Configuration Options
@@ -100,10 +98,8 @@ Each plugin supports these options:
 | `url` | Git repository URL (required) |
 | `skills_path` | Glob pattern to find skills (default: `skills/*`) |
 | `skills` | List of skills to install, or omit for all |
-| `hooks_path` | Glob pattern to find hooks (default: `pi-hooks/*.ts`) |
-| `hooks` | List of hooks to install, or omit for all |
-| `tools_path` | Glob pattern to find tools (default: `tools/*`) |
-| `tools` | List of tools to install, or omit for all |
+| `extensions_path` | Glob pattern to find extensions (default: `extensions/*.ts`) |
+| `extensions` | List of extensions to install, or omit for all |
 | `alias` | Optional prefix to prevent name collisions |
 
 ### Updating Plugins
@@ -160,32 +156,25 @@ Example: `skill-overrides/brainstorming-pi.md` is appended to the brainstorming 
 |-------|-------------|
 | `fetching-buildkite-failures` | Fetches build results from Buildkite and helps diagnose CI failures |
 
-## Available Tools
-
-### From pi-interview-tool
-
-| Tool | Agent | Description |
-|------|-------|-------------|
-| `pi-interview-tool` | Pi | Interactive web-based form for gathering user responses to clarification questions |
-
-### Custom Tools
-
-| Tool | Agent | Description |
-|------|-------|-------------|
-| `AskUserQuestion` | Pi | Ask the user a question and let them pick from options or enter a custom response |
-
-## Available Hooks
+## Available Extensions
 
 ### From agent-stuff
 
-| Hook | Agent | Description |
-|------|-------|-------------|
+| Extension | Agent | Description |
+|-----------|-------|-------------|
 | `answer` | Pi | Extracts questions from assistant responses into interactive Q&A with custom TUI |
 
-### Custom Hooks
+### From pi-interview-tool
 
-| Hook | Agent | Description |
-|------|-------|-------------|
+| Extension | Agent | Description |
+|-----------|-------|-------------|
+| `pi-interview-tool` | Pi | Interactive web-based form for gathering user responses to clarification questions |
+
+### Custom Extensions
+
+| Extension | Agent | Description |
+|-----------|-------|-------------|
+| `AskUserQuestion` | Pi | Ask the user a question and let them pick from options or enter a custom response |
 | `confirm-destructive` | Pi | Prompts for confirmation before destructive session actions (macOS only) |
 | `protected-paths` | Pi | Blocks write and edit operations to protected paths (.env, .git/, node_modules/) |
 
@@ -226,37 +215,35 @@ The command preserves any existing settings in the file. Requires `jq` to be ins
 
 See Pi's [skills documentation](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent/docs/skills.md) for all available options.
 
-## What are Custom Tools?
+## What are Extensions?
 
-Custom tools extend the built-in toolset and are called by the LLM directly. They are TypeScript modules with custom TUI integration.
+Extensions are TypeScript modules that extend Pi Coding Agent functionality. They can:
+- Register custom tools callable by the LLM
+- Subscribe to lifecycle events (tool calls, session changes, etc.)
+- Block or modify operations
+- Add custom TUI components
+- Register slash commands
 
-> **Note:** Custom tools are currently only supported by Pi Coding Agent.
+> **Note:** Extensions are currently only supported by Pi Coding Agent.
 
-### Tool Locations
+Extensions use the unified `ExtensionAPI` which provides:
+- Event subscriptions via `pi.on("event_name", handler)`
+- Tool registration via `pi.registerTool({ ... })`
+- Command registration via `pi.registerCommand("name", { ... })`
+- UI interactions via `pi.ui.select()`, `pi.ui.confirm()`, etc.
 
-| Agent | User Tools | Project Tools |
-|-------|------------|---------------|
-| Pi Coding Agent | `~/.pi/agent/tools/*/index.ts` | `.pi/tools/*/index.ts` |
+See Pi's [extensions documentation](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/extensions.md) for details.
 
-## What are Hooks?
+### Extension Locations
 
-Hooks are event listeners that intercept and can modify agent behavior. They can block operations, add logging, enforce policies, or extend functionality.
-
-> **Note:** Hooks are currently only supported by Pi Coding Agent.
-
-Hooks are TypeScript modules that export a default function taking a `HookAPI` object. They can listen to events like `tool_call` and return actions like `{ block: true, reason: "..." }`.
-
-See Pi's [hooks documentation](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent#hooks) for details.
-
-### Hook Locations
-
-| Agent | User Hooks | Project Hooks |
-|-------|------------|---------------|
-| Pi Coding Agent | `~/.pi/agent/hooks/*/index.ts` | `.pi/hooks/*/index.ts` |
+| Agent | User Extensions | Project Extensions |
+|-------|-----------------|-------------------|
+| Pi Coding Agent | `~/.pi/agent/extensions/*/index.ts` | `.pi/extensions/*/index.ts` |
 
 ## References
 
 - [Claude Code Skills Documentation](https://docs.anthropic.com/en/docs/claude-code/skills)
 - [Pi Coding Agent Documentation](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent)
+- [Pi Extensions Documentation](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/extensions.md)
 - [Codex CLI Skills Documentation](https://developers.openai.com/codex/skills)
 - [Agent Skills Specification](https://agentskills.io/specification)

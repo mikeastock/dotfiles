@@ -1,13 +1,13 @@
 /**
- * Protected Paths Hook
+ * Protected Paths Extension
  *
  * Blocks write and edit operations to protected paths.
  * Useful for preventing accidental modifications to sensitive files.
  */
 
-import type { HookAPI } from "@mariozechner/pi-coding-agent";
+import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 
-export default function (pi: HookAPI) {
+export default function (pi: ExtensionAPI) {
 	const protectedPaths = [".env", ".git/", "node_modules/"];
 
 	pi.on("tool_call", async (event, ctx) => {
