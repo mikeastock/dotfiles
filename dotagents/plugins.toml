@@ -44,3 +44,7 @@ skills = ["*"]  # Install all skills from this plugin
 url = "https://github.com/nicobailon/pi-interview-tool"
 extensions_path = "."  # Extension files are at root level
 extensions = ["*"]  # Install all extensions from this plugin
+
+[agent-scripts]
+url = "https://github.com/steipete/agent-scripts"
+skills = ["create-cli"]
