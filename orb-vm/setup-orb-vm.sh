@@ -154,12 +154,12 @@ create_symlink '~/.dotfiles/.config/fish/completions' '~/.config/fish/completion
 # Use VM-specific starship config (shows VM indicator)
 create_symlink '~/.dotfiles/.config/starship-vm.toml' '~/.config/starship.toml'
 create_symlink '~/.dotfiles/.tmux.conf' '~/.tmux.conf'
-create_symlink '~/.dotfiles/.gitignore' '~/.gitignore'
+
 create_symlink '~/.dotfiles/.psqlrc' '~/.psqlrc'
 create_symlink '~/.dotfiles/.ideavimrc' '~/.ideavimrc'
 
 echo "  Symlinked: nvim, atuin, stylua, direnv, starship, fish/functions, fish/completions"
-echo "  Symlinked: .tmux.conf, .gitignore, .psqlrc, .ideavimrc"
+echo "  Symlinked: .tmux.conf, .psqlrc, .ideavimrc"
 
 # ===========================================
 # Environment file (~/.env)
@@ -646,7 +646,7 @@ echo "    - ~/.config/starship.toml (prompt)"
 echo "    - ~/.config/fish/config.fish (main fish config)"
 echo "    - ~/.config/fish/functions/ (fish functions)"
 echo "    - ~/.config/fish/completions/ (fish completions)"
-echo "    - ~/.tmux.conf, ~/.gitignore, ~/.psqlrc, ~/.ideavimrc"
+echo "    - ~/.tmux.conf, ~/.psqlrc, ~/.ideavimrc"
 echo ""
 echo "  VM-specific overrides:"
 echo "    - ~/.config/fish/conf.d/orb.fish (OrbStack overlay)"
