@@ -2,7 +2,7 @@
  * AskUserQuestion Extension - Let the LLM ask the user a question with options
  */
 
-import type { ExtensionAPI, RenderResultOptions, Theme } from "@mariozechner/pi-coding-agent";
+import type { ExtensionAPI, ExtensionContext, ToolRenderResultOptions, Theme } from "@mariozechner/pi-coding-agent";
 import { Text } from "@mariozechner/pi-tui";
 import { Type, type Static } from "@sinclair/typebox";
 
@@ -30,8 +30,8 @@ export default function (pi: ExtensionAPI) {
 		description: "Ask the user a question and let them pick from options. Use when you need user input to proceed.",
 		parameters: QuestionParams,
 
-		async execute(_toolCallId: string, params: QuestionParamsType, _onUpdate: unknown, _ctx: unknown, _signal: AbortSignal) {
-			if (!pi.hasUI) {
+		async execute(_toolCallId: string, params: QuestionParamsType, _onUpdate, ctx: ExtensionContext, _signal?: AbortSignal) {
+			if (!ctx.hasUI) {
 				return {
 					content: [{ type: "text", text: "Error: UI not available (running in non-interactive mode)" }],
 					details: { question: params.question, options: params.options, answer: null },
@@ -50,7 +50,7 @@ export default function (pi: ExtensionAPI) {
 				? [...params.options, CUSTOM_OPTION]
 				: params.options;
 
-			const answer = await pi.ui.select(params.question, displayOptions);
+			const answer = await ctx.ui.select(params.question, displayOptions);
 
 			if (answer === undefined) {
 				return {
@@ -61,7 +61,7 @@ export default function (pi: ExtensionAPI) {
 
 			// Handle custom response
 			if (answer === CUSTOM_OPTION) {
-				const customAnswer = await pi.ui.input("Enter your response", "Type your answer here...");
+				const customAnswer = await ctx.ui.input("Enter your response", "Type your answer here...");
 
 				if (customAnswer === undefined || customAnswer === null || customAnswer.trim() === "") {
 					return {
@@ -93,10 +93,11 @@ export default function (pi: ExtensionAPI) {
 			return new Text(text, 0, 0);
 		},
 
-		renderResult(result: { content: Array<{ type: string; text?: string }>; details?: QuestionDetails }, _options: RenderResultOptions, theme: Theme) {
-			const { details } = result;
+		renderResult(result, _options: ToolRenderResultOptions, theme: Theme) {
+			const typedResult = result as { content: Array<{ type: string; text?: string }>; details?: QuestionDetails };
+			const { details } = typedResult;
 			if (!details) {
-				const text = result.content[0];
+				const text = typedResult.content[0];
 				return new Text(text?.type === "text" ? (text.text ?? "") : "", 0, 0);
 			}
 

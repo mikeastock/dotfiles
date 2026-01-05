@@ -9,11 +9,11 @@ importers:
   .:
     devDependencies:
       '@mariozechner/pi-coding-agent':
-        specifier: ^0.32.1
-        version: 0.32.1(ws@8.18.3)(zod@3.25.76)
+        specifier: ^0.35.0
+        version: 0.35.0(ws@8.18.3)(zod@3.25.76)
       '@mariozechner/pi-tui':
-        specifier: ^0.32.1
-        version: 0.32.1
+        specifier: ^0.35.0
+        version: 0.35.0
       '@sinclair/typebox':
         specifier: ^0.34.45
         version: 0.34.45
@@ -39,11 +39,62 @@ packages:
     resolution: {integrity: sha512-Q/N6JNWvIvPnLDvjlE1OUBLPQHH6l3CltCEsHIujp45zQUSSh8K+gHnaEX45yAT1nyngnINhvWtzN+Nb9D8RAQ==}
     engines: {node: '>=6.9.0'}
 
-  '@borewit/text-codec@0.1.1':
-    resolution: {integrity: sha512-5L/uBxmjaCIX5h8Z+uu+kA9BQLkc/Wl06UGR5ajNRxu+/XjonB5i8JpgFMrPj3LXTCPA0pv8yxUvbUi+QthGGA==}
+  '@borewit/text-codec@0.2.1':
+    resolution: {integrity: sha512-k7vvKPbf7J2fZ5klGRD9AeKfUvojuZIQ3BT5u7Jfv+puwXkUBUT5PVyMDfJZpy30CBDXGMgw7fguK/lpOMBvgw==}
 
-  '@emnapi/runtime@1.7.1':
-    resolution: {integrity: sha512-PVtJr5CmLwYAU9PZDMITZoR5iAOShYREoR45EyyLrbntV50mdePTgUn4AmOw90Ifcj+x2kRjdzr1HP3RrNiHGA==}
+  '@crosscopy/clipboard-darwin-arm64@0.2.8':
+    resolution: {integrity: sha512-Y36ST9k5JZgtDE6SBT45bDNkPKBHd4UEIZgWnC0iC4kAWwdjPmsZ8Mn8e5W0YUKowJ/BDcO+EGm2tVTPQOQKXg==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@crosscopy/clipboard-darwin-universal@0.2.8':
+    resolution: {integrity: sha512-btGV1tLpJWZ4iKa66niahvpZpVRJzgQnYUE+PUX3YYZzaWD0ESuHuVtKVC8sR+b4dsXIiWW5skXbcRmLsF4rtA==}
+    engines: {node: '>= 10'}
+    os: [darwin]
+
+  '@crosscopy/clipboard-darwin-x64@0.2.8':
+    resolution: {integrity: sha512-0QMKf0XrLZrprYYXU4lgaTuzbnYPh9wH6PvsfDB1FZvWf6rOi0syTaBZYnoghbQe700qwLPEfBRjgljJ3Tn6oA==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [darwin]
+
+  '@crosscopy/clipboard-linux-arm64-gnu@0.2.8':
+    resolution: {integrity: sha512-8YrU03MRsygymqEcHkNgqCqSCQbYRmJCnMXeS4i8FYeOkAxBEeRvPbHoNmI10uppXJZNZgfIKM7Qqk9tEHiwqQ==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [linux]
+
+  '@crosscopy/clipboard-linux-riscv64-gnu@0.2.8':
+    resolution: {integrity: sha512-/QWLhnb0QYVjEv5GOAC1q+1DaezYU8Th+IoDKUCsR5i43Cqm+g+N/I2K35yo3J+HHkK9XNbtIDZDXlFgK6tRUg==}
+    engines: {node: '>= 10'}
+    cpu: [riscv64]
+    os: [linux]
+
+  '@crosscopy/clipboard-linux-x64-gnu@0.2.8':
+    resolution: {integrity: sha512-j17eaF/onP/6VAGGKtxA1KmmkErmdjta9gMdMV/yUmgeBYzJ9fMpWUzbk2vmaOyXfhaSzR/sk1P6VLBmvCpqHg==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [linux]
+
+  '@crosscopy/clipboard-win32-arm64-msvc@0.2.8':
+    resolution: {integrity: sha512-MVkMyuYN3y5v0s4HrijM0iA8hZVmpUhHd8X4zKG30t4nE6MbOjOt/8EabMrVmGZlsLeOL2sa0o8Wo9bvhWU+vA==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [win32]
+
+  '@crosscopy/clipboard-win32-x64-msvc@0.2.8':
+    resolution: {integrity: sha512-/GpiB4B3lSgg7eCLDQw9NfFjtQFjo0S88IL+EK54Hx7ZgAP4Ad/ezP/8dw0cA+N/M6iPYy0reCIjW9st82/uxw==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [win32]
+
+  '@crosscopy/clipboard@0.2.8':
+    resolution: {integrity: sha512-0qRWscafAHzQ+DdfXX+YgPN2KDTIzWBNfN5Q6z1CgCWsRxtkwK8HfQUc00xIejfRWSGWPIxcCTg82hvg06bodg==}
+    engines: {node: '>= 10'}
+
+  '@emnapi/runtime@1.8.1':
+    resolution: {integrity: sha512-mehfKSMWjjNol8659Z8KxEMrdSJDDot5SXMq00dM8BN4o+CLNXQ0xH2V7EchNHV4RmbZLmmPdEaXZc5H2FXmDg==}
 
   '@google/genai@1.34.0':
     resolution: {integrity: sha512-vu53UMPvjmb7PGzlYu6Tzxso8Dfhn+a7eQFaS2uNemVtDZKwzSpJ5+ikqBbXplF7RGB1STcVDqCkPvquiwb2sw==}
@@ -203,22 +254,22 @@ packages:
     resolution: {integrity: sha512-O8jcjabXaleOG9DQ0+ARXWZBTfnP4WNAqzuiJK7ll44AmxGKv/J2M4TPjxjY3znBCfvBXFzucm1twdyFybFqEA==}
     engines: {node: '>=12'}
 
-  '@mariozechner/pi-agent-core@0.32.1':
-    resolution: {integrity: sha512-zsM2cMNh7QxWu5uxo2xEqmn9zDz0/xu0/NLTX+XfT2LE/DEK/w5dZE5xPt3yHn3HY6RqOHgIVkmHJpysXMwi7Q==}
+  '@mariozechner/pi-agent-core@0.35.0':
+    resolution: {integrity: sha512-fq8HLpX8wfA0vFfOd9aHfd9DSkQ0BD3H+FtQNcvZWTDvuEQ5jdfGwOGYUNXr5zZj8UZwz+easNuPjNv7Cs5LiQ==}
     engines: {node: '>=20.0.0'}
 
-  '@mariozechner/pi-ai@0.32.1':
-    resolution: {integrity: sha512-owE3QrsJ5g4iS9d2qKbG6dJqcAXZEISWH5VbWovf3Y8frJIg9hCMbCFW9nqOgBZLE7ICu1jUBq/8rHBrKkOalw==}
-    engines: {node: '>=20.0.0'}
-    hasBin: true
-
-  '@mariozechner/pi-coding-agent@0.32.1':
-    resolution: {integrity: sha512-ee/jW+JEtVK2uI3Cy5b2qLMkNRKPQKn8tWaI2513Apsogssof84be187bzRI64Y7GyowrnBMlg7eiVA3HHyhWQ==}
+  '@mariozechner/pi-ai@0.35.0':
+    resolution: {integrity: sha512-hGsQUDogpXQz/QMBy7zHZ5RcgGdKMpO7ckHYx1qQNznXA7ZILl0ByNdICxAc1mcqJN+0ODMcSNyp9Kul574uAA==}
     engines: {node: '>=20.0.0'}
     hasBin: true
 
-  '@mariozechner/pi-tui@0.32.1':
-    resolution: {integrity: sha512-SofZpq29TaubZoe92MUv8KXJ4UpiqnOb+vHfBbhkGe//StMlAdpVmoqU4ulOLEDUotQEHlRso6DKb1IKDGn3qw==}
+  '@mariozechner/pi-coding-agent@0.35.0':
+    resolution: {integrity: sha512-QRGyXiCdw6d3TyaXigx3UcWb0El8MB2XuZLnIyKy5nsGJqZi9Vs7Ck1YfmmG+fe4WW2OQzAGWIuu6nSynEklsQ==}
+    engines: {node: '>=20.0.0'}
+    hasBin: true
+
+  '@mariozechner/pi-tui@0.35.0':
+    resolution: {integrity: sha512-HZTOeenzM0DVSnEf9VGPuAeufvKEmJN0GnLVp+4Xk1g60eiB0VVnw+Xc+vNf2utFVY/VZ+RrgTsv5IFdQivG7Q==}
     engines: {node: '>=20.0.0'}
 
   '@mistralai/mistralai@1.10.0':
@@ -370,8 +421,8 @@ packages:
     resolution: {integrity: sha512-7yAQpD2UMJzLi1Dqv7qFYnPbaPx7ZfFK6PiIxQ4PfkGPyNyl2Ugx+a/umUonmKqjhM4DnfbMvdX6otXq83soQQ==}
     engines: {node: ^12.20 || >= 14.13}
 
-  file-type@21.2.0:
-    resolution: {integrity: sha512-vCYBgFOrJQLoTzDyAXAL/RFfKnXXpUYt4+tipVy26nJJhT7ftgGETf2tAQF59EEL61i3MrorV/PG6tf7LJK7eg==}
+  file-type@21.3.0:
+    resolution: {integrity: sha512-8kPJMIGz1Yt/aPEwOsrR97ZyZaD1Iqm8PClb1nYFclUCkBi0Ma5IsYNQzvSFS9ib51lWyIw5mIT9rWzI/xjpzA==}
     engines: {node: '>=20'}
 
   foreground-child@3.3.1:
@@ -624,8 +675,8 @@ packages:
   thenify@3.3.1:
     resolution: {integrity: sha512-RVZSIV5IG10Hk3enotrhvz0T9em6cyHBLkH/YAZuKqd8hRkKhSfCGIcP2KUY0EPxndzANBmNllzWPwak+bheSw==}
 
-  token-types@6.1.1:
-    resolution: {integrity: sha512-kh9LVIWH5CnL63Ipf0jhlBIy0UsrMj/NJDfpsy1SqOXlLKEVyXXYrnFxFT1yOOYVGBSApeVnjPw/sBz5BfEjAQ==}
+  token-types@6.1.2:
+    resolution: {integrity: sha512-dRXchy+C0IgK8WPC6xvCHFRIWYUbqqdEIKPaKo/AcTUNzwLTK6AH7RjdLWsEZcAN/TBdtfUw3PYEgPr5VPr6ww==}
     engines: {node: '>=14.16'}
 
   ts-algebra@2.0.0:
@@ -705,9 +756,44 @@ snapshots:
 
   '@babel/runtime@7.28.4': {}
 
-  '@borewit/text-codec@0.1.1': {}
+  '@borewit/text-codec@0.2.1': {}
 
-  '@emnapi/runtime@1.7.1':
+  '@crosscopy/clipboard-darwin-arm64@0.2.8':
+    optional: true
+
+  '@crosscopy/clipboard-darwin-universal@0.2.8':
+    optional: true
+
+  '@crosscopy/clipboard-darwin-x64@0.2.8':
+    optional: true
+
+  '@crosscopy/clipboard-linux-arm64-gnu@0.2.8':
+    optional: true
+
+  '@crosscopy/clipboard-linux-riscv64-gnu@0.2.8':
+    optional: true
+
+  '@crosscopy/clipboard-linux-x64-gnu@0.2.8':
+    optional: true
+
+  '@crosscopy/clipboard-win32-arm64-msvc@0.2.8':
+    optional: true
+
+  '@crosscopy/clipboard-win32-x64-msvc@0.2.8':
+    optional: true
+
+  '@crosscopy/clipboard@0.2.8':
+    optionalDependencies:
+      '@crosscopy/clipboard-darwin-arm64': 0.2.8
+      '@crosscopy/clipboard-darwin-universal': 0.2.8
+      '@crosscopy/clipboard-darwin-x64': 0.2.8
+      '@crosscopy/clipboard-linux-arm64-gnu': 0.2.8
+      '@crosscopy/clipboard-linux-riscv64-gnu': 0.2.8
+      '@crosscopy/clipboard-linux-x64-gnu': 0.2.8
+      '@crosscopy/clipboard-win32-arm64-msvc': 0.2.8
+      '@crosscopy/clipboard-win32-x64-msvc': 0.2.8
+
+  '@emnapi/runtime@1.8.1':
     dependencies:
       tslib: 2.8.1
     optional: true
@@ -805,7 +891,7 @@ snapshots:
 
   '@img/sharp-wasm32@0.34.5':
     dependencies:
-      '@emnapi/runtime': 1.7.1
+      '@emnapi/runtime': 1.8.1
     optional: true
 
   '@img/sharp-win32-arm64@0.34.5':
@@ -832,10 +918,10 @@ snapshots:
       wrap-ansi: 8.1.0
       wrap-ansi-cjs: wrap-ansi@7.0.0
 
-  '@mariozechner/pi-agent-core@0.32.1(ws@8.18.3)(zod@3.25.76)':
+  '@mariozechner/pi-agent-core@0.35.0(ws@8.18.3)(zod@3.25.76)':
     dependencies:
-      '@mariozechner/pi-ai': 0.32.1(ws@8.18.3)(zod@3.25.76)
-      '@mariozechner/pi-tui': 0.32.1
+      '@mariozechner/pi-ai': 0.35.0(ws@8.18.3)(zod@3.25.76)
+      '@mariozechner/pi-tui': 0.35.0
     transitivePeerDependencies:
       - '@modelcontextprotocol/sdk'
       - bufferutil
@@ -844,7 +930,7 @@ snapshots:
       - ws
       - zod
 
-  '@mariozechner/pi-ai@0.32.1(ws@8.18.3)(zod@3.25.76)':
+  '@mariozechner/pi-ai@0.35.0(ws@8.18.3)(zod@3.25.76)':
     dependencies:
       '@anthropic-ai/sdk': 0.71.2(zod@3.25.76)
       '@google/genai': 1.34.0
@@ -864,15 +950,16 @@ snapshots:
       - ws
       - zod
 
-  '@mariozechner/pi-coding-agent@0.32.1(ws@8.18.3)(zod@3.25.76)':
+  '@mariozechner/pi-coding-agent@0.35.0(ws@8.18.3)(zod@3.25.76)':
     dependencies:
-      '@mariozechner/pi-agent-core': 0.32.1(ws@8.18.3)(zod@3.25.76)
-      '@mariozechner/pi-ai': 0.32.1(ws@8.18.3)(zod@3.25.76)
-      '@mariozechner/pi-tui': 0.32.1
+      '@crosscopy/clipboard': 0.2.8
+      '@mariozechner/pi-agent-core': 0.35.0(ws@8.18.3)(zod@3.25.76)
+      '@mariozechner/pi-ai': 0.35.0(ws@8.18.3)(zod@3.25.76)
+      '@mariozechner/pi-tui': 0.35.0
       chalk: 5.6.2
       cli-highlight: 2.1.11
       diff: 8.0.2
-      file-type: 21.2.0
+      file-type: 21.3.0
       glob: 11.1.0
       jiti: 2.6.1
       marked: 15.0.12
@@ -885,7 +972,7 @@ snapshots:
       - ws
       - zod
 
-  '@mariozechner/pi-tui@0.32.1':
+  '@mariozechner/pi-tui@0.35.0':
     dependencies:
       '@types/mime-types': 2.1.4
       chalk: 5.6.2
@@ -906,7 +993,7 @@ snapshots:
   '@tokenizer/inflate@0.4.1':
     dependencies:
       debug: 4.4.3
-      token-types: 6.1.1
+      token-types: 6.1.2
     transitivePeerDependencies:
       - supports-color
 
@@ -1022,11 +1109,11 @@ snapshots:
       node-domexception: 1.0.0
       web-streams-polyfill: 3.3.3
 
-  file-type@21.2.0:
+  file-type@21.3.0:
     dependencies:
       '@tokenizer/inflate': 0.4.1
       strtok3: 10.3.4
-      token-types: 6.1.1
+      token-types: 6.1.2
       uint8array-extras: 1.5.0
     transitivePeerDependencies:
       - supports-color
@@ -1307,9 +1394,9 @@ snapshots:
     dependencies:
       any-promise: 1.3.0
 
-  token-types@6.1.1:
+  token-types@6.1.2:
     dependencies:
-      '@borewit/text-codec': 0.1.1
+      '@borewit/text-codec': 0.2.1
       '@tokenizer/token': 0.3.0
       ieee754: 1.2.1
 
