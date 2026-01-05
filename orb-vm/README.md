@@ -203,7 +203,19 @@ This sets pnpm's virtual store directory to `node_modules/.pnpm.linux/` instead 
 | UV | `.venv/` | `.venv-linux/` |
 | pnpm | `node_modules/.pnpm/` | `node_modules/.pnpm.linux/` |
 
-## Tools Installed via Mise
+## Tools Installed
+
+### Via Homebrew (Linuxbrew)
+
+The setup script installs these CLI tools:
+- `zoxide` - smarter cd command
+- `starship` - cross-shell prompt
+- `atuin` - shell history search
+- `fzf` - fuzzy finder
+- `bat` - better cat with syntax highlighting
+- `jq` - JSON processor
+
+### Via Mise
 
 The `~/.config/mise/config.toml` installs:
 - node (latest)
