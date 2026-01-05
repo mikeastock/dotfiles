@@ -33,7 +33,6 @@ if ! command -v op &> /dev/null; then
 fi
 
 # Fetch secrets (will prompt for authentication if needed)
-ANTHROPIC_OAUTH_TOKEN=$(op read "op://Private/Anthropic OAuth Token/credential")
 CEREBRAS_API_KEY=$(op read "op://Private/Cerebras API Key/credential")
 BUILDKITE_API_TOKEN=$(op read "op://Private/Buildkite API Token/credential")
 
@@ -103,7 +102,6 @@ if status is-interactive
     # ===========================================
     # API Keys (from 1Password)
     # ===========================================
-    set -gx ANTHROPIC_OAUTH_TOKEN "$ANTHROPIC_OAUTH_TOKEN"
     set -gx CEREBRAS_API_KEY "$CEREBRAS_API_KEY"
     set -gx BUILDKITE_API_TOKEN "$BUILDKITE_API_TOKEN"
     set -gx BUILDKITE_ORGANIZATION_SLUG buildr
@@ -214,7 +212,7 @@ echo "Writing profile.d script for /code mount..."
 write_file_sudo '/etc/profile.d/z-restrict-mac-access.sh' << 'PROFILE_SCRIPT'
 #!/bin/sh
 
-# Configuration  
+# Configuration
 MAC_CODE_BASE="/Users/mikeastock/code"
 TARGET_MOUNT="/code"
 
