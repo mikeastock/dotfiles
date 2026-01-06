@@ -9,6 +9,7 @@ help:
 	@echo "  config-symlinks Symlink .config files and directories"
 	@echo "  brew            Install Homebrew and packages"
 	@echo "  macos-defaults  Set macOS defaults"
+	@echo "  clean           Remove all managed symlinks"
 	@echo "  help            Show this help message"
 	@echo ""
 	@echo "Options:"
@@ -38,11 +39,33 @@ else
 	@echo "✓ Using custom DOTFILES_DIR: $(DOTFILES_DIR)"
 endif
 
+# Helper: create symlink or error if non-symlink exists
+# Usage: $(call safe_symlink,source,target)
+define safe_symlink
+	@if [ -L $(2) ]; then \
+		:; \
+	elif [ -e $(2) ]; then \
+		echo "✗ Error: $(2) exists and is not a symlink"; \
+		echo "  Run 'make clean' first or remove it manually"; \
+		exit 1; \
+	else \
+		ln -s $(1) $(2); \
+	fi
+endef
+
 # Symlink dotfiles to home directory
 .PHONY: home-symlinks
 home-symlinks: icloud-link
 	@for link in $(HOME_LINKS); do \
-		test -L $(HOME)/$$link || ln -s $(DOTFILES_DIR)/$$link $(HOME)/$$link; \
+		if [ -L $(HOME)/$$link ]; then \
+			:; \
+		elif [ -e $(HOME)/$$link ]; then \
+			echo "✗ Error: $(HOME)/$$link exists and is not a symlink"; \
+			echo "  Run 'make clean' first or remove it manually"; \
+			exit 1; \
+		else \
+			ln -s $(DOTFILES_DIR)/$$link $(HOME)/$$link; \
+		fi; \
 	done
 	@echo "✓ Home symlinks created"
 
@@ -54,17 +77,71 @@ config-symlinks: icloud-link
 	@mkdir -p $(HOME)/.config/fish
 	@# Config directories (link entire dir)
 	@for dir in $(CONFIG_DIRS); do \
-		test -L $(HOME)/.config/$$dir || ln -s $(DOTFILES_DIR)/.config/$$dir $(HOME)/.config/$$dir; \
+		if [ -L $(HOME)/.config/$$dir ]; then \
+			:; \
+		elif [ -e $(HOME)/.config/$$dir ]; then \
+			echo "✗ Error: $(HOME)/.config/$$dir exists and is not a symlink"; \
+			echo "  Run 'make clean' first or remove it manually"; \
+			exit 1; \
+		else \
+			ln -s $(DOTFILES_DIR)/.config/$$dir $(HOME)/.config/$$dir; \
+		fi; \
 	done
-	@# nvim (individual files)
-	@test -L $(HOME)/.config/nvim/init.lua || ln -s $(DOTFILES_DIR)/.config/nvim/init.lua $(HOME)/.config/nvim/init.lua
-	@test -d $(HOME)/.config/nvim/autoload || ln -s $(DOTFILES_DIR)/.config/nvim/autoload $(HOME)/.config/nvim/autoload
-	@# fish (config.fish and functions/)
-	@test -L $(HOME)/.config/fish/config.fish || ln -s $(DOTFILES_DIR)/.config/fish/config.fish $(HOME)/.config/fish/config.fish
-	@test -L $(HOME)/.config/fish/functions || ln -s $(DOTFILES_DIR)/.config/fish/functions $(HOME)/.config/fish/functions
+	@# nvim (individual files - only if nvim dir is not already a symlink)
+	@if [ ! -L $(HOME)/.config/nvim ]; then \
+		if [ -L $(HOME)/.config/nvim/init.lua ]; then :; \
+		elif [ -e $(HOME)/.config/nvim/init.lua ]; then \
+			echo "✗ Error: $(HOME)/.config/nvim/init.lua exists and is not a symlink"; \
+			echo "  Run 'make clean' first or remove it manually"; \
+			exit 1; \
+		else ln -s $(DOTFILES_DIR)/.config/nvim/init.lua $(HOME)/.config/nvim/init.lua; fi; \
+		if [ -L $(HOME)/.config/nvim/autoload ]; then :; \
+		elif [ -e $(HOME)/.config/nvim/autoload ]; then \
+			echo "✗ Error: $(HOME)/.config/nvim/autoload exists and is not a symlink"; \
+			echo "  Run 'make clean' first or remove it manually"; \
+			exit 1; \
+		else ln -s $(DOTFILES_DIR)/.config/nvim/autoload $(HOME)/.config/nvim/autoload; fi; \
+	fi
+	@# fish (config.fish and functions/ - only if fish dir is not already a symlink)
+	@if [ ! -L $(HOME)/.config/fish ]; then \
+		if [ -L $(HOME)/.config/fish/config.fish ]; then :; \
+		elif [ -e $(HOME)/.config/fish/config.fish ]; then \
+			echo "✗ Error: $(HOME)/.config/fish/config.fish exists and is not a symlink"; \
+			echo "  Run 'make clean' first or remove it manually"; \
+			exit 1; \
+		else ln -s $(DOTFILES_DIR)/.config/fish/config.fish $(HOME)/.config/fish/config.fish; fi; \
+		if [ -L $(HOME)/.config/fish/functions ]; then :; \
+		elif [ -e $(HOME)/.config/fish/functions ]; then \
+			echo "✗ Error: $(HOME)/.config/fish/functions exists and is not a symlink"; \
+			echo "  Run 'make clean' first or remove it manually"; \
+			exit 1; \
+		else ln -s $(DOTFILES_DIR)/.config/fish/functions $(HOME)/.config/fish/functions; fi; \
+	fi
 	@# starship.toml (single file)
-	@test -L $(HOME)/.config/starship.toml || ln -s $(DOTFILES_DIR)/.config/starship.toml $(HOME)/.config/starship.toml
+	$(call safe_symlink,$(DOTFILES_DIR)/.config/starship.toml,$(HOME)/.config/starship.toml)
 	@echo "✓ Config symlinks created"
+
+# Remove all managed symlinks (only removes if target is a symlink)
+.PHONY: clean
+clean:
+	@echo "Removing managed symlinks..."
+	@# Home symlinks
+	@for link in $(HOME_LINKS); do \
+		[ -L $(HOME)/$$link ] && rm $(HOME)/$$link || true; \
+	done
+	@# Config directories
+	@for dir in $(CONFIG_DIRS); do \
+		[ -L $(HOME)/.config/$$dir ] && rm $(HOME)/.config/$$dir || true; \
+	done
+	@# nvim
+	@[ -L $(HOME)/.config/nvim/init.lua ] && rm $(HOME)/.config/nvim/init.lua || true
+	@[ -L $(HOME)/.config/nvim/autoload ] && rm $(HOME)/.config/nvim/autoload || true
+	@# fish
+	@[ -L $(HOME)/.config/fish/config.fish ] && rm $(HOME)/.config/fish/config.fish || true
+	@[ -L $(HOME)/.config/fish/functions ] && rm $(HOME)/.config/fish/functions || true
+	@# starship
+	@[ -L $(HOME)/.config/starship.toml ] && rm $(HOME)/.config/starship.toml || true
+	@echo "✓ Symlinks removed"
 
 # Install Homebrew and packages
 .PHONY: brew
