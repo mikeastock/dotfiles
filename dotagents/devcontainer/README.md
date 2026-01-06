@@ -1,102 +1,102 @@
-# autonomous coding sandbox
+# Autonomous Coding Sandbox
 
-a devcontainer for running claude code, codex, and pi coding agent in autonomous mode.
+A devcontainer for running Claude Code, Codex, and Pi Coding Agent in autonomous mode.
 
-based on anthropic's claude code devcontainer.
+Based on Anthropic's Claude Code devcontainer.
 
-## requirements
+## Requirements
 
-- docker (or [orbstack](https://orbstack.dev/))
-- devcontainer cli (`npm install -g @devcontainers/cli`)
-- 1password cli (`brew install 1password-cli`) - optional, for secret injection
+- Docker (or [OrbStack](https://orbstack.dev/))
+- devcontainer CLI (`npm install -g @devcontainers/cli`)
+- 1Password CLI (`brew install 1password-cli`) - optional, for secret injection
 
-## quickstart
+## Quickstart
 
 ```bash
-# install devc command globally
+# Install devc command globally
 ./devcontainer/install.sh self-install
 
-# run in any project folder
+# Run in any project folder
 devc <repo>
 # or
 cd <repo> && devc .
 ```
 
-you're now in tmux with claude, codex, and pi ready to go, with permissions preconfigured.
+You're now in tmux with Claude, Codex, and Pi ready to go, with permissions preconfigured.
 
-to use with vscode, run `devc install <repo>` and choose "reopen in container" in the editor.
+To use with VS Code, run `devc install <repo>` and choose "Reopen in Container" in the editor.
 
-## features
+## Features
 
-### pre-installed tools
+### Pre-installed Tools
 
-| tool | version | notes |
+| Tool | Version | Notes |
 |------|---------|-------|
-| node | 22.x | via official node image |
-| ruby | 3.4.7 | via ruby-install, with bundler 2.7.2 |
-| python | 3.14 | via uv |
-| rust | stable | via rustup |
-| claude code | latest | `claude` command |
-| codex cli | latest | `codex` command |
-| pi coding agent | latest | `pi` command |
+| Node | 22.x | Via official Node image |
+| Ruby | 3.4.7 | Via ruby-install, with Bundler 2.7.2 |
+| Python | 3.14 | Via uv |
+| Rust | stable | Via rustup |
+| Claude Code | latest | `claude` command |
+| Codex CLI | latest | `codex` command |
+| Pi Coding Agent | latest | `pi` command |
 
-### service discovery
+### Service Discovery
 
-connects to local docker containers via `host.docker.internal`:
+Connects to local Docker containers via `host.docker.internal`:
 
-| service | environment variable |
+| Service | Environment Variable |
 |---------|---------------------|
-| postgresql | `PGHOST=host.docker.internal` |
-| redis | `REDIS_URL=redis://host.docker.internal:6379` |
-| meilisearch | `MEILISEARCH_URL=http://host.docker.internal:7700` |
-| dolt | `DOLT_HOST=host.docker.internal` |
-| minio | `MINIO_ENDPOINT=host.docker.internal:9000` |
+| PostgreSQL | `PGHOST=host.docker.internal` |
+| Redis | `REDIS_URL=redis://host.docker.internal:6379` |
+| Meilisearch | `MEILISEARCH_URL=http://host.docker.internal:7700` |
+| Dolt | `DOLT_HOST=host.docker.internal` |
+| MinIO | `MINIO_ENDPOINT=host.docker.internal:9000` |
 
-### secret injection via 1password
+### Secret Injection via 1Password
 
-secrets are fetched from 1password at container start using a service account token.
+Secrets are fetched from 1Password at container start using a service account token.
 
-1. create a service account at [1password.com](https://my.1password.com) → Developer → Service Accounts
-2. grant access to the vault containing your secrets (e.g., `dev-shared-with-robots`)
-3. set the token in your shell profile:
+1. Create a service account at [1password.com](https://my.1password.com) → Developer → Service Accounts
+2. Grant access to the vault containing your secrets (e.g., `dev-shared-with-robots`)
+3. Set the token in your shell profile:
    ```bash
    export DEVCONTAINER_OP_SERVICE_ACCOUNT_TOKEN="ops_..."
    ```
 
-currently injected secrets:
+Currently injected secrets:
 - `CEREBRAS_API_KEY`
 - `BUILDKITE_API_TOKEN`
 
-### bind mounts from host
+### Bind Mounts from Host
 
-| host path | container path | notes |
+| Host Path | Container Path | Notes |
 |-----------|----------------|-------|
-| `~/.claude` | `/home/dev/.claude` | claude code config, history, skills |
-| `~/.codex` | `/home/dev/.codex` | codex cli config |
-| `~/.pi` | `/home/dev/.pi` | pi agent config |
-| `~/.gitconfig` | `/home/dev/.gitconfig` | git config (readonly) |
+| `~/.claude` | `/home/dev/.claude` | Claude Code config, history, skills |
+| `~/.codex` | `/home/dev/.codex` | Codex CLI config |
+| `~/.pi` | `/home/dev/.pi` | Pi agent config |
+| `~/.gitconfig` | `/home/dev/.gitconfig` | Git config (readonly) |
 
-### ruby/bundler configuration
+### Ruby/Bundler Configuration
 
-- bundler 2.7.2 installed automatically (matches typical Gemfile.lock)
+- Bundler 2.7.2 installed automatically (matches typical Gemfile.lock)
 - `BUNDLE_PATH=vendor/bundle` - gems installed to project directory
 - `libmariadb-dev` included for mysql2 gem native extensions
 - `/usr/local` is writable by the `dev` user
 
-## commands
+## Commands
 
-| command | description |
+| Command | Description |
 |---------|-------------|
-| `devc <repo>` | install template, start container, attach tmux |
-| `devc install <repo>` | install template only (for vscode) |
-| `devc rebuild <repo>` | remove container, rebuild image, start fresh |
-| `devc exec <repo> -- <cmd>` | run command in container |
-| `devc self-install` | install devc to `~/.local/bin` |
+| `devc <repo>` | Install template, start container, attach tmux |
+| `devc install <repo>` | Install template only (for VS Code) |
+| `devc rebuild <repo>` | Remove container, rebuild image, start fresh |
+| `devc exec <repo> -- <cmd>` | Run command in container |
+| `devc self-install` | Install devc to `~/.local/bin` |
 
-## notes
+## Notes
 
-- **overwrites `.devcontainer/`** on every run
-- default shell is fish, zsh/bash available
-- container user is `dev` with passwordless sudo
-- command history persists across rebuilds via docker volume
-- set `DEVC_TEMPLATE_DIR` to override template source location
+- **Overwrites `.devcontainer/`** on every run
+- Default shell is Fish, Zsh/Bash available
+- Container user is `dev` with passwordless sudo
+- Command history persists across rebuilds via Docker volume
+- Set `DEVC_TEMPLATE_DIR` to override template source location
