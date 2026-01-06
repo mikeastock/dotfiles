@@ -11,6 +11,7 @@ FROM ${NODE_IMAGE} AS node
 
 ARG CLAUDE_CODE_VERSION=latest
 ARG CODEX_VERSION=latest
+ARG PI_VERSION=latest
 
 # Build-time npm defaults.
 ENV NPM_CONFIG_PREFIX=/usr/local/share/npm-global \
@@ -23,11 +24,12 @@ ENV NPM_CONFIG_PREFIX=/usr/local/share/npm-global \
 
 RUN mkdir -p /usr/local/share/npm-global
 
-# Install Claude Code + Codex CLI + pnpm in the node stage for faster rebuilds.
+# Install Claude Code + Codex CLI + Pi Coding Agent + pnpm in the node stage for faster rebuilds.
 RUN --mount=type=cache,target=/root/.npm \
   npm install -g \
     "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" \
     "@openai/codex@${CODEX_VERSION}" \
+    "@mariozechner/pi-coding-agent@${PI_VERSION}" \
   && corepack enable --install-directory /usr/local/share/npm-global/bin \
   && corepack prepare pnpm@latest --activate
 
@@ -38,6 +40,7 @@ ENV TZ="${TZ}"
 
 ARG CLAUDE_CODE_VERSION=latest
 ARG CODEX_VERSION=latest
+ARG PI_VERSION=latest
 
 # Install common dev tools.
 # Note: we intentionally do NOT install iptables/ipset or ship a firewall script.
