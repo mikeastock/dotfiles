@@ -77,18 +77,18 @@ RUN node -v && npm -v
 RUN git config --system worktree.useRelativePaths true \
   && git config --system --add safe.directory /workspace
 
-RUN if ! id -u "node" >/dev/null 2>&1; then \
-    useradd -m -s /usr/bin/fish "node"; \
+RUN if ! id -u "dev" >/dev/null 2>&1; then \
+    useradd -m -s /usr/bin/fish "dev"; \
   fi
 
-# Ensure default node user has access to the global npm prefix.
+# Ensure dev user has access to the global npm prefix.
 RUN mkdir -p /usr/local/share/npm-global \
-  && chown -R "node:node" /usr/local/share
+  && chown -R "dev:dev" /usr/local/share
 
 # Persist shell history across container rebuilds.
 RUN mkdir -p /commandhistory \
   && touch /commandhistory/.bash_history /commandhistory/.zsh_history \
-  && chown -R "node:node" /commandhistory \
+  && chown -R "dev:dev" /commandhistory \
   && cat >/etc/profile.d/00-commandhistory.sh <<'EOF'
 # Persist interactive shell history in /commandhistory.
 if [ -d /commandhistory ]; then
@@ -117,9 +117,9 @@ RUN echo '. /etc/profile.d/00-commandhistory.sh' >> /etc/bash.bashrc \
 ENV DEVCONTAINER=true
 
 # Create workspace + agent config dirs and set permissions.
-RUN mkdir -p /workspace /home/node/.claude /home/node/.codex /home/node/.npm /home/node/.config/fish /home/node/.cache \
-  && touch /home/node/.zshrc \
-  && chown -R node:node /workspace /home/node/.claude /home/node/.codex /home/node/.npm /home/node/.config /home/node/.cache /home/node/.zshrc
+RUN mkdir -p /workspace /home/dev/.claude /home/dev/.codex /home/dev/.npm /home/dev/.config/fish /home/dev/.cache \
+  && touch /home/dev/.zshrc \
+  && chown -R dev:dev /workspace /home/dev/.claude /home/dev/.codex /home/dev/.npm /home/dev/.config /home/dev/.cache /home/dev/.zshrc
 
 WORKDIR /workspace
 
@@ -132,14 +132,14 @@ ENV NPM_CONFIG_FUND=false \
     NPM_CONFIG_PROGRESS=false
 
 # Switch to non-root for normal dev.
-USER node
+USER dev
 
-# Runtime npm cache should be writable by node.
-ENV NPM_CONFIG_CACHE=/home/node/.npm
+# Runtime npm cache should be writable by dev user.
+ENV NPM_CONFIG_CACHE=/home/dev/.npm
 
 # Default shell + editor.
-ENV HOME=/home/node
-ENV XDG_CONFIG_HOME=/home/node/.config
+ENV HOME=/home/dev
+ENV XDG_CONFIG_HOME=/home/dev/.config
 ENV SHELL=/usr/bin/fish
 ENV EDITOR=vim
 ENV VISUAL=vim
@@ -147,8 +147,8 @@ ENV VISUAL=vim
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
-# Ensure uv is on PATH for the node user.
-ENV PATH="/home/node/.local/bin:${PATH}"
+# Ensure uv is on PATH for the dev user.
+ENV PATH="/home/dev/.local/bin:${PATH}"
 
 # Preinstall managed Python for uv.
 RUN uv python install 3.14
@@ -182,11 +182,14 @@ RUN ruby-install --system ruby ${RUBY_VERSION} -- --disable-install-doc \
   && rm -rf /usr/local/src/ruby-${RUBY_VERSION}* \
   && ruby -v
 
-USER node
+# Allow dev user to install gems without sudo.
+RUN chown -R dev:dev /usr/local/lib/ruby /usr/local/bin
+
+USER dev
 
 # Passwordless sudo for the non-root user (for unattended / automation workflows).
 USER root
-RUN echo "node ALL=(root) NOPASSWD: ALL" > /etc/sudoers.d/yolo \
+RUN echo "dev ALL=(root) NOPASSWD: ALL" > /etc/sudoers.d/yolo \
   && chmod 0440 /etc/sudoers.d/yolo
 
-USER node
+USER dev

@@ -31,7 +31,7 @@ TMUX_CONFIG = """\
 set -g default-terminal "tmux-256color"
 set -g focus-events on
 set -sg escape-time 10
-set -g mouse on
+set -g mouse off
 set -g history-limit 200000
 set -g renumber-windows on
 setw -g mode-keys vi
