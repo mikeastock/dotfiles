@@ -48,7 +48,7 @@ INSTALL_PATHS = {
     },
     "codex": {
         "skills": HOME / ".codex" / "skills",
-        "commands": HOME / ".codex" / "commands",
+        "prompts": HOME / ".codex" / "prompts",
     },
     "pi": {
         "skills": HOME / ".pi" / "agent" / "skills",
@@ -318,7 +318,7 @@ def install_commands():
         return
 
     for agent, paths in INSTALL_PATHS.items():
-        # Claude/Codex use "commands", Pi uses "prompts" (same format)
+        # Claude uses "commands", Codex/Pi use "prompts" (same format)
         dest_key = "commands" if "commands" in paths else "prompts" if "prompts" in paths else None
         if not dest_key:
             continue
@@ -400,7 +400,7 @@ def clean(plugins: dict[str, Plugin]):
                             remove_path(installed)
                             print(f"  Removed skill: {skill_dir.name} from {agent}")
 
-    # Clean commands from all agents (commands for Claude/Codex, prompts for Pi)
+    # Clean commands from all agents (commands for Claude, prompts for Codex/Pi)
     if COMMANDS_DIR.exists():
         for agent, paths in INSTALL_PATHS.items():
             dest_key = "commands" if "commands" in paths else "prompts" if "prompts" in paths else None

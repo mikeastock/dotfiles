@@ -221,7 +221,7 @@ All three agents support the same markdown format with YAML frontmatter (`descri
 | Agent | Location |
 |-------|----------|
 | Claude Code | `~/.claude/commands/` |
-| Codex CLI | `~/.codex/commands/` |
+| Codex CLI | `~/.codex/prompts/` |
 | Pi Coding Agent | `~/.pi/agent/prompts/` |
 
 ## What are Extensions?
