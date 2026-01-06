@@ -28,6 +28,24 @@ die() {
   exit 1
 }
 
+# Fetch secrets from 1Password and export as env vars for devcontainer
+fetch_secrets() {
+  if ! command -v op &>/dev/null; then
+    echo "warning: 1Password CLI (op) not found, skipping secret injection" >&2
+    return
+  fi
+
+  echo "Fetching secrets from 1Password..." >&2
+  export CEREBRAS_API_KEY=$(op read "op://Private/Cerebras API Key/credential" 2>/dev/null || true)
+  export BUILDKITE_API_TOKEN=$(op read "op://Private/Buildkite API Token/credential" 2>/dev/null || true)
+
+  if [[ -n "$CEREBRAS_API_KEY" || -n "$BUILDKITE_API_TOKEN" ]]; then
+    echo "  Secrets fetched successfully" >&2
+  else
+    echo "  warning: Could not fetch secrets (not signed in?)" >&2
+  fi
+}
+
 ensure_repo() {
   local repo_path="$1"
   [[ -d "$repo_path" ]] || die "repo path does not exist or is not a directory: $repo_path"
@@ -163,18 +181,21 @@ case "$cmd" in
   rebuild)
     copy_template "$REPO_PATH" "$TEMPLATE_DIR"
     require_devcontainer_cli
+    fetch_secrets
     devcontainer up --workspace-folder "$REPO_PATH" --remove-existing-container
     devcontainer exec --workspace-folder "$REPO_PATH" tmux new -As agent
     ;;
   up)
     copy_template "$REPO_PATH" "$TEMPLATE_DIR"
     require_devcontainer_cli
+    fetch_secrets
     devcontainer up --workspace-folder "$REPO_PATH"
     devcontainer exec --workspace-folder "$REPO_PATH" tmux new -As agent
     ;;
   exec)
     copy_template "$REPO_PATH" "$TEMPLATE_DIR"
     require_devcontainer_cli
+    fetch_secrets
     if [[ $# -gt 0 && "$1" == "--" ]]; then
       shift
     fi
