@@ -35,14 +35,20 @@ fetch_secrets() {
     return
   fi
 
+  if [[ -z "${DEVCONTAINER_OP_SERVICE_ACCOUNT_TOKEN:-}" ]]; then
+    echo "warning: DEVCONTAINER_OP_SERVICE_ACCOUNT_TOKEN not set, skipping secret injection" >&2
+    return
+  fi
+
   echo "Fetching secrets from 1Password..." >&2
-  export CEREBRAS_API_KEY=$(op read "op://Private/Cerebras API Key/credential" 2>/dev/null || true)
-  export BUILDKITE_API_TOKEN=$(op read "op://Private/Buildkite API Token/credential" 2>/dev/null || true)
+  export OP_SERVICE_ACCOUNT_TOKEN="$DEVCONTAINER_OP_SERVICE_ACCOUNT_TOKEN"
+  export CEREBRAS_API_KEY=$(op read "op://dev-shared-with-robots/Cerebras API Key/credential" 2>/dev/null || true)
+  export BUILDKITE_API_TOKEN=$(op read "op://dev-shared-with-robots/Buildkite API Token/credential" 2>/dev/null || true)
 
   if [[ -n "$CEREBRAS_API_KEY" || -n "$BUILDKITE_API_TOKEN" ]]; then
     echo "  Secrets fetched successfully" >&2
   else
-    echo "  warning: Could not fetch secrets (not signed in?)" >&2
+    echo "  warning: Could not fetch secrets (check token permissions?)" >&2
   fi
 }
 
