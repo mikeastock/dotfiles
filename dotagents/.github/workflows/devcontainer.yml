@@ -1,0 +1,67 @@
+name: Devcontainer
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'devcontainer/**'
+      - '.github/workflows/devcontainer.yml'
+  pull_request:
+    branches: [main, master]
+    paths:
+      - 'devcontainer/**'
+      - '.github/workflows/devcontainer.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Validate devcontainer.json schema
+        run: |
+          pipx run check-jsonschema --schemafile "https://raw.githubusercontent.com/devcontainers/spec/main/schemas/devContainer.schema.json" devcontainer/devcontainer.json
+
+  build:
+    runs-on: ubuntu-latest
+    needs: validate
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build devcontainer image
+        uses: docker/build-push-action@v6
+        with:
+          context: devcontainer
+          push: false
+          load: true
+          tags: agents-sandbox:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Verify installed tools
+        run: |
+          docker run --rm agents-sandbox:test bash -c "
+            set -e
+            echo '=== Node.js ===' && node -v
+            echo '=== npm ===' && npm -v
+            echo '=== pnpm ===' && pnpm -v
+            echo '=== Claude Code ===' && claude --version
+            echo '=== Codex ===' && codex --version
+            echo '=== Ruby ===' && ruby -v
+            echo '=== uv ===' && uv --version
+            echo '=== Python ===' && uv run python --version
+            echo '=== git ===' && git --version
+            echo '=== gh ===' && gh --version
+            echo '=== tmux ===' && tmux -V
+            echo '=== fish ===' && fish --version
+            echo '=== zsh ===' && zsh --version
+            echo '=== ripgrep ===' && rg --version | head -1
+            echo '=== All tools verified ==='
+          "
