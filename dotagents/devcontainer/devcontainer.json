@@ -25,7 +25,12 @@
     "CODEX_HOME": "/home/dev/.codex",
     "CEREBRAS_API_KEY": "${localEnv:CEREBRAS_API_KEY}",
     "BUILDKITE_API_TOKEN": "${localEnv:BUILDKITE_API_TOKEN}",
-    "BUILDKITE_ORGANIZATION_SLUG": "buildr"
+    "BUILDKITE_ORGANIZATION_SLUG": "buildr",
+    "PGHOST": "host.docker.internal",
+    "REDIS_URL": "redis://host.docker.internal:6379",
+    "MEILISEARCH_URL": "http://host.docker.internal:7700",
+    "DOLT_HOST": "host.docker.internal",
+    "MINIO_ENDPOINT": "host.docker.internal:9000"
   },
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
   "workspaceFolder": "/workspace"
