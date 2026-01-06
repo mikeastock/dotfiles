@@ -3,11 +3,10 @@ help:
 	@echo "Usage: make [target]"
 	@echo ""
 	@echo "Targets:"
-	@echo "  all             Run all setup tasks (symlinks, brew, macos-defaults)"
+	@echo "  all             Run all setup tasks (symlinks, macos-defaults)"
 	@echo "  icloud-link     Create iCloud drive symlink"
 	@echo "  home-symlinks   Symlink dotfiles to home directory"
 	@echo "  config-symlinks Symlink .config files and directories"
-	@echo "  brew            Install Homebrew and packages"
 	@echo "  macos-defaults  Set macOS defaults"
 	@echo "  clean           Remove all managed symlinks"
 	@echo "  help            Show this help message"
@@ -18,7 +17,7 @@ help:
 	@echo "                  Example: make all DOTFILES_DIR=~/code/dotfiles"
 
 .PHONY: all
-all: icloud-link home-symlinks config-symlinks brew macos-defaults
+all: icloud-link home-symlinks config-symlinks macos-defaults
 
 # DOTFILES_DIR can be overridden: make DOTFILES_DIR=~/code/personal/dotfiles
 DOTFILES_DIR ?= $(HOME)/icloud-drive/dotfiles
@@ -142,16 +141,6 @@ clean:
 	@# starship
 	@[ -L $(HOME)/.config/starship.toml ] && rm $(HOME)/.config/starship.toml || true
 	@echo "✓ Symlinks removed"
-
-# Install Homebrew and packages
-.PHONY: brew
-brew:
-	@command -v brew >/dev/null || /bin/bash -c "$$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-	@brew update
-	@brew tap Homebrew/bundle
-	@brew bundle --file=$(DOTFILES_DIR)/Brewfile --verbose
-	@brew upgrade
-	@echo "✓ Homebrew packages installed"
 
 # Set macOS defaults
 .PHONY: macos-defaults
