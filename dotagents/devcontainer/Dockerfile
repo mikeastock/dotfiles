@@ -182,8 +182,8 @@ RUN ruby-install --system ruby ${RUBY_VERSION} -- --disable-install-doc \
   && rm -rf /usr/local/src/ruby-${RUBY_VERSION}* \
   && ruby -v
 
-# Allow dev user to install gems without sudo.
-RUN chown -R dev:dev /usr/local/lib/ruby /usr/local/bin
+# Allow dev user to install gems and other tools without sudo.
+RUN chown -R dev:dev /usr/local
 
 USER dev
 
