@@ -9,6 +9,10 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    groups:
+      pi-packages:
+        patterns:
+          - "@mariozechner/pi-*"
 
   - package-ecosystem: "github-actions"
     directory: "/"

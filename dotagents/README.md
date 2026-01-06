@@ -48,6 +48,7 @@ agents/
 │   └── pi/
 │       ├── AskUserQuestion/
 │       ├── confirm-destructive/
+│       ├── handoff/
 │       └── protected-paths/
 ├── scripts/
 │   └── build.py                      # Python build system
@@ -185,6 +186,7 @@ Example: `skill-overrides/brainstorming-pi.md` is appended to the brainstorming 
 |-----------|-------|-------------|
 | `AskUserQuestion` | Pi | Ask the user a question and let them pick from options or enter a custom response |
 | `confirm-destructive` | Pi | Prompts for confirmation before destructive session actions (macOS only) |
+| `handoff` | Pi | Transfer conversation context to a new focused session via `/handoff` command |
 | `protected-paths` | Pi | Blocks write and edit operations to protected paths (.env, .git/, node_modules/) |
 
 ## What are Skills?

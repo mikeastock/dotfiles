@@ -30,6 +30,10 @@ agents/
 │   └── <skill>-<agent>.md          # Appended to SKILL.md during build
 ├── extensions/                     # Custom extensions (Pi only)
 │   └── pi/
+│       ├── AskUserQuestion/
+│       ├── confirm-destructive/
+│       ├── handoff/
+│       ├── protected-paths/
 │       └── <extension-name>/index.ts
 ├── scripts/
 │   └── build.py                    # Python build system (requires Python 3.11+)
