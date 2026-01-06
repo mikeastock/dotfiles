@@ -64,6 +64,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     ripgrep \
     zoxide \
     fd-find \
+    libmariadb-dev \
   && rm -rf /var/lib/apt/lists/*
 RUN if command -v fdfind >/dev/null 2>&1 && [ ! -e /usr/local/bin/fd ]; then \
     ln -s /usr/bin/fdfind /usr/local/bin/fd; \

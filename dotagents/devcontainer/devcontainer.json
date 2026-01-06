@@ -9,8 +9,15 @@
       "CODEX_VERSION": "latest"
     }
   },
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": false,
+      "installOhMyZsh": false,
+      "upgradePackages": false
+    }
+  },
   "remoteUser": "dev",
-  "postCreateCommand": "uv run --no-sync /workspace/.devcontainer/post_install.py",
+  "postCreateCommand": "uv run --no-sync /workspace/.devcontainer/post_install.py && gem install bundler -v 2.7.2 --no-document && bundle config set --global path 'vendor/bundle'",
   "mounts": [
     "source=commandhistory,target=/commandhistory,type=volume",
     "source=${localEnv:HOME}/.claude,target=/home/dev/.claude,type=bind,consistency=cached",
@@ -23,6 +30,7 @@
     "NODE_OPTIONS": "--max-old-space-size=4096",
     "CLAUDE_CONFIG_DIR": "/home/dev/.claude",
     "CODEX_HOME": "/home/dev/.codex",
+    "BUNDLE_PATH": "vendor/bundle",
     "CEREBRAS_API_KEY": "${localEnv:CEREBRAS_API_KEY}",
     "BUILDKITE_API_TOKEN": "${localEnv:BUILDKITE_API_TOKEN}",
     "BUILDKITE_ORGANIZATION_SLUG": "buildr",
