@@ -10,20 +10,6 @@
 #
 # Plugin directories use hyphen separator: owner/repo -> plugins/owner-repo/
 
-["obra/superpowers"]
-url = "https://github.com/obra/superpowers"
-skills = [
-    "brainstorming",
-    "dispatching-parallel-agents",
-    "executing-plans",
-    "subagent-driven-development",
-    "systematic-debugging",
-    "test-driven-development",
-    "verification-before-completion",
-    "writing-plans",
-    "writing-skills",
-]
-
 ["anthropics/skills"]
 url = "https://github.com/anthropics/skills"
 skills = ["frontend-design"]

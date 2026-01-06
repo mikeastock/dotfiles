@@ -211,22 +211,26 @@ def build_skill(name: str, source: Path, agent: str):
         print(f"    Warning: {source} has no SKILL.md, skipping")
         return False
 
-    # Check for override
+    # Check for overrides: global or local per-skill
     override = OVERRIDES_DIR / f"{name}-{agent}.md"
+    local_override = source / "overrides" / f"{agent}.md"
     dest_skill_md = dest / "SKILL.md"
 
-    if override.exists():
-        # Concatenate original + override
+    if override.exists() or local_override.exists():
         with open(dest_skill_md, "w") as out:
             out.write(skill_md.read_text())
-            out.write("\n")
-            out.write(override.read_text())
+            if override.exists():
+                out.write("\n")
+                out.write(override.read_text())
+            if local_override.exists():
+                out.write("\n")
+                out.write(local_override.read_text())
     else:
         shutil.copy(skill_md, dest_skill_md)
 
     # Copy additional files
     for item in source.iterdir():
-        if item.name != "SKILL.md":
+        if item.name not in {"SKILL.md", "overrides"}:
             dest_item = dest / item.name
             if item.is_dir():
                 shutil.copytree(item, dest_item, dirs_exist_ok=True)

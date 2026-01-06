@@ -251,8 +251,8 @@ init_submodules() {
     log_info "Checking git submodules..."
     cd "$PROJECT_DIR"
 
-    # Check if submodules are initialized
-    if [ ! -d "$PROJECT_DIR/plugins/superpowers/skills" ]; then
+    # Check if any submodules are uninitialized
+    if git submodule status --recursive | grep -q '^-'; then
         log_info "Initializing git submodules..."
         git submodule update --init --recursive
     else

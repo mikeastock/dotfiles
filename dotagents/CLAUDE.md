@@ -18,7 +18,6 @@ agents/
 ├── plugins.toml                    # Plugin configuration (URLs, enabled items, paths)
 ├── plugins/                        # Git submodules (skill sources, owner-repo format)
 │   ├── anthropics-skills/          # github.com/anthropics/skills
-│   ├── obra-superpowers/           # github.com/obra/superpowers
 │   ├── SawyerHood-dev-browser/     # github.com/SawyerHood/dev-browser
 │   ├── EveryInc-compound-engineering-plugin/  # github.com/EveryInc/compound-engineering-plugin
 │   └── mitsuhiko-agent-stuff/      # github.com/mitsuhiko/agent-stuff
@@ -56,7 +55,9 @@ agents/
 Skills follow the [Agent Skills specification](https://agentskills.io/specification). When creating or modifying skills, fetch the latest specification from that URL for current format requirements.
 
 ### Skill Overrides
-Files in `skill-overrides/<skill>-<agent>.md` are **appended** to the skill's SKILL.md during build. This allows agent-specific customizations without modifying upstream skills.
+Files in `skill-overrides/<skill>-<agent>.md` are **appended** to the skill's SKILL.md during build. This allows agent-specific customizations without modifying upstream skills, and applies to both plugin and custom skills.
+
+Custom skills can also include per-skill overrides at `skills/<skill>/overrides/<agent>.md`, which are appended after `skill-overrides` for that skill.
 
 ### Plugin Configuration
 All plugin configuration is in `plugins.toml`. Plugins use fully qualified names (`owner/repo`) as table keys. The corresponding directory uses hyphen separator: `owner/repo` → `plugins/owner-repo/`.

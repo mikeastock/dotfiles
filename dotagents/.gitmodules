@@ -1,9 +1,6 @@
 [submodule "plugins/SawyerHood-dev-browser"]
 	path = plugins/SawyerHood-dev-browser
 	url = https://github.com/SawyerHood/dev-browser.git
-[submodule "plugins/obra-superpowers"]
-	path = plugins/obra-superpowers
-	url = https://github.com/obra/superpowers.git
 [submodule "plugins/anthropics-skills"]
 	path = plugins/anthropics-skills
 	url = https://github.com/anthropics/skills.git

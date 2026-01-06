@@ -32,13 +32,12 @@ agents/
 ├── plugins.toml                      # plugin configuration
 ├── plugins/
 │   ├── anthropic-skills/             # git submodule (github.com/anthropics/skills)
-│   ├── superpowers/                  # git submodule (github.com/obra/superpowers)
 │   ├── dev-browser/                  # git submodule (github.com/SawyerHood/dev-browser)
 │   ├── compound-engineering/         # git submodule (github.com/EveryInc/compound-engineering-plugin)
 │   ├── agent-stuff/                  # git submodule (github.com/mitsuhiko/agent-stuff)
 │   └── pi-interview-tool/            # git submodule (github.com/nicobailon/pi-interview-tool)
 ├── skills/                           # custom skills
-│   └── fetching-buildkite-failures/
+│   └── <skill-name>/
 ├── commands/                         # slash commands (Claude Code, Codex)
 │   └── commit.md
 ├── skill-overrides/                  # agent-specific appends
@@ -70,14 +69,6 @@ agents/
 All plugin configuration is in `plugins.toml`:
 
 ```toml
-[superpowers]
-url = "https://github.com/obra/superpowers"
-skills = [
-    "brainstorming",
-    "systematic-debugging",
-    "test-driven-development",
-]
-
 [agent-stuff]
 url = "https://github.com/mitsuhiko/agent-stuff"
 skills = []  # No skills from this plugin
@@ -115,26 +106,13 @@ make install
 
 ## Skill Overrides
 
-Override files in `skill-overrides/<skill>-<agent>.md` are appended to skills during build. This allows agent-specific customizations without modifying upstream skills.
+Override files in `skill-overrides/<skill>-<agent>.md` are appended to skills during build. This allows agent-specific customizations without modifying upstream skills. Overrides apply to both plugin and custom skills.
 
 Example: `skill-overrides/brainstorming-pi.md` is appended to the brainstorming skill when building for Pi agent.
 
+For custom skills, you can also place per-skill overrides at `skills/<skill>/overrides/<agent>.md`. These are appended after `skill-overrides` so the most specific override wins.
+
 ## Available Skills
-
-### From superpowers
-
-| Skill | Description |
-|-------|-------------|
-| `brainstorming` | Explores user intent, requirements and design before implementation |
-| `dispatching-parallel-agents` | Use when facing 2+ independent tasks without shared state |
-| `executing-plans` | Execute implementation plans with review checkpoints |
-| `subagent-driven-development` | Execute implementation plans with independent tasks |
-| `systematic-debugging` | Use when encountering bugs or unexpected behavior |
-| `test-driven-development` | Use when implementing features, before writing implementation code |
-| `using-superpowers` | Establishes how to find and use skills at conversation start |
-| `verification-before-completion` | Requires running verification before making success claims |
-| `writing-plans` | Use when you have requirements for a multi-step task |
-| `writing-skills` | Use when creating or editing skills |
 
 ### From anthropic-skills
 
@@ -158,7 +136,13 @@ Example: `skill-overrides/brainstorming-pi.md` is appended to the brainstorming 
 
 | Skill | Description |
 |-------|-------------|
+| `brainstorming` | Explores user intent, requirements and design before implementation |
+| `executing-plans` | Execute implementation plans with review checkpoints |
 | `fetching-buildkite-failures` | Fetches build results from Buildkite and helps diagnose CI failures |
+| `subagent-driven-development` | Execute implementation plans with independent tasks |
+| `test-driven-development` | Use when implementing features, before writing implementation code |
+| `writing-clearly-and-concisely` | Guidance for clear, concise prose based on Strunk |
+| `writing-plans` | Use when you have requirements for a multi-step task |
 
 ## Available Commands
 
