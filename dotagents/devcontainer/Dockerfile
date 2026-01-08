@@ -61,6 +61,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     tmux \
     ncurses-term \
     git \
+    git-lfs \
     ripgrep \
     zoxide \
     fd-find \
