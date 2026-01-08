@@ -234,6 +234,26 @@ def install_tmux_config() -> None:
     log(f"installed tmux config to {tmux_dest}")
 
 
+def upgrade_coding_agents() -> None:
+    """Upgrade Claude Code, Codex CLI, and Pi Coding Agent to latest versions."""
+    packages = [
+        "@anthropic-ai/claude-code@latest",
+        "@openai/codex@latest",
+        "@mariozechner/pi-coding-agent@latest",
+    ]
+    log("upgrading coding agents to latest versions...")
+    result = subprocess.run(
+        ["npm", "install", "-g", *packages],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        log(f"failed to upgrade coding agents: {result.stderr.strip()}")
+        return
+    log("upgraded coding agents to latest versions")
+
+
 def main() -> None:
     workspace = resolve_workspace()
     if not is_git_repo(workspace):
@@ -249,6 +269,7 @@ def main() -> None:
     ensure_codex_config()
     ensure_claude_config()
     ensure_fish_config()
+    upgrade_coding_agents()
     log("configured defaults for container use")
 
 
