@@ -31,8 +31,20 @@ die() {
 # Fetch secrets from 1Password and export as env vars for devcontainer
 fetch_secrets() {
   if ! command -v op &>/dev/null; then
-    echo "warning: 1Password CLI (op) not found, skipping secret injection" >&2
-    return
+    cat >&2 <<'EOF'
+error: 1Password CLI (op) not found
+
+The devcontainer requires 1Password CLI to fetch secrets (API keys, tokens).
+
+Install 1Password CLI:
+  macOS:   brew install 1password-cli
+  Linux:   https://developer.1password.com/docs/cli/get-started/#install
+  Windows: winget install AgileBits.1Password.CLI
+
+After installing, ensure DEVCONTAINER_OP_SERVICE_ACCOUNT_TOKEN is set in your
+environment with a valid service account token.
+EOF
+    exit 1
   fi
 
   if [[ -z "${DEVCONTAINER_OP_SERVICE_ACCOUNT_TOKEN:-}" ]]; then
