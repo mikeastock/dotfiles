@@ -42,8 +42,8 @@ fetch_secrets() {
 
   echo "Fetching secrets from 1Password..." >&2
   export OP_SERVICE_ACCOUNT_TOKEN="$DEVCONTAINER_OP_SERVICE_ACCOUNT_TOKEN"
-  export CEREBRAS_API_KEY=$(op read "op://dev-shared-with-robots/Cerebras API Key/credential" 2>/dev/null || true)
-  export BUILDKITE_API_TOKEN=$(op read "op://dev-shared-with-robots/Buildkite API Token/credential" 2>/dev/null || true)
+  export CEREBRAS_API_KEY=$(op read "op://dev-shared-with-robots/CEREBRAS_API_KEY/credential" 2>/dev/null || true)
+  export BUILDKITE_API_TOKEN=$(op read "op://dev-shared-with-robots/BUILDKITE_API_TOKEN/credential" 2>/dev/null || true)
 
   if [[ -n "$CEREBRAS_API_KEY" || -n "$BUILDKITE_API_TOKEN" ]]; then
     echo "  Secrets fetched successfully" >&2
