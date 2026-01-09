@@ -38,6 +38,7 @@ EXTENSIONS_DIR = ROOT / "extensions"
 OVERRIDES_DIR = ROOT / "skill-overrides"
 BUILD_DIR = ROOT / "build"
 CONFIG_FILE = ROOT / "plugins.toml"
+CODEX_CONFIG_FILE = ROOT / "codex-config.toml"
 
 # Installation paths
 HOME = Path.home()
@@ -384,6 +385,25 @@ def install_extensions(plugins: dict[str, Plugin]):
     print(f"  Installed {len(installed)} extensions to {dest}")
 
 
+def install_codex_config():
+    """Install Codex CLI configuration."""
+    print("Installing Codex config...")
+
+    if not CODEX_CONFIG_FILE.exists():
+        print("  No codex-config.toml found, skipping")
+        return
+
+    dest = HOME / ".codex" / "config.toml"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+
+    if dest.exists():
+        print(f"  Skipping (already exists at {dest})")
+        return
+
+    shutil.copy(CODEX_CONFIG_FILE, dest)
+    print(f"  Installed to {dest}")
+
+
 def clean(plugins: dict[str, Plugin]):
     """Remove all installed artifacts."""
     print("Cleaning installed artifacts...")
@@ -458,6 +478,7 @@ def main():
         install_skills()
         install_commands()
         install_extensions(plugins)
+        install_codex_config()
         print("\nAll done!")
     elif args.command == "install-skills":
         build_skills(plugins)
