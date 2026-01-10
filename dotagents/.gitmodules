@@ -12,7 +12,7 @@
 	url = https://github.com/mitsuhiko/agent-stuff
 [submodule "plugins/nicobailon-pi-interview-tool"]
 	path = plugins/nicobailon-pi-interview-tool
-	url = https://github.com/nicobailon/pi-interview-tool
+	url = https://github.com/mikeastock/pi-interview-tool.git
 [submodule "plugins/steipete-agent-scripts"]
 	path = plugins/steipete-agent-scripts
 	url = https://github.com/steipete/agent-scripts
