@@ -52,7 +52,7 @@ agents/
 ## Key Concepts
 
 ### Skills
-Skills follow the [Agent Skills specification](https://agentskills.io/specification). When creating or modifying skills, fetch the latest specification from that URL for current format requirements.
+Skills follow the [Agent Skills specification](https://agentskills.io/specification.md). When creating or modifying skills, fetch the latest specification from that URL for current format requirements.
 
 ### Skill Overrides
 Files in `skill-overrides/<skill>-<agent>.md` are **appended** to the skill's SKILL.md during build. This allows agent-specific customizations without modifying upstream skills, and applies to both plugin and custom skills.
@@ -105,7 +105,7 @@ GitHub Actions runs `./tests/run-all.sh` on push/PR to main/master branches.
 ## Code Conventions
 
 ### Skills (SKILL.md)
-- Follow the [Agent Skills specification](https://agentskills.io/specification) - fetch it for current format requirements
+- Follow the [Agent Skills specification](https://agentskills.io/specification.md) - fetch it for current format requirements
 - Include workflow diagrams (graphviz dot format) for complex processes
 - Document prerequisites, step-by-step processes, and common mistakes
 - Reference related skills when appropriate
@@ -139,7 +139,7 @@ Extensions use the unified `ExtensionAPI` which provides:
 ## Adding New Content
 
 ### Adding a Custom Skill
-1. Fetch the [Agent Skills specification](https://agentskills.io/specification) for the current format
+1. Fetch the [Agent Skills specification](https://agentskills.io/specification.md) for the current format
 2. Create `skills/<skill-name>/SKILL.md` following the specification
 3. Add any supporting files to the same directory
 4. Run `make install` to build and install
