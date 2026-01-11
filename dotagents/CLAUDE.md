@@ -82,6 +82,7 @@ make install
 | Command | Description |
 |---------|-------------|
 | `make install` | Build and install skills and extensions for all agents |
+| `make install-non-interactive` | Install for headless/automated environments (skips interactive extensions and overrides) |
 | `make build` | Build skills to `build/` without installing |
 | `make install-skills` | Install skills only |
 | `make install-extensions` | Install Pi extensions only |

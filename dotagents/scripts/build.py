@@ -16,6 +16,35 @@ from dataclasses import dataclass, field
 from fnmatch import fnmatch
 from pathlib import Path
 
+# Extensions that require user interaction and should be skipped in non-interactive mode
+INTERACTIVE_EXTENSIONS = {
+    "AskUserQuestion",
+    "confirm-destructive",
+}
+
+# Plugins that require user interaction and should be skipped entirely in non-interactive mode
+# Use fully qualified names (owner/repo)
+INTERACTIVE_PLUGINS = {
+    "nicobailon/pi-interview-tool",
+}
+
+# Skill override patterns that require user interaction (skill name patterns)
+# Overrides matching these patterns are skipped in non-interactive mode
+INTERACTIVE_OVERRIDE_PATTERNS = {
+    "*-AskUserQuestion-*",  # Any override referencing AskUserQuestion
+}
+
+# Skill overrides that explicitly require interactivity
+INTERACTIVE_OVERRIDES = {
+    "ask-questions-if-underspecified-claude.md",
+    "ask-questions-if-underspecified-pi.md",
+    "brainstorming-claude.md",
+    "brainstorming-pi.md",
+}
+
+# Global flag for non-interactive mode
+NON_INTERACTIVE = False
+
 
 def remove_path(path: Path) -> None:
     """Remove a path, handling both symlinks and directories."""
@@ -161,6 +190,10 @@ def discover_items(plugin: Plugin, item_type: str) -> list[tuple[str, Path]]:
     - ["*"] = all items (wildcard)
     - ["item1", "item2"] = only specified items
     """
+    # Skip entire plugin in non-interactive mode if it's marked as interactive
+    if NON_INTERACTIVE and plugin.name in INTERACTIVE_PLUGINS:
+        return []
+
     plugin_dir = PLUGINS_DIR / plugin.dir_name
     if not plugin_dir.exists():
         return []
@@ -201,6 +234,19 @@ def discover_items(plugin: Plugin, item_type: str) -> list[tuple[str, Path]]:
     return items
 
 
+def is_interactive_override(override_path: Path) -> bool:
+    """Check if an override file is interactive-only."""
+    filename = override_path.name
+    # Check explicit list
+    if filename in INTERACTIVE_OVERRIDES:
+        return True
+    # Check patterns
+    for pattern in INTERACTIVE_OVERRIDE_PATTERNS:
+        if fnmatch(filename, pattern):
+            return True
+    return False
+
+
 def build_skill(name: str, source: Path, agent: str):
     """Build a skill for a specific agent."""
     dest = BUILD_DIR / agent / name
@@ -217,13 +263,17 @@ def build_skill(name: str, source: Path, agent: str):
     local_override = source / "overrides" / f"{agent}.md"
     dest_skill_md = dest / "SKILL.md"
 
-    if override.exists() or local_override.exists():
+    # In non-interactive mode, skip interactive overrides
+    use_override = override.exists() and not (NON_INTERACTIVE and is_interactive_override(override))
+    use_local_override = local_override.exists() and not (NON_INTERACTIVE and is_interactive_override(local_override))
+
+    if use_override or use_local_override:
         with open(dest_skill_md, "w") as out:
             out.write(skill_md.read_text())
-            if override.exists():
+            if use_override:
                 out.write("\n")
                 out.write(override.read_text())
-            if local_override.exists():
+            if use_local_override:
                 out.write("\n")
                 out.write(local_override.read_text())
     else:
@@ -253,9 +303,15 @@ def build_skills(plugins: dict[str, Plugin]):
         agent_dir.mkdir(parents=True)
 
     built = set()
+    skipped_plugins = []
 
     # Process plugins
     for plugin in plugins.values():
+        # Track skipped interactive plugins
+        if NON_INTERACTIVE and plugin.name in INTERACTIVE_PLUGINS:
+            skipped_plugins.append(plugin.name)
+            continue
+
         for name, path in discover_items(plugin, "skills"):
             if name in built:
                 print(f"    Warning: Skill '{name}' already exists, skipping duplicate from {plugin.name}")
@@ -265,6 +321,9 @@ def build_skills(plugins: dict[str, Plugin]):
                     if agent == AGENTS[0]:  # Only print once
                         print(f"  {name} (from {plugin.name})")
                     built.add(name)
+
+    if skipped_plugins:
+        print(f"  Skipped {len(skipped_plugins)} interactive plugins: {', '.join(skipped_plugins)}")
 
     # Process custom skills
     if SKILLS_DIR.exists():
@@ -341,16 +400,31 @@ def install_extensions(plugins: dict[str, Plugin]):
     """Install extensions from plugins and custom extensions directory."""
     print("Installing extensions...")
 
+    if NON_INTERACTIVE:
+        print("  (non-interactive mode: skipping interactive extensions and plugins)")
+
     dest = INSTALL_PATHS["pi"]["extensions"]
     dest.mkdir(parents=True, exist_ok=True)
 
     installed = set()
+    skipped_extensions = []
+    skipped_plugins = []
 
     # Extensions from plugins
     for plugin in plugins.values():
+        # Track skipped interactive plugins
+        if NON_INTERACTIVE and plugin.name in INTERACTIVE_PLUGINS:
+            skipped_plugins.append(plugin.name)
+            continue
+
         for name, path in discover_items(plugin, "extensions"):
             if name in installed:
                 print(f"    Warning: Extension '{name}' already exists, skipping duplicate from {plugin.name}")
+                continue
+
+            # Skip interactive extensions in non-interactive mode
+            if NON_INTERACTIVE and name in INTERACTIVE_EXTENSIONS:
+                skipped_extensions.append(name)
                 continue
 
             dest_ext = dest / name
@@ -372,6 +446,12 @@ def install_extensions(plugins: dict[str, Plugin]):
         for ext_dir in sorted(custom_extensions.iterdir()):
             if ext_dir.is_dir():
                 name = ext_dir.name
+
+                # Skip interactive extensions in non-interactive mode
+                if NON_INTERACTIVE and name in INTERACTIVE_EXTENSIONS:
+                    skipped_extensions.append(name)
+                    continue
+
                 if name in installed:
                     print(f"    Warning: Custom extension '{name}' conflicts with plugin extension")
 
@@ -382,6 +462,10 @@ def install_extensions(plugins: dict[str, Plugin]):
                 print(f"  {name} (custom)")
                 installed.add(name)
 
+    if skipped_plugins:
+        print(f"  Skipped {len(skipped_plugins)} interactive plugins: {', '.join(skipped_plugins)}")
+    if skipped_extensions:
+        print(f"  Skipped {len(skipped_extensions)} interactive extensions: {', '.join(skipped_extensions)}")
     print(f"  Installed {len(installed)} extensions to {dest}")
 
 
@@ -461,18 +545,29 @@ def clean(plugins: dict[str, Plugin]):
 
 
 def main():
+    global NON_INTERACTIVE
+
     parser = argparse.ArgumentParser(description="Build and install AI agent plugins")
     parser.add_argument("command", choices=["build", "install", "install-skills", "install-commands", "install-extensions", "clean", "submodule-init"],
                         help="Command to run")
+    parser.add_argument("--non-interactive", action="store_true",
+                        help="Skip interactive extensions and overrides (for headless/automated environments)")
     args = parser.parse_args()
+
+    # Set global flag
+    NON_INTERACTIVE = args.non_interactive
 
     plugins = load_config()
 
     if args.command == "submodule-init":
         init_submodules()
     elif args.command == "build":
+        if NON_INTERACTIVE:
+            print("Building in non-interactive mode...")
         build_skills(plugins)
     elif args.command == "install":
+        if NON_INTERACTIVE:
+            print("Installing in non-interactive mode...")
         init_submodules()
         build_skills(plugins)
         install_skills()
