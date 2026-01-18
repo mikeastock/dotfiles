@@ -74,3 +74,11 @@ assert.deepEqual(multiAnswer.value, ["a", "b", "x"]);
 assert.deepEqual(multiAnswer.label, ["A", "B", "x"]);
 assert.deepEqual(multiAnswer.wasCustom, [false, false, true]);
 assert.deepEqual(multiAnswer.index, [1, 2]);
+
+const normalized = normalizeQuestions({
+  mode: "input",
+  question: "Free text",
+  allowEmpty: false,
+});
+assert.equal(normalized[0].mode, "input");
+assert.equal(normalized[0].allowEmpty, false);
