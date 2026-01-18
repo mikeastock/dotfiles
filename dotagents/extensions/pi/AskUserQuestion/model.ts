@@ -78,3 +78,44 @@ export function normalizeQuestions(params: SingleParams): Question[] {
     ),
   ];
 }
+
+export interface RenderOption extends QuestionOption {
+  isOther?: boolean;
+}
+
+export function buildRenderOptions(question: Question): RenderOption[] {
+  const options: RenderOption[] = [...question.options];
+  if (question.allowCustom) {
+    options.push({ value: "__other__", label: question.customLabel, isOther: true });
+  }
+  return options;
+}
+
+export function resolveDefaults(question: Question): {
+  optionIndex: number;
+  checkedIndexes: number[];
+  customValue: string;
+} {
+  if (question.mode === "single") {
+    const idx = question.defaultValue
+      ? question.options.findIndex((opt) => opt.value === question.defaultValue)
+      : -1;
+    const unmatched = question.defaultValue && idx === -1 && question.allowCustom ? question.defaultValue : "";
+    return { optionIndex: Math.max(0, idx), checkedIndexes: [], customValue: unmatched };
+  }
+
+  if (question.mode === "multi") {
+    const defaults = question.defaultValues ?? [];
+    const matched = defaults
+      .map((value) => question.options.findIndex((opt) => opt.value === value))
+      .filter((index) => index >= 0);
+    const unmatched = defaults.filter((value) => !question.options.some((opt) => opt.value === value));
+    return {
+      optionIndex: 0,
+      checkedIndexes: matched,
+      customValue: question.allowCustom ? unmatched.join(", ") : "",
+    };
+  }
+
+  return { optionIndex: 0, checkedIndexes: [], customValue: question.defaultValue ?? "" };
+}
