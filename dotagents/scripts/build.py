@@ -62,7 +62,7 @@ import tomllib
 ROOT = Path(__file__).parent.parent
 PLUGINS_DIR = ROOT / "plugins"
 SKILLS_DIR = ROOT / "skills"
-COMMANDS_DIR = ROOT / "commands"
+
 EXTENSIONS_DIR = ROOT / "extensions"
 OVERRIDES_DIR = ROOT / "skill-overrides"
 BUILD_DIR = ROOT / "build"
@@ -74,15 +74,12 @@ HOME = Path.home()
 INSTALL_PATHS = {
     "claude": {
         "skills": HOME / ".claude" / "skills",
-        "commands": HOME / ".claude" / "commands",
     },
     "codex": {
         "skills": HOME / ".codex" / "skills",
-        "prompts": HOME / ".codex" / "prompts",
     },
     "pi": {
         "skills": HOME / ".pi" / "agent" / "skills",
-        "prompts": HOME / ".pi" / "agent" / "prompts",
         "extensions": HOME / ".pi" / "agent" / "extensions",
     },
 }
@@ -369,33 +366,6 @@ def install_skills():
         print(f"  {agent}: {count} skills -> {dest}")
 
 
-def install_commands():
-    """Install slash commands to agent directories."""
-    print("Installing commands...")
-
-    if not COMMANDS_DIR.exists():
-        print("  No commands directory found, skipping")
-        return
-
-    for agent, paths in INSTALL_PATHS.items():
-        # Claude uses "commands", Codex/Pi use "prompts" (same format)
-        dest_key = "commands" if "commands" in paths else "prompts" if "prompts" in paths else None
-        if not dest_key:
-            continue
-
-        dest = paths[dest_key]
-        dest.mkdir(parents=True, exist_ok=True)
-
-        count = 0
-        for cmd_file in sorted(COMMANDS_DIR.iterdir()):
-            if cmd_file.is_file() and cmd_file.suffix == ".md":
-                dest_cmd = dest / cmd_file.name
-                shutil.copy(cmd_file, dest_cmd)
-                count += 1
-
-        print(f"  {agent}: {count} commands -> {dest}")
-
-
 def install_extensions(plugins: dict[str, Plugin]):
     """Install extensions from plugins and custom extensions directory."""
     print("Installing extensions...")
@@ -504,19 +474,6 @@ def clean(plugins: dict[str, Plugin]):
                             remove_path(installed)
                             print(f"  Removed skill: {skill_dir.name} from {agent}")
 
-    # Clean commands from all agents (commands for Claude, prompts for Codex/Pi)
-    if COMMANDS_DIR.exists():
-        for agent, paths in INSTALL_PATHS.items():
-            dest_key = "commands" if "commands" in paths else "prompts" if "prompts" in paths else None
-            if not dest_key:
-                continue
-            for cmd_file in COMMANDS_DIR.iterdir():
-                if cmd_file.is_file() and cmd_file.suffix == ".md":
-                    installed = paths[dest_key] / cmd_file.name
-                    if installed.exists():
-                        installed.unlink()
-                        print(f"  Removed command: {cmd_file.name} from {agent}")
-
     # Clean extensions
     ext_dest = INSTALL_PATHS["pi"]["extensions"]
     for plugin in plugins.values():
@@ -548,7 +505,7 @@ def main():
     global NON_INTERACTIVE
 
     parser = argparse.ArgumentParser(description="Build and install AI agent plugins")
-    parser.add_argument("command", choices=["build", "install", "install-skills", "install-commands", "install-extensions", "clean", "submodule-init"],
+    parser.add_argument("command", choices=["build", "install", "install-skills", "install-extensions", "clean", "submodule-init"],
                         help="Command to run")
     parser.add_argument("--non-interactive", action="store_true",
                         help="Skip interactive extensions and overrides (for headless/automated environments)")
@@ -571,15 +528,12 @@ def main():
         init_submodules()
         build_skills(plugins)
         install_skills()
-        install_commands()
         install_extensions(plugins)
         install_codex_config()
         print("\nAll done!")
     elif args.command == "install-skills":
         build_skills(plugins)
         install_skills()
-    elif args.command == "install-commands":
-        install_commands()
     elif args.command == "install-extensions":
         install_extensions(plugins)
     elif args.command == "clean":

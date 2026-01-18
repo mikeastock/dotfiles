@@ -16,12 +16,11 @@ make install
 This initializes submodules, builds skills (applying overrides), and installs them for all supported agents. See `make help` for more options:
 
 ```
-make install             Initialize submodules and install skills, commands, and extensions
+make install             Initialize submodules and install skills and extensions
 make install-skills      Install skills only (Claude Code, Codex, Pi agent)
-make install-commands    Install slash commands only (Claude Code, Codex, Pi agent)
 make install-extensions  Install extensions only (Pi agent)
 make build               Build skills with overrides (without installing)
-make clean               Remove all installed skills, commands, extensions, and build artifacts
+make clean               Remove all installed skills, extensions, and build artifacts
 make pi-skills-config    Configure Pi agent to use only Pi-specific skills
 ```
 
@@ -38,8 +37,6 @@ agents/
 │   └── pi-interview-tool/            # git submodule (github.com/nicobailon/pi-interview-tool)
 ├── skills/                           # custom skills
 │   └── <skill-name>/
-├── commands/                         # slash commands (Claude Code, Codex)
-│   └── commit.md
 ├── skill-overrides/                  # agent-specific appends
 │   ├── brainstorming-claude.md
 │   └── brainstorming-pi.md
@@ -140,16 +137,11 @@ For custom skills, you can also place per-skill overrides at `skills/<skill>/ove
 | `brainstorming` | Explores user intent, requirements and design before implementation |
 | `executing-plans` | Execute implementation plans with review checkpoints |
 | `fetching-buildkite-failures` | Fetches build results from Buildkite and helps diagnose CI failures |
+| `semantic-commit` | Create semantic git commits following Conventional Commits specification |
 | `subagent-driven-development` | Execute implementation plans with independent tasks |
 | `test-driven-development` | Use when implementing features, before writing implementation code |
 | `writing-clearly-and-concisely` | Guidance for clear, concise prose based on Strunk |
 | `writing-plans` | Use when you have requirements for a multi-step task |
-
-## Available Commands
-
-| Command | Description |
-|---------|-------------|
-| `/commit` | Create a semantic commit following Conventional Commits specification |
 
 ## Available Extensions
 
@@ -210,20 +202,6 @@ This uses `jq` to update `~/.pi/agent/settings.json` with:
 The command preserves any existing settings in the file. Requires `jq` to be installed (`brew install jq` on macOS or `apt install jq` on Linux).
 
 See Pi's [skills documentation](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent/docs/skills.md) for all available options.
-
-## What are Slash Commands?
-
-Slash commands are shortcuts that trigger specific prompts or actions. They are markdown files that define a prompt template invoked via `/command-name` syntax.
-
-All three agents support the same markdown format with YAML frontmatter (`description`) and content with argument placeholders (`$1`, `$ARGUMENTS`).
-
-### Command Locations
-
-| Agent | Location |
-|-------|----------|
-| Claude Code | `~/.claude/commands/` |
-| Codex CLI | `~/.codex/prompts/` |
-| Pi Coding Agent | `~/.pi/agent/prompts/` |
 
 ## What are Extensions?
 
