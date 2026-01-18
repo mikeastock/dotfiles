@@ -1,5 +1,10 @@
 import assert from "node:assert/strict";
-import { normalizeQuestions, buildRenderOptions, resolveDefaults } from "../extensions/pi/AskUserQuestion/model";
+import {
+  normalizeQuestions,
+  buildRenderOptions,
+  resolveDefaults,
+  buildAnswer,
+} from "../extensions/pi/AskUserQuestion/model";
 
 const result = normalizeQuestions({
   mode: "single",
@@ -37,3 +42,35 @@ assert.equal(renderOptions[renderOptions.length - 1].isOther, true);
 const defaults = resolveDefaults(question);
 assert.deepEqual(defaults.checkedIndexes, [0]);
 assert.equal(defaults.customValue, "x");
+
+const singleQuestion = {
+  id: "q1",
+  mode: "single",
+  prompt: "Pick one",
+  options: [{ value: "a", label: "A" }],
+  allowCustom: true,
+  customLabel: "Other",
+  allowEmpty: true,
+};
+
+const multiQuestion = {
+  ...singleQuestion,
+  id: "q2",
+  mode: "multi",
+  options: [
+    { value: "a", label: "A" },
+    { value: "b", label: "B" },
+  ],
+};
+
+const singleAnswer = buildAnswer(singleQuestion, { selectedIndexes: [0], customValue: "" });
+assert.equal(singleAnswer.value, "a");
+assert.equal(singleAnswer.label, "A");
+assert.equal(singleAnswer.wasCustom, false);
+assert.equal(singleAnswer.index, 1);
+
+const multiAnswer = buildAnswer(multiQuestion, { selectedIndexes: [0, 1], customValue: "x" });
+assert.deepEqual(multiAnswer.value, ["a", "b", "x"]);
+assert.deepEqual(multiAnswer.label, ["A", "B", "x"]);
+assert.deepEqual(multiAnswer.wasCustom, [false, false, true]);
+assert.deepEqual(multiAnswer.index, [1, 2]);

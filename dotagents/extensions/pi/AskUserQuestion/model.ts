@@ -119,3 +119,57 @@ export function resolveDefaults(question: Question): {
 
   return { optionIndex: 0, checkedIndexes: [], customValue: question.defaultValue ?? "" };
 }
+
+export interface SelectionState {
+  selectedIndexes: number[];
+  customValue: string;
+}
+
+export interface Answer {
+  id: string;
+  mode: QuestionMode;
+  value: string | string[];
+  label: string | string[];
+  wasCustom: boolean | boolean[];
+  index?: number | number[];
+}
+
+export function buildAnswer(question: Question, state: SelectionState): Answer {
+  if (question.mode === "input") {
+    const value = state.customValue;
+    return { id: question.id, mode: question.mode, value, label: value, wasCustom: true };
+  }
+
+  const selectedOptions = state.selectedIndexes.map((idx) => question.options[idx]);
+  const optionValues = selectedOptions.map((opt) => opt.value);
+  const optionLabels = selectedOptions.map((opt) => opt.label);
+  const optionIndexes = state.selectedIndexes.map((idx) => idx + 1);
+
+  if (question.mode === "single") {
+    if (state.customValue) {
+      return { id: question.id, mode: question.mode, value: state.customValue, label: state.customValue, wasCustom: true };
+    }
+    return {
+      id: question.id,
+      mode: question.mode,
+      value: optionValues[0],
+      label: optionLabels[0],
+      wasCustom: false,
+      index: optionIndexes[0],
+    };
+  }
+
+  const values = state.customValue ? [...optionValues, state.customValue] : optionValues;
+  const labels = state.customValue ? [...optionLabels, state.customValue] : optionLabels;
+  const wasCustom = state.customValue
+    ? [...optionValues.map(() => false), true]
+    : optionValues.map(() => false);
+  return {
+    id: question.id,
+    mode: question.mode,
+    value: values,
+    label: labels,
+    wasCustom,
+    index: optionIndexes,
+  };
+}
