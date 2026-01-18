@@ -169,7 +169,7 @@ For custom skills, you can also place per-skill overrides at `skills/<skill>/ove
 
 | Extension | Agent | Description |
 |-----------|-------|-------------|
-| `AskUserQuestion` | Pi | Ask the user a question and let them pick from options or enter a custom response |
+| `AskUserQuestion` | Pi | Ask user questions with single-select, multi-select (checkboxes), or free text input modes |
 | `confirm-destructive` | Pi | Prompts for confirmation before destructive session actions (macOS only) |
 | `handoff` | Pi | Transfer conversation context to a new focused session via `/handoff` command |
 | `protected-paths` | Pi | Blocks write and edit operations to protected paths (.env, .git/, node_modules/) |
