@@ -22,6 +22,7 @@ import {
   normalizeQuestions,
   resolveDefaults,
 } from "./model";
+import { wrapQuestionLines } from "./text";
 
 interface AskUserQuestionResult {
   cancelled: boolean;
@@ -187,7 +188,9 @@ export default function (pi: ExtensionAPI) {
             const add = (s: string) => lines.push(truncateToWidth(s, width));
 
             add(theme.fg("accent", "─".repeat(width)));
-            add(theme.fg("text", ` ${question.prompt}`));
+            for (const line of wrapQuestionLines(question.prompt, width)) {
+              add(theme.fg("text", line));
+            }
             lines.push("");
             add(theme.fg("muted", " Your answer:"));
             for (const line of editor.render(width - 2)) {
@@ -295,7 +298,9 @@ export default function (pi: ExtensionAPI) {
             const add = (s: string) => lines.push(truncateToWidth(s, width));
 
             add(theme.fg("accent", "─".repeat(width)));
-            add(theme.fg("text", ` ${question.prompt}`));
+            for (const line of wrapQuestionLines(question.prompt, width)) {
+              add(theme.fg("text", line));
+            }
             lines.push("");
 
             for (let i = 0; i < options.length; i++) {
@@ -474,7 +479,9 @@ export default function (pi: ExtensionAPI) {
             const add = (s: string) => lines.push(truncateToWidth(s, width));
 
             add(theme.fg("accent", "─".repeat(width)));
-            add(theme.fg("text", ` ${question.prompt}`));
+            for (const line of wrapQuestionLines(question.prompt, width)) {
+              add(theme.fg("text", line));
+            }
             lines.push("");
 
             for (let i = 0; i < options.length; i++) {
@@ -907,7 +914,9 @@ export default function (pi: ExtensionAPI) {
               const question = currentQuestion();
               if (question) {
                 const options = currentOptions(question);
-                add(theme.fg("text", ` ${question.prompt}`));
+                for (const line of wrapQuestionLines(question.prompt, width)) {
+                  add(theme.fg("text", line));
+                }
                 lines.push("");
 
                 if (question.mode === "input") {
@@ -1069,8 +1078,15 @@ export default function (pi: ExtensionAPI) {
           text += theme.fg("dim", ` (${truncateToWidth(labels, 40)})`);
         }
       } else if (args.question) {
-        text += theme.fg("muted", `[${args.mode || "single"}] `);
-        text += theme.fg("text", args.question);
+        const mode = args.mode || "single";
+        text += theme.fg("muted", `[${mode}]`);
+        const questionLines = wrapQuestionLines(String(args.question), 80);
+        if (questionLines.length > 0) {
+          text += theme.fg("text", questionLines[0]);
+          if (questionLines.length > 1) {
+            text += `\n${questionLines.slice(1).map((line) => theme.fg("text", line)).join("\n")}`;
+          }
+        }
       }
 
       const options = Array.isArray(args.options) ? (args.options as Array<{ label: string }>) : [];

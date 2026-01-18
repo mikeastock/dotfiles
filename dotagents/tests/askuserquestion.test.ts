@@ -5,6 +5,7 @@ import {
   resolveDefaults,
   buildAnswer,
 } from "../extensions/pi/AskUserQuestion/model";
+import { wrapQuestionLines } from "../extensions/pi/AskUserQuestion/text";
 
 const result = normalizeQuestions({
   mode: "single",
@@ -82,3 +83,9 @@ const normalized = normalizeQuestions({
 });
 assert.equal(normalized[0].mode, "input");
 assert.equal(normalized[0].allowEmpty, false);
+
+const longPrompt = "This is a long question that should wrap across lines";
+const wrapped = wrapQuestionLines(longPrompt, 20, "");
+assert.ok(wrapped.length > 1);
+const combined = wrapped.join(" ").replace(/\s+/g, " ").trim();
+assert.equal(combined, longPrompt);
