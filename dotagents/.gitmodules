@@ -7,9 +7,6 @@
 [submodule "plugins/EveryInc-compound-engineering-plugin"]
 	path = plugins/EveryInc-compound-engineering-plugin
 	url = https://github.com/EveryInc/compound-engineering-plugin
-[submodule "plugins/mitsuhiko-agent-stuff"]
-	path = plugins/mitsuhiko-agent-stuff
-	url = https://github.com/mitsuhiko/agent-stuff
 [submodule "plugins/nicobailon-pi-interview-tool"]
 	path = plugins/nicobailon-pi-interview-tool
 	url = https://github.com/mikeastock/pi-interview-tool.git

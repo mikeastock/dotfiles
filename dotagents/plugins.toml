@@ -19,10 +19,6 @@ url = "https://github.com/EveryInc/compound-engineering-plugin"
 skills_path = "plugins/*/skills/*"
 skills = ["dspy-ruby"]
 
-["mitsuhiko/agent-stuff"]
-url = "https://github.com/mitsuhiko/agent-stuff"
-extensions = ["answer"]
-
 ["SawyerHood/dev-browser"]
 url = "https://github.com/SawyerHood/dev-browser"
 skills = ["*"]  # Install all skills from this plugin
