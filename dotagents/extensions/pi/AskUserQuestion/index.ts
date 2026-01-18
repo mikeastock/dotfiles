@@ -139,6 +139,16 @@ export default function (pi: ExtensionAPI) {
         return errorResult("Error: No questions provided", questions);
       }
 
+      const invalidQuestion = questions.find(
+        (question) => question.mode !== "input" && question.options.length === 0 && !question.allowCustom,
+      );
+      if (invalidQuestion) {
+        return errorResult(
+          `Error: No options provided for ${invalidQuestion.id} and custom input disabled`,
+          questions,
+        );
+      }
+
       async function askInput(question: Question): Promise<SelectionState | null> {
         const defaults = resolveDefaults(question);
         return ctx.ui.custom<SelectionState | null>((tui, theme, _kb, done) => {
