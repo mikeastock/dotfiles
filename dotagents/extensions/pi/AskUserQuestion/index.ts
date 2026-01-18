@@ -255,27 +255,19 @@ export default function (pi: ExtensionAPI) {
 								return;
 							}
 
-							// Enter on Submit row or to enter edit mode for "Type something"
+							// Enter submits (or opens editor for "Type something")
 							if (matchesKey(data, Key.enter)) {
-								if (optionIndex === allOptions.length) {
-									// Submit row
-									submit();
-									return;
-								}
-								const opt = allOptions[optionIndex];
-								if (opt.isOther) {
-									editMode = true;
-									editor.setText(customValue);
-									refresh();
-								} else {
-									// Toggle on enter too
-									if (checked.has(optionIndex)) {
-										checked.delete(optionIndex);
-									} else {
-										checked.add(optionIndex);
+								if (optionIndex < allOptions.length) {
+									const opt = allOptions[optionIndex];
+									if (opt.isOther) {
+										editMode = true;
+										editor.setText(customValue);
+										refresh();
+										return;
 									}
-									refresh();
 								}
+								// Submit from any row
+								submit();
 								return;
 							}
 
@@ -345,7 +337,7 @@ export default function (pi: ExtensionAPI) {
 								add(theme.fg("dim", " Enter to confirm • Esc to go back"));
 							} else {
 								lines.push("");
-								add(theme.fg("dim", " ↑↓ navigate • Space/Enter toggle • Enter on Submit to finish • Esc cancel"));
+								add(theme.fg("dim", " ↑↓ navigate • Space toggle • Enter submit • Esc cancel"));
 							}
 							add(theme.fg("accent", "─".repeat(width)));
 
