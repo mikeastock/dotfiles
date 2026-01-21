@@ -45,7 +45,9 @@ agents/
 │       ├── AskUserQuestion/
 │       ├── confirm-destructive/
 │       ├── handoff/
-│       └── protected-paths/
+│       ├── permission-gate/
+│       ├── protected-paths/
+│       └── terraform-apply-gate/
 ├── scripts/
 │   └── build.py                      # Python build system
 ├── tests/                            # test suite
@@ -165,7 +167,9 @@ For custom skills, you can also place per-skill overrides at `skills/<skill>/ove
 | `AskUserQuestion` | Pi | Ask user questions with single-select, multi-select (checkboxes), or free text input modes |
 | `confirm-destructive` | Pi | Prompts for confirmation before destructive session actions (macOS only) |
 | `handoff` | Pi | Transfer conversation context to a new focused session via `/handoff` command |
+| `permission-gate` | Pi | Prompts for confirmation before running dangerous bash commands (rm -rf, sudo, chmod 777) |
 | `protected-paths` | Pi | Blocks write and edit operations to protected paths (.env, .git/, node_modules/) |
+| `terraform-apply-gate` | Pi | Prompts for explicit confirmation before running terraform/tf apply commands |
 
 ## What are Skills?
 
