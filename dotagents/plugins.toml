@@ -31,8 +31,3 @@ extensions = [ "*" ]                                    # Install all extensions
 ["steipete/agent-scripts"]
 url = "https://github.com/steipete/agent-scripts"
 skills = [ "create-cli", "nano-banana-pro" ]
-
-["nateberkopec/dotfiles"]
-url = "https://github.com/nateberkopec/dotfiles"
-skills_path = "files/home/.claude/skills/*"
-skills = [ "sandi-metz-rules" ]
