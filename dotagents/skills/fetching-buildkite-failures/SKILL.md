@@ -54,17 +54,17 @@ digraph workflow {
 
 **Fetch failures for current branch:**
 ```bash
-python scripts/fetch_buildkite_failures.py
+python {baseDir}/scripts/fetch_buildkite_failures.py
 ```
 
 **Fetch specific build:**
 ```bash
-python scripts/fetch_buildkite_failures.py --build 1723
+python {baseDir}/scripts/fetch_buildkite_failures.py --build 1723
 ```
 
 **Fetch different branch:**
 ```bash
-python scripts/fetch_buildkite_failures.py --branch main
+python {baseDir}/scripts/fetch_buildkite_failures.py --branch main
 ```
 
 ## Step-by-Step Process
@@ -74,7 +74,7 @@ python scripts/fetch_buildkite_failures.py --branch main
 Run the script to get structured JSON output:
 
 ```bash
-python scripts/fetch_buildkite_failures.py
+python {baseDir}/scripts/fetch_buildkite_failures.py
 ```
 
 The script outputs JSON with:
