@@ -12,22 +12,22 @@
 
 ["anthropics/skills"]
 url = "https://github.com/anthropics/skills"
-skills = ["frontend-design"]
+skills = [ "frontend-design" ]
 
 ["EveryInc/compound-engineering-plugin"]
 url = "https://github.com/EveryInc/compound-engineering-plugin"
 skills_path = "plugins/*/skills/*"
-skills = ["dspy-ruby"]
+skills = [ "dspy-ruby" ]
 
 ["SawyerHood/dev-browser"]
 url = "https://github.com/SawyerHood/dev-browser"
-skills = ["*"]  # Install all skills from this plugin
+skills = [ "*" ]                                  # Install all skills from this plugin
 
 ["nicobailon/pi-interview-tool"]
 url = "https://github.com/nicobailon/pi-interview-tool"
-extensions_path = "."  # Extension files are at root level
-extensions = ["*"]  # Install all extensions from this plugin
+extensions_path = "."                                   # Extension files are at root level
+extensions = [ "*" ]                                    # Install all extensions from this plugin
 
 ["steipete/agent-scripts"]
 url = "https://github.com/steipete/agent-scripts"
-skills = ["create-cli"]
+skills = [ "create-cli", "nano-banana-pro" ]
