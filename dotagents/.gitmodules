@@ -13,3 +13,6 @@
 [submodule "plugins/steipete-agent-scripts"]
 	path = plugins/steipete-agent-scripts
 	url = https://github.com/steipete/agent-scripts
+[submodule "plugins/nateberkopec-dotfiles"]
+	path = plugins/nateberkopec-dotfiles
+	url = https://github.com/nateberkopec/dotfiles.git
