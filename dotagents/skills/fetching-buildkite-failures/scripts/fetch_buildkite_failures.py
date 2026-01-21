@@ -229,16 +229,194 @@ def parse_typescript_errors(log_content, job_name):
     return errors
 
 
+def parse_python_errors(log_content, job_name):
+    """Extract Python tool errors (uv, ruff, pytest, ty, pyproject-fmt)."""
+    errors = []
+    normalized = normalize_log(log_content)
+    
+    # uv error pattern (e.g., "error: Failed to initialize cache at `/.cache/uv`")
+    uv_pattern = re.compile(
+        r'^error:\s*(.+?)$(?:\n\s+Caused by:\s*(.+?)$)?',
+        re.MULTILINE
+    )
+    
+    for match in uv_pattern.finditer(normalized):
+        message = match.group(1).strip()
+        caused_by = match.group(2).strip() if match.group(2) else None
+        full_message = f"{message} - Caused by: {caused_by}" if caused_by else message
+        
+        errors.append({
+            "message": full_message[:500],
+            "type": "uv"
+        })
+    
+    # ruff error pattern (file:line:col: error code message)
+    ruff_pattern = re.compile(
+        r'^([^:\s]+\.py):(\d+):(\d+):\s*([A-Z]+\d+)\s+(.+)$',
+        re.MULTILINE
+    )
+    
+    for match in ruff_pattern.finditer(normalized):
+        errors.append({
+            "file": match.group(1),
+            "line": int(match.group(2)),
+            "column": int(match.group(3)),
+            "code": match.group(4),
+            "message": match.group(5).strip(),
+            "type": "ruff"
+        })
+    
+    # pytest failure pattern
+    pytest_pattern = re.compile(
+        r'FAILED\s+([^:\s]+)::(\S+)',
+        re.MULTILINE
+    )
+    
+    for match in pytest_pattern.finditer(normalized):
+        errors.append({
+            "file": match.group(1),
+            "test_name": match.group(2),
+            "type": "pytest"
+        })
+    
+    # ty (type checker) error pattern
+    ty_pattern = re.compile(
+        r'^([^:\s]+\.py):(\d+):(\d+):\s*error:\s*(.+)$',
+        re.MULTILINE
+    )
+    
+    for match in ty_pattern.finditer(normalized):
+        errors.append({
+            "file": match.group(1),
+            "line": int(match.group(2)),
+            "column": int(match.group(3)),
+            "message": match.group(4).strip(),
+            "type": "ty"
+        })
+    
+    return errors
+
+
+def parse_go_errors(log_content, job_name):
+    """Extract Go tool errors (gofmt, go test)."""
+    errors = []
+    normalized = normalize_log(log_content)
+    
+    # gofmt outputs files that need formatting (one per line)
+    # If gofmt -l outputs anything, those files need formatting
+    gofmt_pattern = re.compile(
+        r'^([^:\s]+\.go)$',
+        re.MULTILINE
+    )
+    
+    # Only capture if it looks like gofmt output (near "gofmt" in log)
+    if 'gofmt' in normalized:
+        for match in gofmt_pattern.finditer(normalized):
+            filepath = match.group(1)
+            if not filepath.startswith('/') and filepath.endswith('.go'):
+                errors.append({
+                    "file": filepath,
+                    "message": "File needs formatting (gofmt)",
+                    "type": "gofmt"
+                })
+    
+    # go test failure pattern
+    go_test_pattern = re.compile(
+        r'---\s*FAIL:\s*(\S+)\s*\(([^)]+)\)',
+        re.MULTILINE
+    )
+    
+    for match in go_test_pattern.finditer(normalized):
+        errors.append({
+            "test_name": match.group(1),
+            "duration": match.group(2),
+            "type": "go_test"
+        })
+    
+    # go build/compile errors
+    go_compile_pattern = re.compile(
+        r'^([^:\s]+\.go):(\d+):(\d+):\s*(.+)$',
+        re.MULTILINE
+    )
+    
+    for match in go_compile_pattern.finditer(normalized):
+        errors.append({
+            "file": match.group(1),
+            "line": int(match.group(2)),
+            "column": int(match.group(3)),
+            "message": match.group(4).strip(),
+            "type": "go_compile"
+        })
+    
+    return errors
+
+
+def parse_docker_errors(log_content, job_name):
+    """Extract Docker and permission errors."""
+    errors = []
+    normalized = normalize_log(log_content)
+    
+    # Permission denied errors - capture the full context line
+    permission_pattern = re.compile(
+        r'([^\n]*(?:Permission denied|permission denied)[^\n]*)',
+        re.MULTILINE | re.IGNORECASE
+    )
+    
+    for match in permission_pattern.finditer(normalized):
+        message = match.group(1).strip()
+        # Skip if it's just noise or already captured by another parser
+        if message and len(message) > 20 and '^^^' not in message:
+            errors.append({
+                "message": message[:500],
+                "type": "permission"
+            })
+    
+    # Docker run failures
+    docker_error_pattern = re.compile(
+        r'docker:\s*Error[^:]*:\s*(.+?)(?=\n|$)',
+        re.MULTILINE | re.IGNORECASE
+    )
+    
+    for match in docker_error_pattern.finditer(normalized):
+        errors.append({
+            "message": match.group(1).strip(),
+            "type": "docker"
+        })
+    
+    # Generic "The command exited with status X" 
+    exit_status_pattern = re.compile(
+        r'The command exited with status (\d+)',
+        re.MULTILINE
+    )
+    
+    for match in exit_status_pattern.finditer(normalized):
+        status = int(match.group(1))
+        if status != 0 and not errors:  # Only add if no other errors found
+            errors.append({
+                "message": f"Command exited with status {status}",
+                "exit_status": status,
+                "type": "exit_status"
+            })
+    
+    return errors
+
+
 def classify_job(job_name):
     """Classify a job by its name to determine parsing strategy."""
     name_lower = job_name.lower()
     
-    if any(x in name_lower for x in ['test', 'rspec', 'rails', 'minitest']):
-        return 'test'
+    if any(x in name_lower for x in ['rspec', 'rails', 'minitest']):
+        return 'ruby_test'
+    elif any(x in name_lower for x in ['python', 'pytest', 'agents', 'snake']):
+        return 'python'
+    elif any(x in name_lower for x in ['go ', 'golang', 'cli test']):
+        return 'go'
     elif any(x in name_lower for x in ['lint', 'rubocop', 'biome', 'eslint']):
         return 'lint'
     elif any(x in name_lower for x in ['typescript', 'typecheck', 'tsc']):
         return 'typescript'
+    elif 'test' in name_lower:
+        return 'test'
     else:
         return 'unknown'
 
@@ -246,20 +424,46 @@ def classify_job(job_name):
 def parse_job_log(log_content, job_name):
     """Parse a job's log and extract relevant errors."""
     job_type = classify_job(job_name)
+    errors = []
     
-    if job_type == 'test':
-        return parse_test_failures(log_content, job_name)
+    # Always check for Docker/permission errors first
+    errors.extend(parse_docker_errors(log_content, job_name))
+    
+    if job_type == 'ruby_test':
+        errors.extend(parse_test_failures(log_content, job_name))
+    elif job_type == 'python':
+        errors.extend(parse_python_errors(log_content, job_name))
+    elif job_type == 'go':
+        errors.extend(parse_go_errors(log_content, job_name))
     elif job_type == 'lint':
-        return parse_lint_errors(log_content, job_name)
+        errors.extend(parse_lint_errors(log_content, job_name))
     elif job_type == 'typescript':
-        return parse_typescript_errors(log_content, job_name)
+        errors.extend(parse_typescript_errors(log_content, job_name))
+    elif job_type == 'test':
+        # Generic test - try multiple parsers
+        errors.extend(parse_test_failures(log_content, job_name))
+        errors.extend(parse_python_errors(log_content, job_name))
+        errors.extend(parse_go_errors(log_content, job_name))
     else:
-        # Try all parsers for unknown job types
-        errors = []
+        # Unknown - try all parsers
         errors.extend(parse_test_failures(log_content, job_name))
         errors.extend(parse_lint_errors(log_content, job_name))
         errors.extend(parse_typescript_errors(log_content, job_name))
-        return errors
+        errors.extend(parse_python_errors(log_content, job_name))
+        errors.extend(parse_go_errors(log_content, job_name))
+    
+    # Deduplicate errors by message
+    seen = set()
+    unique_errors = []
+    for error in errors:
+        key = error.get('message', '') or error.get('test_name', '') or error.get('file', '')
+        if key and key not in seen:
+            seen.add(key)
+            unique_errors.append(error)
+        elif not key:
+            unique_errors.append(error)
+    
+    return unique_errors
 
 
 def main():
@@ -331,6 +535,9 @@ def main():
             "test_failures": 0,
             "lint_errors": 0,
             "typescript_errors": 0,
+            "python_errors": 0,
+            "go_errors": 0,
+            "docker_errors": 0,
             "other_errors": 0
         }
     }
@@ -369,12 +576,18 @@ def main():
                 # Update summary counts
                 for error in errors:
                     error_type = error.get("type", "other")
-                    if error_type in ["test_failure", "error"]:
+                    if error_type in ["test_failure", "error", "pytest"]:
                         result["summary"]["test_failures"] += 1
-                    elif error_type in ["rubocop", "lint"]:
+                    elif error_type in ["rubocop", "lint", "ruff"]:
                         result["summary"]["lint_errors"] += 1
                     elif error_type == "typescript":
                         result["summary"]["typescript_errors"] += 1
+                    elif error_type in ["uv", "ty"]:
+                        result["summary"]["python_errors"] += 1
+                    elif error_type in ["go_test", "go_compile", "gofmt"]:
+                        result["summary"]["go_errors"] += 1
+                    elif error_type in ["docker", "permission", "exit_status"]:
+                        result["summary"]["docker_errors"] += 1
                     else:
                         result["summary"]["other_errors"] += 1
         
