@@ -31,7 +31,7 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 ```markdown
 # [Feature Name] Implementation Plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+> REQUIRED SUB-SKILL: Use executing-plans skill to implement this plan task-by-task.
 
 **Goal:** [One sentence describing what this builds]
 
@@ -105,9 +105,9 @@ After saving the plan, offer execution choice:
 **Which approach?"**
 
 **If Subagent-Driven chosen:**
-- **REQUIRED SUB-SKILL:** Use superpowers:subagent-driven-development
+- **REQUIRED SUB-SKILL:** Use subagent-driven-development skill
 - Stay in this session
 - Fresh subagent per task + code review
 
 **If Parallel Session chosen:**
-- **REQUIRED SUB-SKILL:** New session uses superpowers:executing-plans
+- **REQUIRED SUB-SKILL:** New session uses executing-plans skill
