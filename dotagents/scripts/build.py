@@ -244,6 +244,44 @@ def is_interactive_override(override_path: Path) -> bool:
     return False
 
 
+def fix_skill_frontmatter_name(content: str, expected_name: str) -> str:
+    """
+    Fix the 'name' field in SKILL.md frontmatter to match the directory name.
+    
+    Per the Agent Skills spec, the directory name is the source of truth.
+    This fixes upstream skills that have mismatched frontmatter names.
+    """
+    import re
+    
+    # Match YAML frontmatter
+    frontmatter_pattern = r'^---\s*\n(.*?)\n---'
+    match = re.match(frontmatter_pattern, content, re.DOTALL)
+    if not match:
+        return content
+    
+    frontmatter = match.group(1)
+    
+    # Check if name field exists and differs from expected
+    name_pattern = r'^name:\s*(.+)$'
+    name_match = re.search(name_pattern, frontmatter, re.MULTILINE)
+    if not name_match:
+        return content
+    
+    current_name = name_match.group(1).strip().strip('"\'')
+    if current_name == expected_name:
+        return content
+    
+    # Replace the name in frontmatter
+    new_frontmatter = re.sub(
+        name_pattern,
+        f'name: {expected_name}',
+        frontmatter,
+        flags=re.MULTILINE
+    )
+    
+    return content[:match.start(1)] + new_frontmatter + content[match.end(1):]
+
+
 def build_skill(name: str, source: Path, agent: str):
     """Build a skill for a specific agent."""
     dest = BUILD_DIR / agent / name
@@ -260,21 +298,21 @@ def build_skill(name: str, source: Path, agent: str):
     local_override = source / "overrides" / f"{agent}.md"
     dest_skill_md = dest / "SKILL.md"
 
+    # Read and fix frontmatter name to match directory
+    skill_content = fix_skill_frontmatter_name(skill_md.read_text(), name)
+
     # In non-interactive mode, skip interactive overrides
     use_override = override.exists() and not (NON_INTERACTIVE and is_interactive_override(override))
     use_local_override = local_override.exists() and not (NON_INTERACTIVE and is_interactive_override(local_override))
 
-    if use_override or use_local_override:
-        with open(dest_skill_md, "w") as out:
-            out.write(skill_md.read_text())
-            if use_override:
-                out.write("\n")
-                out.write(override.read_text())
-            if use_local_override:
-                out.write("\n")
-                out.write(local_override.read_text())
-    else:
-        shutil.copy(skill_md, dest_skill_md)
+    with open(dest_skill_md, "w") as out:
+        out.write(skill_content)
+        if use_override:
+            out.write("\n")
+            out.write(override.read_text())
+        if use_local_override:
+            out.write("\n")
+            out.write(local_override.read_text())
 
     # Copy additional files
     for item in source.iterdir():
