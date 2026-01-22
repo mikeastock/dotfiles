@@ -53,6 +53,7 @@ def remove_path(path: Path) -> None:
     elif path.exists():
         shutil.rmtree(path)
 
+
 if sys.version_info < (3, 11):
     sys.exit("Error: Python 3.11+ required (for tomllib)")
 
@@ -95,6 +96,7 @@ def plugin_dir_name(name: str) -> str:
 @dataclass
 class Plugin:
     """Configuration for a single plugin."""
+
     name: str  # Fully qualified name: owner/repo
     url: str
     skills_path: list[str] = field(default_factory=lambda: ["skills/*"])
@@ -111,6 +113,7 @@ class Plugin:
     @classmethod
     def from_dict(cls, name: str, data: dict) -> "Plugin":
         """Create Plugin from TOML dictionary."""
+
         def normalize_path(p) -> list[str]:
             if p is None:
                 return []
@@ -131,7 +134,9 @@ class Plugin:
             url=data["url"],
             skills_path=normalize_path(data.get("skills_path", "skills/*")),
             skills=normalize_items(data.get("skills")),
-            extensions_path=normalize_path(data.get("extensions_path", "extensions/*.ts")),
+            extensions_path=normalize_path(
+                data.get("extensions_path", "extensions/*.ts")
+            ),
             extensions=normalize_items(data.get("extensions")),
             alias=data.get("alias"),
         )
@@ -247,39 +252,36 @@ def is_interactive_override(override_path: Path) -> bool:
 def fix_skill_frontmatter_name(content: str, expected_name: str) -> str:
     """
     Fix the 'name' field in SKILL.md frontmatter to match the directory name.
-    
+
     Per the Agent Skills spec, the directory name is the source of truth.
     This fixes upstream skills that have mismatched frontmatter names.
     """
     import re
-    
+
     # Match YAML frontmatter
-    frontmatter_pattern = r'^---\s*\n(.*?)\n---'
+    frontmatter_pattern = r"^---\s*\n(.*?)\n---"
     match = re.match(frontmatter_pattern, content, re.DOTALL)
     if not match:
         return content
-    
+
     frontmatter = match.group(1)
-    
+
     # Check if name field exists and differs from expected
-    name_pattern = r'^name:\s*(.+)$'
+    name_pattern = r"^name:\s*(.+)$"
     name_match = re.search(name_pattern, frontmatter, re.MULTILINE)
     if not name_match:
         return content
-    
-    current_name = name_match.group(1).strip().strip('"\'')
+
+    current_name = name_match.group(1).strip().strip("\"'")
     if current_name == expected_name:
         return content
-    
+
     # Replace the name in frontmatter
     new_frontmatter = re.sub(
-        name_pattern,
-        f'name: {expected_name}',
-        frontmatter,
-        flags=re.MULTILINE
+        name_pattern, f"name: {expected_name}", frontmatter, flags=re.MULTILINE
     )
-    
-    return content[:match.start(1)] + new_frontmatter + content[match.end(1):]
+
+    return content[: match.start(1)] + new_frontmatter + content[match.end(1) :]
 
 
 def build_skill(name: str, source: Path, agent: str):
@@ -302,8 +304,12 @@ def build_skill(name: str, source: Path, agent: str):
     skill_content = fix_skill_frontmatter_name(skill_md.read_text(), name)
 
     # In non-interactive mode, skip interactive overrides
-    use_override = override.exists() and not (NON_INTERACTIVE and is_interactive_override(override))
-    use_local_override = local_override.exists() and not (NON_INTERACTIVE and is_interactive_override(local_override))
+    use_override = override.exists() and not (
+        NON_INTERACTIVE and is_interactive_override(override)
+    )
+    use_local_override = local_override.exists() and not (
+        NON_INTERACTIVE and is_interactive_override(local_override)
+    )
 
     with open(dest_skill_md, "w") as out:
         out.write(skill_content)
@@ -349,7 +355,9 @@ def build_skills(plugins: dict[str, Plugin]):
 
         for name, path in discover_items(plugin, "skills"):
             if name in built:
-                print(f"    Warning: Skill '{name}' already exists, skipping duplicate from {plugin.name}")
+                print(
+                    f"    Warning: Skill '{name}' already exists, skipping duplicate from {plugin.name}"
+                )
                 continue
             for agent in AGENTS:
                 if build_skill(name, path, agent):
@@ -358,7 +366,9 @@ def build_skills(plugins: dict[str, Plugin]):
                     built.add(name)
 
     if skipped_plugins:
-        print(f"  Skipped {len(skipped_plugins)} interactive plugins: {', '.join(skipped_plugins)}")
+        print(
+            f"  Skipped {len(skipped_plugins)} interactive plugins: {', '.join(skipped_plugins)}"
+        )
 
     # Process custom skills
     if SKILLS_DIR.exists():
@@ -366,7 +376,9 @@ def build_skills(plugins: dict[str, Plugin]):
             if skill_dir.is_dir():
                 name = skill_dir.name
                 if name in built:
-                    print(f"    Warning: Custom skill '{name}' conflicts with plugin skill")
+                    print(
+                        f"    Warning: Custom skill '{name}' conflicts with plugin skill"
+                    )
                 for agent in AGENTS:
                     if build_skill(name, skill_dir, agent):
                         if agent == AGENTS[0]:
@@ -427,7 +439,9 @@ def install_extensions(plugins: dict[str, Plugin]):
 
         for name, path in discover_items(plugin, "extensions"):
             if name in installed:
-                print(f"    Warning: Extension '{name}' already exists, skipping duplicate from {plugin.name}")
+                print(
+                    f"    Warning: Extension '{name}' already exists, skipping duplicate from {plugin.name}"
+                )
                 continue
 
             # Skip interactive extensions in non-interactive mode
@@ -461,7 +475,9 @@ def install_extensions(plugins: dict[str, Plugin]):
                     continue
 
                 if name in installed:
-                    print(f"    Warning: Custom extension '{name}' conflicts with plugin extension")
+                    print(
+                        f"    Warning: Custom extension '{name}' conflicts with plugin extension"
+                    )
 
                 dest_ext = dest / name
                 remove_path(dest_ext)
@@ -471,9 +487,13 @@ def install_extensions(plugins: dict[str, Plugin]):
                 installed.add(name)
 
     if skipped_plugins:
-        print(f"  Skipped {len(skipped_plugins)} interactive plugins: {', '.join(skipped_plugins)}")
+        print(
+            f"  Skipped {len(skipped_plugins)} interactive plugins: {', '.join(skipped_plugins)}"
+        )
     if skipped_extensions:
-        print(f"  Skipped {len(skipped_extensions)} interactive extensions: {', '.join(skipped_extensions)}")
+        print(
+            f"  Skipped {len(skipped_extensions)} interactive extensions: {', '.join(skipped_extensions)}"
+        )
     print(f"  Installed {len(installed)} extensions to {dest}")
 
 
@@ -534,7 +554,7 @@ def clean(plugins: dict[str, Plugin]):
     # Clean build directory
     if BUILD_DIR.exists():
         shutil.rmtree(BUILD_DIR)
-        print(f"  Removed build directory")
+        print("  Removed build directory")
 
     print("  Done")
 
@@ -543,10 +563,23 @@ def main():
     global NON_INTERACTIVE
 
     parser = argparse.ArgumentParser(description="Build and install AI agent plugins")
-    parser.add_argument("command", choices=["build", "install", "install-skills", "install-extensions", "clean", "submodule-init"],
-                        help="Command to run")
-    parser.add_argument("--non-interactive", action="store_true",
-                        help="Skip interactive extensions and overrides (for headless/automated environments)")
+    parser.add_argument(
+        "command",
+        choices=[
+            "build",
+            "install",
+            "install-skills",
+            "install-extensions",
+            "clean",
+            "submodule-init",
+        ],
+        help="Command to run",
+    )
+    parser.add_argument(
+        "--non-interactive",
+        action="store_true",
+        help="Skip interactive extensions and overrides (for headless/automated environments)",
+    )
     args = parser.parse_args()
 
     # Set global flag
