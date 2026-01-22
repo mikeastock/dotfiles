@@ -96,29 +96,29 @@ function ssm-connect
   aws --profile $profile ssm start-session --region us-east-1 --target $instance_id
 end
 
-function orb -d "OrbStack wrapper with auto-cd to relative path in ~/code"
-  if test (count $argv) -eq 0; or test "$argv[1]" = "shell"
-    set mac_pwd (pwd)
-    command orb run -s "MAC_PWD='$mac_pwd' bash -li"
-  else
-    command orb $argv
-  end
-end
-
-function orb-codex -d "Run codex --yolo in OrbStack at current directory"
-  set mac_pwd (pwd)
-  command orb run -s "MAC_PWD='$mac_pwd' fish -lc 'codex --yolo'"
-end
-
-function orb-pi -d "Run pi in OrbStack at current directory"
-  set mac_pwd (pwd)
-  command orb run -s "MAC_PWD='$mac_pwd' fish -lc 'pi'"
-end
-
-function orb-claude -d "Run claude in OrbStack at current directory"
-  set mac_pwd (pwd)
-  command orb run -s "MAC_PWD='$mac_pwd' fish -lc 'claude --allow-dangerously-skip-permissions'"
-end
+# function orb -d "OrbStack wrapper with auto-cd to relative path in ~/code"
+#   if test (count $argv) -eq 0; or test "$argv[1]" = "shell"
+#     set mac_pwd (pwd)
+#     command orb run -s "MAC_PWD='$mac_pwd' bash -li"
+#   else
+#     command orb $argv
+#   end
+# end
+#
+# function orb-codex -d "Run codex --yolo in OrbStack at current directory"
+#   set mac_pwd (pwd)
+#   command orb run -s "MAC_PWD='$mac_pwd' fish -lc 'codex --yolo'"
+# end
+#
+# function orb-pi -d "Run pi in OrbStack at current directory"
+#   set mac_pwd (pwd)
+#   command orb run -s "MAC_PWD='$mac_pwd' fish -lc 'pi'"
+# end
+#
+# function orb-claude -d "Run claude in OrbStack at current directory"
+#   set mac_pwd (pwd)
+#   command orb run -s "MAC_PWD='$mac_pwd' fish -lc 'claude --allow-dangerously-skip-permissions'"
+# end
 
 ####### PATH SETUP
 
@@ -127,6 +127,11 @@ if test -d /opt/homebrew
     fish_add_path /opt/homebrew/bin
 else if test -d /home/linuxbrew/.linuxbrew
     eval (/home/linuxbrew/.linuxbrew/bin/brew shellenv)
+end
+
+####### Tailscale
+if test -d "/Applications/Tailscale.app/Contents/MacOS"
+  alias tailscale="/Applications/Tailscale.app/Contents/MacOS/Tailscale"
 end
 
 ####### Mise
