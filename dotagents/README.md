@@ -144,6 +144,7 @@ For custom skills, you can also place per-skill overrides at `skills/<skill>/ove
 |-------|-------------|
 | `ask-questions-if-underspecified` | Clarify requirements before implementing (invoke explicitly) |
 | `brainstorming` | Explores user intent, requirements and design before implementation |
+| `brave-search` | Web search and content extraction via Brave Search API |
 | `executing-plans` | Execute implementation plans with review checkpoints |
 | `fetching-buildkite-failures` | Fetches build results from Buildkite and helps diagnose CI failures |
 | `nano-banana-pro` | Generate or edit images via Gemini 3 Pro Image |
