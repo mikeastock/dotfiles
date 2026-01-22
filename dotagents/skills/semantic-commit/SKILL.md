@@ -10,22 +10,30 @@ Create git commits following the [Conventional Commits](https://www.conventional
 ## Commit Format
 
 ```
-<type>[optional scope][!]: <description>
+<type>[optional scope]: <description>
 
 [optional body]
 
 [optional footer(s)]
 ```
 
-- **Breaking changes**: Add `!` after the type/scope, or include `BREAKING CHANGE:` in the footer
-- **Scope**: Optional, describes the section of the codebase (e.g., `feat(api):`, `fix(auth):`)
+### Guidelines
+
+- Start with a short prefix followed by colon and space (feat:, fix:, docs:, refactor:, test:, chore:, etc.)
+- feat: for user-visible features, fix: for bug fixes
+- A scope MAY be added in parentheses, e.g. `fix(parser):` - only when it meaningfully improves clarity
+- Short description in imperative mood explaining what changed, not how
+- Body MAY be included after one blank line for context, rationale, or non-obvious behavior
+- Footers MAY be included (Token: value format, use `-` instead of spaces in tokens)
+- Breaking changes should be explained clearly in description or body, no special marking required
+- **Clarity and usefulness matter more than strict conformance**
 
 ## Commit Types
 
 | Type | Description |
 |------|-------------|
-| `feat` | A new feature |
-| `fix` | A bug fix |
+| `feat` | A new feature (user-visible) |
+| `fix` | A bug fix (user-visible) |
 | `docs` | Documentation only changes |
 | `style` | Changes that do not affect the meaning of the code (formatting, semicolons, etc.) |
 | `refactor` | A code change that neither fixes a bug nor adds a feature |
@@ -84,17 +92,17 @@ Understand what was modified to write an accurate message.
 
 Based on the changes:
 - **Type**: What category of change? (feat, fix, refactor, etc.)
-- **Scope**: What area of the codebase? (optional but helpful)
-- **Breaking**: Does this break backward compatibility?
+- **Scope**: What area of the codebase? Only add when it meaningfully improves clarity
+- **Breaking**: Does this break backward compatibility? Explain clearly in description or body
 
 ## Writing Good Commit Messages
 
 ### Subject Line
 
 - Use imperative mood: "add feature" not "added feature"
-- Keep under 50 characters
+- Keep under 50 characters when possible
 - Don't end with a period
-- Be specific: "add user authentication" not "update code"
+- Explain what changed, not how
 
 <Good>
 ```
@@ -115,7 +123,7 @@ changes
 
 ### Body (Optional)
 
-Use when the "why" isn't obvious from the subject:
+Include after one blank line when context, rationale, or non-obvious behavior needs explanation:
 - Explain motivation for the change
 - Contrast with previous behavior
 - Note any side effects
@@ -132,9 +140,10 @@ Closes #123
 
 ### Footer (Optional)
 
-- `BREAKING CHANGE: description` for breaking changes
+Use Token: value format (use `-` instead of spaces in token names):
 - `Closes #123` or `Fixes #456` for issue references
 - `Co-authored-by: Name <email>` for pair programming
+- `Reviewed-by: Name <email>` for review attribution
 
 ## Examples
 
@@ -150,7 +159,7 @@ Closes #123
 | Updated dependencies | `build: upgrade react to v18` |
 | Changed CI config | `ci: add node 20 to test matrix` |
 | Cleaned up files | `chore: remove unused imports` |
-| Breaking API change | `feat(api)!: change response format` |
+| Breaking API change | `feat(api): change response format to JSON arrays` |
 
 ## Common Mistakes
 
@@ -158,9 +167,10 @@ Closes #123
 |---------|-----|
 | Past tense ("added") | Use imperative ("add") |
 | Too vague ("fix bug") | Be specific ("fix null check in parser") |
-| Too long subject | Keep under 50 chars |
+| Too long subject | Keep concise, move details to body |
 | Wrong type | `fix` = bug, `feat` = new capability, `refactor` = no behavior change |
 | Combining unrelated changes | Split into multiple commits |
+| Overusing scope | Only add scope when it meaningfully improves clarity |
 
 ## Quick Reference
 

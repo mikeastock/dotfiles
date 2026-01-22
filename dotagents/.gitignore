@@ -3,6 +3,3 @@ build/
 
 # Node.js
 node_modules/
-
-# Python
-__pycache__/

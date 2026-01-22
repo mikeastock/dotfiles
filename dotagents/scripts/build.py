@@ -137,14 +137,7 @@ class Plugin:
         )
 
 
-@dataclass
-class Config:
-    """Global configuration including plugins and exclusions."""
-    plugins: dict[str, Plugin]
-    skill_exclusions: dict[str, list[str]] = field(default_factory=dict)  # agent -> [skills]
-
-
-def load_config() -> Config:
+def load_config() -> dict[str, Plugin]:
     """Load and parse plugins.toml."""
     if not CONFIG_FILE.exists():
         sys.exit(f"Error: {CONFIG_FILE} not found")
@@ -152,11 +145,7 @@ def load_config() -> Config:
     with open(CONFIG_FILE, "rb") as f:
         data = tomllib.load(f)
 
-    # Extract skill_exclusions if present
-    skill_exclusions = data.pop("skill_exclusions", {})
-
-    plugins = {name: Plugin.from_dict(name, cfg) for name, cfg in data.items()}
-    return Config(plugins=plugins, skill_exclusions=skill_exclusions)
+    return {name: Plugin.from_dict(name, cfg) for name, cfg in data.items()}
 
 
 def run_cmd(cmd: list[str], check: bool = True) -> subprocess.CompletedProcess:
@@ -255,12 +244,8 @@ def is_interactive_override(override_path: Path) -> bool:
     return False
 
 
-def build_skill(name: str, source: Path, agent: str, exclusions: dict[str, list[str]] = None):
+def build_skill(name: str, source: Path, agent: str):
     """Build a skill for a specific agent."""
-    # Check if skill is excluded for this agent
-    if exclusions and agent in exclusions and name in exclusions[agent]:
-        return False
-
     dest = BUILD_DIR / agent / name
     dest.mkdir(parents=True, exist_ok=True)
 
@@ -303,7 +288,7 @@ def build_skill(name: str, source: Path, agent: str, exclusions: dict[str, list[
     return True
 
 
-def build_skills(plugins: dict[str, Plugin], exclusions: dict[str, list[str]] = None):
+def build_skills(plugins: dict[str, Plugin]):
     """Build all skills from plugins and custom skills directory."""
     print("Building skills...")
 
@@ -316,7 +301,6 @@ def build_skills(plugins: dict[str, Plugin], exclusions: dict[str, list[str]] = 
 
     built = set()
     skipped_plugins = []
-    excluded_skills = []
 
     # Process plugins
     for plugin in plugins.values():
@@ -330,13 +314,10 @@ def build_skills(plugins: dict[str, Plugin], exclusions: dict[str, list[str]] = 
                 print(f"    Warning: Skill '{name}' already exists, skipping duplicate from {plugin.name}")
                 continue
             for agent in AGENTS:
-                if build_skill(name, path, agent, exclusions):
+                if build_skill(name, path, agent):
                     if agent == AGENTS[0]:  # Only print once
                         print(f"  {name} (from {plugin.name})")
                     built.add(name)
-                elif exclusions and agent in exclusions and name in exclusions[agent]:
-                    if name not in excluded_skills:
-                        excluded_skills.append(f"{name} ({agent})")
 
     if skipped_plugins:
         print(f"  Skipped {len(skipped_plugins)} interactive plugins: {', '.join(skipped_plugins)}")
@@ -349,16 +330,11 @@ def build_skills(plugins: dict[str, Plugin], exclusions: dict[str, list[str]] = 
                 if name in built:
                     print(f"    Warning: Custom skill '{name}' conflicts with plugin skill")
                 for agent in AGENTS:
-                    if build_skill(name, skill_dir, agent, exclusions):
+                    if build_skill(name, skill_dir, agent):
                         if agent == AGENTS[0]:
                             print(f"  {name} (custom)")
                         built.add(name)
-                    elif exclusions and agent in exclusions and name in exclusions[agent]:
-                        if f"{name} ({agent})" not in excluded_skills:
-                            excluded_skills.append(f"{name} ({agent})")
 
-    if excluded_skills:
-        print(f"  Excluded: {', '.join(excluded_skills)}")
     print(f"  Built {len(built)} skills")
 
 
@@ -390,7 +366,7 @@ def install_skills():
         print(f"  {agent}: {count} skills -> {dest}")
 
 
-def install_extensions(config: Config):
+def install_extensions(plugins: dict[str, Plugin]):
     """Install extensions from plugins and custom extensions directory."""
     print("Installing extensions...")
 
@@ -405,7 +381,7 @@ def install_extensions(config: Config):
     skipped_plugins = []
 
     # Extensions from plugins
-    for plugin in config.plugins.values():
+    for plugin in plugins.values():
         # Track skipped interactive plugins
         if NON_INTERACTIVE and plugin.name in INTERACTIVE_PLUGINS:
             skipped_plugins.append(plugin.name)
@@ -482,7 +458,7 @@ def install_codex_config():
     print(f"  Installed to {dest}")
 
 
-def clean(config: Config):
+def clean(plugins: dict[str, Plugin]):
     """Remove all installed artifacts."""
     print("Cleaning installed artifacts...")
 
@@ -500,7 +476,7 @@ def clean(config: Config):
 
     # Clean extensions
     ext_dest = INSTALL_PATHS["pi"]["extensions"]
-    for plugin in config.plugins.values():
+    for plugin in plugins.values():
         for name, _ in discover_items(plugin, "extensions"):
             installed = ext_dest / name
             if installed.exists() or installed.is_symlink():
@@ -538,30 +514,30 @@ def main():
     # Set global flag
     NON_INTERACTIVE = args.non_interactive
 
-    config = load_config()
+    plugins = load_config()
 
     if args.command == "submodule-init":
         init_submodules()
     elif args.command == "build":
         if NON_INTERACTIVE:
             print("Building in non-interactive mode...")
-        build_skills(config.plugins, config.skill_exclusions)
+        build_skills(plugins)
     elif args.command == "install":
         if NON_INTERACTIVE:
             print("Installing in non-interactive mode...")
         init_submodules()
-        build_skills(config.plugins, config.skill_exclusions)
+        build_skills(plugins)
         install_skills()
-        install_extensions(config)
+        install_extensions(plugins)
         install_codex_config()
         print("\nAll done!")
     elif args.command == "install-skills":
-        build_skills(config.plugins, config.skill_exclusions)
+        build_skills(plugins)
         install_skills()
     elif args.command == "install-extensions":
-        install_extensions(config)
+        install_extensions(plugins)
     elif args.command == "clean":
-        clean(config)
+        clean(plugins)
 
 
 if __name__ == "__main__":
