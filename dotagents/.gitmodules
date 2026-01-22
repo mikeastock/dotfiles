@@ -13,3 +13,6 @@
 [submodule "plugins/steipete-agent-scripts"]
 	path = plugins/steipete-agent-scripts
 	url = https://github.com/steipete/agent-scripts
+[submodule "plugins/mitsuhiko-agent-stuff"]
+	path = plugins/mitsuhiko-agent-stuff
+	url = https://github.com/mitsuhiko/agent-stuff
