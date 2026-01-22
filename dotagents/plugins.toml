@@ -31,3 +31,7 @@ extensions = [ "*" ]                                    # Install all extensions
 ["steipete/agent-scripts"]
 url = "https://github.com/steipete/agent-scripts"
 skills = [ "create-cli", "nano-banana-pro" ]
+
+["vercel-labs/agent-skills"]
+url = "https://github.com/vercel-labs/agent-skills"
+skills = [ "react-best-practices" ]

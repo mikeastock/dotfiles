@@ -34,7 +34,8 @@ agents/
 │   ├── dev-browser/                  # git submodule (github.com/SawyerHood/dev-browser)
 │   ├── compound-engineering/         # git submodule (github.com/EveryInc/compound-engineering-plugin)
 │   ├── agent-stuff/                  # git submodule (github.com/mitsuhiko/agent-stuff)
-│   └── pi-interview-tool/            # git submodule (github.com/nicobailon/pi-interview-tool)
+│   ├── pi-interview-tool/            # git submodule (github.com/nicobailon/pi-interview-tool)
+│   └── vercel-labs-agent-skills/     # git submodule (github.com/vercel-labs/agent-skills)
 ├── skills/                           # custom skills
 │   └── <skill-name>/
 ├── skill-overrides/                  # agent-specific appends
@@ -130,6 +131,12 @@ For custom skills, you can also place per-skill overrides at `skills/<skill>/ove
 | Skill | Description |
 |-------|-------------|
 | `dev-browser` | Browser automation for web development |
+
+### From vercel-labs/agent-skills
+
+| Skill | Description |
+|-------|-------------|
+| `react-best-practices` | React best practices and patterns for building maintainable applications |
 
 ### Custom Skills
 
