@@ -16,3 +16,6 @@
 [submodule "plugins/vercel-labs-agent-skills"]
 	path = plugins/vercel-labs-agent-skills
 	url = https://github.com/vercel-labs/agent-skills
+[submodule "plugins/mitsuhiko-agent-stuff"]
+	path = plugins/mitsuhiko-agent-stuff
+	url = https://github.com/mitsuhiko/agent-stuff

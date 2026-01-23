@@ -71,8 +71,8 @@ All plugin configuration is in `plugins.toml`:
 ```toml
 [agent-stuff]
 url = "https://github.com/mitsuhiko/agent-stuff"
-skills = []  # No skills from this plugin
-extensions = ["answer"]
+extensions_path = "pi-extensions/*.ts"
+extensions = ["review"]
 
 [compound-engineering]
 url = "https://github.com/EveryInc/compound-engineering-plugin"
