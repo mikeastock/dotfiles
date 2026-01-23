@@ -16,10 +16,11 @@ Opinionated constraints for building better interfaces with agents.
 
 ## Components
 
-- MUST use accessible component primitives for anything with keyboard or focus behavior (`Base UI`, `React Aria`, `Radix`)
+- SHOULD prefer [`shadcn/ui`](https://ui.shadcn.com) components when available in the project
+- SHOULD add new `shadcn/ui` components via CLI (`npx shadcn@latest add <component>`) when needed
 - MUST use the project's existing component primitives first
+- MUST use accessible component primitives for anything with keyboard or focus behavior (`shadcn/ui`, `Radix`, `React Aria`, `Base UI`)
 - NEVER mix primitive systems within the same interaction surface
-- SHOULD prefer [`Base UI`](https://base-ui.com/react/components) for new primitives if compatible with the stack
 - MUST add an `aria-label` to icon-only buttons
 - NEVER rebuild keyboard or focus behavior by hand unless explicitly requested
 
