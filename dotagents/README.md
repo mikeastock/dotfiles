@@ -30,11 +30,12 @@ make pi-skills-config    Configure Pi agent to use only Pi-specific skills
 agents/
 ├── plugins.toml                      # plugin configuration
 ├── plugins/
-│   ├── anthropic-skills/             # git submodule (github.com/anthropics/skills)
-│   ├── dev-browser/                  # git submodule (github.com/SawyerHood/dev-browser)
-│   ├── compound-engineering/         # git submodule (github.com/EveryInc/compound-engineering-plugin)
-│   ├── agent-stuff/                  # git submodule (github.com/mitsuhiko/agent-stuff)
-│   ├── pi-interview-tool/            # git submodule (github.com/nicobailon/pi-interview-tool)
+│   ├── anthropics-skills/            # git submodule (github.com/anthropics/skills)
+│   ├── EveryInc-compound-engineering-plugin/  # git submodule
+│   ├── mitsuhiko-agent-stuff/        # git submodule (github.com/mitsuhiko/agent-stuff)
+│   ├── nicobailon-pi-interview-tool/ # git submodule
+│   ├── SawyerHood-dev-browser/       # git submodule (github.com/SawyerHood/dev-browser)
+│   ├── steipete-agent-scripts/       # git submodule (github.com/steipete/agent-scripts)
 │   └── vercel-labs-agent-skills/     # git submodule (github.com/vercel-labs/agent-skills)
 ├── skills/                           # custom skills
 │   └── <skill-name>/
