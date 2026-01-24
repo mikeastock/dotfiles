@@ -403,13 +403,16 @@ def install_skills():
             continue
 
         dest = paths["skills"]
+
+        # Clear existing skills directory for a fresh install
+        if dest.exists():
+            shutil.rmtree(dest)
         dest.mkdir(parents=True, exist_ok=True)
 
         count = 0
         for skill_dir in sorted(source.iterdir()):
             if skill_dir.is_dir():
                 dest_skill = dest / skill_dir.name
-                remove_path(dest_skill)
                 shutil.copytree(skill_dir, dest_skill)
                 count += 1
 
@@ -424,6 +427,10 @@ def install_extensions(plugins: dict[str, Plugin]):
         print("  (non-interactive mode: skipping interactive extensions and plugins)")
 
     dest = INSTALL_PATHS["pi"]["extensions"]
+
+    # Clear existing extensions directory for a fresh install
+    if dest.exists():
+        shutil.rmtree(dest)
     dest.mkdir(parents=True, exist_ok=True)
 
     installed = set()
