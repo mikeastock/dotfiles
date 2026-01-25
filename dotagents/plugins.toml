@@ -39,4 +39,4 @@ skills = [ "react-best-practices" ]
 ["mitsuhiko/agent-stuff"]
 url = "https://github.com/mitsuhiko/agent-stuff"
 extensions_path = "pi-extensions/*.ts"
-extensions = [ "review" ]
+extensions = [ "cwd-history", "review" ]
