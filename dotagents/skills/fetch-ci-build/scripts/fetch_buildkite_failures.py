@@ -1,9 +1,13 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = []
+# ///
 """
 Fetch and parse Buildkite CI failures for the current branch.
 
 Usage:
-    python fetch_buildkite_failures.py [options]
+    uv run fetch_buildkite_failures.py [options]
 
 Options:
     --branch BRANCH    Git branch (default: current branch)
