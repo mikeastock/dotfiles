@@ -31,6 +31,7 @@ export default function (pi: ExtensionAPI) {
 		/\bheroku\s+domains:clear\b/i,
 
 		// Heroku config and release operations
+		/\bheroku\s+config:set\b/i,
 		/\bheroku\s+config:unset\b/i,
 		/\bheroku\s+releases:rollback\b/i,
 
