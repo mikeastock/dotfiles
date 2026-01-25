@@ -249,6 +249,75 @@ def is_interactive_override(override_path: Path) -> bool:
     return False
 
 
+def parse_skill_agents(content: str) -> list[str] | None:
+    """
+    Parse the 'agents' field from SKILL.md frontmatter.
+
+    Returns:
+        List of agent names if specified, None if not specified (means all agents).
+    """
+    import re
+
+    # Match YAML frontmatter
+    frontmatter_pattern = r"^---\s*\n(.*?)\n---"
+    match = re.match(frontmatter_pattern, content, re.DOTALL)
+    if not match:
+        return None
+
+    frontmatter = match.group(1)
+
+    # Parse agents field - supports both YAML list formats:
+    # agents: [claude, codex] or agents: ["claude", "codex"]
+    agents_pattern = r"^agents:\s*\[([^\]]*)\]"
+    agents_match = re.search(agents_pattern, frontmatter, re.MULTILINE)
+    if not agents_match:
+        return None
+
+    # Parse the list items
+    agents_str = agents_match.group(1)
+    if not agents_str.strip():
+        return []
+
+    # Split by comma and clean up each item
+    agents = []
+    for item in agents_str.split(","):
+        item = item.strip().strip("\"'")
+        if item:
+            agents.append(item)
+
+    return agents
+
+
+def strip_agents_from_frontmatter(content: str) -> str:
+    """
+    Remove the 'agents' field from SKILL.md frontmatter.
+
+    The agents field is build-time configuration and should not appear
+    in the installed skill.
+    """
+    import re
+
+    # Match YAML frontmatter
+    frontmatter_pattern = r"^---\s*\n(.*?)\n---"
+    match = re.match(frontmatter_pattern, content, re.DOTALL)
+    if not match:
+        return content
+
+    frontmatter = match.group(1)
+
+    # Remove the agents line (including the newline)
+    agents_pattern = r"^agents:\s*\[[^\]]*\]\n?"
+    new_frontmatter = re.sub(agents_pattern, "", frontmatter, flags=re.MULTILINE)
+
+    # Clean up trailing whitespace (pattern expects \n before ---)
+    new_frontmatter = new_frontmatter.rstrip()
+
+    if new_frontmatter == frontmatter:
+        return content
+
+    return content[: match.start(1)] + new_frontmatter + content[match.end(1) :]
+
+
 def fix_skill_frontmatter_name(content: str, expected_name: str) -> str:
     """
     Fix the 'name' field in SKILL.md frontmatter to match the directory name.
@@ -284,24 +353,40 @@ def fix_skill_frontmatter_name(content: str, expected_name: str) -> str:
     return content[: match.start(1)] + new_frontmatter + content[match.end(1) :]
 
 
-def build_skill(name: str, source: Path, agent: str):
-    """Build a skill for a specific agent."""
-    dest = BUILD_DIR / agent / name
-    dest.mkdir(parents=True, exist_ok=True)
+def build_skill(name: str, source: Path, agent: str) -> bool | None:
+    """
+    Build a skill for a specific agent.
 
+    Returns:
+        True if built successfully
+        False if skipped due to missing SKILL.md
+        None if skipped due to agent filtering
+    """
     # Find SKILL.md
     skill_md = source / "SKILL.md"
     if not skill_md.exists():
         print(f"    Warning: {source} has no SKILL.md, skipping")
         return False
 
+    # Read content and check agent filtering
+    raw_content = skill_md.read_text()
+    allowed_agents = parse_skill_agents(raw_content)
+
+    # If agents field is specified and this agent is not in the list, skip
+    if allowed_agents is not None and agent not in allowed_agents:
+        return None
+
+    dest = BUILD_DIR / agent / name
+    dest.mkdir(parents=True, exist_ok=True)
+
     # Check for overrides: global or local per-skill
     override = OVERRIDES_DIR / f"{name}-{agent}.md"
     local_override = source / "overrides" / f"{agent}.md"
     dest_skill_md = dest / "SKILL.md"
 
-    # Read and fix frontmatter name to match directory
-    skill_content = fix_skill_frontmatter_name(skill_md.read_text(), name)
+    # Process content: fix name and strip agents field
+    skill_content = fix_skill_frontmatter_name(raw_content, name)
+    skill_content = strip_agents_from_frontmatter(skill_content)
 
     # In non-interactive mode, skip interactive overrides
     use_override = override.exists() and not (
@@ -359,11 +444,17 @@ def build_skills(plugins: dict[str, Plugin]):
                     f"    Warning: Skill '{name}' already exists, skipping duplicate from {plugin.name}"
                 )
                 continue
+            built_for_agents = []
             for agent in AGENTS:
-                if build_skill(name, path, agent):
-                    if agent == AGENTS[0]:  # Only print once
-                        print(f"  {name} (from {plugin.name})")
-                    built.add(name)
+                result = build_skill(name, path, agent)
+                if result is True:
+                    built_for_agents.append(agent)
+            if built_for_agents:
+                if set(built_for_agents) == set(AGENTS):
+                    print(f"  {name} (from {plugin.name})")
+                else:
+                    print(f"  {name} (from {plugin.name}) [{', '.join(built_for_agents)}]")
+                built.add(name)
 
     if skipped_plugins:
         print(
@@ -379,11 +470,17 @@ def build_skills(plugins: dict[str, Plugin]):
                     print(
                         f"    Warning: Custom skill '{name}' conflicts with plugin skill"
                     )
+                built_for_agents = []
                 for agent in AGENTS:
-                    if build_skill(name, skill_dir, agent):
-                        if agent == AGENTS[0]:
-                            print(f"  {name} (custom)")
-                        built.add(name)
+                    result = build_skill(name, skill_dir, agent)
+                    if result is True:
+                        built_for_agents.append(agent)
+                if built_for_agents:
+                    if set(built_for_agents) == set(AGENTS):
+                        print(f"  {name} (custom)")
+                    else:
+                        print(f"  {name} (custom) [{', '.join(built_for_agents)}]")
+                    built.add(name)
 
     print(f"  Built {len(built)} skills")
 

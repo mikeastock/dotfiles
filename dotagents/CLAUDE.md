@@ -110,6 +110,15 @@ GitHub Actions runs `./tests/run-all.sh` on push/PR to main/master branches.
 - Include workflow diagrams (graphviz dot format) for complex processes
 - Document prerequisites, step-by-step processes, and common mistakes
 - Reference related skills when appropriate
+- Use the `agents` frontmatter field to limit which agents receive a skill:
+  ```yaml
+  ---
+  name: my-skill
+  description: Only for codex
+  agents: [codex]  # Only install for codex (omit for all agents)
+  ---
+  ```
+  The `agents` field is stripped from the built skill.
 
 ### Extensions (TypeScript - Pi only)
 Location: `extensions/pi/<extension-name>/index.ts`
@@ -142,9 +151,10 @@ Extensions use the unified `ExtensionAPI` which provides:
 ### Adding a Custom Skill
 1. Fetch the [Agent Skills specification](https://agentskills.io/specification.md) for the current format
 2. Create `skills/<skill-name>/SKILL.md` following the specification
-3. Add any supporting files to the same directory
-4. Run `make install` to build and install
-5. Update README.md: add to "Custom Skills" table and directory structure
+3. Optionally add `agents: [claude, codex, pi]` to frontmatter to limit installation to specific agents
+4. Add any supporting files to the same directory
+5. Run `make install` to build and install
+6. Update README.md: add to "Custom Skills" table and directory structure
 
 ### Adding a Skill Override
 1. Create `skill-overrides/<skill-name>-<agent>.md` (agent: `claude` or `pi`)

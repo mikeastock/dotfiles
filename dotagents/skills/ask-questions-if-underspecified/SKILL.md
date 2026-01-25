@@ -1,6 +1,7 @@
 ---
 name: ask-questions-if-underspecified
 description: Clarify requirements before implementing. Do not use automatically, only when invoked explicitly.
+agents: [codex]
 ---
 
 # Ask Questions If Underspecified
