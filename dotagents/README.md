@@ -149,6 +149,7 @@ For custom skills, you can also place per-skill overrides at `skills/<skill>/ove
 | `executing-plans` | Execute implementation plans with review checkpoints |
 | `fetching-buildkite-failures` | Fetches build results from Buildkite and helps diagnose CI failures |
 | `nano-banana-pro` | Generate or edit images via Gemini 3 Pro Image |
+| `playwright-cli` | Browser automation for web testing, form filling, screenshots, and data extraction |
 | `semantic-commit` | Create semantic git commits following Conventional Commits specification |
 | `subagent-driven-development` | Execute implementation plans with independent tasks |
 | `test-driven-development` | Use when implementing features, before writing implementation code |
