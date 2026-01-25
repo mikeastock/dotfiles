@@ -7,7 +7,7 @@
 Fetch and parse Buildkite CI failures for the current branch.
 
 Usage:
-    uv run fetch_buildkite_failures.py [options]
+    uv run {baseDir}/scripts/fetch_buildkite_failures.py [options]
 
 Options:
     --branch BRANCH    Git branch (default: current branch)

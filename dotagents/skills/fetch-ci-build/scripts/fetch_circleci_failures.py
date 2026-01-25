@@ -7,7 +7,7 @@
 Fetch and parse CircleCI failures for the current branch.
 
 Usage:
-    uv run fetch_circleci_failures.py [options]
+    uv run {baseDir}/scripts/fetch_circleci_failures.py [options]
 
 Options:
     --branch BRANCH      Git branch (default: current branch)
