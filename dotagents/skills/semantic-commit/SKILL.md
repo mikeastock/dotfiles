@@ -20,6 +20,7 @@ Create git commits following the [Conventional Commits](https://www.conventional
 ### Guidelines
 
 - Start with a short prefix followed by colon and space (feat:, fix:, docs:, refactor:, test:, chore:, etc.)
+- Isolate your changes and commit only what you did (no unrelated files)
 - feat: for user-visible features, fix: for bug fixes
 - A scope MAY be added in parentheses, e.g. `fix(parser):` - only when it meaningfully improves clarity
 - Short description in imperative mood explaining what changed, not how
@@ -77,8 +78,8 @@ git diff --stat            # unstaged changes
 ### 2. Stage Changes
 
 If no changes are staged:
-- Ask which files to stage, or
-- Stage all with `git add -A`
+- Ask which files to stage
+- Stage only files you changed for this task (avoid unrelated changes)
 
 ### 3. Review Staged Changes
 
