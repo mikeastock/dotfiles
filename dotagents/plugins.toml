@@ -36,6 +36,10 @@ skills = [ "create-cli", "nano-banana-pro" ]
 url = "https://github.com/vercel-labs/agent-skills"
 skills = [ "react-best-practices" ]
 
+["openprose/prose"]
+url = "https://github.com/openprose/prose"
+skills = [ "open-prose" ]
+
 ["mitsuhiko/agent-stuff"]
 url = "https://github.com/mitsuhiko/agent-stuff"
 extensions_path = "pi-extensions/*.ts"

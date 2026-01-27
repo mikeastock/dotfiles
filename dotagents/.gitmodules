@@ -19,3 +19,6 @@
 [submodule "plugins/mitsuhiko-agent-stuff"]
 	path = plugins/mitsuhiko-agent-stuff
 	url = https://github.com/mitsuhiko/agent-stuff
+[submodule "plugins/openprose-prose"]
+	path = plugins/openprose-prose
+	url = https://github.com/openprose/prose
