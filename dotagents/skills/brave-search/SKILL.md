@@ -43,9 +43,16 @@ Content: (if --content flag used)
 ...
 ```
 
+## Special URL Handling (CRITICAL)
+
+**DO NOT use Brave Search for these URLs. Use the correct tool instead:**
+
+- **GitHub URLs**: **ALWAYS** use the `gh` CLI instead (e.g., `gh api`, `gh repo view`, `gh issue view`, etc.)
+- **`.md` file URLs**: **ALWAYS** use `curl` to fetch the raw file content directly (e.g., `curl -sL https://example.com/docs/guide.md`)
+
 ## When to Use
 
 - Searching for documentation or API references
 - Looking up facts or current information
-- Fetching content from specific URLs
+- Fetching content from specific URLs (except GitHub URLs or `.md` files — see above)
 - Any task requiring web search without interactive browsing
