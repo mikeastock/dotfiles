@@ -256,6 +256,10 @@ def parse_skill_agents(content: str) -> list[str] | None:
     """
     Parse the 'agents' field from SKILL.md frontmatter.
 
+    Supports two formats per Agent Skills spec:
+    1. Top-level: agents: [claude, codex, pi]
+    2. In metadata: metadata.agents: "codex, pi" (comma-separated string)
+
     Returns:
         List of agent names if specified, None if not specified (means all agents).
     """
@@ -269,32 +273,57 @@ def parse_skill_agents(content: str) -> list[str] | None:
 
     frontmatter = match.group(1)
 
-    # Parse agents field - supports both YAML list formats:
+    # First try top-level agents field (YAML list format):
     # agents: [claude, codex] or agents: ["claude", "codex"]
     agents_pattern = r"^agents:\s*\[([^\]]*)\]"
     agents_match = re.search(agents_pattern, frontmatter, re.MULTILINE)
-    if not agents_match:
-        return None
+    if agents_match:
+        agents_str = agents_match.group(1)
+        if not agents_str.strip():
+            return []
+        agents = []
+        for item in agents_str.split(","):
+            item = item.strip().strip("\"'")
+            if item:
+                agents.append(item)
+        return agents
 
-    # Parse the list items
-    agents_str = agents_match.group(1)
-    if not agents_str.strip():
-        return []
+    # Try metadata.agents field (comma-separated string per Agent Skills spec):
+    # metadata:
+    #   agents: codex, pi
+    metadata_agents_pattern = r"^\s+agents:\s*(.+)$"
+    # Only match if we're in a metadata block
+    in_metadata = False
+    for line in frontmatter.split("\n"):
+        if line.startswith("metadata:"):
+            in_metadata = True
+            continue
+        if in_metadata:
+            # Check if we've left the metadata block (non-indented line)
+            if line and not line.startswith(" ") and not line.startswith("\t"):
+                in_metadata = False
+                continue
+            # Look for agents field
+            metadata_match = re.match(metadata_agents_pattern, line)
+            if metadata_match:
+                agents_str = metadata_match.group(1).strip().strip("\"'")
+                if not agents_str:
+                    return []
+                agents = []
+                for item in agents_str.split(","):
+                    item = item.strip().strip("\"'")
+                    if item:
+                        agents.append(item)
+                return agents
 
-    # Split by comma and clean up each item
-    agents = []
-    for item in agents_str.split(","):
-        item = item.strip().strip("\"'")
-        if item:
-            agents.append(item)
-
-    return agents
+    return None
 
 
 def strip_agents_from_frontmatter(content: str) -> str:
     """
     Remove the 'agents' field from SKILL.md frontmatter.
 
+    Handles both top-level agents field and metadata.agents field.
     The agents field is build-time configuration and should not appear
     in the installed skill.
     """
@@ -307,10 +336,18 @@ def strip_agents_from_frontmatter(content: str) -> str:
         return content
 
     frontmatter = match.group(1)
+    new_frontmatter = frontmatter
 
-    # Remove the agents line (including the newline)
+    # Remove top-level agents line (including the newline)
     agents_pattern = r"^agents:\s*\[[^\]]*\]\n?"
-    new_frontmatter = re.sub(agents_pattern, "", frontmatter, flags=re.MULTILINE)
+    new_frontmatter = re.sub(agents_pattern, "", new_frontmatter, flags=re.MULTILINE)
+
+    # Remove metadata.agents line (indented agents: inside metadata block)
+    # This pattern matches "  agents: value\n" where value can be anything
+    metadata_agents_pattern = r"^[ \t]+agents:\s*.*\n?"
+    new_frontmatter = re.sub(
+        metadata_agents_pattern, "", new_frontmatter, flags=re.MULTILINE
+    )
 
     # Clean up trailing whitespace (pattern expects \n before ---)
     new_frontmatter = new_frontmatter.rstrip()
