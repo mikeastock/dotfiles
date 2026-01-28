@@ -73,6 +73,9 @@ CODEX_CONFIG_FILE = ROOT / "codex-config.toml"
 # Installation paths
 HOME = Path.home()
 INSTALL_PATHS = {
+    "amp": {
+        "skills": HOME / ".config" / "agents" / "skills",
+    },
     "claude": {
         "skills": HOME / ".claude" / "skills",
     },
@@ -85,7 +88,7 @@ INSTALL_PATHS = {
     },
 }
 
-AGENTS = ["claude", "codex", "pi"]  # Agents that get skill builds
+AGENTS = ["amp", "claude", "codex", "pi"]  # Agents that get skill builds
 
 
 def plugin_dir_name(name: str) -> str:

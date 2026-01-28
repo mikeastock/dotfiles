@@ -1,6 +1,6 @@
 # Agents
 
-This repository contains reusable skills and extensions for AI coding agents including [Pi Coding Agent](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent), Claude Code, and [Codex CLI](https://github.com/openai/codex).
+This repository contains reusable skills and extensions for AI coding agents including [Amp](https://ampcode.com), [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [Codex CLI](https://github.com/openai/codex), and [Pi Coding Agent](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent).
 
 ## Requirements
 
@@ -17,11 +17,11 @@ This initializes submodules, builds skills (applying overrides), and installs th
 
 ```
 make install             Initialize submodules and install skills and extensions
-make install-skills      Install skills only (Claude Code, Codex, Pi agent)
+make install-skills      Install skills only (Amp, Claude Code, Codex, Pi agent)
 make install-extensions  Install extensions only (Pi agent)
 make build               Build skills with overrides (without installing)
 make clean               Remove all installed skills, extensions, and build artifacts
-make pi-skills-config    Configure Pi agent to use only Pi-specific skills
+make agents-config       Configure all agents to use their own skills directories
 ```
 
 ## Structure
@@ -193,18 +193,27 @@ Skills are installed to:
 
 | Agent | Location |
 |-------|----------|
+| Amp | `~/.config/agents/skills/` |
 | Claude Code | `~/.claude/skills/` |
 | Codex CLI | `~/.codex/skills/` |
 | Pi Coding Agent | `~/.pi/agent/skills/` |
 
-Since skills are installed to all three locations, disable Claude and Codex skill loading in Pi to avoid duplicate skill warnings:
+Since skills are installed to all locations, configure agents to use only their own skills directories to avoid duplicates:
 
 ```bash
-make pi-skills-config
+make agents-config
 ```
 
-This uses `jq` to update `~/.pi/agent/settings.json` with:
+This uses `jq` to update agent settings:
 
+**Amp** (`~/.config/amp/settings.json`):
+```json
+{
+  "amp.skills.path": "~/.config/agents/skills"
+}
+```
+
+**Pi** (`~/.pi/agent/settings.json`):
 ```json
 {
   "skills": {
@@ -214,9 +223,11 @@ This uses `jq` to update `~/.pi/agent/settings.json` with:
 }
 ```
 
-The command preserves any existing settings in the file. Requires `jq` to be installed (`brew install jq` on macOS or `apt install jq` on Linux).
+Claude Code and Codex CLI use their default locations and need no additional configuration.
 
-See Pi's [skills documentation](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent/docs/skills.md) for all available options.
+The command preserves any existing settings. Requires `jq` (`brew install jq` on macOS or `apt install jq` on Linux).
+
+See [Amp skills documentation](https://ampcode.com/manual/agent-skills.md) and [Pi skills documentation](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent/docs/skills.md) for more options.
 
 ## What are Extensions?
 
@@ -245,8 +256,10 @@ See Pi's [extensions documentation](https://github.com/badlogic/pi-mono/blob/mai
 
 ## References
 
+- [Amp Documentation](https://ampcode.com/manual.md)
+- [Amp Skills Documentation](https://ampcode.com/manual/agent-skills.md)
 - [Claude Code Skills Documentation](https://docs.anthropic.com/en/docs/claude-code/skills)
+- [Codex CLI Skills Documentation](https://developers.openai.com/codex/skills)
 - [Pi Coding Agent Documentation](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent)
 - [Pi Extensions Documentation](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/extensions.md)
-- [Codex CLI Skills Documentation](https://developers.openai.com/codex/skills)
 - [Agent Skills Specification](https://agentskills.io/specification.md)

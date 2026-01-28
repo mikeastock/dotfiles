@@ -7,11 +7,15 @@
 PYTHON := python3
 BUILD_SCRIPT := $(CURDIR)/scripts/build.py
 
-# Pi settings for pi-skills-config target
+# Agent settings directories
 PI_SETTINGS_DIR := $(HOME)/.pi/agent
 PI_SETTINGS_FILE := $(PI_SETTINGS_DIR)/settings.json
+AMP_SETTINGS_DIR := $(HOME)/.config/amp
+AMP_SETTINGS_FILE := $(AMP_SETTINGS_DIR)/settings.json
+CODEX_SETTINGS_DIR := $(HOME)/.codex
+CODEX_SETTINGS_FILE := $(CODEX_SETTINGS_DIR)/config.toml
 
-.PHONY: all install install-non-interactive install-skills install-extensions build clean help submodule-init plugin-update pi-skills-config check-python
+.PHONY: all install install-non-interactive install-skills install-extensions build clean help submodule-init plugin-update agents-config check-python
 
 all: help
 
@@ -21,12 +25,12 @@ help:
 	@echo "Usage:"
 	@echo "  make install                 Initialize submodules and install skills and extensions"
 	@echo "  make install-non-interactive Install for headless/automated environments (skips interactive extensions)"
-	@echo "  make install-skills          Install skills only (Claude Code, Codex, Pi agent)"
+	@echo "  make install-skills          Install skills only (Amp, Claude Code, Codex, Pi agent)"
 	@echo "  make install-extensions      Install extensions only (Pi agent)"
 	@echo "  make build                   Build skills with overrides (without installing)"
 	@echo "  make plugin-update           Update all plugin submodules to latest"
 	@echo "  make clean                   Remove all installed skills, extensions, and build artifacts"
-	@echo "  make pi-skills-config        Configure Pi agent to use only Pi-specific skills"
+	@echo "  make agents-config           Configure all agents to use their own skills directories"
 	@echo "  make help                    Show this help message"
 	@echo ""
 	@echo "Configuration: plugins.toml"
@@ -63,21 +67,38 @@ plugin-update:
 	@git submodule update --remote --merge
 	@echo "Plugins updated"
 
-pi-skills-config:
-	@echo "Configuring Pi agent skills settings..."
-	@mkdir -p $(PI_SETTINGS_DIR)
-	@if [ ! -f "$(PI_SETTINGS_FILE)" ]; then \
-		echo '{}' > "$(PI_SETTINGS_FILE)"; \
-	fi
-	@if command -v jq >/dev/null 2>&1; then \
-		jq '.skills.enableClaudeUser = false | .skills.enableCodexUser = false' \
-			"$(PI_SETTINGS_FILE)" > "$(PI_SETTINGS_FILE).tmp" && \
-			mv "$(PI_SETTINGS_FILE).tmp" "$(PI_SETTINGS_FILE)"; \
-		echo "Pi agent settings updated: $(PI_SETTINGS_FILE)"; \
-		echo "  skills.enableClaudeUser = false"; \
-		echo "  skills.enableCodexUser = false"; \
-	else \
+agents-config:
+	@echo "Configuring agent settings..."
+	@if ! command -v jq >/dev/null 2>&1; then \
 		echo "Error: jq is required but not installed."; \
 		echo "Install with: brew install jq (macOS) or apt install jq (Linux)"; \
 		exit 1; \
 	fi
+	@echo ""
+	@echo "Configuring Amp..."
+	@mkdir -p $(AMP_SETTINGS_DIR)
+	@if [ ! -f "$(AMP_SETTINGS_FILE)" ]; then \
+		echo '{}' > "$(AMP_SETTINGS_FILE)"; \
+	fi
+	@jq '."amp.skills.path" = "~/.config/agents/skills"' \
+		"$(AMP_SETTINGS_FILE)" > "$(AMP_SETTINGS_FILE).tmp" && \
+		mv "$(AMP_SETTINGS_FILE).tmp" "$(AMP_SETTINGS_FILE)"
+	@echo "  $(AMP_SETTINGS_FILE)"
+	@echo "    amp.skills.path = ~/.config/agents/skills"
+	@echo ""
+	@echo "Configuring Pi..."
+	@mkdir -p $(PI_SETTINGS_DIR)
+	@if [ ! -f "$(PI_SETTINGS_FILE)" ]; then \
+		echo '{}' > "$(PI_SETTINGS_FILE)"; \
+	fi
+	@jq '.skills.enableClaudeUser = false | .skills.enableCodexUser = false' \
+		"$(PI_SETTINGS_FILE)" > "$(PI_SETTINGS_FILE).tmp" && \
+		mv "$(PI_SETTINGS_FILE).tmp" "$(PI_SETTINGS_FILE)"
+	@echo "  $(PI_SETTINGS_FILE)"
+	@echo "    skills.enableClaudeUser = false"
+	@echo "    skills.enableCodexUser = false"
+	@echo ""
+	@echo "Claude Code: No configuration needed (uses ~/.claude/skills/)"
+	@echo "Codex CLI: No configuration needed (uses ~/.codex/skills/)"
+	@echo ""
+	@echo "All agents configured!"

@@ -88,7 +88,7 @@ make install
 | `make install-extensions` | Install Pi extensions only |
 | `make clean` | Remove all installed artifacts and build directory |
 | `make plugin-update` | Update all plugin submodules to latest |
-| `make pi-skills-config` | Configure Pi to use only its own skills (avoid duplicates) |
+| `make agents-config` | Configure all agents to use their own skills directories (avoid duplicates) |
 
 ### Testing
 ```bash
@@ -171,6 +171,7 @@ Extensions use the unified `ExtensionAPI` which provides:
 
 | Agent | Skills | Extensions |
 |-------|--------|------------|
+| Amp | `~/.config/agents/skills/` | N/A |
 | Claude Code | `~/.claude/skills/` | N/A |
 | Codex CLI | `~/.codex/skills/` | N/A |
 | Pi Agent | `~/.pi/agent/skills/` | `~/.pi/agent/extensions/` |
