@@ -2,7 +2,7 @@
 #
 # agent-status - Display agent states for tmux status bar
 #
-# Output format: session◉ session● session○
+# Output format: session ◉  session ●  session ○
 #   ◉ = waiting for user input (yellow)
 #   ● = working (green)
 #   ○ = idle (dim) - pi only, codex doesn't report idle
@@ -48,15 +48,15 @@ for session in $sessions; do
   # Format based on state
   case "$state" in
     waiting)
-      output+="#[fg=yellow]${session}◉#[fg=default] "
+      output+="#[fg=yellow]${session} ◉#[fg=default] "
       ;;
     working)
-      output+="#[fg=green]${session}●#[fg=default] "
+      output+="#[fg=green]${session} ●#[fg=default] "
       ;;
     idle)
       # Only show idle for agents that report it (pi)
       # Codex only reports "waiting", so if we see idle it's from pi
-      output+="#[fg=colour244]${session}○#[fg=default] "
+      output+="#[fg=colour244]${session} ○#[fg=default] "
       ;;
   esac
 done
