@@ -1,0 +1,161 @@
+#!/usr/bin/env python3
+"""
+Codex notification handler for agent-status integration.
+"""
+
+import json
+import os
+import sys
+import tempfile
+import subprocess
+import time
+
+STATE_FILE = os.path.expanduser("~/.config/agents/state.json")
+LOG_FILE = os.path.expanduser("~/.config/agents/notify.log")
+
+WAITING_EVENT_TYPES = {
+    "agent-turn-complete",
+    "agent_turn_complete",
+    "turn/completed",
+    "turn_completed",
+}
+
+def log(msg: str) -> None:
+    """Log a message for debugging."""
+    with open(LOG_FILE, "a") as f:
+        f.write(f"{time.strftime('%H:%M:%S')} - {msg}\n")
+
+def get_tmux_session_name() -> str | None:
+    """Get current tmux session name, or None if not in tmux."""
+    if not os.environ.get("TMUX_PANE"):
+        log("No TMUX_PANE env var; trying tmux display-message anyway")
+    try:
+        result = subprocess.run(
+            ["tmux", "display-message", "-p", "#S"],
+            capture_output=True,
+            text=True,
+            timeout=1,
+        )
+        if result.returncode != 0:
+            log(f"tmux display-message failed: {result.stderr.strip()}")
+            return None
+        session = result.stdout.strip() or None
+        log(f"Got tmux session: {session}")
+        return session
+    except Exception as e:
+        log(f"Error getting tmux session: {e}")
+        return None
+
+def get_codex_pid() -> int | None:
+    """Find the codex process that spawned this notify script."""
+    try:
+        ppid = os.getppid()
+        for _ in range(5):
+            result = subprocess.run(
+                ["ps", "-p", str(ppid), "-o", "comm="],
+                capture_output=True,
+                text=True,
+                timeout=1,
+            )
+            comm = result.stdout.strip()
+            if "codex" in comm.lower():
+                return ppid
+            result = subprocess.run(
+                ["ps", "-p", str(ppid), "-o", "ppid="],
+                capture_output=True,
+                text=True,
+                timeout=1,
+            )
+            ppid = int(result.stdout.strip())
+    except Exception:
+        pass
+    return None
+
+def read_state_file() -> dict:
+    try:
+        with open(STATE_FILE, "r") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {"sessions": {}}
+
+def write_state_file(state: dict) -> None:
+    os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
+    fd, temp_path = tempfile.mkstemp(dir=os.path.dirname(STATE_FILE))
+    try:
+        with os.fdopen(fd, "w") as f:
+            json.dump(state, f, indent=2)
+        os.rename(temp_path, STATE_FILE)
+    except Exception:
+        os.unlink(temp_path)
+        raise
+
+def update_state(session_name: str, new_state: str, pid: int) -> None:
+    state = read_state_file()
+    state["sessions"][session_name] = {
+        "agent": "codex",
+        "state": new_state,
+        "pid": pid,
+        "timestamp": int(time.time() * 1000),
+    }
+    write_state_file(state)
+    log(f"Updated state: {session_name} -> {new_state} (pid={pid})")
+
+def read_notification_payload() -> tuple[str | None, str]:
+    """Read JSON payload from argv or stdin."""
+    if len(sys.argv) >= 2:
+        return sys.argv[1], "argv"
+    if not sys.stdin.isatty():
+        data = sys.stdin.read().strip()
+        return (data or None), "stdin"
+    return None, "none"
+
+
+def extract_event_type(notification: dict) -> str:
+    event_type = notification.get("type") or notification.get("method") or ""
+    if not event_type and isinstance(notification.get("event"), dict):
+        event_type = (
+            notification.get("event", {}).get("type")
+            or notification.get("event", {}).get("method")
+            or ""
+        )
+    return event_type
+
+
+def main() -> int:
+    log(f"Called with args: {sys.argv}")
+    log(
+        f"Env: TMUX_PANE={os.environ.get('TMUX_PANE')} TMUX={os.environ.get('TMUX')}"
+    )
+
+    payload, source = read_notification_payload()
+    log(f"Payload source: {source}")
+    if not payload:
+        log("No payload provided")
+        return 0
+
+    try:
+        notification = json.loads(payload)
+        log(f"Parsed notification keys: {list(notification.keys())}")
+    except json.JSONDecodeError as e:
+        preview = payload[:500]
+        log(f"JSON decode error: {e}; payload preview: {preview}")
+        return 1
+    
+    session_name = get_tmux_session_name()
+    if not session_name:
+        log("Not in tmux, exiting")
+        return 0
+    
+    event_type = extract_event_type(notification)
+    log(f"Event type: {event_type}")
+
+    if event_type in WAITING_EVENT_TYPES:
+        codex_pid = get_codex_pid() or os.getppid()
+        update_state(session_name, "waiting", codex_pid)
+    else:
+        log("Event type not handled; no state update")
+    
+    return 0
+
+if __name__ == "__main__":
+    sys.exit(main())

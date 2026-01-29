@@ -3,6 +3,8 @@ sandbox_mode = "danger-full-access"
 model = "gpt-5.2-codex"
 model_reasoning_effort = "high"
 tool_output_token_limit = 25000
+# Keep local CLI quiet about unstable features.
+suppress_unstable_features_warning = true
 # Leave room for native compaction near the 272–273k context window.
 # Formula: 273000 - (tool_output_token_limit + 15000)
 # With tool_output_token_limit=25000 ⇒ 273000 - (25000 + 15000) = 233000
@@ -15,6 +17,17 @@ apply_patch_freeform = true
 web_search_request = true
 skills = true
 shell_snapshot = true
+steer = true
+collab = true
 
 [projects."/Users/mikeastock/code"]
 trust_level = "trusted"
+
+[notice]
+hide_rate_limit_model_nudge = true
+
+# Agent status notification for tmux integration
+notify = ["python3", "/Users/mikeastock/.local/bin/codex-notify"]
+
+[tui]
+notifications = ["turn/completed", "agent-turn-complete"]
