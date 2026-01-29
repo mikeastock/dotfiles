@@ -30,7 +30,6 @@ agents/
 ├── extensions/                     # Custom extensions (Pi only)
 │   └── pi/
 │       ├── AskUserQuestion/
-│       ├── confirm-destructive/
 │       ├── handoff/
 │       ├── protected-paths/
 │       └── <extension-name>/index.ts

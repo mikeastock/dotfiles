@@ -46,7 +46,6 @@ agents/
 │   └── pi/
 │       ├── agent-status/
 │       ├── AskUserQuestion/
-│       ├── confirm-destructive/
 │       ├── handoff/
 │       ├── permission-gate/
 │       ├── protected-paths/
@@ -178,7 +177,6 @@ For custom skills, you can also place per-skill overrides at `skills/<skill>/ove
 |-----------|-------|-------------|
 | `agent-status` | Pi | Writes agent state (idle/working/waiting) to `~/.config/agents/state.json` for tmux status integration |
 | `AskUserQuestion` | Pi | Ask user questions with single-select, multi-select (checkboxes), or free text input modes |
-| `confirm-destructive` | Pi | Prompts for confirmation before destructive session actions (macOS only) |
 | `handoff` | Pi | Transfer conversation context to a new focused session via `/handoff` command |
 | `permission-gate` | Pi | Prompts for confirmation before running dangerous bash commands (rm -rf, sudo, chmod 777) |
 | `protected-paths` | Pi | Blocks write and edit operations to protected paths (.env, .git/, node_modules/) |
