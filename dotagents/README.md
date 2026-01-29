@@ -149,6 +149,7 @@ For custom skills, you can also place per-skill overrides at `skills/<skill>/ove
 | `brave-search` | Web search and content extraction via Brave Search API |
 | `executing-plans` | Execute implementation plans with review checkpoints |
 | `fetch-ci-build` | Fetch CI build results and diagnose failures (GitHub Actions, Buildkite, CircleCI) |
+| `favicon-generator` | Generate favicons from prompts using magenta keying and ImageMagick outputs |
 | `nano-banana-pro` | Generate or edit images via Gemini 3 Pro Image |
 | `playwright-cli` | Browser automation for web testing, form filling, screenshots, and data extraction |
 | `semantic-commit` | Create semantic git commits following Conventional Commits specification |
