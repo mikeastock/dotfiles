@@ -142,9 +142,8 @@ mise activate fish | source
 fish_add_path ~/.local/bin
 alias claude="claude --allow-dangerously-skip-permissions"
 
-####### Claude Code Superpowers
-# https://github.com/obra/superpowers
-fish_add_path ~/.config/superpowers/skills/skills/using-skills/
+####### Bun
+fish_add_path ~/.bun/bin
 
 ####### Amp
 fish_add_path $HOME/.amp/bin

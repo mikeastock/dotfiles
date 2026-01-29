@@ -1,4 +1,4 @@
 font-family = "Fira Code"
 theme = Catppuccin Mocha
 copy-on-select = false
-keybind = shift+enter=text:\x1b\r
+keybind = shift+enter=text:\n
