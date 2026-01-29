@@ -16,8 +16,8 @@ CODEX_SETTINGS_DIR := $(HOME)/.codex
 CODEX_SETTINGS_FILE := $(CODEX_SETTINGS_DIR)/config.toml
 LOCAL_BIN_DIR := $(HOME)/.local/bin
 AGENTS_CONFIG_DIR := $(HOME)/.config/agents
-TMUX_BIN_DIR := $(CURDIR)/tmux/bin
-TMUX_CONFIG_DIR := $(CURDIR)/tmux/config
+TMUX_BIN_DIR := $(CURDIR)/tmux-agent-status/bin
+TMUX_CONFIG_DIR := $(CURDIR)/tmux-agent-status/config
 
 .PHONY: all install install-non-interactive install-skills install-extensions install-tmux build clean help submodule-init plugin-update agents-config check-python
 
