@@ -25,6 +25,13 @@ interface StateFile {
 
 const STATE_FILE = path.join(os.homedir(), ".config", "agents", "state.json");
 
+const WAIT_EVENT = "agent-status:wait";
+
+interface WaitEvent {
+	active: boolean;
+	source?: string;
+}
+
 function getTmuxSessionName(): string | null {
 	const tmuxPane = process.env.TMUX_PANE;
 	if (!tmuxPane) return null;
@@ -38,6 +45,14 @@ function getTmuxSessionName(): string | null {
 	} catch {
 		return null;
 	}
+}
+
+function isWaitEvent(payload: unknown): payload is WaitEvent {
+	return (
+		typeof payload === "object" &&
+		payload !== null &&
+		typeof (payload as WaitEvent).active === "boolean"
+	);
 }
 
 function readStateFile(): StateFile {
@@ -85,6 +100,11 @@ export default function (pi: ExtensionAPI) {
 
 	pi.on("agent_start", async () => {
 		updateState(sessionName, "working");
+	});
+
+	pi.events.on(WAIT_EVENT, (payload) => {
+		if (!isWaitEvent(payload)) return;
+		updateState(sessionName, payload.active ? "waiting" : "working");
 	});
 
 	pi.on("agent_end", async () => {

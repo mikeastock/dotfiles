@@ -9,6 +9,13 @@
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 
+const WAIT_EVENT = "agent-status:wait";
+const WAIT_SOURCE = "permission-gate";
+
+function emitWait(pi: ExtensionAPI, active: boolean) {
+	pi.events.emit(WAIT_EVENT, { active, source: WAIT_SOURCE });
+}
+
 export default function (pi: ExtensionAPI) {
 	const dangerousPatterns = [
 		// File system destructive operations
@@ -60,7 +67,13 @@ export default function (pi: ExtensionAPI) {
 				return { block: true, reason: "Dangerous command blocked (no UI for confirmation)" };
 			}
 
-			const choice = await ctx.ui.select(`⚠️ Dangerous command:\n\n ${command}\n\nAllow?`, ["Yes", "No"]);
+			emitWait(pi, true);
+			let choice: string | undefined;
+			try {
+				choice = await ctx.ui.select(`⚠️ Dangerous command:\n\n ${command}\n\nAllow?`, ["Yes", "No"]);
+			} finally {
+				emitWait(pi, false);
+			}
 
 			if (choice !== "Yes") {
 				return { block: true, reason: "Blocked by user" };
