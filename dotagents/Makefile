@@ -8,8 +8,6 @@ PYTHON := python3
 BUILD_SCRIPT := $(CURDIR)/scripts/build.py
 
 # Agent settings directories
-PI_SETTINGS_DIR := $(HOME)/.pi/agent
-PI_SETTINGS_FILE := $(PI_SETTINGS_DIR)/settings.json
 AMP_SETTINGS_DIR := $(HOME)/.config/amp
 AMP_SETTINGS_FILE := $(AMP_SETTINGS_DIR)/settings.json
 CODEX_SETTINGS_DIR := $(HOME)/.codex
@@ -106,18 +104,7 @@ agents-config:
 	@echo "  $(AMP_SETTINGS_FILE)"
 	@echo "    amp.skills.path = ~/.config/agents/skills"
 	@echo ""
-	@echo "Configuring Pi..."
-	@mkdir -p $(PI_SETTINGS_DIR)
-	@if [ ! -f "$(PI_SETTINGS_FILE)" ]; then \
-		echo '{}' > "$(PI_SETTINGS_FILE)"; \
-	fi
-	@jq '.skills.enableClaudeUser = false | .skills.enableCodexUser = false' \
-		"$(PI_SETTINGS_FILE)" > "$(PI_SETTINGS_FILE).tmp" && \
-		mv "$(PI_SETTINGS_FILE).tmp" "$(PI_SETTINGS_FILE)"
-	@echo "  $(PI_SETTINGS_FILE)"
-	@echo "    skills.enableClaudeUser = false"
-	@echo "    skills.enableCodexUser = false"
-	@echo ""
+	@echo "Pi: Configured via 'make install' (agent-configs/pi-settings.json)"
 	@echo "Claude Code: No configuration needed (uses ~/.claude/skills/)"
 	@echo "Codex CLI: No configuration needed (uses ~/.codex/skills/)"
 	@echo ""

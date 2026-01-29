@@ -1,0 +1,20 @@
+{
+  "lastChangelogVersion": "0.50.3",
+  "defaultProvider": "anthropic",
+  "defaultModel": "claude-opus-4-5",
+  "hideThinkingBlock": false,
+  "defaultThinkingLevel": "high",
+  "steeringMode": "all",
+  "doubleEscapeAction": "tree",
+  "enabledModels": [
+    "anthropic/claude-opus-4-5",
+    "openai-codex/gpt-5.2-codex",
+    "cerebras/zai-glm-4.7",
+    "synthetic/hf:moonshotai/Kimi-K2.5"
+  ],
+  "packages": [],
+  "skills": {
+    "enableClaudeUser": false,
+    "enableCodexUser": false
+  }
+}

@@ -68,7 +68,10 @@ EXTENSIONS_DIR = ROOT / "extensions"
 OVERRIDES_DIR = ROOT / "skill-overrides"
 BUILD_DIR = ROOT / "build"
 CONFIG_FILE = ROOT / "plugins.toml"
-CODEX_CONFIG_FILE = ROOT / "codex-config.toml"
+AGENT_CONFIGS_DIR = ROOT / "agent-configs"
+CODEX_CONFIG_FILE = AGENT_CONFIGS_DIR / "codex-config.toml"
+PI_SETTINGS_FILE = AGENT_CONFIGS_DIR / "pi-settings.json"
+GLOBAL_AGENTS_MD = AGENT_CONFIGS_DIR / "AGENTS.md"
 
 # Installation paths
 HOME = Path.home()
@@ -660,6 +663,41 @@ def install_codex_config():
     print(f"  Installed to {dest}")
 
 
+def install_pi_settings():
+    """Install Pi agent settings."""
+    print("Installing Pi settings...")
+
+    if not PI_SETTINGS_FILE.exists():
+        print("  No pi-settings.json found, skipping")
+        return
+
+    dest = HOME / ".pi" / "agent" / "settings.json"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+
+    shutil.copy(PI_SETTINGS_FILE, dest)
+    print(f"  Installed to {dest}")
+
+
+def install_global_agents_md():
+    """Install global AGENTS.md for codex and pi."""
+    print("Installing global AGENTS.md...")
+
+    if not GLOBAL_AGENTS_MD.exists():
+        print("  No AGENTS.md found in agent-configs/, skipping")
+        return
+
+    # Install for codex and pi only
+    destinations = {
+        "codex": HOME / ".codex" / "AGENTS.md",
+        "pi": HOME / ".pi" / "agent" / "AGENTS.md",
+    }
+
+    for agent, dest in destinations.items():
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(GLOBAL_AGENTS_MD, dest)
+        print(f"  {agent}: {dest}")
+
+
 def clean(plugins: dict[str, Plugin]):
     """Remove all installed artifacts."""
     print("Cleaning installed artifacts...")
@@ -699,6 +737,16 @@ def clean(plugins: dict[str, Plugin]):
     if BUILD_DIR.exists():
         shutil.rmtree(BUILD_DIR)
         print("  Removed build directory")
+
+    # Clean global AGENTS.md
+    agents_md_paths = [
+        HOME / ".codex" / "AGENTS.md",
+        HOME / ".pi" / "agent" / "AGENTS.md",
+    ]
+    for path in agents_md_paths:
+        if path.exists():
+            path.unlink()
+            print(f"  Removed {path}")
 
     print("  Done")
 
@@ -745,6 +793,8 @@ def main():
         install_skills()
         install_extensions(plugins)
         install_codex_config()
+        install_pi_settings()
+        install_global_agents_md()
         print("\nAll done!")
     elif args.command == "install-skills":
         build_skills(plugins)
