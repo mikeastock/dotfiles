@@ -1,37 +1,41 @@
 /**
  * Agent Status Extension
  *
- * Writes Pi agent state to ~/.config/agents/state.json for tmux status integration.
- * Uses PID-based keying to support multiple agents per tmux session.
+ * Connects to the agent-status daemon via Unix socket for tmux status integration.
+ * Connection lifecycle = agent liveness (no PID tracking needed).
  */
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { execSync } from "node:child_process";
-import * as fs from "node:fs";
+import * as net from "node:net";
 import * as os from "node:os";
 import * as path from "node:path";
 
 type AgentState = "idle" | "working" | "waiting";
 
-interface AgentEntry {
-	session: string;
-	pane: string | null;
-	agent: "pi";
-	state: AgentState;
-	timestamp: number;
-}
-
-interface StateFile {
-	agents: Record<string, AgentEntry>;
-}
-
-const STATE_FILE = path.join(os.homedir(), ".config", "agents", "state.json");
-
+const SOCKET_PATH = path.join(
+	os.homedir(),
+	".config",
+	"agents",
+	"agent-status.sock",
+);
 const WAIT_EVENT = "agent-status:wait";
 
 interface WaitEvent {
 	active: boolean;
 	source?: string;
+}
+
+interface JsonRpcRequest {
+	id?: number;
+	method: string;
+	params?: Record<string, unknown>;
+}
+
+interface JsonRpcResponse {
+	id?: number;
+	result?: unknown;
+	error?: { code: number; message: string };
 }
 
 function getTmuxInfo(): { session: string; pane: string | null } | null {
@@ -61,82 +65,133 @@ function isWaitEvent(payload: unknown): payload is WaitEvent {
 	);
 }
 
-function readStateFile(): StateFile {
-	try {
-		const content = fs.readFileSync(STATE_FILE, "utf-8");
-		const parsed = JSON.parse(content);
-		// Handle migration from old format
-		if (parsed?.sessions && !parsed?.agents) {
-			return { agents: {} };
-		}
-		if (!parsed?.agents) return { agents: {} };
-		return parsed as StateFile;
-	} catch {
-		return { agents: {} };
-	}
-}
-
-function writeStateFile(state: StateFile): void {
-	const dir = path.dirname(STATE_FILE);
-	fs.mkdirSync(dir, { recursive: true });
-
-	const tempFile = `${STATE_FILE}.${process.pid}.tmp`;
-	fs.writeFileSync(tempFile, JSON.stringify(state, null, 2));
-	fs.renameSync(tempFile, STATE_FILE);
-}
-
-function updateState(
-	session: string,
-	pane: string | null,
-	newState: AgentState,
-): void {
-	const stateFile = readStateFile();
-	const pid = process.pid.toString();
-	stateFile.agents[pid] = {
-		session,
-		pane,
-		agent: "pi",
-		state: newState,
-		timestamp: Date.now(),
-	};
-	writeStateFile(stateFile);
-}
-
-function removeAgent(): void {
-	const stateFile = readStateFile();
-	const pid = process.pid.toString();
-	delete stateFile.agents[pid];
-	writeStateFile(stateFile);
-}
-
 export default function (pi: ExtensionAPI) {
 	const tmuxInfo = getTmuxInfo();
 	if (!tmuxInfo) return;
 
 	const { session, pane } = tmuxInfo;
 
-	updateState(session, pane, "idle");
+	let socket: net.Socket | null = null;
+	let requestId = 0;
+	let connected = false;
+
+	function sendRequest(method: string, params?: Record<string, unknown>): void {
+		if (!socket || !connected) return;
+
+		const req: JsonRpcRequest = {
+			method,
+			params,
+		};
+
+		try {
+			socket.write(JSON.stringify(req) + "\n");
+		} catch {
+			// Ignore write errors
+		}
+	}
+
+	function sendRequestWithResponse(
+		method: string,
+		params?: Record<string, unknown>,
+	): Promise<JsonRpcResponse> {
+		return new Promise((resolve) => {
+			if (!socket || !connected) {
+				resolve({ error: { code: -1, message: "not connected" } });
+				return;
+			}
+
+			const id = ++requestId;
+			const req: JsonRpcRequest = { id, method, params };
+
+			const handleData = (data: Buffer) => {
+				const lines = data.toString().split("\n").filter(Boolean);
+				for (const line of lines) {
+					try {
+						const resp: JsonRpcResponse = JSON.parse(line);
+						if (resp.id === id) {
+							socket?.off("data", handleData);
+							resolve(resp);
+							return;
+						}
+					} catch {
+						// Ignore parse errors
+					}
+				}
+			};
+
+			socket.on("data", handleData);
+
+			try {
+				socket.write(JSON.stringify(req) + "\n");
+			} catch (err) {
+				socket.off("data", handleData);
+				resolve({ error: { code: -1, message: String(err) } });
+			}
+
+			setTimeout(() => {
+				socket?.off("data", handleData);
+				resolve({ error: { code: -1, message: "timeout" } });
+			}, 5000);
+		});
+	}
+
+	function updateState(newState: AgentState): void {
+		sendRequest("update", { state: newState });
+	}
+
+	function connect(): void {
+		socket = net.createConnection(SOCKET_PATH);
+
+		socket.on("connect", async () => {
+			connected = true;
+
+			await sendRequestWithResponse("register", {
+				session,
+				pane,
+				agent: "pi",
+				state: "idle",
+			});
+		});
+
+		socket.on("error", () => {
+			connected = false;
+		});
+
+		socket.on("close", () => {
+			connected = false;
+			setTimeout(() => {
+				if (!connected) connect();
+			}, 5000);
+		});
+	}
+
+	connect();
 
 	pi.on("agent_start", async () => {
-		updateState(session, pane, "working");
+		updateState("working");
 	});
 
 	pi.events.on(WAIT_EVENT, (payload) => {
 		if (!isWaitEvent(payload)) return;
-		updateState(session, pane, payload.active ? "waiting" : "working");
+		updateState(payload.active ? "waiting" : "working");
 	});
 
 	pi.on("agent_end", async () => {
-		updateState(session, pane, "waiting");
+		updateState("waiting");
 	});
 
 	pi.on("session_shutdown", async () => {
-		removeAgent();
+		if (socket) {
+			sendRequest("unregister");
+			socket.end();
+		}
 	});
 
 	const cleanup = () => {
 		try {
-			removeAgent();
+			if (socket) {
+				socket.destroy();
+			}
 		} catch {
 			// Ignore cleanup errors
 		}
