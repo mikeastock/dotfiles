@@ -7,19 +7,14 @@
 PYTHON := python3
 BUILD_SCRIPT := $(CURDIR)/scripts/build.py
 
-# Agent settings directories
-AMP_SETTINGS_DIR := $(HOME)/.config/amp
-AMP_SETTINGS_FILE := $(AMP_SETTINGS_DIR)/settings.json
-CODEX_SETTINGS_DIR := $(HOME)/.codex
-CODEX_SETTINGS_FILE := $(CODEX_SETTINGS_DIR)/config.toml
+# Paths
 LOCAL_BIN_DIR := $(HOME)/.local/bin
-AGENTS_CONFIG_DIR := $(HOME)/.config/agents
 AGENT_STATUS_BIN := tmux-agent-status/agent-status
 AGENT_STATUS_PLIST_SRC := tmux-agent-status/com.agents.agent-status.plist
 AGENT_STATUS_PLIST_DST := $(HOME)/Library/LaunchAgents/com.agents.agent-status.plist
 AGENT_STATUS_LABEL := com.agents.agent-status
 
-.PHONY: all install install-non-interactive install-skills install-extensions install-codex-config install-tmux build build-agent-status clean clean-tmux help submodule-init plugin-update agents-config check-python
+.PHONY: all install install-non-interactive install-skills install-extensions install-configs install-tmux build build-agent-status clean clean-tmux help submodule-init plugin-update check-python
 
 all: help
 
@@ -31,12 +26,12 @@ help:
 	@echo "  make install-non-interactive Install for headless/automated environments (skips interactive extensions)"
 	@echo "  make install-skills          Install skills only (Amp, Claude Code, Codex, Pi agent)"
 	@echo "  make install-extensions      Install extensions only (Pi agent)"
-	@echo "  make install-codex-config    Install Codex CLI config only"
+	@echo "  make install-configs         Install all agent configs (Amp, Codex, Pi)"
 	@echo "  make install-tmux            Install tmux agent integration scripts"
 	@echo "  make build                   Build skills with overrides (without installing)"
 	@echo "  make plugin-update           Update all plugin submodules to latest"
 	@echo "  make clean                   Remove all installed skills, extensions, and build artifacts"
-	@echo "  make agents-config           Configure all agents to use their own skills directories"
+
 	@echo "  make help                    Show this help message"
 	@echo ""
 	@echo "Configuration: plugins.toml"
@@ -66,8 +61,8 @@ install-skills: check-python
 install-extensions: check-python
 	@$(PYTHON) $(BUILD_SCRIPT) install-extensions
 
-install-codex-config: check-python
-	@$(PYTHON) $(BUILD_SCRIPT) install-codex-config
+install-configs: check-python
+	@$(PYTHON) $(BUILD_SCRIPT) install-configs
 
 # Go daemon build
 $(AGENT_STATUS_BIN): tmux-agent-status/main.go tmux-agent-status/cmd/*.go tmux-agent-status/internal/**/*.go
@@ -104,27 +99,4 @@ plugin-update:
 	@git submodule update --remote --merge
 	@echo "Plugins updated"
 
-agents-config:
-	@echo "Configuring agent settings..."
-	@if ! command -v jq >/dev/null 2>&1; then \
-		echo "Error: jq is required but not installed."; \
-		echo "Install with: brew install jq (macOS) or apt install jq (Linux)"; \
-		exit 1; \
-	fi
-	@echo ""
-	@echo "Configuring Amp..."
-	@mkdir -p $(AMP_SETTINGS_DIR)
-	@if [ ! -f "$(AMP_SETTINGS_FILE)" ]; then \
-		echo '{}' > "$(AMP_SETTINGS_FILE)"; \
-	fi
-	@jq '."amp.skills.path" = "~/.config/agents/skills"' \
-		"$(AMP_SETTINGS_FILE)" > "$(AMP_SETTINGS_FILE).tmp" && \
-		mv "$(AMP_SETTINGS_FILE).tmp" "$(AMP_SETTINGS_FILE)"
-	@echo "  $(AMP_SETTINGS_FILE)"
-	@echo "    amp.skills.path = ~/.config/agents/skills"
-	@echo ""
-	@echo "Pi: Configured via 'make install' (configs/pi-settings.json)"
-	@echo "Claude Code: No configuration needed (uses ~/.claude/skills/)"
-	@echo "Codex CLI: No configuration needed (uses ~/.codex/skills/)"
-	@echo ""
-	@echo "All agents configured!"
+

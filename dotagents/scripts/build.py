@@ -644,6 +644,31 @@ def install_extensions(plugins: dict[str, Plugin]):
     print(f"  Installed {len(installed)} extensions to {dest}")
 
 
+def install_amp_config():
+    """Install Amp agent configuration."""
+    import json
+
+    print("Installing Amp config...")
+
+    dest = HOME / ".config" / "amp" / "settings.json"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+
+    # Load existing settings or start with empty dict
+    if dest.exists():
+        with open(dest) as f:
+            settings = json.load(f)
+    else:
+        settings = {}
+
+    # Set skills path
+    settings["amp.skills.path"] = "~/.config/agents/skills"
+
+    with open(dest, "w") as f:
+        json.dump(settings, f, indent=2)
+
+    print(f"  Installed to {dest}")
+
+
 def install_codex_config():
     """Install Codex CLI configuration."""
     print("Installing Codex config...")
@@ -692,6 +717,14 @@ def install_global_agents_md():
         dest.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(GLOBAL_AGENTS_MD, dest)
         print(f"  {agent}: {dest}")
+
+
+def install_configs():
+    """Install all agent configurations."""
+    install_amp_config()
+    install_codex_config()
+    install_pi_settings()
+    install_global_agents_md()
 
 
 def clean(plugins: dict[str, Plugin]):
@@ -758,7 +791,7 @@ def main():
             "install",
             "install-skills",
             "install-extensions",
-            "install-codex-config",
+            "install-configs",
             "clean",
             "submodule-init",
         ],
@@ -789,17 +822,15 @@ def main():
         build_skills(plugins)
         install_skills()
         install_extensions(plugins)
-        install_codex_config()
-        install_pi_settings()
-        install_global_agents_md()
+        install_configs()
         print("\nAll done!")
     elif args.command == "install-skills":
         build_skills(plugins)
         install_skills()
     elif args.command == "install-extensions":
         install_extensions(plugins)
-    elif args.command == "install-codex-config":
-        install_codex_config()
+    elif args.command == "install-configs":
+        install_configs()
     elif args.command == "clean":
         clean(plugins)
 
