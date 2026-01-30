@@ -16,8 +16,9 @@ LOCAL_BIN_DIR := $(HOME)/.local/bin
 AGENTS_CONFIG_DIR := $(HOME)/.config/agents
 TMUX_BIN_DIR := $(CURDIR)/tmux-agent-status/bin
 TMUX_CONFIG_DIR := $(CURDIR)/tmux-agent-status/config
+AGENT_STATUS_GO := tmux-agent-status/agent-status-go
 
-.PHONY: all install install-non-interactive install-skills install-extensions install-tmux build clean help submodule-init plugin-update agents-config check-python
+.PHONY: all install install-non-interactive install-skills install-extensions install-tmux build build-agent-status clean clean-tmux help submodule-init plugin-update agents-config check-python
 
 all: help
 
@@ -63,19 +64,20 @@ install-skills: check-python
 install-extensions: check-python
 	@$(PYTHON) $(BUILD_SCRIPT) install-extensions
 
-install-tmux:
-	@echo "Installing tmux agent integration..."
-	@mkdir -p $(LOCAL_BIN_DIR)
-	@mkdir -p $(AGENTS_CONFIG_DIR)
-	@ln -sf $(TMUX_BIN_DIR)/codex-notify $(LOCAL_BIN_DIR)/codex-notify
-	@ln -sf $(TMUX_BIN_DIR)/agent-status $(LOCAL_BIN_DIR)/agent-status
-	@if [ ! -f "$(AGENTS_CONFIG_DIR)/state.json" ]; then \
-		cp "$(TMUX_CONFIG_DIR)/state.json" "$(AGENTS_CONFIG_DIR)/state.json"; \
-		echo "  Installed $(AGENTS_CONFIG_DIR)/state.json"; \
-	else \
-		echo "  $(AGENTS_CONFIG_DIR)/state.json already exists; leaving as-is"; \
-	fi
-	@echo "  Linked codex-notify + agent-status into $(LOCAL_BIN_DIR)"
+# Go daemon build
+$(AGENT_STATUS_GO): tmux-agent-status/main.go tmux-agent-status/cmd/*.go tmux-agent-status/internal/**/*.go
+	cd tmux-agent-status && go build -o agent-status-go .
+
+build-agent-status: $(AGENT_STATUS_GO)
+
+install-tmux: build-agent-status
+	@mkdir -p ~/.local/bin
+	@ln -sf $(abspath $(AGENT_STATUS_GO)) ~/.local/bin/agent-status
+	@echo "Installed agent-status to ~/.local/bin/"
+
+clean-tmux:
+	rm -f $(AGENT_STATUS_GO)
+	rm -f ~/.local/bin/agent-status
 
 clean: check-python
 	@$(PYTHON) $(BUILD_SCRIPT) clean
