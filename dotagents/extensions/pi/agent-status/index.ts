@@ -2,6 +2,7 @@
  * Agent Status Extension
  *
  * Writes Pi agent state to ~/.config/agents/state.json for tmux status integration.
+ * Uses PID-based keying to support multiple agents per tmux session.
  */
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
@@ -12,15 +13,16 @@ import * as path from "node:path";
 
 type AgentState = "idle" | "working" | "waiting";
 
-interface SessionState {
+interface AgentEntry {
+	session: string;
+	pane: string | null;
 	agent: "pi";
 	state: AgentState;
-	pid: number;
 	timestamp: number;
 }
 
 interface StateFile {
-	sessions: Record<string, SessionState>;
+	agents: Record<string, AgentEntry>;
 }
 
 const STATE_FILE = path.join(os.homedir(), ".config", "agents", "state.json");
@@ -32,16 +34,20 @@ interface WaitEvent {
 	source?: string;
 }
 
-function getTmuxSessionName(): string | null {
+function getTmuxInfo(): { session: string; pane: string | null } | null {
 	const tmuxPane = process.env.TMUX_PANE;
 	if (!tmuxPane) return null;
 
 	try {
-		const result = execSync("tmux display-message -p '#S'", {
+		const result = execSync("tmux display-message -p '#S\n#{pane_id}'", {
 			encoding: "utf-8",
 			timeout: 1000,
 		}).trim();
-		return result || null;
+		const lines = result.split("\n");
+		const session = lines[0] || null;
+		const pane = lines[1] || null;
+		if (!session) return null;
+		return { session, pane };
 	} catch {
 		return null;
 	}
@@ -58,11 +64,15 @@ function isWaitEvent(payload: unknown): payload is WaitEvent {
 function readStateFile(): StateFile {
 	try {
 		const content = fs.readFileSync(STATE_FILE, "utf-8");
-		const parsed = JSON.parse(content) as StateFile;
-		if (!parsed?.sessions) return { sessions: {} };
-		return parsed;
+		const parsed = JSON.parse(content);
+		// Handle migration from old format
+		if (parsed?.sessions && !parsed?.agents) {
+			return { agents: {} };
+		}
+		if (!parsed?.agents) return { agents: {} };
+		return parsed as StateFile;
 	} catch {
-		return { sessions: {} };
+		return { agents: {} };
 	}
 }
 
@@ -75,49 +85,58 @@ function writeStateFile(state: StateFile): void {
 	fs.renameSync(tempFile, STATE_FILE);
 }
 
-function updateState(sessionName: string, newState: AgentState): void {
+function updateState(
+	session: string,
+	pane: string | null,
+	newState: AgentState,
+): void {
 	const stateFile = readStateFile();
-	stateFile.sessions[sessionName] = {
+	const pid = process.pid.toString();
+	stateFile.agents[pid] = {
+		session,
+		pane,
 		agent: "pi",
 		state: newState,
-		pid: process.pid,
 		timestamp: Date.now(),
 	};
 	writeStateFile(stateFile);
 }
 
-function removeSession(sessionName: string): void {
+function removeAgent(): void {
 	const stateFile = readStateFile();
-	delete stateFile.sessions[sessionName];
+	const pid = process.pid.toString();
+	delete stateFile.agents[pid];
 	writeStateFile(stateFile);
 }
 
 export default function (pi: ExtensionAPI) {
-	const sessionName = getTmuxSessionName();
-	if (!sessionName) return;
+	const tmuxInfo = getTmuxInfo();
+	if (!tmuxInfo) return;
 
-	updateState(sessionName, "idle");
+	const { session, pane } = tmuxInfo;
+
+	updateState(session, pane, "idle");
 
 	pi.on("agent_start", async () => {
-		updateState(sessionName, "working");
+		updateState(session, pane, "working");
 	});
 
 	pi.events.on(WAIT_EVENT, (payload) => {
 		if (!isWaitEvent(payload)) return;
-		updateState(sessionName, payload.active ? "waiting" : "working");
+		updateState(session, pane, payload.active ? "waiting" : "working");
 	});
 
 	pi.on("agent_end", async () => {
-		updateState(sessionName, "waiting");
+		updateState(session, pane, "waiting");
 	});
 
 	pi.on("session_shutdown", async () => {
-		removeSession(sessionName);
+		removeAgent();
 	});
 
 	const cleanup = () => {
 		try {
-			removeSession(sessionName);
+			removeAgent();
 		} catch {
 			// Ignore cleanup errors
 		}

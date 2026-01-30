@@ -1,76 +1,106 @@
 #!/usr/bin/env bash
 #
-# agent-status - Display agent states for tmux status bar
+# agent-status - Display agent states for tmux status bar (multi-agent support)
 #
-# Output format: session ◉  session ●  session ○
+# Output format: session ◉●  session2 ○
 #   ◉ = waiting for user input (yellow)
 #   ● = working (green)
-#   ○ = idle (dim) - pi only, codex doesn't report idle
+#   ○ = idle (dim)
 #
-# Agents:
-#   pi    - full lifecycle (idle, working, waiting)
-#   codex - waiting-only (only shows when needs attention)
+# State file structure (keyed by PID):
+# {
+#   "agents": {
+#     "12345": { "session": "dev", "pane": "%1", "agent": "pi", "state": "working" },
+#     "67890": { "session": "dev", "pane": "%3", "agent": "codex", "state": "waiting" }
+#   }
+# }
 #
 
 STATE_FILE="$HOME/.config/agents/state.json"
 
-# Exit silently if no state file
+# Exit silently if no state file or jq unavailable
 [[ -f "$STATE_FILE" ]] || exit 0
+command -v jq &>/dev/null || exit 0
 
 # Check if a PID is running
 is_running() {
   kill -0 "$1" 2>/dev/null
 }
 
-# Read state file and output tmux-formatted status
-output=""
-stale_sessions=()
+# Build list of live PIDs and collect stale ones
+live_pids=""
+stale_pids=""
 
-# Parse JSON with jq (fall back to empty if jq not available)
-if ! command -v jq &>/dev/null; then
+for pid in $(jq -r '.agents // {} | keys[]' "$STATE_FILE" 2>/dev/null); do
+  if is_running "$pid"; then
+    live_pids+="\"$pid\","
+  else
+    stale_pids+="$pid "
+  fi
+done
+
+# Remove trailing comma
+live_pids="${live_pids%,}"
+
+# If no live agents, clean up and exit
+if [[ -z "$live_pids" ]]; then
+  # Clean up all stale PIDs
+  if [[ -n "$stale_pids" ]]; then
+    (
+      for pid in $stale_pids; do
+        tmp=$(mktemp)
+        jq "del(.agents[\"$pid\"])" "$STATE_FILE" > "$tmp" 2>/dev/null && mv "$tmp" "$STATE_FILE"
+      done
+    ) &
+  fi
   exit 0
 fi
 
-# Get all sessions from state file
-sessions=$(jq -r '.sessions | keys[]' "$STATE_FILE" 2>/dev/null)
+# Use jq to:
+# 1. Filter to only live PIDs
+# 2. Group by session
+# 3. Output session + states in a parseable format
+output=$(jq -r --argjson live "[$live_pids]" '
+  .agents
+  | to_entries
+  | map(select(.key as $k | $live | index($k)))
+  | group_by(.value.session)
+  | map({
+      session: .[0].value.session,
+      has_waiting: (map(.value.state) | index("waiting") != null),
+      has_working: (map(.value.state) | index("working") != null),
+      has_idle: (map(.value.state) | index("idle") != null)
+    })
+  | sort_by(.session)
+  | .[]
+  | [.session, .has_waiting, .has_working, .has_idle]
+  | @tsv
+' "$STATE_FILE" 2>/dev/null)
 
-for session in $sessions; do
-  state=$(jq -r ".sessions[\"$session\"].state" "$STATE_FILE" 2>/dev/null)
-  pid=$(jq -r ".sessions[\"$session\"].pid" "$STATE_FILE" 2>/dev/null)
-  agent=$(jq -r ".sessions[\"$session\"].agent // \"unknown\"" "$STATE_FILE" 2>/dev/null)
+# Build tmux-formatted output
+result=""
+while IFS=$'\t' read -r session has_waiting has_working has_idle; do
+  [[ -z "$session" ]] && continue
   
-  # Check if process is still running
-  if ! is_running "$pid"; then
-    stale_sessions+=("$session")
-    continue
+  indicators=""
+  [[ "$has_waiting" == "true" ]] && indicators+="#[fg=yellow]◉"
+  [[ "$has_working" == "true" ]] && indicators+="#[fg=green]●"
+  [[ "$has_idle" == "true" ]] && indicators+="#[fg=colour244]○"
+  
+  if [[ -n "$indicators" ]]; then
+    result+="${session} ${indicators}#[fg=default]  "
   fi
-  
-  # Format based on state
-  case "$state" in
-    waiting)
-      output+="#[fg=yellow]${session} ◉#[fg=default] "
-      ;;
-    working)
-      output+="#[fg=green]${session} ●#[fg=default] "
-      ;;
-    idle)
-      # Only show idle for agents that report it (pi)
-      # Codex only reports "waiting", so if we see idle it's from pi
-      output+="#[fg=colour244]${session} ○#[fg=default] "
-      ;;
-  esac
-done
+done <<< "$output"
 
-# Clean up stale sessions (async, don't block status bar)
-if [[ ${#stale_sessions[@]} -gt 0 ]]; then
+# Clean up stale PIDs (async, don't block status bar)
+if [[ -n "$stale_pids" ]]; then
   (
-    for session in "${stale_sessions[@]}"; do
-      # Read current state, remove stale session, write back
+    for pid in $stale_pids; do
       tmp=$(mktemp)
-      jq "del(.sessions[\"$session\"])" "$STATE_FILE" > "$tmp" 2>/dev/null && mv "$tmp" "$STATE_FILE"
+      jq "del(.agents[\"$pid\"])" "$STATE_FILE" > "$tmp" 2>/dev/null && mv "$tmp" "$STATE_FILE"
     done
   ) &
 fi
 
-# Output (trim trailing space)
-echo -n "${output% }"
+# Output (trim trailing spaces)
+echo -n "${result%  }"
