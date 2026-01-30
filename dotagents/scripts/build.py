@@ -762,6 +762,7 @@ def main():
             "install",
             "install-skills",
             "install-extensions",
+            "install-codex-config",
             "clean",
             "submodule-init",
         ],
@@ -801,6 +802,8 @@ def main():
         install_skills()
     elif args.command == "install-extensions":
         install_extensions(plugins)
+    elif args.command == "install-codex-config":
+        install_codex_config()
     elif args.command == "clean":
         clean(plugins)
 

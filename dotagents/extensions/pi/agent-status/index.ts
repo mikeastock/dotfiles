@@ -72,7 +72,7 @@ export default function (pi: ExtensionAPI) {
 	const { session, pane } = tmuxInfo;
 
 	let socket: net.Socket | null = null;
-	let requestId = 0;
+	let nextRequestId = 0;
 	let connected = false;
 
 	function sendRequest(method: string, params?: Record<string, unknown>): void {
@@ -98,9 +98,9 @@ export default function (pi: ExtensionAPI) {
 			if (!socket || !connected) {
 				resolve({ error: { code: -1, message: "not connected" } });
 				return;
-			}
+				}
 
-			const id = ++requestId;
+				const id = ++nextRequestId;
 			const req: JsonRpcRequest = { id, method, params };
 
 			const handleData = (data: Buffer) => {
@@ -155,6 +155,7 @@ export default function (pi: ExtensionAPI) {
 
 		socket.on("error", () => {
 			connected = false;
+			socket?.destroy();
 		});
 
 		socket.on("close", () => {
@@ -177,7 +178,7 @@ export default function (pi: ExtensionAPI) {
 	});
 
 	pi.on("agent_end", async () => {
-		updateState("waiting");
+		updateState("idle");
 	});
 
 	pi.on("session_shutdown", async () => {

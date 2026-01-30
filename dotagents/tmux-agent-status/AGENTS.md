@@ -4,44 +4,60 @@ Guidance for AI assistants working on `tmux-agent-status`.
 
 ## Scope
 
-This directory contains the tmux status integration scripts and tests:
+This directory contains the Go-based tmux status daemon:
 
-- `bin/agent-status` (bash) – reads `~/.config/agents/state.json`, groups agents by tmux session, renders status symbols, and cleans up stale PIDs.
-- `bin/codex-notify` (python) – Codex notification handler that writes state updates.
-- `config/state.json` – template state file (PID-keyed).
-- `test-harness.sh` – end-to-end local test harness (not CI).
+- `main.go` – CLI entry point with subcommand dispatch
+- `cmd/` – Subcommand implementations (daemon, status, notify, debug commands)
+- `internal/` – Core packages (server, store, render, jsonrpc, types)
+- `test-harness.sh` – End-to-end test harness (not CI)
 
-## State File Format
+## Architecture
 
-The state file is PID-keyed and supports multiple agents per tmux session:
+A Go daemon listens on `~/.config/agents/agent-status.sock`. Agents connect via Unix socket and send JSON-RPC messages. Connection lifecycle = agent liveness (no PID polling).
+
+```
+┌─────────────┐     Unix socket      ┌─────────────┐
+│ Pi extension│─────────────────────▶│   daemon    │
+└─────────────┘                      │  (Go)       │
+┌─────────────┐     notify cmd       │             │
+│ Codex CLI   │─────────────────────▶│             │──▶ tmux status
+└─────────────┘                      └─────────────┘
+```
+
+## JSON-RPC Protocol
+
+Messages are newline-delimited JSON (NDJSON):
 
 ```json
-{
-  "agents": {
-    "12345": {
-      "session": "dev",
-      "pane": "%1",
-      "agent": "pi",
-      "state": "working",
-      "timestamp": 1234567890000
-    }
-  }
-}
+{"method": "register", "params": {"session": "dev", "pane": "%1", "agent": "pi", "state": "idle"}}
+{"method": "update", "params": {"state": "working"}}
+{"method": "unregister"}
 ```
 
 ## Conventions
 
-- Keep `agent-status` bash 3.2 compatible (macOS default). Avoid associative arrays.
-- Use `jq` for JSON operations.
-- Always check PID liveness with `kill -0` and remove stale entries asynchronously.
-- Keep output strictly tmux-compatible (no extra newlines).
+- Keep the daemon minimal and fast (called every 2s by tmux)
+- Connection close = automatic cleanup (no explicit unregister required)
+- States: `idle`, `working`, `waiting`
+- Output must be tmux-compatible (no extra newlines)
 
 ## Testing
 
-Run the local harness during development:
+Run the test harness during development:
 
 ```bash
-./tmux-agent-status/test-harness.sh
+./test-harness.sh
 ```
 
-It spawns real processes and validates output. Not for CI.
+Run unit tests:
+
+```bash
+go test ./...
+```
+
+## launchd
+
+The daemon runs as a launchd service on macOS. Installed via `make install-tmux`.
+
+Plist: `~/Library/LaunchAgents/com.agents.agent-status.plist`
+Logs: `~/Library/Logs/agent-status.log`

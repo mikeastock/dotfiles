@@ -19,7 +19,7 @@ AGENT_STATUS_PLIST_SRC := tmux-agent-status/com.agents.agent-status.plist
 AGENT_STATUS_PLIST_DST := $(HOME)/Library/LaunchAgents/com.agents.agent-status.plist
 AGENT_STATUS_LABEL := com.agents.agent-status
 
-.PHONY: all install install-non-interactive install-skills install-extensions install-tmux build build-agent-status clean clean-tmux help submodule-init plugin-update agents-config check-python
+.PHONY: all install install-non-interactive install-skills install-extensions install-codex-config install-tmux build build-agent-status clean clean-tmux help submodule-init plugin-update agents-config check-python
 
 all: help
 
@@ -31,6 +31,7 @@ help:
 	@echo "  make install-non-interactive Install for headless/automated environments (skips interactive extensions)"
 	@echo "  make install-skills          Install skills only (Amp, Claude Code, Codex, Pi agent)"
 	@echo "  make install-extensions      Install extensions only (Pi agent)"
+	@echo "  make install-codex-config    Install Codex CLI config only"
 	@echo "  make install-tmux            Install tmux agent integration scripts"
 	@echo "  make build                   Build skills with overrides (without installing)"
 	@echo "  make plugin-update           Update all plugin submodules to latest"
@@ -64,6 +65,9 @@ install-skills: check-python
 
 install-extensions: check-python
 	@$(PYTHON) $(BUILD_SCRIPT) install-extensions
+
+install-codex-config: check-python
+	@$(PYTHON) $(BUILD_SCRIPT) install-codex-config
 
 # Go daemon build
 $(AGENT_STATUS_BIN): tmux-agent-status/main.go tmux-agent-status/cmd/*.go tmux-agent-status/internal/**/*.go
