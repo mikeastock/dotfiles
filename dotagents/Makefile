@@ -123,7 +123,7 @@ agents-config:
 	@echo "  $(AMP_SETTINGS_FILE)"
 	@echo "    amp.skills.path = ~/.config/agents/skills"
 	@echo ""
-	@echo "Pi: Configured via 'make install' (agent-configs/pi-settings.json)"
+	@echo "Pi: Configured via 'make install' (configs/pi-settings.json)"
 	@echo "Claude Code: No configuration needed (uses ~/.claude/skills/)"
 	@echo "Codex CLI: No configuration needed (uses ~/.codex/skills/)"
 	@echo ""

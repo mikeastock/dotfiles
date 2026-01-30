@@ -68,10 +68,10 @@ EXTENSIONS_DIR = ROOT / "extensions"
 OVERRIDES_DIR = ROOT / "skill-overrides"
 BUILD_DIR = ROOT / "build"
 CONFIG_FILE = ROOT / "plugins.toml"
-AGENT_CONFIGS_DIR = ROOT / "agent-configs"
-CODEX_CONFIG_FILE = AGENT_CONFIGS_DIR / "codex-config.toml"
-PI_SETTINGS_FILE = AGENT_CONFIGS_DIR / "pi-settings.json"
-GLOBAL_AGENTS_MD = AGENT_CONFIGS_DIR / "AGENTS.md"
+CONFIGS_DIR = ROOT / "configs"
+CODEX_CONFIG_FILE = CONFIGS_DIR / "codex-config.toml"
+PI_SETTINGS_FILE = CONFIGS_DIR / "pi-settings.json"
+GLOBAL_AGENTS_MD = CONFIGS_DIR / "AGENTS.md"
 
 # Installation paths
 HOME = Path.home()
@@ -679,7 +679,7 @@ def install_global_agents_md():
     print("Installing global AGENTS.md...")
 
     if not GLOBAL_AGENTS_MD.exists():
-        print("  No AGENTS.md found in agent-configs/, skipping")
+        print("  No AGENTS.md found in configs/, skipping")
         return
 
     # Install for codex and pi only

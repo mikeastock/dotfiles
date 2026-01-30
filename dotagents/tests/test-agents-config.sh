@@ -2,7 +2,7 @@
 #
 # Test script for agents-config Makefile command
 # Tests the jq-based settings modification for Amp
-# (Pi settings are now managed via make install from agent-configs/pi-settings.json)
+# (Pi settings are now managed via make install from configs/pi-settings.json)
 #
 # Usage: ./tests/test-agents-config.sh
 #
