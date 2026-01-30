@@ -14,9 +14,10 @@ CODEX_SETTINGS_DIR := $(HOME)/.codex
 CODEX_SETTINGS_FILE := $(CODEX_SETTINGS_DIR)/config.toml
 LOCAL_BIN_DIR := $(HOME)/.local/bin
 AGENTS_CONFIG_DIR := $(HOME)/.config/agents
-TMUX_BIN_DIR := $(CURDIR)/tmux-agent-status/bin
-TMUX_CONFIG_DIR := $(CURDIR)/tmux-agent-status/config
 AGENT_STATUS_BIN := tmux-agent-status/agent-status
+AGENT_STATUS_PLIST_SRC := tmux-agent-status/com.agents.agent-status.plist
+AGENT_STATUS_PLIST_DST := $(HOME)/Library/LaunchAgents/com.agents.agent-status.plist
+AGENT_STATUS_LABEL := com.agents.agent-status
 
 .PHONY: all install install-non-interactive install-skills install-extensions install-tmux build build-agent-status clean clean-tmux help submodule-init plugin-update agents-config check-python
 
@@ -74,8 +75,20 @@ install-tmux: build-agent-status
 	@mkdir -p ~/.local/bin
 	@ln -sf $(abspath $(AGENT_STATUS_BIN)) ~/.local/bin/agent-status
 	@echo "Installed agent-status to ~/.local/bin/"
+ifeq ($(shell uname),Darwin)
+	@mkdir -p ~/Library/LaunchAgents
+	@sed 's|__HOME__|$(HOME)|g' $(AGENT_STATUS_PLIST_SRC) > $(AGENT_STATUS_PLIST_DST)
+	@launchctl bootout gui/$$(id -u) $(AGENT_STATUS_PLIST_DST) 2>/dev/null || true
+	@launchctl bootstrap gui/$$(id -u) $(AGENT_STATUS_PLIST_DST)
+	@echo "Installed and started launchd service: $(AGENT_STATUS_LABEL)"
+endif
 
 clean-tmux:
+ifeq ($(shell uname),Darwin)
+	@launchctl bootout gui/$$(id -u) $(AGENT_STATUS_PLIST_DST) 2>/dev/null || true
+	@rm -f $(AGENT_STATUS_PLIST_DST)
+	@echo "Removed launchd service"
+endif
 	rm -f $(AGENT_STATUS_BIN)
 	rm -f ~/.local/bin/agent-status
 
