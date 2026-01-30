@@ -655,10 +655,6 @@ def install_codex_config():
     dest = HOME / ".codex" / "config.toml"
     dest.parent.mkdir(parents=True, exist_ok=True)
 
-    if dest.exists():
-        print(f"  Skipping (already exists at {dest})")
-        return
-
     shutil.copy(CODEX_CONFIG_FILE, dest)
     print(f"  Installed to {dest}")
 
