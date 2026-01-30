@@ -11,10 +11,10 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-AGENT_STATUS="$SCRIPT_DIR/agent-status-go"
+AGENT_STATUS="$SCRIPT_DIR/agent-status"
 
 if [[ ! -x "$AGENT_STATUS" ]]; then
-	(cd "$SCRIPT_DIR" && go build -o agent-status-go .)
+	(cd "$SCRIPT_DIR" && go build -o agent-status .)
 fi
 
 TEST_HOME=$(mktemp -d)

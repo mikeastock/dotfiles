@@ -16,7 +16,7 @@ LOCAL_BIN_DIR := $(HOME)/.local/bin
 AGENTS_CONFIG_DIR := $(HOME)/.config/agents
 TMUX_BIN_DIR := $(CURDIR)/tmux-agent-status/bin
 TMUX_CONFIG_DIR := $(CURDIR)/tmux-agent-status/config
-AGENT_STATUS_GO := tmux-agent-status/agent-status-go
+AGENT_STATUS_BIN := tmux-agent-status/agent-status
 
 .PHONY: all install install-non-interactive install-skills install-extensions install-tmux build build-agent-status clean clean-tmux help submodule-init plugin-update agents-config check-python
 
@@ -65,18 +65,18 @@ install-extensions: check-python
 	@$(PYTHON) $(BUILD_SCRIPT) install-extensions
 
 # Go daemon build
-$(AGENT_STATUS_GO): tmux-agent-status/main.go tmux-agent-status/cmd/*.go tmux-agent-status/internal/**/*.go
-	cd tmux-agent-status && go build -o agent-status-go .
+$(AGENT_STATUS_BIN): tmux-agent-status/main.go tmux-agent-status/cmd/*.go tmux-agent-status/internal/**/*.go
+	cd tmux-agent-status && go build -o agent-status .
 
-build-agent-status: $(AGENT_STATUS_GO)
+build-agent-status: $(AGENT_STATUS_BIN)
 
 install-tmux: build-agent-status
 	@mkdir -p ~/.local/bin
-	@ln -sf $(abspath $(AGENT_STATUS_GO)) ~/.local/bin/agent-status
+	@ln -sf $(abspath $(AGENT_STATUS_BIN)) ~/.local/bin/agent-status
 	@echo "Installed agent-status to ~/.local/bin/"
 
 clean-tmux:
-	rm -f $(AGENT_STATUS_GO)
+	rm -f $(AGENT_STATUS_BIN)
 	rm -f ~/.local/bin/agent-status
 
 clean: check-python
