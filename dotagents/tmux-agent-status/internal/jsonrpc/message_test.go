@@ -1,7 +1,9 @@
 package jsonrpc
 
 import (
+	"bytes"
 	"encoding/json"
+	"strings"
 	"testing"
 )
 
@@ -67,5 +69,34 @@ func TestErrorResponse(t *testing.T) {
 	}
 	if decoded.Error.Code != -32600 {
 		t.Errorf("Error.Code = %d, want -32600", decoded.Error.Code)
+	}
+}
+
+func TestCodecReadWrite(t *testing.T) {
+	var buf bytes.Buffer
+	codec := NewCodec(&buf, &buf)
+
+	req := Request{
+		ID:     1,
+		Method: "ping",
+	}
+	if err := codec.WriteRequest(req); err != nil {
+		t.Fatalf("WriteRequest error: %v", err)
+	}
+
+	line := buf.String()
+	if !strings.HasSuffix(line, "\n") {
+		t.Error("Expected newline suffix")
+	}
+
+	buf2 := bytes.NewBufferString(line)
+	codec2 := NewCodec(buf2, buf2)
+
+	gotReq, err := codec2.ReadRequest()
+	if err != nil {
+		t.Fatalf("ReadRequest error: %v", err)
+	}
+	if gotReq.Method != "ping" {
+		t.Errorf("Method = %s, want ping", gotReq.Method)
 	}
 }
