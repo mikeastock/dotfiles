@@ -90,6 +90,5 @@ tmux-agent-status/
 │   ├── store/                # In-memory agent registry
 │   ├── server/               # Unix socket daemon
 │   └── render/               # Tmux output formatting
-├── bin/                      # Legacy scripts (deprecated)
-└── test-harness.sh           # E2E tests (update for Go)
+└── test-harness.sh           # E2E tests for the Go daemon
 ```
