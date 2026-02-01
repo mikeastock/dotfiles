@@ -46,6 +46,32 @@ func (s *Store) Register(connID, session, pane string, agentType types.AgentType
 	return id
 }
 
+// Upsert updates an agent by session/pane/type or creates a new one.
+func (s *Store) Upsert(session, pane string, agentType types.AgentType, state types.AgentState) string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for id, entry := range s.agents {
+		if entry.agent.Session == session && entry.agent.Pane == pane && entry.agent.Type == agentType {
+			entry.agent.State = state
+			return id
+		}
+	}
+
+	id := generateID()
+	s.agents[id] = &agentEntry{
+		connID: "",
+		agent: types.Agent{
+			ID:      id,
+			Session: session,
+			Pane:    pane,
+			Type:    agentType,
+			State:   state,
+		},
+	}
+	return id
+}
+
 // Get retrieves an agent by ID.
 func (s *Store) Get(id string) (types.Agent, bool) {
 	s.mu.RLock()

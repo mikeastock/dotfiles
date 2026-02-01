@@ -58,6 +58,9 @@ func (h *Handler) Handle(connID string, req *jsonrpc.Request) jsonrpc.Response {
 	case "register":
 		resp = h.handleRegister(connID, req)
 
+	case "upsert":
+		resp = h.handleUpsert(req)
+
 	case "update":
 		resp = h.handleUpdate(connID, req)
 
@@ -108,6 +111,35 @@ func (h *Handler) handleRegister(connID string, req *jsonrpc.Request) jsonrpc.Re
 	agentID := h.store.Register(connID, params.Session, params.Pane, agentType, state)
 	h.SetAgentID(connID, agentID)
 
+	resp.Result = mustMarshal(map[string]string{"agent_id": agentID})
+	return resp
+}
+
+func (h *Handler) handleUpsert(req *jsonrpc.Request) jsonrpc.Response {
+	resp := jsonrpc.Response{ID: req.ID}
+
+	var params registerParams
+	if err := json.Unmarshal(req.Params, &params); err != nil {
+		resp.Error = jsonrpc.ErrorInvalidParams(err.Error())
+		return resp
+	}
+
+	if params.Session == "" {
+		resp.Error = jsonrpc.ErrorInvalidParams("session is required")
+		return resp
+	}
+
+	agentType := types.AgentType(params.Agent)
+	if agentType != types.AgentPi && agentType != types.AgentCodex {
+		agentType = types.AgentPi
+	}
+
+	state := types.AgentState(params.State)
+	if !state.Valid() {
+		state = types.StateIdle
+	}
+
+	agentID := h.store.Upsert(params.Session, params.Pane, agentType, state)
 	resp.Result = mustMarshal(map[string]string{"agent_id": agentID})
 	return resp
 }

@@ -89,7 +89,7 @@ func RunNotify(args []string) error {
 
 	codec.WriteRequest(jsonrpc.Request{
 		ID:     1,
-		Method: "register",
+		Method: "upsert",
 		Params: params,
 	})
 
