@@ -198,6 +198,10 @@ func (h *Handler) handleUnregister(connID string, req *jsonrpc.Request) jsonrpc.
 	}
 
 	if params.AgentID != "" {
+		if _, ok := h.store.Get(params.AgentID); !ok {
+			resp.Error = jsonrpc.ErrorInvalidParams("not registered")
+			return resp
+		}
 		h.store.Unregister(params.AgentID)
 		resp.Result = mustMarshal(map[string]string{"ok": "true"})
 		return resp

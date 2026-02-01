@@ -117,6 +117,28 @@ func TestHandleUpdateByAgentID(t *testing.T) {
 	}
 }
 
+func TestHandleUpdateUnknownAgentID(t *testing.T) {
+	s := store.New()
+	h := NewHandler(s)
+
+	params, _ := json.Marshal(map[string]string{
+		"agent_id": "unknown",
+		"state":    "working",
+	})
+
+	req := &jsonrpc.Request{
+		ID:     1,
+		Method: "update",
+		Params: params,
+	}
+
+	resp := h.Handle("conn1", req)
+
+	if resp.Error == nil {
+		t.Fatal("Expected error for unknown agent_id")
+	}
+}
+
 func TestHandleUnregisterByAgentID(t *testing.T) {
 	s := store.New()
 	h := NewHandler(s)
@@ -141,6 +163,27 @@ func TestHandleUnregisterByAgentID(t *testing.T) {
 
 	if _, ok := s.Get(agentID); ok {
 		t.Fatal("Expected agent to be unregistered")
+	}
+}
+
+func TestHandleUnregisterUnknownAgentID(t *testing.T) {
+	s := store.New()
+	h := NewHandler(s)
+
+	params, _ := json.Marshal(map[string]string{
+		"agent_id": "unknown",
+	})
+
+	req := &jsonrpc.Request{
+		ID:     1,
+		Method: "unregister",
+		Params: params,
+	}
+
+	resp := h.Handle("conn1", req)
+
+	if resp.Error == nil {
+		t.Fatal("Expected error for unknown agent_id")
 	}
 }
 

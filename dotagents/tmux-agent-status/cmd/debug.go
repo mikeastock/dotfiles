@@ -98,7 +98,7 @@ func RunUpdate(args []string) error {
 	return nil
 }
 
-// RunUnregister removes the current agent (for testing).
+// RunUnregister removes an agent by ID (for testing).
 func RunUnregister(args []string) error {
 	if len(args) < 1 {
 		return fmt.Errorf("usage: unregister <agent-id>")

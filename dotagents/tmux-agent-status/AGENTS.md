@@ -13,7 +13,7 @@ This directory contains the Go-based tmux status daemon:
 
 ## Architecture
 
-A Go daemon listens on `~/.config/agents/agent-status.sock`. Agents connect via Unix socket and send JSON-RPC messages. Connection lifecycle = agent liveness (no PID polling).
+A Go daemon listens on `~/.config/agents/agent-status.sock`. Agents connect via Unix socket and send JSON-RPC messages. Connection lifecycle = agent liveness for registered agents (no PID polling); stateless upsert updates (Codex) persist until overwritten or explicitly removed.
 
 ```
 ┌─────────────┐     Unix socket      ┌─────────────┐
@@ -30,6 +30,7 @@ Messages are newline-delimited JSON (NDJSON):
 
 ```json
 {"method": "register", "params": {"session": "dev", "pane": "%1", "agent": "pi", "state": "idle"}}
+{"method": "upsert", "params": {"session": "dev", "pane": "%1", "agent": "codex", "state": "waiting"}}
 {"method": "update", "params": {"state": "working"}}
 {"method": "unregister"}
 ```
@@ -37,7 +38,7 @@ Messages are newline-delimited JSON (NDJSON):
 ## Conventions
 
 - Keep the daemon minimal and fast (called every 2s by tmux)
-- Connection close = automatic cleanup (no explicit unregister required)
+- Connection close = automatic cleanup for registered agents (no explicit unregister required)
 - States: `idle`, `working`, `waiting`
 - Output must be tmux-compatible (no extra newlines)
 
