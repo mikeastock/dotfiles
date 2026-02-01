@@ -27,7 +27,7 @@ trust_level = "trusted"
 hide_rate_limit_model_nudge = true
 
 # Agent status notification for tmux integration
-notify = ["python3", "/Users/mikeastock/.local/bin/codex-notify"]
+notify = ["/Users/mikeastock/.local/bin/agent-status", "notify"]
 
 [tui]
 notifications = ["turn/completed", "agent-turn-complete"]
