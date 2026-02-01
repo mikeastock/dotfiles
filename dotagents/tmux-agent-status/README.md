@@ -12,14 +12,14 @@ dev ◉●  staging ○
 
 ## Architecture
 
-A Go daemon (`agent-status daemon`) listens on `~/.config/agents/agent-status.sock`. Agents connect via Unix socket and send state updates. When a connection closes, the agent is removed. No PID polling.
+A Go daemon (`agent-status daemon`) listens on `~/.config/agents/agent-status.sock`. Agents connect via Unix socket and send state updates. Registered agents are removed on disconnect; stateless upsert updates persist until replaced or explicitly removed. No PID polling.
 
 ## Supported Agents
 
 | Agent | Integration |
 |-------|-------------|
 | **Pi** | Extension holds a persistent socket connection |
-| **Codex** | `notify` subcommand called via `--notify-command` |
+| **Codex** | `notify` subcommand sends stateless updates via `--notify-command` |
 
 ## Installation
 
