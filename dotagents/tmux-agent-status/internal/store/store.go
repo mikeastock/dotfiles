@@ -53,6 +53,7 @@ func (s *Store) Upsert(session, pane string, agentType types.AgentType, state ty
 
 	for id, entry := range s.agents {
 		if entry.agent.Session == session && entry.agent.Pane == pane && entry.agent.Type == agentType {
+			entry.connID = ""
 			entry.agent.State = state
 			return id
 		}

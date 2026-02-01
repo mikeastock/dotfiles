@@ -175,3 +175,94 @@ func TestServerUpsertPersistsAfterDisconnect(t *testing.T) {
 		t.Errorf("Expected 1 session after disconnect, got %d", len(sessions))
 	}
 }
+
+func TestServerUpsertClearsConnection(t *testing.T) {
+	tmpFile, err := os.CreateTemp("", "tas-*.sock")
+	if err != nil {
+		t.Fatalf("CreateTemp error: %v", err)
+	}
+	sockPath := tmpFile.Name()
+	if err := tmpFile.Close(); err != nil {
+		t.Fatalf("Close error: %v", err)
+	}
+	if err := os.Remove(sockPath); err != nil {
+		t.Fatalf("Remove error: %v", err)
+	}
+	t.Cleanup(func() {
+		os.Remove(sockPath)
+	})
+
+	s := store.New()
+	srv := NewServer(sockPath, s)
+	go srv.ListenAndServe()
+	defer srv.Shutdown()
+
+	time.Sleep(50 * time.Millisecond)
+
+	conn, err := net.Dial("unix", sockPath)
+	if err != nil {
+		t.Fatalf("Dial error: %v", err)
+	}
+	defer func() {
+		if conn != nil {
+			conn.Close()
+		}
+	}()
+	codec := jsonrpc.NewCodec(conn, conn)
+
+	registerParams, _ := json.Marshal(map[string]string{
+		"session": "dev",
+		"pane":    "%1",
+		"agent":   "codex",
+		"state":   "idle",
+	})
+	err = codec.WriteRequest(jsonrpc.Request{
+		ID:     1,
+		Method: "register",
+		Params: registerParams,
+	})
+	if err != nil {
+		t.Fatalf("WriteRequest error: %v", err)
+	}
+	resp, err := codec.ReadResponse()
+	if err != nil {
+		t.Fatalf("ReadResponse error: %v", err)
+	}
+	if resp.Error != nil {
+		t.Fatalf("Unexpected error: %v", resp.Error)
+	}
+
+	upsertParams, _ := json.Marshal(map[string]string{
+		"session": "dev",
+		"pane":    "%1",
+		"agent":   "codex",
+		"state":   "working",
+	})
+	err = codec.WriteRequest(jsonrpc.Request{
+		ID:     2,
+		Method: "upsert",
+		Params: upsertParams,
+	})
+	if err != nil {
+		t.Fatalf("WriteRequest error: %v", err)
+	}
+	resp, err = codec.ReadResponse()
+	if err != nil {
+		t.Fatalf("ReadResponse error: %v", err)
+	}
+	if resp.Error != nil {
+		t.Fatalf("Unexpected error: %v", resp.Error)
+	}
+
+	if err := conn.Close(); err != nil {
+		t.Fatalf("Close error: %v", err)
+	}
+	conn = nil
+
+	time.Sleep(100 * time.Millisecond)
+
+	sessions := s.ListBySession()
+	if len(sessions) != 1 {
+		t.Fatalf("Expected 1 session after disconnect, got %d", len(sessions))
+	}
+}
