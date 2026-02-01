@@ -58,11 +58,12 @@ func RunRegister(args []string) error {
 
 // RunUpdate updates agent state (for testing).
 func RunUpdate(args []string) error {
-	if len(args) < 1 {
-		return fmt.Errorf("usage: update <state>")
+	if len(args) < 2 {
+		return fmt.Errorf("usage: update <agent-id> <state>")
 	}
 
-	state := args[0]
+	agentID := args[0]
+	state := args[1]
 
 	conn, err := connectDaemon()
 	if err != nil {
@@ -72,7 +73,8 @@ func RunUpdate(args []string) error {
 
 	codec := jsonrpc.NewCodec(conn, conn)
 	params, _ := json.Marshal(map[string]string{
-		"state": state,
+		"agent_id": agentID,
+		"state":    state,
 	})
 
 	if err := codec.WriteRequest(jsonrpc.Request{
@@ -98,6 +100,12 @@ func RunUpdate(args []string) error {
 
 // RunUnregister removes the current agent (for testing).
 func RunUnregister(args []string) error {
+	if len(args) < 1 {
+		return fmt.Errorf("usage: unregister <agent-id>")
+	}
+
+	agentID := args[0]
+
 	conn, err := connectDaemon()
 	if err != nil {
 		return err
@@ -105,9 +113,14 @@ func RunUnregister(args []string) error {
 	defer conn.Close()
 
 	codec := jsonrpc.NewCodec(conn, conn)
+	params, _ := json.Marshal(map[string]string{
+		"agent_id": agentID,
+	})
+
 	if err := codec.WriteRequest(jsonrpc.Request{
 		ID:     1,
 		Method: "unregister",
+		Params: params,
 	}); err != nil {
 		return err
 	}

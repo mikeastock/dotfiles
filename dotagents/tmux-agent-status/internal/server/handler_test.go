@@ -88,6 +88,62 @@ func TestHandleUpdate(t *testing.T) {
 	}
 }
 
+func TestHandleUpdateByAgentID(t *testing.T) {
+	s := store.New()
+	h := NewHandler(s)
+
+	agentID := s.Register("conn1", "dev", "%1", types.AgentPi, types.StateIdle)
+
+	params, _ := json.Marshal(map[string]string{
+		"agent_id": agentID,
+		"state":    "working",
+	})
+
+	req := &jsonrpc.Request{
+		ID:     1,
+		Method: "update",
+		Params: params,
+	}
+
+	resp := h.Handle("conn2", req)
+
+	if resp.Error != nil {
+		t.Fatalf("Unexpected error: %v", resp.Error)
+	}
+
+	agent, _ := s.Get(agentID)
+	if agent.State != types.StateWorking {
+		t.Errorf("State = %s, want working", agent.State)
+	}
+}
+
+func TestHandleUnregisterByAgentID(t *testing.T) {
+	s := store.New()
+	h := NewHandler(s)
+
+	agentID := s.Register("conn1", "dev", "%1", types.AgentPi, types.StateIdle)
+
+	params, _ := json.Marshal(map[string]string{
+		"agent_id": agentID,
+	})
+
+	req := &jsonrpc.Request{
+		ID:     1,
+		Method: "unregister",
+		Params: params,
+	}
+
+	resp := h.Handle("conn2", req)
+
+	if resp.Error != nil {
+		t.Fatalf("Unexpected error: %v", resp.Error)
+	}
+
+	if _, ok := s.Get(agentID); ok {
+		t.Fatal("Expected agent to be unregistered")
+	}
+}
+
 func TestHandleStatus(t *testing.T) {
 	s := store.New()
 	h := NewHandler(s)

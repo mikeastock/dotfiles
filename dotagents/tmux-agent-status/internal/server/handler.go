@@ -145,22 +145,27 @@ func (h *Handler) handleUpsert(req *jsonrpc.Request) jsonrpc.Response {
 }
 
 type updateParams struct {
-	State string `json:"state"`
+	AgentID string `json:"agent_id"`
+	State   string `json:"state"`
 }
 
 func (h *Handler) handleUpdate(connID string, req *jsonrpc.Request) jsonrpc.Response {
 	resp := jsonrpc.Response{ID: req.ID}
 
-	agentID, ok := h.GetAgentID(connID)
-	if !ok {
-		resp.Error = jsonrpc.ErrorInvalidParams("not registered")
-		return resp
-	}
-
 	var params updateParams
 	if err := json.Unmarshal(req.Params, &params); err != nil {
 		resp.Error = jsonrpc.ErrorInvalidParams(err.Error())
 		return resp
+	}
+
+	agentID := params.AgentID
+	if agentID == "" {
+		var ok bool
+		agentID, ok = h.GetAgentID(connID)
+		if !ok {
+			resp.Error = jsonrpc.ErrorInvalidParams("not registered")
+			return resp
+		}
 	}
 
 	state := types.AgentState(params.State)
@@ -169,13 +174,34 @@ func (h *Handler) handleUpdate(connID string, req *jsonrpc.Request) jsonrpc.Resp
 		return resp
 	}
 
-	h.store.Update(agentID, state)
+	if !h.store.Update(agentID, state) {
+		resp.Error = jsonrpc.ErrorInvalidParams("not registered")
+		return resp
+	}
 	resp.Result = mustMarshal(map[string]string{"ok": "true"})
 	return resp
 }
 
+type unregisterParams struct {
+	AgentID string `json:"agent_id"`
+}
+
 func (h *Handler) handleUnregister(connID string, req *jsonrpc.Request) jsonrpc.Response {
 	resp := jsonrpc.Response{ID: req.ID}
+
+	var params unregisterParams
+	if len(req.Params) != 0 {
+		if err := json.Unmarshal(req.Params, &params); err != nil {
+			resp.Error = jsonrpc.ErrorInvalidParams(err.Error())
+			return resp
+		}
+	}
+
+	if params.AgentID != "" {
+		h.store.Unregister(params.AgentID)
+		resp.Result = mustMarshal(map[string]string{"ok": "true"})
+		return resp
+	}
 
 	agentID, ok := h.GetAgentID(connID)
 	if ok {
