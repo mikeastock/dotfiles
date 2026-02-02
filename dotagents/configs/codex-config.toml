@@ -10,6 +10,15 @@ suppress_unstable_features_warning = true
 # With tool_output_token_limit=25000 ⇒ 273000 - (25000 + 15000) = 233000
 model_auto_compact_token_limit = 233000
 
+# Agent status notification for tmux integration
+notify = [ "/Users/mikeastock/.local/bin/agent-status", "notify" ]
+
+[notice]
+hide_rate_limit_model_nudge = true
+
+[tui]
+notifications = [ "agent-turn-complete" ]
+
 [features]
 ghost_commit = false
 unified_exec = true
@@ -21,11 +30,3 @@ collab = true
 
 [projects."/Users/mikeastock/code"]
 trust_level = "trusted"
-
-[notice]
-hide_rate_limit_model_nudge = true
-
-# Agent status notification for tmux integration
-notification_method = "command"
-notifications = [ "agent-turn-start", "agent-turn-complete" ]
-notify = [ "/Users/mikeastock/.local/bin/agent-status", "notify" ]
