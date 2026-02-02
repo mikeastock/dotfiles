@@ -5,11 +5,11 @@
  * for your next task and creates a new session with a generated prompt.
  *
  * Usage:
- * /handoff now implement this for teams as well
- * /handoff execute phase one of the plan
- * /handoff check other places that need this fix
+ *   /handoff now implement this for teams as well
+ *   /handoff execute phase one of the plan
+ *   /handoff check other places that need this fix
  *
- * The generated prompt appears as a draft in the editor for review/editing.
+ * Based on: https://github.com/pasky/pi-amplike
  */
 
 import { complete, type Message } from "@mariozechner/pi-ai";
@@ -75,7 +75,7 @@ export default function (pi: ExtensionAPI) {
 			const currentSessionFile = ctx.sessionManager.getSessionFile();
 
 			// Generate the handoff prompt with loader UI
-			const result = await ctx.ui.custom<string | null>((tui, theme, _keybindings, done) => {
+			const result = await ctx.ui.custom<string | null>((tui, theme, _kb, done) => {
 				const loader = new BorderedLoader(tui, theme, `Generating handoff prompt...`);
 				loader.onAbort = () => done(null);
 
@@ -124,14 +124,6 @@ export default function (pi: ExtensionAPI) {
 				return;
 			}
 
-			// Let user edit the generated prompt
-			const editedPrompt = await ctx.ui.editor("Edit handoff prompt (ctrl+enter to submit, esc to cancel)", result);
-
-			if (editedPrompt === undefined) {
-				ctx.ui.notify("Cancelled", "info");
-				return;
-			}
-
 			// Create new session with parent tracking
 			const newSessionResult = await ctx.newSession({
 				parentSession: currentSessionFile,
@@ -142,9 +134,18 @@ export default function (pi: ExtensionAPI) {
 				return;
 			}
 
-			// Set the edited prompt in the main editor for submission
-			ctx.ui.setEditorText(editedPrompt);
-			ctx.ui.notify("Handoff ready. Submit when ready.", "info");
+			// Build the final prompt with user's goal first for easy identification
+			// Format: goal (first line for session preview) → skill → parent ref → context
+			let finalPrompt = result;
+			if (currentSessionFile) {
+				finalPrompt = `${goal}\n\n/skill:session-query\n\n**Parent session:** \`${currentSessionFile}\`\n\n${result}`;
+			} else {
+				// Even without parent session, put goal first
+				finalPrompt = `${goal}\n\n${result}`;
+			}
+
+			// Immediately submit the handoff prompt to start the agent
+			pi.sendUserMessage(finalPrompt);
 		},
 	});
 }
