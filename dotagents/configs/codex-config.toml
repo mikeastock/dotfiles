@@ -14,7 +14,6 @@ model_auto_compact_token_limit = 233000
 ghost_commit = false
 unified_exec = true
 apply_patch_freeform = true
-web_search_request = true
 skills = true
 shell_snapshot = true
 steer = true
@@ -27,7 +26,7 @@ trust_level = "trusted"
 hide_rate_limit_model_nudge = true
 
 # Agent status notification for tmux integration
-notify = ["/Users/mikeastock/.local/bin/agent-status", "notify"]
+notify = [ "/Users/mikeastock/.local/bin/agent-status", "notify" ]
 
 [tui]
-notifications = ["turn/completed", "agent-turn-complete"]
+notifications = [ "turn/completed", "agent-turn-complete" ]
