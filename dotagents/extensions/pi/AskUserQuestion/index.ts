@@ -132,7 +132,7 @@ export default function (pi: ExtensionAPI) {
       "Ask the user a question. Modes: single (pick one), multi (pick many with checkboxes), input (free text). Use when you need user input to proceed.",
     parameters: QuestionParams,
 
-    async execute(_toolCallId, params, _onUpdate, ctx, _signal) {
+    async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
       const hasLegacy = Boolean(params.mode && params.question);
       if (!params.questions && !hasLegacy) {
         return errorResult("Error: No questions provided");
