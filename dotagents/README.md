@@ -155,7 +155,6 @@ For custom skills, you can also place per-skill overrides at `skills/<skill>/ove
 | `nano-banana-pro` | Generate or edit images via Gemini 3 Pro Image |
 | `playwright-cli` | Browser automation for web testing, form filling, screenshots, and data extraction |
 | `semantic-commit` | Create semantic git commits following Conventional Commits specification |
-| `subagent-driven-development` | Execute implementation plans with independent tasks |
 | `test-driven-development` | Use when implementing features, before writing implementation code |
 | `writing-clearly-and-concisely` | Guidance for clear, concise prose based on Strunk |
 | `writing-plans` | Use when you have requirements for a multi-step task |
