@@ -11,12 +11,20 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-AGENT_STATUS="$SCRIPT_DIR/agent-status"
+if [[ -n "${AGENT_STATUS_BIN:-}" ]]; then
+	AGENT_STATUS="$AGENT_STATUS_BIN"
+else
+	HOST_GOOS=$(go env GOOS)
+	HOST_GOARCH=$(go env GOARCH)
+	AGENT_STATUS="$SCRIPT_DIR/../build/agent-status/${HOST_GOOS}-${HOST_GOARCH}/agent-status"
+fi
 REAL_HOME="$HOME"
 CODEX_CONFIG_PATH="$REAL_HOME/.codex/config.toml"
 
 if [[ ! -x "$AGENT_STATUS" ]]; then
-	(cd "$SCRIPT_DIR" && go build -o agent-status .)
+	mkdir -p "$(dirname "$AGENT_STATUS")"
+	(cd "$SCRIPT_DIR" && CGO_ENABLED=1 GOOS="$(go env GOOS)" GOARCH="$(go env GOARCH)" \
+		go build -o "$AGENT_STATUS" .)
 fi
 
 TEST_HOME=$(mktemp -d)

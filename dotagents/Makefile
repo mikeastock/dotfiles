@@ -9,10 +9,22 @@ BUILD_SCRIPT := $(CURDIR)/scripts/build.py
 
 # Paths
 LOCAL_BIN_DIR := $(HOME)/.local/bin
-AGENT_STATUS_BIN := tmux-agent-status/agent-status
+HOST_GOOS := $(shell go env GOOS)
+HOST_GOARCH := $(shell go env GOARCH)
+HOST_TARGET := $(HOST_GOOS)/$(HOST_GOARCH)
+AGENT_STATUS_BUILD_DIR := build/agent-status
+AGENT_STATUS_HOST_BIN := $(AGENT_STATUS_BUILD_DIR)/$(HOST_GOOS)-$(HOST_GOARCH)/agent-status
+AGENT_STATUS_STAMP := $(AGENT_STATUS_BUILD_DIR)/.stamp
 AGENT_STATUS_PLIST_SRC := tmux-agent-status/com.agents.agent-status.plist
 AGENT_STATUS_PLIST_DST := $(HOME)/Library/LaunchAgents/com.agents.agent-status.plist
 AGENT_STATUS_LABEL := com.agents.agent-status
+
+ifeq ($(HOST_GOOS),darwin)
+AGENT_STATUS_TARGETS ?= linux/amd64 $(HOST_TARGET)
+else
+AGENT_STATUS_TARGETS ?= $(HOST_TARGET)
+endif
+AGENT_STATUS_TARGETS := $(sort $(AGENT_STATUS_TARGETS))
 
 .PHONY: all install install-non-interactive install-skills install-extensions install-configs install-tmux build build-agent-status clean clean-tmux help submodule-init plugin-update check-python
 
@@ -65,14 +77,31 @@ install-configs: check-python
 	@$(PYTHON) $(BUILD_SCRIPT) install-configs
 
 # Go daemon build
-$(AGENT_STATUS_BIN): tmux-agent-status/main.go tmux-agent-status/cmd/*.go tmux-agent-status/internal/**/*.go
-	cd tmux-agent-status && go build -o agent-status .
+AGENT_STATUS_SOURCES := tmux-agent-status/main.go tmux-agent-status/go.mod \
+	tmux-agent-status/cmd/*.go tmux-agent-status/internal/**/*.go
 
-build-agent-status: $(AGENT_STATUS_BIN)
+$(AGENT_STATUS_STAMP): $(AGENT_STATUS_SOURCES)
+	@mkdir -p $(AGENT_STATUS_BUILD_DIR)
+	@set -e; \
+	for target in $(AGENT_STATUS_TARGETS); do \
+		os=$${target%/*}; arch=$${target#*/}; \
+		out_dir="$(AGENT_STATUS_BUILD_DIR)/$$os-$$arch"; \
+		mkdir -p "$$out_dir"; \
+		cgo=0; \
+		if [ "$$target" = "$(HOST_TARGET)" ]; then cgo=1; fi; \
+		(cd tmux-agent-status && \
+			CGO_ENABLED=$$cgo GOOS=$$os GOARCH=$$arch \
+			go build -o "../$$out_dir/agent-status" .); \
+	done
+	@touch $@
+
+build-agent-status: $(AGENT_STATUS_STAMP)
 
 install-tmux: build-agent-status
 	@mkdir -p ~/.local/bin
-	@ln -sf $(abspath $(AGENT_STATUS_BIN)) ~/.local/bin/agent-status
+	@test -x $(AGENT_STATUS_HOST_BIN) || \
+		(echo "Error: $(AGENT_STATUS_HOST_BIN) missing. Run 'make build-agent-status'."; exit 1)
+	@ln -sf $(abspath $(AGENT_STATUS_HOST_BIN)) ~/.local/bin/agent-status
 	@echo "Installed agent-status to ~/.local/bin/"
 ifeq ($(shell uname),Darwin)
 	@mkdir -p ~/Library/LaunchAgents
@@ -88,7 +117,7 @@ ifeq ($(shell uname),Darwin)
 	@rm -f $(AGENT_STATUS_PLIST_DST)
 	@echo "Removed launchd service"
 endif
-	rm -f $(AGENT_STATUS_BIN)
+	rm -rf $(AGENT_STATUS_BUILD_DIR)
 	rm -f ~/.local/bin/agent-status
 
 clean: check-python
@@ -98,5 +127,4 @@ plugin-update:
 	@echo "Updating plugin submodules..."
 	@git submodule update --remote --merge
 	@echo "Plugins updated"
-
 
