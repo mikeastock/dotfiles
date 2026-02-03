@@ -33,6 +33,7 @@ agents/
 ├── plugins.toml                      # plugin configuration
 ├── plugins/
 │   ├── anthropics-skills/            # git submodule (github.com/anthropics/skills)
+│   ├── buildrtech-dotagents/         # git submodule (github.com/buildrtech/dotagents)
 │   ├── EveryInc-compound-engineering-plugin/  # git submodule
 │   ├── mitsuhiko-agent-stuff/        # git submodule (github.com/mitsuhiko/agent-stuff)
 │   ├── nicobailon-pi-interview-tool/ # git submodule
@@ -142,22 +143,36 @@ For custom skills, you can also place per-skill overrides at `skills/<skill>/ove
 |-------|-------------|
 | `react-best-practices` | React best practices and patterns for building maintainable applications |
 
+### From buildrtech/dotagents
+
+| Skill | Description |
+|-------|-------------|
+| `brainstorming` | Explores user intent, requirements and design before implementation |
+| `dispatching-parallel-agents` | Use when facing 2+ independent tasks that can be worked on without shared state |
+| `executing-plans` | Execute implementation plans with review checkpoints |
+| `receiving-code-review` | Technical evaluation when receiving code review feedback |
+| `requesting-code-review` | Dispatch code reviewer subagent to catch issues before they cascade |
+| `semantic-commit` | Create semantic git commits following Conventional Commits specification |
+| `systematic-debugging` | Use when encountering any bug, test failure, or unexpected behavior |
+| `test-driven-development` | Use when implementing features, before writing implementation code |
+| `verification-before-completion` | Verify work with evidence before claiming completion |
+| `writing-plans` | Use when you have requirements for a multi-step task |
+
 ### Custom Skills
 
 | Skill | Description |
 |-------|-------------|
 | `ask-questions-if-underspecified` | Clarify requirements before implementing (invoke explicitly) |
-| `brainstorming` | Explores user intent, requirements and design before implementation |
 | `brave-search` | Web search and content extraction via Brave Search API |
-| `executing-plans` | Execute implementation plans with review checkpoints |
 | `fetch-ci-build` | Fetch CI build results and diagnose failures (GitHub Actions, Buildkite, CircleCI) |
 | `favicon-generator` | Generate favicons from prompts using magenta keying and ImageMagick outputs |
+| `mcporter` | Interact with MCP servers using the mcporter CLI |
 | `nano-banana-pro` | Generate or edit images via Gemini 3 Pro Image |
 | `playwright-cli` | Browser automation for web testing, form filling, screenshots, and data extraction |
-| `semantic-commit` | Create semantic git commits following Conventional Commits specification |
-| `test-driven-development` | Use when implementing features, before writing implementation code |
+| `react-ui` | Opinionated constraints for building better interfaces with agents |
+| `sandi-metz-rules` | Sandi Metz's four rules for writing maintainable Ruby code |
+| `stitch` | Generate UI designs and frontend code with Google Stitch via MCP |
 | `writing-clearly-and-concisely` | Guidance for clear, concise prose based on Strunk |
-| `writing-plans` | Use when you have requirements for a multi-step task |
 
 ## Available Extensions
 

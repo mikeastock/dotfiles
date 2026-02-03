@@ -44,3 +44,7 @@ skills = [ "open-prose" ]
 url = "https://github.com/mitsuhiko/agent-stuff"
 extensions_path = "pi-extensions/*.ts"
 extensions = [ "cwd-history", "review" ]
+
+["buildrtech/dotagents"]
+url = "https://github.com/buildrtech/dotagents"
+skills = [ "*" ]                                  # All superpower skills

@@ -22,3 +22,6 @@
 [submodule "plugins/openprose-prose"]
 	path = plugins/openprose-prose
 	url = https://github.com/openprose/prose
+[submodule "plugins/buildrtech-dotagents"]
+	path = plugins/buildrtech-dotagents
+	url = https://github.com/buildrtech/dotagents
