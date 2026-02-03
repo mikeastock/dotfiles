@@ -38,12 +38,12 @@ Start by understanding the current project context, then ask questions one at a 
 ## After the Design
 
 **Documentation:**
-- Write the validated design to `docs/plans/YYYY-MM-DD-<topic>-design.md`
+- Write the validated design to `docs/design/YYYY-MM-DD-<topic>.md`
 - Use elements-of-style:writing-clearly-and-concisely skill if available
 - Commit the design document to git
 
 **Implementation (if continuing):**
-- Ask: "Ready to set up for implementation?"
+- Ask: "Ready to create an implementation plan?"
 - Use superpowers:writing-plans skill to create detailed implementation plan
 
 ## Key Principles
