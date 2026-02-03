@@ -34,14 +34,17 @@ Be concise and direct. If the information isn't in the session, say so.`;
 export default function (pi: ExtensionAPI) {
 	pi.registerTool({
 		name: "session_query",
-		label: (params) => `Session Query: ${params.question}`,
+		label: "Session Query",
 		description:
 			"Query a previous pi session file for context, decisions, or information. Use when you need to look up what happened in a parent session or any other session.",
 		renderResult: (result, _options, theme) => {
 			const container = new Container();
+			const textContent = result.content.find(
+				(item): item is { type: "text"; text: string } => item.type === "text",
+			);
 
-			if (result.content && result.content[0]?.text) {
-				const text = result.content[0].text;
+			if (textContent?.text) {
+				const text = textContent.text;
 				// Parse: **Query:** question\n\n---\n\nanswer
 				const match = text.match(/\*\*Query:\*\* (.+?)\n\n---\n\n([\s\S]+)/);
 
