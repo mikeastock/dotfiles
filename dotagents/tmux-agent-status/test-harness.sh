@@ -12,6 +12,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 AGENT_STATUS="$SCRIPT_DIR/agent-status"
+REAL_HOME="$HOME"
+CODEX_CONFIG_PATH="$REAL_HOME/.codex/config.toml"
 
 if [[ ! -x "$AGENT_STATUS" ]]; then
 	(cd "$SCRIPT_DIR" && go build -o agent-status .)
@@ -31,6 +33,7 @@ NC='\033[0m'
 # Track results
 PASSED=0
 FAILED=0
+SKIPPED=0
 
 cleanup() {
 	echo -e "\n${DIM}Cleaning up...${NC}"
@@ -157,6 +160,56 @@ assert_empty() {
 	fi
 }
 
+skip() {
+	local desc="$1"
+	echo -e "${YELLOW}~${NC} $desc"
+	SKIPPED=$((SKIPPED + 1))
+}
+
+has_notify_config() {
+	python3 - <<'PY'
+import os
+import pathlib
+import sys
+import tomllib
+
+path = pathlib.Path(os.environ["CODEX_CONFIG_PATH"])
+if not path.exists():
+    sys.exit(1)
+try:
+    data = tomllib.loads(path.read_text())
+except Exception:
+    sys.exit(2)
+sys.exit(0 if data.get("notify") else 1)
+PY
+}
+
+run_codex_exec() {
+	local label="$1"
+	local cmd=("${@:2}")
+
+	if "${cmd[@]}" >/dev/null 2>&1; then
+		echo -e "${GREEN}✓${NC} $label"
+		PASSED=$((PASSED + 1))
+	else
+		echo -e "${RED}✗${NC} $label"
+		FAILED=$((FAILED + 1))
+	fi
+}
+
+assert_codex_visible() {
+	local output="$1"
+	local desc="$2"
+
+	if echo "$output" | rg -q '"agent":\s*"codex"'; then
+		echo -e "${GREEN}✓${NC} $desc"
+		PASSED=$((PASSED + 1))
+	else
+		echo -e "${RED}✗${NC} $desc"
+		FAILED=$((FAILED + 1))
+	fi
+}
+
 echo -e "${YELLOW}═══════════════════════════════════════════${NC}"
 echo -e "${YELLOW}  tmux-agent-status Test Harness${NC}"
 echo -e "${YELLOW}═══════════════════════════════════════════${NC}"
@@ -247,12 +300,44 @@ output=$(run_status)
 assert_empty "$output" "Agent removed after disconnect"
 
 # ============================================================
+echo -e "\n${YELLOW}▸ Test: Codex integration (optional)${NC}"
+# ============================================================
+if [[ "${CODEX_INTEGRATION:-}" != "1" ]]; then
+	skip "CODEX_INTEGRATION=1 not set"
+elif [[ -z "${TMUX:-}" ]]; then
+	skip "TMUX not set (run inside tmux)"
+elif ! command -v codex >/dev/null 2>&1; then
+	skip "codex not found on PATH"
+elif [[ ! -S "$REAL_HOME/.config/agents/agent-status.sock" ]]; then
+	skip "agent-status daemon socket not found in real HOME"
+else
+	run_codex_exec "Codex exec runs with notify override" \
+		codex exec -c "notify=[\"$AGENT_STATUS\",\"notify\"]" "agent-status integration probe"
+	output=$(HOME="$REAL_HOME" "$AGENT_STATUS" list 2>/dev/null || true)
+	assert_codex_visible "$output" "Codex notify hook updates daemon (override)"
+
+	has_notify_config
+	notify_status=$?
+	if [[ $notify_status -eq 0 ]]; then
+		run_codex_exec "Codex exec runs with config notify" \
+			codex exec "agent-status config probe"
+		output=$(HOME="$REAL_HOME" "$AGENT_STATUS" list 2>/dev/null || true)
+		assert_codex_visible "$output" "Codex notify hook updates daemon (config)"
+	elif [[ $notify_status -eq 2 ]]; then
+		skip "Could not parse $CODEX_CONFIG_PATH"
+	else
+		skip "No top-level notify in $CODEX_CONFIG_PATH"
+	fi
+fi
+
+# ============================================================
 # Summary
 # ============================================================
 echo
 echo -e "${YELLOW}═══════════════════════════════════════════${NC}"
 echo -e "  ${GREEN}Passed:${NC} $PASSED"
 echo -e "  ${RED}Failed:${NC} $FAILED"
+echo -e "  ${YELLOW}Skipped:${NC} $SKIPPED"
 echo -e "${YELLOW}═══════════════════════════════════════════${NC}"
 
 if [[ $FAILED -gt 0 ]]; then
