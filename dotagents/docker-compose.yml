@@ -12,12 +12,6 @@ services:
       WAIT_SECONDS: ${WAIT_SECONDS:-25}
     volumes:
       - .:/workspace
-      - codex_home:/home/dev/.codex
-      - pi_home:/home/dev/.pi
     working_dir: /workspace
     command: ["/bin/bash", "/workspace/docker/codex-pi-test/run-e2e.sh"]
     tty: true
-
-volumes:
-  codex_home:
-  pi_home:

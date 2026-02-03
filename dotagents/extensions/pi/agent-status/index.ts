@@ -6,7 +6,7 @@
  */
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import * as net from "node:net";
 import * as os from "node:os";
 import * as path from "node:path";
@@ -43,10 +43,14 @@ function getTmuxInfo(): { session: string; pane: string | null } | null {
 	if (!tmuxPane) return null;
 
 	try {
-		const result = execSync("tmux display-message -p '#S\n#{pane_id}'", {
+		const result = execFileSync(
+			"tmux",
+			["display-message", "-p", "-t", tmuxPane, "#S\n#{pane_id}"],
+			{
 			encoding: "utf-8",
 			timeout: 1000,
-		}).trim();
+			},
+		).trim();
 		const lines = result.split("\n");
 		const session = lines[0] || null;
 		const pane = lines[1] || null;

@@ -89,22 +89,37 @@ PI_MODEL_Q=$(printf %q "$PI_MODEL")
 PI_PROMPT_Q=$(printf %q "$PI_PROMPT")
 
 printf "Running Codex + Pi inside tmux...\n"
-tmux send-keys -t "$TMUX_SESSION":0.0 "CODEX_API_KEY=$API_KEY_Q codex exec $CODEX_PROMPT_Q" C-m
-tmux send-keys -t "$TMUX_SESSION":0.1 "pi --provider $PI_PROVIDER_Q --model $PI_MODEL_Q --api-key $API_KEY_Q --no-session --print $PI_PROMPT_Q" C-m
+tmux send-keys -t "$TMUX_SESSION":0.0 "CODEX_API_KEY=$API_KEY_Q codex exec $CODEX_PROMPT_Q >$HOME/codex.log 2>&1" C-m
+tmux send-keys -t "$TMUX_SESSION":0.1 "env | rg -n '^TMUX' >$HOME/tmux-env.log; HOME=$HOME OPENAI_API_KEY=$API_KEY_Q pi --provider $PI_PROVIDER_Q --model $PI_MODEL_Q --api-key $API_KEY_Q --no-session --print --extension $HOME/.pi/agent/extensions/agent-status/index.ts $PI_PROMPT_Q >$HOME/pi.log 2>&1" C-m
 
 WAIT_SECONDS=${WAIT_SECONDS:-25}
-sleep "$WAIT_SECONDS"
+found_codex=0
+found_pi=0
+STATUS_JSON=""
 
-STATUS_JSON=$($HOME/.local/bin/agent-status list || true)
+for _ in $(seq 1 "$WAIT_SECONDS"); do
+  STATUS_JSON=$($HOME/.local/bin/agent-status list || true)
+  if printf "%s\n" "$STATUS_JSON" | rg -q '"agent"\s*:\s*"codex"'; then
+    found_codex=1
+  fi
+  if printf "%s\n" "$STATUS_JSON" | rg -q '"agent"\s*:\s*"pi"'; then
+    found_pi=1
+  fi
+  if [[ "$found_codex" -eq 1 && "$found_pi" -eq 1 ]]; then
+    break
+  fi
+  sleep 1
+done
+
 printf "%s\n" "$STATUS_JSON" > "$HOME/agent-status-list.json"
 
 missing=0
-if ! printf "%s\n" "$STATUS_JSON" | rg -q '"agent":"codex"'; then
+if [[ "$found_codex" -eq 0 ]]; then
   echo "codex entry missing from agent-status list" >&2
   missing=1
 fi
 
-if ! printf "%s\n" "$STATUS_JSON" | rg -q '"agent":"pi"'; then
+if [[ "$found_pi" -eq 0 ]]; then
   echo "pi entry missing from agent-status list" >&2
   missing=1
 fi
@@ -112,6 +127,18 @@ fi
 if [[ "$missing" -ne 0 ]]; then
   echo "agent-status list:" >&2
   printf "%s\n" "$STATUS_JSON" >&2
+  if [[ -s "$HOME/codex.log" ]]; then
+    echo "codex log:" >&2
+    tail -n 200 "$HOME/codex.log" >&2
+  fi
+  if [[ -s "$HOME/tmux-env.log" ]]; then
+    echo "tmux env log:" >&2
+    cat "$HOME/tmux-env.log" >&2
+  fi
+  if [[ -s "$HOME/pi.log" ]]; then
+    echo "pi log:" >&2
+    tail -n 200 "$HOME/pi.log" >&2
+  fi
   exit 1
 fi
 
