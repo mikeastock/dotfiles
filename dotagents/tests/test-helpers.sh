@@ -30,6 +30,8 @@ SANDBOX_DIR=""
 cleanup() {
     if [ -n "$SANDBOX_DIR" ] && [ -d "$SANDBOX_DIR" ]; then
         echo -e "\n${YELLOW}Cleaning up sandbox directory...${NC}"
+        # Make all files writable before deletion (handles Go module cache read-only files)
+        chmod -R u+w "$SANDBOX_DIR" 2>/dev/null || true
         rm -rf "$SANDBOX_DIR"
     fi
 }
