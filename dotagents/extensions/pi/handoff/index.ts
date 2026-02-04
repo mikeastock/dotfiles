@@ -16,27 +16,50 @@ import { complete, type Message } from "@mariozechner/pi-ai";
 import type { ExtensionAPI, SessionEntry } from "@mariozechner/pi-coding-agent";
 import { BorderedLoader, convertToLlm, serializeConversation } from "@mariozechner/pi-coding-agent";
 
-const SYSTEM_PROMPT = `You are a context transfer assistant. Given a conversation history and the user's goal for a new thread, generate a focused prompt that:
+const SYSTEM_PROMPT = `You are a context transfer assistant. Given a conversation history and the user's goal for a new thread, extract only the context needed to continue the work. Do not restate the goal or write new instructions.
 
-1. Summarizes relevant context from the conversation (decisions made, approaches taken, key findings)
-2. Lists any relevant files that were discussed or modified
-3. Clearly states the next task based on the user's goal
-4. Is self-contained - the new thread should be able to proceed without the old conversation
+Return markdown sections with concise bullets. Omit any section that has no content.
 
-Format your response as a prompt the user can send to start the new thread. Be concise but include all necessary context. Do not include any preamble like "Here's the prompt" - just output the prompt itself.
+Required sections (when applicable):
+- ## Context (key work done, approaches, findings)
+- ## Decisions (tradeoffs, choices made)
+- ## Commands Run (shell/tool invocations worth reusing)
+- ## Open Questions (unknowns, blockers, follow-ups)
+- ## Files (paths mentioned or modified)
 
-Example output format:
-## Context
-We've been working on X. Key decisions:
-- Decision 1
-- Decision 2
+Rules:
+- Be concise and factual.
+- Only list files that are mentioned in the conversation.
+- Do not include a Task/Goal section or any preamble. The user goal will be appended separately.`;
 
-Files involved:
-- path/to/file1.ts
-- path/to/file2.ts
+const VAGUE_GOAL_PATTERNS = [
+	/^continue$/i,
+	/^continue\s+this$/i,
+	/^continue\s+work$/i,
+	/^continue\s+from\s+here$/i,
+	/^keep\s+going$/i,
+	/^go\s+on$/i,
+	/^resume$/i,
+	/^fix$/i,
+	/^fix\s+this$/i,
+	/^fix\s+it$/i,
+	/^finish$/i,
+	/^finish\s+this$/i,
+	/^next$/i,
+	/^same$/i,
+	/^todo$/i,
+	/^tbd$/i,
+];
 
-## Task
-[Clear description of what to do next based on user's goal]`;
+const isVagueGoal = (goal: string) => {
+	const normalized = goal.trim().toLowerCase();
+	const words = normalized.split(/\s+/).filter(Boolean);
+	if (words.length < 3) {
+		return true;
+	}
+
+	return VAGUE_GOAL_PATTERNS.some((pattern) => pattern.test(normalized));
+};
 
 export default function (pi: ExtensionAPI) {
 	pi.registerCommand("handoff", {
@@ -55,6 +78,14 @@ export default function (pi: ExtensionAPI) {
 			const goal = args.trim();
 			if (!goal) {
 				ctx.ui.notify("Usage: /handoff <goal for new thread>", "error");
+				return;
+			}
+
+			if (isVagueGoal(goal)) {
+				ctx.ui.notify(
+					"Goal looks too vague for a useful handoff. Provide a specific next task (what and where), e.g. /handoff add OAuth support to core/src/mcp/oauth.",
+					"error",
+				);
 				return;
 			}
 
@@ -135,17 +166,23 @@ export default function (pi: ExtensionAPI) {
 			}
 
 			// Build the final prompt with user's goal first for easy identification
-			// Format: goal (first line for session preview) → skill → parent ref → context
-			let finalPrompt = result;
+			// Format: goal (session preview) → skill → parent ref → context → goal section
+			const contextSection = result.trim();
+			const goalSection = `## Goal\n${goal}`;
+			const promptParts: string[] = [goal];
+
 			if (currentSessionFile) {
-				finalPrompt = `${goal}\n\n/skill:session-query\n\n**Parent session:** \`${currentSessionFile}\`\n\n${result}`;
-			} else {
-				// Even without parent session, put goal first
-				finalPrompt = `${goal}\n\n${result}`;
+				promptParts.push("/skill:session-query", `**Parent session:** \`${currentSessionFile}\``);
 			}
 
+			if (contextSection) {
+				promptParts.push(contextSection);
+			}
+
+			promptParts.push(goalSection);
+
 			// Immediately submit the handoff prompt to start the agent
-			pi.sendUserMessage(finalPrompt);
+			pi.sendUserMessage(promptParts.join("\n\n"));
 		},
 	});
 }
