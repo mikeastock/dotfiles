@@ -16,6 +16,7 @@ right_format = ""
 
 [directory]
 style = "blue"
+fish_style_pwd_dir_length = 1
 
 [character]
 success_symbol = "[❯](purple)"

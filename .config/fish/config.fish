@@ -104,9 +104,9 @@ end
 
 ####### Homebrew (macOS) / Linuxbrew (Linux)
 if test -d /opt/homebrew
-    fish_add_path /opt/homebrew/bin
+  fish_add_path /opt/homebrew/bin
 else if test -d /home/linuxbrew/.linuxbrew
-    eval (/home/linuxbrew/.linuxbrew/bin/brew shellenv)
+  eval (/home/linuxbrew/.linuxbrew/bin/brew shellenv)
 end
 
 ####### Tailscale
@@ -130,17 +130,32 @@ fish_add_path $HOME/.amp/bin
 
 ####### Postgres 17 (macOS only)
 if test -d /opt/homebrew/opt/postgresql@17/bin
-    fish_add_path /opt/homebrew/opt/postgresql@17/bin/
+  fish_add_path /opt/homebrew/opt/postgresql@17/bin/
 end
 
 ####### GNU sed (macOS only)
 if test -d /opt/homebrew/opt/gnu-sed/libexec/gnubin
-    fish_add_path /opt/homebrew/opt/gnu-sed/libexec/gnubin/
+  fish_add_path /opt/homebrew/opt/gnu-sed/libexec/gnubin/
 end
 
 ####### Z Alt (zoxide)
 if type -q zoxide
-    zoxide init fish | source
+  zoxide init fish | source
+end
+
+####### LM Studio CLI
+if test -d ~/.lmstudio
+  fish_add_path ~/.lmstudio/bin
+end
+
+####### Daytona
+if test -d ~/.config/fish/daytona.completion_script.fish
+  source ~/.config/fish/daytona.completion_script.fish
+end
+
+####### 1Password Plugins
+if test -d ~/.config/op
+  source ~/.config/op/plugins.sh
 end
 
 ###### Orbstack
@@ -148,10 +163,10 @@ source ~/.orbstack/shell/init2.fish 2>/dev/null || :
 
 ###### History Search (atuin)
 if type -q atuin
-    atuin init fish --disable-up-arrow | source
+  atuin init fish --disable-up-arrow | source
 end
 
 ####### PROMPT CONFIG (starship)
 if type -q starship
-    starship init fish | source
+  starship init fish | source
 end
