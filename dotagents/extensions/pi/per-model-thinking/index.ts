@@ -1,9 +1,20 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
-import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
+import type { ExtensionAPI, SessionEntry } from "@mariozechner/pi-coding-agent";
 
 type ThinkingLevel = "off" | "minimal" | "low" | "medium" | "high" | "xhigh";
+
+type ModelChangeEntry = SessionEntry & {
+  type: "model_change";
+  provider: string;
+  modelId: string;
+};
+
+type ThinkingLevelChangeEntry = SessionEntry & {
+  type: "thinking_level_change";
+  thinkingLevel: ThinkingLevel;
+};
 
 const STATE_PATH = join(homedir(), ".pi", "agent", "per-model-thinking.json");
 
@@ -22,23 +33,34 @@ function isThinkingLevel(value: unknown): value is ThinkingLevel {
   );
 }
 
-function replayThinkingByModel(entries: Array<Record<string, unknown>>): Map<string, ThinkingLevel> {
+function isModelChangeEntry(entry: SessionEntry): entry is ModelChangeEntry {
+  return (
+    entry.type === "model_change" &&
+    typeof (entry as { provider?: unknown }).provider === "string" &&
+    typeof (entry as { modelId?: unknown }).modelId === "string"
+  );
+}
+
+function isThinkingLevelChangeEntry(entry: SessionEntry): entry is ThinkingLevelChangeEntry {
+  return (
+    entry.type === "thinking_level_change" &&
+    isThinkingLevel((entry as { thinkingLevel?: unknown }).thinkingLevel)
+  );
+}
+
+function replayThinkingByModel(entries: SessionEntry[]): Map<string, ThinkingLevel> {
   const levels = new Map<string, ThinkingLevel>();
   let currentModel: string | undefined;
   let currentThinking: ThinkingLevel = "off";
 
   for (const entry of entries) {
-    if (
-      entry.type === "model_change" &&
-      typeof entry.provider === "string" &&
-      typeof entry.modelId === "string"
-    ) {
+    if (isModelChangeEntry(entry)) {
       currentModel = `${entry.provider}/${entry.modelId}`;
       levels.set(currentModel, currentThinking);
       continue;
     }
 
-    if (entry.type === "thinking_level_change" && isThinkingLevel(entry.thinkingLevel)) {
+    if (isThinkingLevelChangeEntry(entry)) {
       currentThinking = entry.thinkingLevel;
       if (currentModel) {
         levels.set(currentModel, currentThinking);
@@ -49,9 +71,7 @@ function replayThinkingByModel(entries: Array<Record<string, unknown>>): Map<str
   return levels;
 }
 
-function entriesBeforeLatestModelChange(
-  entries: Array<Record<string, unknown>>,
-): Array<Record<string, unknown>> {
+function entriesBeforeLatestModelChange(entries: SessionEntry[]): SessionEntry[] {
   for (let i = entries.length - 1; i >= 0; i -= 1) {
     if (entries[i].type === "model_change") {
       return entries.slice(0, i);
@@ -96,9 +116,7 @@ export default function (pi: ExtensionAPI) {
       thinkingByModel.set(key, level);
     }
 
-    const sessionLevels = replayThinkingByModel(
-      ctx.sessionManager.getBranch() as Array<Record<string, unknown>>,
-    );
+    const sessionLevels = replayThinkingByModel(ctx.sessionManager.getBranch());
     for (const [key, level] of sessionLevels) {
       thinkingByModel.set(key, level);
     }
@@ -116,7 +134,7 @@ export default function (pi: ExtensionAPI) {
   });
 
   pi.on("model_select", async (event, ctx) => {
-    const branch = ctx.sessionManager.getBranch() as Array<Record<string, unknown>>;
+    const branch = ctx.sessionManager.getBranch();
     const historicalLevels = replayThinkingByModel(entriesBeforeLatestModelChange(branch));
 
     if (event.previousModel) {

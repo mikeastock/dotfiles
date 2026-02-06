@@ -50,8 +50,10 @@ agents/
 │       ├── agent-status/
 │       ├── AskUserQuestion/
 │       ├── handoff/
+│       ├── per-model-thinking/
 │       ├── permission-gate/
 │       ├── protected-paths/
+│       ├── session-query/
 │       └── terraform-apply-gate/
 ├── scripts/
 │   └── build.py                      # Python build system
@@ -195,8 +197,10 @@ For custom skills, you can also place per-skill overrides at `skills/<skill>/ove
 | `agent-status` | Pi | Writes agent state (idle/working/waiting) to `~/.config/agents/state.json` for tmux status integration |
 | `AskUserQuestion` | Pi | Ask user questions with single-select, multi-select (checkboxes), or free text input modes |
 | `handoff` | Pi | Transfer conversation context to a new focused session via `/handoff` command |
+| `per-model-thinking` | Pi | Persists and restores thinking level per selected model across sessions |
 | `permission-gate` | Pi | Prompts for confirmation before running dangerous bash commands (rm -rf, sudo, chmod 777) |
 | `protected-paths` | Pi | Blocks write and edit operations to protected paths (.env, .git/, node_modules/) |
+| `session-query` | Pi | Adds a tool to query previous Pi session files for context and decisions |
 | `terraform-apply-gate` | Pi | Prompts for explicit confirmation before running terraform/tf apply commands |
 
 ## What are Skills?
