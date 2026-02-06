@@ -148,11 +148,6 @@ if test -d ~/.lmstudio
   fish_add_path ~/.lmstudio/bin
 end
 
-####### Daytona
-if test -d ~/.config/fish/daytona.completion_script.fish
-  source ~/.config/fish/daytona.completion_script.fish
-end
-
 ####### 1Password Plugins
 if test -d ~/.config/op
   source ~/.config/op/plugins.sh
