@@ -24,8 +24,6 @@ make clean               Remove all installed skills, extensions, and build arti
 make agents-config       Configure all agents to use their own skills directories
 ```
 
-The tmux agent-status binary builds into `build/agent-status/<os>-<arch>/agent-status`. `make install-tmux` links the host binary from that directory.
-
 ## Structure
 
 ```
@@ -65,7 +63,6 @@ agents/
 │   └── run-all.sh
 ├── build/                            # generated during install
 │   ├── claude/
-│   ├── agent-status/
 │   └── pi/
 ├── Makefile
 └── README.md
