@@ -128,6 +128,12 @@ test_make_install_skills() {
         log_error "FAIL: No Pi skills installed"
         TESTS_FAILED=$((TESTS_FAILED + 1))
     fi
+
+    # buildrtech/dotagents superpower skills should be skipped for Amp only
+    assert_file_not_exists "$SANDBOX_DIR/.config/agents/skills/writing-plans" "Amp skips buildr superpower skills"
+    assert_dir_exists "$SANDBOX_DIR/.claude/skills/writing-plans" "Claude still installs buildr superpower skills"
+    assert_dir_exists "$SANDBOX_DIR/.codex/skills/writing-plans" "Codex still installs buildr superpower skills"
+    assert_dir_exists "$SANDBOX_DIR/.pi/agent/skills/writing-plans" "Pi still installs buildr superpower skills"
 }
 
 # Test: make install-extensions (with sandbox)

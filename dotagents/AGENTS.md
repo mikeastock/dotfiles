@@ -65,6 +65,7 @@ Each plugin can specify:
 - `url` - Git repository URL (required)
 - `skills_path` - Glob pattern to find skills (default: `skills/*`)
 - `skills` - List of skills to install: `["*"]` for all, `["a", "b"]` for specific, `[]` or omit for none
+- `skills_skip_agents` - Agents that should not receive this plugin's skills (optional)
 - `extensions_path` - Glob pattern to find extensions (default: `extensions/*.ts`)
 - `extensions` - List of extensions to install: `["*"]` for all, `["a", "b"]` for specific, `[]` or omit for none
 - `alias` - Optional prefix to prevent name collisions

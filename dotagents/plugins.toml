@@ -4,6 +4,7 @@
 #   url             - Git repository URL (required)
 #   skills_path     - Glob pattern(s) to find skills (default: "skills/*")
 #   skills          - List of skills to install: ["*"] for all, [] or omit for none
+#   skills_skip_agents - Agents that should not receive this plugin's skills (optional)
 #   extensions_path - Glob pattern(s) to find extensions (default: "extensions/*.ts")
 #   extensions      - List of extensions to install: ["*"] for all, [] or omit for none
 #   alias           - Optional prefix to prevent name collisions
@@ -48,3 +49,4 @@ extensions = [ "cwd-history", "review" ]
 ["buildrtech/dotagents"]
 url = "https://github.com/buildrtech/dotagents"
 skills = [ "*" ]                                  # All superpower skills
+skills_skip_agents = [ "amp" ]                    # Skip superpower skills for Amp

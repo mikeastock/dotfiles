@@ -97,9 +97,19 @@ Each plugin supports these options:
 | `url` | Git repository URL (required) |
 | `skills_path` | Glob pattern to find skills (default: `skills/*`) |
 | `skills` | List of skills to install, or omit for all |
+| `skills_skip_agents` | Agents that should not receive this plugin's skills (optional) |
 | `extensions_path` | Glob pattern to find extensions (default: `extensions/*.ts`) |
 | `extensions` | List of extensions to install, or omit for all |
 | `alias` | Optional prefix to prevent name collisions |
+
+Example (skip a plugin's skills for Amp):
+
+```toml
+["buildrtech/dotagents"]
+url = "https://github.com/buildrtech/dotagents"
+skills = ["*"]
+skills_skip_agents = ["amp"]
+```
 
 ### Updating Plugins
 

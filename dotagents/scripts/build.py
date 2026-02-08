@@ -107,6 +107,7 @@ class Plugin:
     url: str
     skills_path: list[str] = field(default_factory=lambda: ["skills/*"])
     skills: list[str] = field(default_factory=list)  # Empty = none, ["*"] = all
+    skills_skip_agents: list[str] = field(default_factory=list)
     extensions_path: list[str] = field(default_factory=lambda: ["extensions/*.ts"])
     extensions: list[str] = field(default_factory=list)  # Empty = none, ["*"] = all
     alias: str | None = None
@@ -140,6 +141,7 @@ class Plugin:
             url=data["url"],
             skills_path=normalize_path(data.get("skills_path", "skills/*")),
             skills=normalize_items(data.get("skills")),
+            skills_skip_agents=normalize_items(data.get("skills_skip_agents")),
             extensions_path=normalize_path(
                 data.get("extensions_path", "extensions/*.ts")
             ),
@@ -489,6 +491,8 @@ def build_skills(plugins: dict[str, Plugin]):
                 continue
             built_for_agents = []
             for agent in AGENTS:
+                if agent in plugin.skills_skip_agents:
+                    continue
                 result = build_skill(name, path, agent)
                 if result is True:
                     built_for_agents.append(agent)
