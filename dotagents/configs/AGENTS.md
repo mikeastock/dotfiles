@@ -2,6 +2,7 @@
 
 **ALWAYS** use `fd` instead of `find`
 **ALWAYS** use `rg` instead of `grep`
+**ALWAYS** set a non-interactive editor env for git continuation commands (e.g. `GIT_EDITOR=true`) when running commands like `git rebase --continue`, `git merge --continue`, or similar.
 
 ## Mindset & Process
 
