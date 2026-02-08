@@ -30,8 +30,6 @@ interface AskUserQuestionResult {
   answers: Answer[];
 }
 
-const WAIT_EVENT = "agent-status:wait";
-const WAIT_SOURCE = "AskUserQuestion";
 
 const ModeSchema = StringEnum(["single", "multi", "input"] as const, {
   description: "single: pick one, multi: pick many with checkboxes, input: free text only",
@@ -79,10 +77,6 @@ function errorResult(
     content: [textContent(message)],
     details: { cancelled: true, questions, answers: [] },
   };
-}
-
-function emitWait(pi: ExtensionAPI, active: boolean) {
-  pi.events.emit(WAIT_EVENT, { active, source: WAIT_SOURCE });
 }
 
 function editorTheme(theme: any): EditorTheme {
@@ -1067,16 +1061,11 @@ export default function (pi: ExtensionAPI) {
         };
       }
 
-      emitWait(pi, true);
-      try {
-        if (questions.length === 1) {
-          return await runSingleQuestion(questions[0]);
-        }
-
-        return await runQuestionnaire(questions);
-      } finally {
-        emitWait(pi, false);
+      if (questions.length === 1) {
+        return await runSingleQuestion(questions[0]);
       }
+
+      return await runQuestionnaire(questions);
     },
 
     renderCall(args, theme) {

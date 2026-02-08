@@ -45,7 +45,6 @@ agents/
 │   └── brainstorming-pi.md
 ├── extensions/
 │   └── pi/
-│       ├── agent-status/
 │       ├── AskUserQuestion/
 │       ├── handoff/
 │       ├── per-model-thinking/
@@ -201,7 +200,6 @@ For custom skills, you can also place per-skill overrides at `skills/<skill>/ove
 
 | Extension | Agent | Description |
 |-----------|-------|-------------|
-| `agent-status` | Pi | Writes agent state (idle/working/waiting) to `~/.config/agents/state.json` for tmux status integration |
 | `AskUserQuestion` | Pi | Ask user questions with single-select, multi-select (checkboxes), or free text input modes |
 | `handoff` | Pi | Transfer conversation context to a new focused session via `/handoff` command |
 | `per-model-thinking` | Pi | Persists and restores thinking level per selected model across sessions |

@@ -7,13 +7,6 @@
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 
-const WAIT_EVENT = "agent-status:wait";
-const WAIT_SOURCE = "terraform-apply-gate";
-
-function emitWait(pi: ExtensionAPI, active: boolean) {
-	pi.events.emit(WAIT_EVENT, { active, source: WAIT_SOURCE });
-}
-
 export default function (pi: ExtensionAPI) {
 	// Match terraform apply or tf apply (with optional flags before/after)
 	const terraformApplyPatterns = [
@@ -33,16 +26,10 @@ export default function (pi: ExtensionAPI) {
 				return { block: true, reason: "Terraform apply blocked (no UI for confirmation)" };
 			}
 
-			emitWait(pi, true);
-			let choice: string | undefined;
-			try {
-				choice = await ctx.ui.select(
-					`🏗️ Terraform Apply Detected:\n\n  ${command}\n\nThis will modify infrastructure. Proceed?`,
-					["Yes, apply changes", "No, cancel"],
-				);
-			} finally {
-				emitWait(pi, false);
-			}
+			const choice = await ctx.ui.select(
+				`🏗️ Terraform Apply Detected:\n\n  ${command}\n\nThis will modify infrastructure. Proceed?`,
+				["Yes, apply changes", "No, cancel"],
+			);
 
 			if (choice !== "Yes, apply changes") {
 				ctx.ui.notify("Terraform apply cancelled", "info");
