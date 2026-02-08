@@ -1,0 +1,341 @@
+#!/usr/bin/env python3
+"""
+screentime — Extract macOS Screen Time data as JSON.
+
+Reads the knowledgeC.db SQLite database and outputs app usage
+events, daily summaries, or top apps as JSON.
+
+Requires Full Disk Access for your terminal app.
+"""
+
+import argparse
+import json
+import os
+import sqlite3
+import sys
+from datetime import datetime, timedelta
+
+DB_PATH = os.path.expanduser(
+    "~/Library/Application Support/Knowledge/knowledgeC.db"
+)
+
+# macOS Cocoa epoch offset (2001-01-01 -> 1970-01-01)
+COCOA_EPOCH = 978307200
+
+STREAM = "/app/usage"
+
+
+def connect():
+    if not os.path.exists(DB_PATH):
+        print("error: knowledgeC.db not found", file=sys.stderr)
+        print("  Expected at: " + DB_PATH, file=sys.stderr)
+        sys.exit(1)
+
+    try:
+        uri = f"file:{DB_PATH}?mode=ro"
+        conn = sqlite3.connect(uri, uri=True)
+        conn.row_factory = sqlite3.Row
+        conn.execute("SELECT 1 FROM ZOBJECT LIMIT 1")
+        return conn
+    except sqlite3.OperationalError as e:
+        msg = str(e)
+        if "authorization denied" in msg or "unable to open" in msg:
+            print(
+                "error: cannot read knowledgeC.db — Full Disk Access required",
+                file=sys.stderr,
+            )
+            print(
+                "  System Settings → Privacy & Security → Full Disk Access",
+                file=sys.stderr,
+            )
+            print(
+                "  Add your terminal app, then restart it.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        raise
+
+
+def date_arg(s):
+    try:
+        return datetime.strptime(s, "%Y-%m-%d")
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"invalid date: {s} (use YYYY-MM-DD)")
+
+
+def cocoa_ts(dt):
+    return dt.timestamp() - COCOA_EPOCH
+
+
+def build_filters(args):
+    """Return (WHERE clauses list, params list) from args."""
+    clauses = [
+        "ZSTREAMNAME = ?",
+        "ZVALUESTRING IS NOT NULL",
+    ]
+    params = [STREAM]
+
+    if args.since or args.until:
+        if args.since:
+            clauses.append("ZSTARTDATE >= ?")
+            params.append(cocoa_ts(args.since))
+        if args.until:
+            clauses.append("ZSTARTDATE < ?")
+            params.append(cocoa_ts(args.until + timedelta(days=1)))
+    else:
+        cutoff = datetime.now() - timedelta(days=args.days)
+        clauses.append("ZSTARTDATE >= ?")
+        params.append(cocoa_ts(cutoff))
+
+    if args.app:
+        clauses.append("ZVALUESTRING LIKE ?")
+        params.append(f"%{args.app}%")
+
+    return clauses, params
+
+
+def output(rows):
+    print(json.dumps([dict(r) for r in rows], indent=2))
+
+
+def cmd_streams(args):
+    conn = connect()
+    rows = conn.execute(
+        """
+        SELECT DISTINCT ZSTREAMNAME AS stream
+        FROM ZOBJECT
+        ORDER BY ZSTREAMNAME
+        """
+    ).fetchall()
+    conn.close()
+    output(rows)
+
+
+def cmd_events(args):
+    conn = connect()
+    clauses, params = build_filters(args)
+    where = " AND ".join(clauses)
+
+    rows = conn.execute(
+        f"""
+        SELECT
+            ZVALUESTRING                                                  AS app,
+            datetime(ZSTARTDATE + {COCOA_EPOCH}, 'unixepoch', 'localtime') AS start_time,
+            datetime(ZENDDATE + {COCOA_EPOCH}, 'unixepoch', 'localtime')   AS end_time,
+            ROUND((ZENDDATE - ZSTARTDATE) / 60.0, 1)                      AS duration_minutes
+        FROM ZOBJECT
+        WHERE {where}
+        ORDER BY ZSTARTDATE DESC
+        LIMIT ?
+        """,
+        params + [args.limit],
+    ).fetchall()
+    conn.close()
+    output(rows)
+
+
+def cmd_daily(args):
+    conn = connect()
+    clauses, params = build_filters(args)
+    where = " AND ".join(clauses)
+
+    rows = conn.execute(
+        f"""
+        SELECT
+            date(ZSTARTDATE + {COCOA_EPOCH}, 'unixepoch', 'localtime') AS day,
+            ZVALUESTRING                                                AS app,
+            ROUND(SUM(ZENDDATE - ZSTARTDATE) / 60.0, 1)                AS total_minutes,
+            COUNT(*)                                                    AS sessions
+        FROM ZOBJECT
+        WHERE {where}
+        GROUP BY day, ZVALUESTRING
+        ORDER BY day DESC, total_minutes DESC
+        """,
+        params,
+    ).fetchall()
+    conn.close()
+    output(rows)
+
+
+def cmd_top(args):
+    conn = connect()
+    clauses, params = build_filters(args)
+    where = " AND ".join(clauses)
+
+    rows = conn.execute(
+        f"""
+        SELECT
+            ZVALUESTRING                                      AS app,
+            ROUND(SUM(ZENDDATE - ZSTARTDATE) / 60.0, 1)      AS total_minutes,
+            ROUND(SUM(ZENDDATE - ZSTARTDATE) / 3600.0, 2)    AS total_hours,
+            COUNT(*)                                          AS sessions
+        FROM ZOBJECT
+        WHERE {where}
+        GROUP BY ZVALUESTRING
+        ORDER BY total_minutes DESC
+        LIMIT ?
+        """,
+        params + [args.limit],
+    ).fetchall()
+    conn.close()
+    output(rows)
+
+
+def main():
+    shared = argparse.ArgumentParser(add_help=False)
+
+    date_group = shared.add_argument_group("date filters")
+    date_group.add_argument(
+        "--days",
+        type=int,
+        default=7,
+        help="last N days (default: 7, ignored if --since/--until set)",
+    )
+    date_group.add_argument(
+        "--since",
+        type=date_arg,
+        metavar="YYYY-MM-DD",
+        help="start date (inclusive)",
+    )
+    date_group.add_argument(
+        "--until",
+        type=date_arg,
+        metavar="YYYY-MM-DD",
+        help="end date (inclusive)",
+    )
+
+    shared.add_argument(
+        "--app",
+        metavar="PATTERN",
+        help="filter by bundle ID substring (e.g. 'slack', 'com.apple')",
+    )
+    shared.add_argument(
+        "--limit",
+        type=int,
+        default=500,
+        help="max rows returned (default: 500)",
+    )
+
+    parser = argparse.ArgumentParser(
+        prog="screentime",
+        parents=[shared],
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description="Extract macOS Screen Time data as JSON.",
+        epilog="""\
+data source:
+  Reads ~/Library/Application Support/Knowledge/knowledgeC.db (read-only).
+  This SQLite database stores ~4 weeks of app usage events recorded by macOS.
+  Timestamps use the Cocoa epoch (2001-01-01) and are converted to local time.
+
+setup:
+  Your terminal app needs Full Disk Access to read the database.
+    1. Open System Settings → Privacy & Security → Full Disk Access
+    2. Add your terminal app (Terminal, iTerm, Ghostty, WezTerm, etc.)
+    3. Restart the terminal
+
+commands:
+  events    Raw foreground app events with start/end times (default)
+  daily     Daily usage summary grouped by app
+  top       Top apps ranked by total usage
+  streams   List all available stream types in the database
+
+output:
+  All commands print a JSON array to stdout. Pipe to jq for filtering,
+  or redirect to a file to save.
+
+examples:
+  screentime                                 Show events from the last 7 days
+  screentime top --limit 10                  Top 10 apps this week
+  screentime top --days 30                   Top apps over the last 30 days
+  screentime daily --app ghostty             Daily Ghostty usage this week
+  screentime events --days 1 --app chrome    Today's Chrome focus events
+  screentime top --since 2026-02-01 \\
+                 --until 2026-02-07          Top apps for a specific date range
+  screentime top --days 7 > usage.json       Save to a file
+  screentime events --days 1 \\
+    | jq '[.[] | select(.duration_minutes > 5)]'
+                                             Filter to sessions over 5 minutes
+  screentime streams                         List all stream types in the DB
+""",
+    )
+
+    sub = parser.add_subparsers(dest="command", title="commands")
+
+    sub.add_parser(
+        "streams",
+        help="list all available stream types",
+        description="List every distinct stream type recorded in knowledgeC.db.",
+    )
+    sub.add_parser(
+        "events",
+        parents=[shared],
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        help="raw app focus events (default)",
+        description="Show individual foreground app events with start/end times.",
+        epilog="""\
+output fields:
+  app               bundle ID (e.g. com.mitchellh.ghostty)
+  start_time        when the app came to foreground
+  end_time          when the app lost focus
+  duration_minutes  session length in minutes
+
+examples:
+  screentime events --days 1                 Today's events
+  screentime events --app slack --limit 20   Last 20 Slack focus events
+  screentime events --since 2026-02-07 --until 2026-02-07
+                                             Events for a single day
+""",
+    )
+    sub.add_parser(
+        "daily",
+        parents=[shared],
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        help="daily usage summary by app",
+        description="Aggregate app usage per day, sorted by most used.",
+        epilog="""\
+output fields:
+  day               date (YYYY-MM-DD)
+  app               bundle ID
+  total_minutes     total foreground time that day
+  sessions          number of focus events
+
+examples:
+  screentime daily                           Daily breakdown, last 7 days
+  screentime daily --app ghostty --days 30   Ghostty usage per day, last month
+""",
+    )
+    sub.add_parser(
+        "top",
+        parents=[shared],
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        help="top apps by total usage",
+        description="Rank apps by total foreground time over the date range.",
+        epilog="""\
+output fields:
+  app               bundle ID
+  total_minutes     total foreground time
+  total_hours       same value in hours
+  sessions          number of focus events
+
+examples:
+  screentime top --limit 10                  Top 10 apps this week
+  screentime top --days 30 --limit 20        Top 20 apps, last month
+  screentime top --app com.apple             Top Apple apps only
+""",
+    )
+
+    args = parser.parse_args()
+
+    commands = {
+        "streams": cmd_streams,
+        "events": cmd_events,
+        "daily": cmd_daily,
+        "top": cmd_top,
+    }
+
+    handler = commands.get(args.command, cmd_events)
+    handler(args)
+
+
+if __name__ == "__main__":
+    main()
