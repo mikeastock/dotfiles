@@ -17,17 +17,22 @@
   1. Compare the research with the codebase to choose the best fit.
   1. Implement the fix or ask about the tradeoffs the user is willing to make.
 - Write idiomatic, simple, maintainable code. Always ask yourself if this is the most simple intuitive solution to the problem.
-- Prefer straightforward Ruby control flow over defensive branching when invariants are already enforced upstream.
-- In Ruby services, optimize for linear readability: fetch records, transform data, execute side effects.
-- Keep service object interfaces lean: remove unused params/dependencies instead of carrying them forward.
-- Prefer intent-revealing private method names over clever abstractions.
-- Prefer memoization for DB-backed lookups inside a service/object lifecycle to prevent accidental repeat queries and N+1-style footguns.
 - Leave each repo better than how you found it. If something is giving a code smell, fix it for the next person.
 - Clean up unused code ruthlessly. If a function no longer needs a parameter or a helper is dead, delete it and update the callers instead of letting the junk linger.
 - **Search before pivoting**. If you are stuck or uncertain, do a quick web search for official docs or specs, then continue with the current approach. Do not change direction unless asked.
 - If code is very confusing or hard to understand:
   1. Try to simplify it.
   1. Add an ASCII art diagram in a code comment if it would help.
+
+## Language Guidance
+
+### Ruby
+
+- Prefer straightforward Ruby control flow over defensive branching when invariants are already enforced upstream.
+- In Ruby services, optimize for linear readability: fetch records, transform data, execute side effects.
+- Keep service object interfaces lean: remove unused params/dependencies instead of carrying them forward.
+- Prefer intent-revealing private method names over clever abstractions.
+- Prefer memoization for DB-backed lookups inside a service/object lifecycle to prevent accidental repeat queries and N+1-style footguns.
 
 ## Testing Philosophy
 
