@@ -6,8 +6,6 @@
  *
  * Works with handoff: when a handoff prompt includes "Parent session: <path>",
  * the model can use this tool to look up details from that session.
- *
- * Based on: https://github.com/pasky/pi-amplike
  */
 
 import { complete, type Message } from "@mariozechner/pi-ai";
