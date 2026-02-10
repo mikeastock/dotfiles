@@ -44,9 +44,9 @@ skills = [ "open-prose" ]
 ["mitsuhiko/agent-stuff"]
 url = "https://github.com/mitsuhiko/agent-stuff"
 extensions_path = "pi-extensions/*.ts"
-extensions = [ "cwd-history", "review" ]
+extensions = [ "review" ]
 
 ["buildrtech/dotagents"]
 url = "https://github.com/buildrtech/dotagents"
-skills = [ "*" ]                                  # All superpower skills
-skills_skip_agents = [ "amp" ]                    # Skip superpower skills for Amp
+skills = [ "*" ]                                # All superpower skills
+skills_skip_agents = [ "amp" ]                  # Skip superpower skills for Amp
