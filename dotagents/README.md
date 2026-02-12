@@ -165,6 +165,7 @@ For custom skills, you can also place per-skill overrides at `skills/<skill>/ove
 | `test-driven-development` | Use when implementing features, before writing implementation code |
 | `verification-before-completion` | Verify work with evidence before claiming completion |
 | `writing-plans` | Use when you have requirements for a multi-step task |
+| `fetch-ci-build` | Fetch CI build results and diagnose failures (GitHub Actions, Buildkite, CircleCI) |
 
 ### Custom Skills
 
@@ -172,7 +173,6 @@ For custom skills, you can also place per-skill overrides at `skills/<skill>/ove
 |-------|-------------|
 | `ask-questions-if-underspecified` | Clarify requirements before implementing (invoke explicitly) |
 | `brave-search` | Web search and content extraction via Brave Search API |
-| `fetch-ci-build` | Fetch CI build results and diagnose failures (GitHub Actions, Buildkite, CircleCI) |
 | `favicon-generator` | Generate favicons from prompts using magenta keying and ImageMagick outputs |
 | `mcporter` | Interact with MCP servers using the mcporter CLI |
 | `nano-banana-pro` | Generate or edit images via Gemini 3 Pro Image |

@@ -48,5 +48,5 @@ extensions = [ "review" ]
 
 ["buildrtech/dotagents"]
 url = "https://github.com/buildrtech/dotagents"
-skills = [ "*" ]                                # All superpower skills
-skills_skip_agents = [ "amp" ]                  # Skip superpower skills for Amp
+skills = [ "brainstorming", "dispatching-parallel-agents", "executing-plans", "receiving-code-review", "requesting-code-review", "semantic-commit", "systematic-debugging", "test-driven-development", "verification-before-completion", "writing-plans", "fetch-ci-build" ]
+skills_skip_agents = [ "amp" ]                  # Skip buildrtech skills for Amp
