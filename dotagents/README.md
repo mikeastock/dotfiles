@@ -1,6 +1,6 @@
 # Agents
 
-This repository contains reusable skills and extensions for AI coding agents including [Amp](https://ampcode.com), [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [Codex CLI](https://github.com/openai/codex), and [Pi Coding Agent](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent).
+This repository contains reusable skills, prompt templates, and extensions for AI coding agents including [Amp](https://ampcode.com), [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [Codex CLI](https://github.com/openai/codex), and [Pi Coding Agent](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent).
 
 ## Requirements
 
@@ -13,14 +13,15 @@ This repository contains reusable skills and extensions for AI coding agents inc
 make install
 ```
 
-This initializes submodules, builds skills (applying overrides), and installs them for all supported agents. See `make help` for more options:
+This initializes submodules, builds skills and prompt templates, and installs them for all supported agents. See `make help` for more options:
 
 ```
-make install             Initialize submodules and install skills and extensions
+make install             Initialize submodules and install skills, prompt templates, and extensions
 make install-skills      Install skills only (Amp, Claude Code, Codex, Pi agent)
+make install-prompts     Install prompt templates only (Pi agent)
 make install-extensions  Install extensions only (Pi agent)
-make build               Build skills with overrides (without installing)
-make clean               Remove all installed skills, extensions, and build artifacts
+make build               Build skills and prompt templates (without installing)
+make clean               Remove all installed skills, prompt templates, extensions, and build artifacts
 make agents-config       Configure all agents to use their own skills directories
 ```
 
@@ -40,6 +41,7 @@ agents/
 │   └── vercel-labs-agent-skills/     # git submodule (github.com/vercel-labs/agent-skills)
 ├── skills/                           # custom skills
 │   └── <skill-name>/
+├── prompts/                          # custom Pi prompt templates (*.md)
 ├── skill-overrides/                  # agent-specific appends
 │   ├── brainstorming-claude.md
 │   └── brainstorming-pi.md
@@ -99,6 +101,8 @@ Each plugin supports these options:
 | `skills_skip_agents` | Agents that should not receive this plugin's skills (optional) |
 | `extensions_path` | Glob pattern to find extensions (default: `extensions/*.ts`) |
 | `extensions` | List of extensions to install, or omit for all |
+| `prompts_path` | Glob pattern to find prompt templates (default: `prompts/*.md`) |
+| `prompts` | List of prompt templates to install, or omit for all |
 | `alias` | Optional prefix to prevent name collisions |
 
 Example (skip a plugin's skills for Amp):
@@ -108,6 +112,15 @@ Example (skip a plugin's skills for Amp):
 url = "https://github.com/buildrtech/dotagents"
 skills = ["*"]
 skills_skip_agents = ["amp"]
+```
+
+Example (install prompt templates from a plugin for Pi):
+
+```toml
+["someowner/someplugin"]
+url = "https://github.com/someowner/someplugin"
+prompts_path = "prompts/*.md"
+prompts = ["review", "refactor-pass"]
 ```
 
 ### Updating Plugins
@@ -208,6 +221,24 @@ For custom skills, you can also place per-skill overrides at `skills/<skill>/ove
 | `session-query` | Pi | Adds a tool to query previous Pi session files for context and decisions |
 | `terraform-apply-gate` | Pi | Prompts for explicit confirmation before running terraform/tf apply commands |
 
+## Prompt Templates
+
+Prompt templates are reusable markdown snippets for Pi slash commands (for example `/review` or `/refactor-pass`).
+
+### Prompt Template Locations
+
+| Agent | Location |
+|-------|----------|
+| Pi Coding Agent | `~/.pi/agent/prompts/*.md` |
+
+Custom templates in this repo live in `prompts/*.md` and are installed with `make install` or `make install-prompts`.
+
+### Available Prompt Templates
+
+| Template | Description |
+|----------|-------------|
+| `refactor-pass` | Runs a focused simplification/refactor workflow and asks for verification via tests/build |
+
 ## What are Skills?
 
 Skills are specialized instruction sets that guide AI agents through specific tasks and workflows. Each skill provides structured guidance for a particular type of work.
@@ -289,4 +320,5 @@ See Pi's [extensions documentation](https://github.com/badlogic/pi-mono/blob/mai
 - [Codex CLI Skills Documentation](https://developers.openai.com/codex/skills)
 - [Pi Coding Agent Documentation](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent)
 - [Pi Extensions Documentation](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/extensions.md)
+- [Pi Prompt Templates Documentation](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/prompt-templates.md)
 - [Agent Skills Specification](https://agentskills.io/specification.md)

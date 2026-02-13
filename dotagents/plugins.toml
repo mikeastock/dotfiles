@@ -7,6 +7,8 @@
 #   skills_skip_agents - Agents that should not receive this plugin's skills (optional)
 #   extensions_path - Glob pattern(s) to find extensions (default: "extensions/*.ts")
 #   extensions      - List of extensions to install: ["*"] for all, [] or omit for none
+#   prompts_path    - Glob pattern(s) to find prompt templates (default: "prompts/*.md")
+#   prompts         - List of prompt templates to install: ["*"] for all, [] or omit for none
 #   alias           - Optional prefix to prevent name collisions
 #
 # Plugin directories use hyphen separator: owner/repo -> plugins/owner-repo/

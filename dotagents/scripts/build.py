@@ -2,8 +2,8 @@
 """
 Build system for AI agent plugins.
 
-Reads plugins.toml and builds/installs skills and extensions for
-Claude Code, Codex CLI, and Pi Agent.
+Reads plugins.toml and builds/installs skills, prompt templates,
+and extensions for Claude Code, Codex CLI, and Pi Agent.
 
 Requires Python 3.11+ (uses tomllib from stdlib).
 """
@@ -63,6 +63,7 @@ import tomllib
 ROOT = Path(__file__).parent.parent
 PLUGINS_DIR = ROOT / "plugins"
 SKILLS_DIR = ROOT / "skills"
+PROMPTS_DIR = ROOT / "prompts"
 
 EXTENSIONS_DIR = ROOT / "extensions"
 OVERRIDES_DIR = ROOT / "skill-overrides"
@@ -88,6 +89,7 @@ INSTALL_PATHS = {
     "pi": {
         "skills": HOME / ".pi" / "agent" / "skills",
         "extensions": HOME / ".pi" / "agent" / "extensions",
+        "prompts": HOME / ".pi" / "agent" / "prompts",
     },
 }
 
@@ -110,6 +112,8 @@ class Plugin:
     skills_skip_agents: list[str] = field(default_factory=list)
     extensions_path: list[str] = field(default_factory=lambda: ["extensions/*.ts"])
     extensions: list[str] = field(default_factory=list)  # Empty = none, ["*"] = all
+    prompts_path: list[str] = field(default_factory=lambda: ["prompts/*.md"])
+    prompts: list[str] = field(default_factory=list)  # Empty = none, ["*"] = all
     alias: str | None = None
 
     @property
@@ -146,6 +150,8 @@ class Plugin:
                 data.get("extensions_path", "extensions/*.ts")
             ),
             extensions=normalize_items(data.get("extensions")),
+            prompts_path=normalize_path(data.get("prompts_path", "prompts/*.md")),
+            prompts=normalize_items(data.get("prompts")),
             alias=data.get("alias"),
         )
 
@@ -214,6 +220,9 @@ def discover_items(plugin: Plugin, item_type: str) -> list[tuple[str, Path]]:
     elif item_type == "extensions":
         patterns = plugin.extensions_path
         enabled = plugin.extensions
+    elif item_type == "prompts":
+        patterns = plugin.prompts_path
+        enabled = plugin.prompts
     else:
         raise ValueError(f"Unknown item type: {item_type}")
 
@@ -226,9 +235,11 @@ def discover_items(plugin: Plugin, item_type: str) -> list[tuple[str, Path]]:
 
     items = []
     for path in glob_paths(plugin_dir, patterns):
-        if path.is_dir():
+        if item_type == "skills" and path.is_dir():
             name = path.name
-        elif path.is_file() and path.suffix == ".ts":
+        elif item_type == "extensions" and path.is_file() and path.suffix == ".ts":
+            name = path.stem
+        elif item_type == "prompts" and path.is_file() and path.suffix == ".md":
             name = path.stem
         else:
             continue
@@ -532,6 +543,46 @@ def build_skills(plugins: dict[str, Plugin]):
     print(f"  Built {len(built)} skills")
 
 
+def build_prompts(plugins: dict[str, Plugin]):
+    """Build prompt templates for Pi from plugins and custom prompts directory."""
+    print("Building prompt templates...")
+
+    build_prompts_dir = BUILD_DIR / "prompts" / "pi"
+    if build_prompts_dir.exists():
+        shutil.rmtree(build_prompts_dir)
+    build_prompts_dir.mkdir(parents=True, exist_ok=True)
+
+    built = set()
+
+    # Process plugin prompts
+    for plugin in plugins.values():
+        for name, path in discover_items(plugin, "prompts"):
+            if name in built:
+                print(
+                    f"    Warning: Prompt '{name}' already exists, skipping duplicate from {plugin.name}"
+                )
+                continue
+
+            shutil.copy(path, build_prompts_dir / f"{name}.md")
+            print(f"  {name} (from {plugin.name})")
+            built.add(name)
+
+    # Process custom prompts
+    if PROMPTS_DIR.exists():
+        for prompt_file in sorted(PROMPTS_DIR.glob("*.md")):
+            name = prompt_file.stem
+            if name in built:
+                print(
+                    f"    Warning: Custom prompt '{name}' conflicts with plugin prompt"
+                )
+
+            shutil.copy(prompt_file, build_prompts_dir / f"{name}.md")
+            print(f"  {name} (custom)")
+            built.add(name)
+
+    print(f"  Built {len(built)} prompt templates")
+
+
 def install_skills():
     """Install built skills to agent directories."""
     print("Installing skills...")
@@ -561,6 +612,30 @@ def install_skills():
                 count += 1
 
         print(f"  {agent}: {count} skills -> {dest}")
+
+
+def install_prompts():
+    """Install built prompt templates to Pi prompt directory."""
+    print("Installing prompt templates...")
+
+    source = BUILD_DIR / "prompts" / "pi"
+    if not source.exists():
+        print("  No built prompt templates found, skipping")
+        return
+
+    dest = INSTALL_PATHS["pi"]["prompts"]
+
+    # Clear existing prompts directory for a fresh install
+    if dest.exists():
+        shutil.rmtree(dest)
+    dest.mkdir(parents=True, exist_ok=True)
+
+    count = 0
+    for prompt_file in sorted(source.glob("*.md")):
+        shutil.copy(prompt_file, dest / prompt_file.name)
+        count += 1
+
+    print(f"  pi: {count} prompts -> {dest}")
 
 
 def install_extensions(plugins: dict[str, Plugin]):
@@ -766,6 +841,12 @@ def clean(plugins: dict[str, Plugin]):
                     remove_path(installed)
                     print(f"  Removed extension: {ext_dir.name}")
 
+    # Clean prompts
+    prompts_dest = INSTALL_PATHS["pi"]["prompts"]
+    if prompts_dest.exists() or prompts_dest.is_symlink():
+        remove_path(prompts_dest)
+        print(f"  Removed prompts from {prompts_dest}")
+
     # Clean build directory
     if BUILD_DIR.exists():
         shutil.rmtree(BUILD_DIR)
@@ -795,6 +876,7 @@ def main():
             "install",
             "install-skills",
             "install-extensions",
+            "install-prompts",
             "install-configs",
             "clean",
             "submodule-init",
@@ -819,12 +901,15 @@ def main():
         if NON_INTERACTIVE:
             print("Building in non-interactive mode...")
         build_skills(plugins)
+        build_prompts(plugins)
     elif args.command == "install":
         if NON_INTERACTIVE:
             print("Installing in non-interactive mode...")
         init_submodules()
         build_skills(plugins)
+        build_prompts(plugins)
         install_skills()
+        install_prompts()
         install_extensions(plugins)
         install_configs()
         print("\nAll done!")
@@ -833,6 +918,9 @@ def main():
         install_skills()
     elif args.command == "install-extensions":
         install_extensions(plugins)
+    elif args.command == "install-prompts":
+        build_prompts(plugins)
+        install_prompts()
     elif args.command == "install-configs":
         install_configs()
     elif args.command == "clean":

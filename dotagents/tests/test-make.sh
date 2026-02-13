@@ -21,8 +21,9 @@ test_make_help() {
     local output
     output=$(make help 2>&1)
 
-    assert_output_contains "$output" "Agents - Skills and Extensions Installer" "Help shows title"
+    assert_output_contains "$output" "Agents - Skills, Prompt Templates, and Extensions Installer" "Help shows title"
     assert_output_contains "$output" "make install" "Help shows install command"
+    assert_output_contains "$output" "make install-prompts" "Help shows install-prompts command"
     assert_output_contains "$output" "make build" "Help shows build command"
     assert_output_contains "$output" "make clean" "Help shows clean command"
     assert_output_contains "$output" "plugins.toml" "Help mentions config file"
@@ -40,7 +41,8 @@ test_make_build() {
     local output
     output=$(make build 2>&1)
 
-    assert_output_contains "$output" "Building skills" "Build shows progress"
+    assert_output_contains "$output" "Building skills" "Build shows skill progress"
+    assert_output_contains "$output" "Building prompt templates" "Build shows prompt progress"
     assert_output_contains "$output" "Built" "Build shows completion"
 
     # Check build directories were created
@@ -48,6 +50,8 @@ test_make_build() {
     assert_dir_exists "$PROJECT_DIR/build/claude" "Build created claude directory"
     assert_dir_exists "$PROJECT_DIR/build/codex" "Build created codex directory"
     assert_dir_exists "$PROJECT_DIR/build/pi" "Build created pi directory"
+    assert_dir_exists "$PROJECT_DIR/build/prompts/pi" "Build created Pi prompt directory"
+    assert_file_exists "$PROJECT_DIR/build/prompts/pi/refactor-pass.md" "Build created refactor-pass prompt template"
 
     # Check that skills were built (at least one skill should exist)
     local skill_count
@@ -161,6 +165,18 @@ test_make_install_extensions() {
     fi
 }
 
+# Test: make install-prompts (with sandbox)
+test_make_install_prompts() {
+    log_test "Testing 'make install-prompts' (sandboxed)"
+    cd "$PROJECT_DIR"
+
+    local output
+    output=$(HOME="$SANDBOX_DIR" make install-prompts 2>&1)
+
+    assert_output_contains "$output" "Installing prompt templates" "Install shows prompt progress"
+    assert_file_exists "$SANDBOX_DIR/.pi/agent/prompts/refactor-pass.md" "Pi prompt template installed"
+}
+
 # Test: make install (with sandbox)
 test_make_install() {
     log_test "Testing 'make install' (sandboxed)"
@@ -176,7 +192,8 @@ test_make_install() {
     local output
     output=$(HOME="$SANDBOX_DIR" make install 2>&1)
 
-    assert_output_contains "$output" "All skills and extensions installed" "Install shows completion message"
+    assert_output_contains "$output" "All skills, prompt templates, and extensions installed" "Install shows completion message"
+    assert_file_exists "$SANDBOX_DIR/.pi/agent/prompts/refactor-pass.md" "Install includes Pi prompts"
 }
 
 # Test: make clean (with sandbox)
@@ -194,7 +211,7 @@ test_make_clean() {
     assert_output_contains "$output" "Cleaning" "Clean shows progress"
 
     # Verify build directories are removed
-    if [ ! -d "$PROJECT_DIR/build/claude" ] && [ ! -d "$PROJECT_DIR/build/pi" ]; then
+    if [ ! -d "$PROJECT_DIR/build/claude" ] && [ ! -d "$PROJECT_DIR/build/pi" ] && [ ! -d "$PROJECT_DIR/build/prompts" ]; then
         log_info "PASS: Build directories removed"
         TESTS_PASSED=$((TESTS_PASSED + 1))
     else
@@ -211,7 +228,7 @@ test_make_all() {
     local output
     output=$(make all 2>&1)
 
-    assert_output_contains "$output" "Agents - Skills and Extensions Installer" "'make all' shows help"
+    assert_output_contains "$output" "Agents - Skills, Prompt Templates, and Extensions Installer" "'make all' shows help"
 }
 
 # Test: plugins.toml exists and is valid
@@ -251,6 +268,7 @@ main() {
     test_make_build
     test_make_install_skills
     test_make_install_extensions
+    test_make_install_prompts
     test_make_install
     test_make_clean
 
