@@ -71,9 +71,9 @@ alias s="git status"
 alias ci="git ci-status -v"
 alias glist="git for-each-ref --sort=-committerdate refs/heads/ --format='%(committerdate:short) %(refname:short)' | head -n 10"
 
-alias tf="terraform"
+alias tf="mise exec -- terraform"
 alias n="corepack pnpm"
-alias gt="gtree"
+alias piu="npm install -g @mariozechner/pi-coding-agent"
 
 function fco -d "Fuzzy-find and checkout a branch"
   git branch --all --sort=-committerdate | grep -v HEAD | string trim | fzf --header='[fuzzy:branch-checkout]' | xargs git checkout

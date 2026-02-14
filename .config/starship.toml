@@ -28,5 +28,6 @@ format = "[$duration]($style) "
 style = "yellow"
 
 # Make prompt a single line instead of two lines
+
 [line_break]
 disabled = true
