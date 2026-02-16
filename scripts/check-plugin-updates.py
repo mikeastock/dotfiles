@@ -15,6 +15,7 @@ Environment variables:
 """
 
 import argparse
+import importlib.util
 import os
 import re
 import shutil
@@ -28,6 +29,14 @@ if sys.version_info < (3, 11):
     sys.exit("Error: Python 3.11+ required (for tomllib)")
 
 import tomllib
+
+# Import trim_plugin from update-plugins.py (hyphen in name requires importlib.util)
+_spec = importlib.util.spec_from_file_location(
+    "update_plugins", Path(__file__).parent / "update-plugins.py"
+)
+_mod = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_mod)
+trim_plugin = _mod.trim_plugin
 
 ROOT = Path(__file__).parent.parent
 CONFIG_FILE = ROOT / "plugins.toml"
@@ -79,7 +88,7 @@ def update_commit_in_toml(plugin_name: str, new_commit: str) -> None:
     CONFIG_FILE.write_text(new_content)
 
 
-def create_pr(plugin_name: str, old_commit: str, new_commit: str) -> None:
+def create_pr(plugin_name: str, old_commit: str, new_commit: str, plugin_config: dict) -> None:
     """Create a PR to update a single plugin."""
     dir_name = plugin_dir_name(plugin_name)
     branch = f"plugin-update/{dir_name}"
@@ -111,6 +120,9 @@ def create_pr(plugin_name: str, old_commit: str, new_commit: str) -> None:
     git_dir = dest / ".git"
     if git_dir.exists():
         shutil.rmtree(git_dir)
+
+    # Trim to only referenced files
+    trim_plugin(dest, plugin_config)
 
     # Update commit in plugins.toml
     update_commit_in_toml(plugin_name, new_commit)
@@ -176,7 +188,7 @@ def main():
 
         if latest != pinned_commit:
             print(f"  {plugin_name}: update available {pinned_commit[:12]} -> {latest[:12]}")
-            updates.append((plugin_name, pinned_commit, latest))
+            updates.append((plugin_name, pinned_commit, latest, plugin_config))
         else:
             print(f"  {plugin_name}: up to date ({pinned_commit[:12]})")
 
@@ -190,9 +202,9 @@ def main():
 
     if args.create_prs:
         print("\nCreating pull requests...")
-        for plugin_name, old_commit, new_commit in updates:
+        for plugin_name, old_commit, new_commit, plugin_config in updates:
             try:
-                create_pr(plugin_name, old_commit, new_commit)
+                create_pr(plugin_name, old_commit, new_commit, plugin_config)
             except Exception as e:
                 print(f"  Error creating PR for {plugin_name}: {e}")
 

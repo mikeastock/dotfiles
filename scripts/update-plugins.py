@@ -3,7 +3,8 @@
 Update vendored plugins to their latest upstream commits.
 
 Reads plugins.toml, clones each plugin at the latest commit,
-replaces the vendored directory, and updates the commit SHA.
+replaces the vendored directory with only the referenced files,
+and updates the commit SHA.
 
 Requires Python 3.11+ (uses tomllib from stdlib).
 """
@@ -46,7 +47,107 @@ def get_latest_commit(url: str) -> str | None:
     return None
 
 
-def update_plugin(name: str, url: str, current_commit: str | None) -> str | None:
+def trim_plugin(plugin_dir: Path, plugin_config: dict) -> None:
+    """
+    Remove files not referenced by plugin config.
+
+    Keeps only the directories/files matched by skills_path, extensions_path,
+    and prompts_path globs that contain items listed in skills/extensions/prompts.
+    """
+    if not plugin_dir.exists():
+        return
+
+    # Collect all paths we need to keep
+    keep_paths: set[Path] = set()
+
+    for item_type, path_key, items_key in [
+        ("skills", "skills_path", "skills"),
+        ("extensions", "extensions_path", "extensions"),
+        ("prompts", "prompts_path", "prompts"),
+    ]:
+        items = plugin_config.get(items_key, [])
+        if isinstance(items, str):
+            items = [items]
+        if not items:
+            continue
+
+        include_all = "*" in items
+
+        # Get glob patterns
+        patterns = plugin_config.get(path_key)
+        if patterns is None:
+            if item_type == "skills":
+                patterns = "skills/*"
+            elif item_type == "extensions":
+                patterns = "extensions/*.ts"
+            elif item_type == "prompts":
+                patterns = "prompts/*.md"
+        if isinstance(patterns, str):
+            patterns = [patterns]
+
+        for pattern in patterns:
+            if pattern == ".":
+                # Root-level files (e.g., *.ts at root)
+                for path in plugin_dir.iterdir():
+                    if path.is_file() and path.suffix == ".ts":
+                        if include_all or path.stem in items:
+                            keep_paths.add(path)
+            else:
+                for path in plugin_dir.glob(pattern):
+                    if item_type == "skills" and path.is_dir():
+                        name = path.name
+                    elif item_type == "extensions" and path.is_file() and path.suffix == ".ts":
+                        name = path.stem
+                    elif item_type == "prompts" and path.is_file() and path.suffix == ".md":
+                        name = path.stem
+                    else:
+                        continue
+
+                    if include_all or name in items:
+                        keep_paths.add(path)
+
+    if not keep_paths:
+        return
+
+    # Build set of all ancestor directories we need to preserve
+    keep_ancestors: set[Path] = set()
+    for p in keep_paths:
+        parent = p.parent
+        while parent != plugin_dir and parent != plugin_dir.parent:
+            keep_ancestors.add(parent)
+            parent = parent.parent
+
+    # Remove everything at top level that isn't an ancestor of something we keep
+    for item in list(plugin_dir.iterdir()):
+        if item in keep_paths:
+            continue
+        if item in keep_ancestors:
+            # Recurse: clean children of this directory
+            _trim_subtree(item, keep_paths, keep_ancestors)
+        else:
+            if item.is_dir():
+                shutil.rmtree(item)
+            else:
+                item.unlink()
+
+
+def _trim_subtree(directory: Path, keep_paths: set[Path], keep_ancestors: set[Path]) -> None:
+    """Recursively remove items not in keep_paths or keep_ancestors."""
+    for item in list(directory.iterdir()):
+        if item in keep_paths:
+            continue
+        if item in keep_ancestors:
+            _trim_subtree(item, keep_paths, keep_ancestors)
+        else:
+            if item.is_dir():
+                shutil.rmtree(item)
+            else:
+                item.unlink()
+
+
+def update_plugin(
+    name: str, url: str, current_commit: str | None, plugin_config: dict
+) -> str | None:
     """
     Update a single vendored plugin.
 
@@ -84,6 +185,9 @@ def update_plugin(name: str, url: str, current_commit: str | None) -> str | None
         if git_dir.exists():
             shutil.rmtree(git_dir)
 
+        # Trim to only referenced files
+        trim_plugin(clone_dest, plugin_config)
+
         # Replace vendored directory
         if dest.exists():
             shutil.rmtree(dest)
@@ -100,10 +204,8 @@ def update_config_commit(plugin_name: str, new_commit: str) -> None:
     escaped_name = re.escape(plugin_name)
 
     # Find the plugin section and update or add commit field
-    # Match: ["owner/repo"] ... commit = "sha" (within the section)
     section_pattern = rf'(\["{escaped_name}"\][^\[]*?)commit\s*=\s*"[a-f0-9]+"'
     if re.search(section_pattern, content, re.DOTALL):
-        # Update existing commit
         new_content = re.sub(
             section_pattern,
             rf'\g<1>commit = "{new_commit}"',
@@ -111,7 +213,6 @@ def update_config_commit(plugin_name: str, new_commit: str) -> None:
             flags=re.DOTALL,
         )
     else:
-        # Add commit after url line
         url_pattern = rf'(\["{escaped_name}"\]\nurl\s*=\s*"[^"]+"\n)'
         new_content = re.sub(
             url_pattern,
@@ -138,7 +239,7 @@ def main():
         url = plugin_config["url"]
         current_commit = plugin_config.get("commit")
 
-        new_commit = update_plugin(plugin_name, url, current_commit)
+        new_commit = update_plugin(plugin_name, url, current_commit, plugin_config)
         if new_commit:
             update_config_commit(plugin_name, new_commit)
             updated += 1
