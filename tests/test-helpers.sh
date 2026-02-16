@@ -248,17 +248,23 @@ setup_sandbox() {
     log_info "Sandbox directories created"
 }
 
-# Initialize git submodules if needed
+# Verify vendored plugins exist (replaces old init_submodules)
 init_submodules() {
-    log_info "Checking git submodules..."
+    log_info "Checking vendored plugins..."
     cd "$PROJECT_DIR"
 
-    # Check if any submodules are uninitialized
-    if git submodule status --recursive | grep -q '^-'; then
-        log_info "Initializing git submodules..."
-        git submodule update --init --recursive
+    local missing=0
+    for dir in plugins/*/; do
+        if [ -z "$(ls -A "$dir" 2>/dev/null)" ]; then
+            log_warn "Plugin directory empty: $dir"
+            missing=$((missing + 1))
+        fi
+    done
+
+    if [ "$missing" -gt 0 ]; then
+        log_warn "$missing plugin(s) have empty directories. Run 'make plugin-update' to fetch them."
     else
-        log_info "Git submodules already initialized"
+        log_info "All vendored plugins present"
     fi
 }
 

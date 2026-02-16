@@ -17,7 +17,7 @@ HOME_LINKS := .bin .gitconfig .ideavimrc .psqlrc .tmux.conf .tmuxinator .vscode
 # .config directories to symlink entirely
 CONFIG_DIRS := alacritty stylua lvim zellij direnv atuin ghostty
 
-.PHONY: all install install-non-interactive install-skills install-extensions install-prompts install-configs build clean help submodule-init plugin-update check-python \
+.PHONY: all install install-non-interactive install-skills install-extensions install-prompts install-configs build clean help plugin-update plugin-check check-python \
 	dot-all dot-icloud-link dot-home-symlinks dot-config-symlinks dot-macos-defaults dot-clean
 
 all: help
@@ -26,14 +26,15 @@ help:
 	@echo "Agents - Skills, Prompt Templates, and Extensions Installer"
 	@echo ""
 	@echo "Usage:"
-	@echo "  make install                 Initialize submodules and install skills and extensions"
+	@echo "  make install                 Build and install skills and extensions"
 	@echo "  make install-non-interactive Install for headless/automated environments (skips interactive extensions)"
 	@echo "  make install-skills          Install skills only (Amp, Claude Code, Codex, Pi agent)"
 	@echo "  make install-extensions      Install extensions only (Pi agent)"
 	@echo "  make install-prompts         Install prompt templates only (Pi agent)"
 	@echo "  make install-configs         Install all agent configs (Amp, Codex, Pi)"
 	@echo "  make build                   Build skills with overrides (without installing)"
-	@echo "  make plugin-update           Update all plugin submodules to latest"
+	@echo "  make plugin-update           Update all vendored plugins to latest upstream"
+	@echo "  make plugin-check            Check if any plugins have upstream updates"
 	@echo "  make clean                   Remove all installed skills, extensions, and build artifacts"
 	@echo ""
 	@echo "Dotfiles:"
@@ -60,8 +61,8 @@ install-non-interactive: check-python
 	@$(PYTHON) $(BUILD_SCRIPT) install --non-interactive
 	@echo "All skills, prompt templates, and extensions installed (non-interactive mode)"
 
-submodule-init:
-	@$(PYTHON) $(BUILD_SCRIPT) submodule-init
+plugin-check: check-python
+	@$(PYTHON) $(CURDIR)/scripts/check-plugin-updates.py
 
 build: check-python
 	@$(PYTHON) $(BUILD_SCRIPT) build
@@ -81,10 +82,8 @@ install-configs: check-python
 clean: check-python
 	@$(PYTHON) $(BUILD_SCRIPT) clean
 
-plugin-update:
-	@echo "Updating plugin submodules..."
-	@git submodule update --remote --merge
-	@echo "Plugins updated"
+plugin-update: check-python
+	@$(PYTHON) $(CURDIR)/scripts/update-plugins.py
 
 # Helper: create symlink or error if non-symlink exists
 # Usage: $(call safe_symlink,source,target)

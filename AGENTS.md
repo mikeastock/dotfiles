@@ -9,14 +9,14 @@ This repository manages reusable skills and extensions for AI coding agents incl
 - **Pi Coding Agent** (badlogic)
 - **Codex CLI** (OpenAI)
 
-Skills are specialized instruction sets that guide AI agents through specific tasks. The repository aggregates skills from multiple sources (git submodules) and custom implementations, applies agent-specific overrides, and installs them to the appropriate locations.
+Skills are specialized instruction sets that guide AI agents through specific tasks. The repository aggregates skills from multiple sources (vendored plugins) and custom implementations, applies agent-specific overrides, and installs them to the appropriate locations.
 
 ## Repository Structure
 
 ```
 agents/
 ├── plugins.toml                    # Plugin configuration (URLs, enabled items, paths)
-├── plugins/                        # Git submodules (skill sources, owner-repo format)
+├── plugins/                        # Vendored plugins (skill sources, owner-repo format)
 │   ├── anthropics-skills/          # github.com/anthropics/skills
 │   ├── SawyerHood-dev-browser/     # github.com/SawyerHood/dev-browser
 │   ├── EveryInc-compound-engineering-plugin/  # github.com/EveryInc/compound-engineering-plugin
@@ -63,6 +63,7 @@ All plugin configuration is in `plugins.toml`. Plugins use fully qualified names
 
 Each plugin can specify:
 - `url` - Git repository URL (required)
+- `commit` - Pinned commit SHA (used to detect upstream updates)
 - `skills_path` - Glob pattern to find skills (default: `skills/*`)
 - `skills` - List of skills to install: `["*"]` for all, `["a", "b"]` for specific, `[]` or omit for none
 - `skills_skip_agents` - Agents that should not receive this plugin's skills (optional)
@@ -74,7 +75,6 @@ Each plugin can specify:
 
 ### Setup
 ```bash
-git submodule update --init --recursive
 make install
 ```
 
@@ -87,7 +87,8 @@ make install
 | `make install-skills` | Install skills only |
 | `make install-extensions` | Install Pi extensions only |
 | `make clean` | Remove all installed artifacts and build directory |
-| `make plugin-update` | Update all plugin submodules to latest |
+| `make plugin-update` | Update all vendored plugins to latest upstream |
+| `make plugin-check` | Check if any plugins have upstream updates |
 | `make agents-config` | Configure all agents to use their own skills directories (avoid duplicates) |
 
 ### Testing
@@ -197,13 +198,13 @@ Extensions use the unified `ExtensionAPI` which provides:
 4. Update README.md: add to "Available Extensions" table and directory structure
 
 ### Adding a New Plugin
-1. Add submodule: `git submodule add <url> plugins/<owner>-<repo>`
-2. Add plugin configuration to `plugins.toml`:
+1. Add plugin configuration to `plugins.toml`:
    ```toml
    ["owner/repo"]
    url = "https://github.com/owner/repo"
    skills = ["*"]  # Use ["*"] for all, or list specific skills
    ```
+2. Run `make plugin-update` to vendor the plugin files
 3. Run `make install`
 
 ## Important Notes

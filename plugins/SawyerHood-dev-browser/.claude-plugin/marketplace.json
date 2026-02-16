@@ -1,0 +1,21 @@
+{
+  "name": "dev-browser-marketplace",
+  "owner": {
+    "name": "Sawyer Hood",
+    "email": "sawyerjhood@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "dev-browser",
+      "source": "./",
+      "description": "Browser automation skill with persistent page state for developers and AI agents",
+      "strict": false,
+      "keywords": ["browser", "playwright", "automation", "testing", "debugging"],
+      "skills": ["./skills/dev-browser"]
+    }
+  ],
+  "metadata": {
+    "description": "Marketplace for the dev-browser skill",
+    "version": "1.0.1"
+  }
+}

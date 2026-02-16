@@ -1,0 +1,22 @@
+# Build artifacts
+build/
+
+# Dependencies
+node_modules/
+plugins/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

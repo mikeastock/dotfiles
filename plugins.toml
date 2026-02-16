@@ -2,6 +2,7 @@
 #
 # Each plugin is a table with fully qualified name (owner/repo):
 #   url             - Git repository URL (required)
+#   commit          - Pinned commit SHA (used to detect upstream updates)
 #   skills_path     - Glob pattern(s) to find skills (default: "skills/*")
 #   skills          - List of skills to install: ["*"] for all, [] or omit for none
 #   skills_skip_agents - Agents that should not receive this plugin's skills (optional)
@@ -12,43 +13,53 @@
 #   alias           - Optional prefix to prevent name collisions
 #
 # Plugin directories use hyphen separator: owner/repo -> plugins/owner-repo/
+# Plugins are vendored directly (not submodules). Use `make plugin-update` to update.
 
 ["anthropics/skills"]
 url = "https://github.com/anthropics/skills"
+commit = "1ed29a03dc852d30fa6ef2ca53a67dc2c2c2c563"
 skills = [ "frontend-design" ]
 
 ["EveryInc/compound-engineering-plugin"]
 url = "https://github.com/EveryInc/compound-engineering-plugin"
+commit = "e4ff6a874c1330e3e6b672db14e6d0b8847910de"
 skills_path = "plugins/*/skills/*"
 skills = [ "dspy-ruby" ]
 
 ["SawyerHood/dev-browser"]
 url = "https://github.com/SawyerHood/dev-browser"
+commit = "66682fb0513aec308e68d71740e2b0394a29d884"
 skills = [ "*" ]                                  # Install all skills from this plugin
 
 ["nicobailon/pi-interview-tool"]
 url = "https://github.com/nicobailon/pi-interview-tool"
+commit = "2cf35ff88c3825e8a8ac364cd66e5ad27f245715"
 extensions_path = "."                                   # Extension files are at root level
 extensions = [ "*" ]                                    # Install all extensions from this plugin
 
 ["steipete/agent-scripts"]
 url = "https://github.com/steipete/agent-scripts"
+commit = "e61eed39e0925a4cc83be6d5cb59d6e61adfe647"
 skills = [ "create-cli" ]
 
 ["vercel-labs/agent-skills"]
 url = "https://github.com/vercel-labs/agent-skills"
+commit = "e23951b8cad2f4b1e7e176c5731127c1263fe86f"
 skills = [ "react-best-practices" ]
 
 ["openprose/prose"]
 url = "https://github.com/openprose/prose"
+commit = "c5780e0c493d17f2c6014671918485705f0d8424"
 skills = [ "open-prose" ]
 
 ["mitsuhiko/agent-stuff"]
 url = "https://github.com/mitsuhiko/agent-stuff"
+commit = "7e4dd947586ebf464dabb40d9a7eb2ba31234a84"
 extensions_path = "pi-extensions/*.ts"
 extensions = [ "review" ]
 
 ["buildrtech/dotagents"]
 url = "https://github.com/buildrtech/dotagents"
+commit = "e228972ff35ac46c45e676b64b9610ac18d87442"
 skills = [ "brainstorming", "dispatching-parallel-agents", "executing-plans", "receiving-code-review", "requesting-code-review", "semantic-commit", "systematic-debugging", "test-driven-development", "verification-before-completion", "writing-plans", "fetch-ci-build" ]
 skills_skip_agents = [ "amp" ]                  # Skip buildrtech skills for Amp

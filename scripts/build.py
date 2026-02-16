@@ -172,11 +172,16 @@ def run_cmd(cmd: list[str], check: bool = True) -> subprocess.CompletedProcess:
     return subprocess.run(cmd, check=check, capture_output=True, text=True)
 
 
-def init_submodules():
-    """Initialize git submodules."""
-    print("Initializing git submodules...")
-    run_cmd(["git", "submodule", "update", "--init", "--recursive"])
-    print("  Done")
+def verify_plugins():
+    """Verify that vendored plugin directories exist."""
+    if not PLUGINS_DIR.exists():
+        return
+    config = load_config()
+    for plugin in config.values():
+        plugin_dir = PLUGINS_DIR / plugin.dir_name
+        if not plugin_dir.exists():
+            print(f"  Warning: Plugin directory missing: {plugin_dir}")
+            print(f"    Run 'make plugin-update' to fetch it")
 
 
 def glob_paths(base: Path, patterns: list[str]) -> list[Path]:
@@ -879,7 +884,6 @@ def main():
             "install-prompts",
             "install-configs",
             "clean",
-            "submodule-init",
         ],
         help="Command to run",
     )
@@ -895,9 +899,7 @@ def main():
 
     plugins = load_config()
 
-    if args.command == "submodule-init":
-        init_submodules()
-    elif args.command == "build":
+    if args.command == "build":
         if NON_INTERACTIVE:
             print("Building in non-interactive mode...")
         build_skills(plugins)
@@ -905,7 +907,7 @@ def main():
     elif args.command == "install":
         if NON_INTERACTIVE:
             print("Installing in non-interactive mode...")
-        init_submodules()
+        verify_plugins()
         build_skills(plugins)
         build_prompts(plugins)
         install_skills()

@@ -40,7 +40,8 @@ make install-extensions
 make install-configs
 make build                   # build agent artifacts only
 make agents-clean            # clean agent build/install artifacts
-make plugin-update           # update plugin submodules
+make plugin-update           # update vendored plugins to latest
+make plugin-check            # check for upstream plugin updates
 ```
 
 ## Structure
@@ -52,7 +53,7 @@ dotfiles/
 ├── skills/                  # custom agent skills
 ├── extensions/pi/           # Pi extensions
 ├── prompts/                 # Pi prompt templates
-├── plugins/                 # plugin submodules
+├── plugins/                 # vendored plugins
 ├── scripts/build.py         # agent build/install system
 ├── tests/                   # agent tooling tests
 └── Makefile                 # dotfiles + agent commands
