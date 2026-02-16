@@ -21,12 +21,12 @@ test_make_help() {
     local output
     output=$(make help 2>&1)
 
-    assert_output_contains "$output" "Agents - Skills, Prompt Templates, and Extensions Installer" "Help shows title"
-    assert_output_contains "$output" "make install" "Help shows install command"
-    assert_output_contains "$output" "make install-prompts" "Help shows install-prompts command"
-    assert_output_contains "$output" "make build" "Help shows build command"
-    assert_output_contains "$output" "make clean" "Help shows clean command"
-    assert_output_contains "$output" "plugins.toml" "Help mentions config file"
+    assert_output_contains "$output" "Usage: make" "Help shows usage"
+    assert_output_contains "$output" "Agent Targets:" "Help shows agent section"
+    assert_output_contains "$output" "install                  Install agent skills/prompts/extensions" "Help shows install command"
+    assert_output_contains "$output" "install-prompts          Install agent prompts" "Help shows install-prompts command"
+    assert_output_contains "$output" "build                    Build agent artifacts only" "Help shows build command"
+    assert_output_contains "$output" "clean           Remove all managed symlinks" "Help shows clean command"
 }
 
 # Test: make build
@@ -192,13 +192,13 @@ test_make_install() {
     local output
     output=$(HOME="$SANDBOX_DIR" make install 2>&1)
 
-    assert_output_contains "$output" "All skills, prompt templates, and extensions installed" "Install shows completion message"
+    assert_output_contains "$output" "Agent skills, prompt templates, and extensions installed" "Install shows completion message"
     assert_file_exists "$SANDBOX_DIR/.pi/agent/prompts/refactor-pass.md" "Install includes Pi prompts"
 }
 
-# Test: make clean (with sandbox)
+# Test: make agents-clean (with sandbox)
 test_make_clean() {
-    log_test "Testing 'make clean' (sandboxed)"
+    log_test "Testing 'make agents-clean' (sandboxed)"
     cd "$PROJECT_DIR"
 
     # First install
@@ -206,9 +206,9 @@ test_make_clean() {
 
     # Then clean
     local output
-    output=$(HOME="$SANDBOX_DIR" make clean 2>&1)
+    output=$(HOME="$SANDBOX_DIR" make agents-clean 2>&1)
 
-    assert_output_contains "$output" "Cleaning" "Clean shows progress"
+    assert_output_contains "$output" "Cleaning installed artifacts" "Clean shows progress"
 
     # Verify build directories are removed
     if [ ! -d "$PROJECT_DIR/build/claude" ] && [ ! -d "$PROJECT_DIR/build/pi" ] && [ ! -d "$PROJECT_DIR/build/prompts" ]; then
@@ -220,15 +220,15 @@ test_make_clean() {
     fi
 }
 
-# Test: make all (should run help)
-test_make_all() {
-    log_test "Testing 'make all' (should show help)"
+# Test: default make target (should run help)
+test_make_default() {
+    log_test "Testing default 'make' target (should show help)"
     cd "$PROJECT_DIR"
 
     local output
-    output=$(make all 2>&1)
+    output=$(make 2>&1)
 
-    assert_output_contains "$output" "Agents - Skills, Prompt Templates, and Extensions Installer" "'make all' shows help"
+    assert_output_contains "$output" "Usage: make" "Default make target shows help"
 }
 
 # Test: plugins.toml exists and is valid
@@ -263,7 +263,7 @@ main() {
 
     # Run tests
     test_make_help
-    test_make_all
+    test_make_default
     test_plugins_toml
     test_make_build
     test_make_install_skills
