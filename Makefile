@@ -15,6 +15,17 @@ help:
 	@echo "  DOTFILES_DIR    Override dotfiles source directory"
 	@echo "                  Default: ~/icloud-drive/dotfiles"
 	@echo "                  Example: make all DOTFILES_DIR=~/code/dotfiles"
+	@echo ""
+	@echo "Agent Targets:"
+	@echo "  install                  Install agent skills/prompts/extensions"
+	@echo "  install-non-interactive  Non-interactive install for CI/headless runs"
+	@echo "  install-skills           Install agent skills"
+	@echo "  install-prompts          Install agent prompts"
+	@echo "  install-extensions       Install Pi extensions"
+	@echo "  install-configs          Install agent config files"
+	@echo "  build                    Build agent artifacts only"
+	@echo "  agents-clean             Clean agent build/install artifacts"
+	@echo "  plugin-update            Update plugin submodules"
 
 .PHONY: all
 all: icloud-link home-symlinks config-symlinks macos-defaults
@@ -148,3 +159,56 @@ macos-defaults:
 	@# Disable shadows on window screenshots
 	@defaults write com.apple.screencapture disable-shadow -bool true
 	@echo "✓ macOS defaults set"
+
+# Agent tooling
+AGENTS_PYTHON ?= python3
+AGENTS_BUILD_SCRIPT := $(CURDIR)/scripts/build.py
+
+.PHONY: agents-check-python agents-install agents-install-non-interactive agents-submodule-init agents-build agents-install-skills agents-install-extensions agents-install-prompts agents-install-configs agents-clean install install-non-interactive install-skills install-extensions install-prompts install-configs build submodule-init plugin-update
+
+agents-check-python:
+	@$(AGENTS_PYTHON) -c "import sys; sys.exit(0 if sys.version_info >= (3, 11) else 1)" 2>/dev/null || \
+		(echo "Error: Python 3.11+ required (for tomllib)"; exit 1)
+
+agents-install: agents-check-python
+	@$(AGENTS_PYTHON) $(AGENTS_BUILD_SCRIPT) install
+	@echo "Agent skills, prompt templates, and extensions installed"
+
+agents-install-non-interactive: agents-check-python
+	@$(AGENTS_PYTHON) $(AGENTS_BUILD_SCRIPT) install --non-interactive
+	@echo "Agent skills, prompt templates, and extensions installed (non-interactive mode)"
+
+agents-submodule-init:
+	@$(AGENTS_PYTHON) $(AGENTS_BUILD_SCRIPT) submodule-init
+
+agents-build: agents-check-python
+	@$(AGENTS_PYTHON) $(AGENTS_BUILD_SCRIPT) build
+
+agents-install-skills: agents-check-python
+	@$(AGENTS_PYTHON) $(AGENTS_BUILD_SCRIPT) install-skills
+
+agents-install-extensions: agents-check-python
+	@$(AGENTS_PYTHON) $(AGENTS_BUILD_SCRIPT) install-extensions
+
+agents-install-prompts: agents-check-python
+	@$(AGENTS_PYTHON) $(AGENTS_BUILD_SCRIPT) install-prompts
+
+agents-install-configs: agents-check-python
+	@$(AGENTS_PYTHON) $(AGENTS_BUILD_SCRIPT) install-configs
+
+agents-clean: agents-check-python
+	@$(AGENTS_PYTHON) $(AGENTS_BUILD_SCRIPT) clean
+
+install: agents-install
+install-non-interactive: agents-install-non-interactive
+install-skills: agents-install-skills
+install-extensions: agents-install-extensions
+install-prompts: agents-install-prompts
+install-configs: agents-install-configs
+build: agents-build
+submodule-init: agents-submodule-init
+
+plugin-update:
+	@echo "Updating plugin submodules..."
+	@git submodule update --remote --merge
+	@echo "Plugins updated"

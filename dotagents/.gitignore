@@ -1,9 +1,0 @@
-# Build output (generated during make install)
-build/
-
-# Node.js
-node_modules/
-
-# Python
-__pycache__/
-*.pyc

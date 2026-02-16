@@ -1,6 +1,6 @@
 # dotfiles
 
-Personal dotfiles for macOS and OrbStack Linux VMs.
+Personal dotfiles for macOS and OrbStack Linux VMs, plus AI agent skills/extensions infrastructure migrated from `dotagents`.
 
 ## Quick Start (macOS)
 
@@ -21,23 +21,41 @@ cd ~/code/personal/dotfiles/orb-vm
 
 See [orb-vm/README.md](orb-vm/README.md) for full documentation.
 
+## Agent Skills / Extensions Tooling
+
+This repo also contains reusable skills, prompt templates, and extensions for Amp, Claude Code, Codex CLI, and Pi Coding Agent.
+
+### Requirements
+
+- Python 3.11+
+- Git
+
+### Agent commands
+
+```bash
+make install                 # install agent skills/prompts/extensions
+make install-skills
+make install-prompts
+make install-extensions
+make install-configs
+make build                   # build agent artifacts only
+make agents-clean            # clean agent build/install artifacts
+make plugin-update           # update plugin submodules
+```
+
 ## Structure
 
-```
+```text
 dotfiles/
-├── .config/
-│   ├── fish/           # Fish shell config
-│   ├── nvim/           # Neovim config
-│   ├── atuin/          # Shell history
-│   ├── starship.toml   # Prompt
-│   └── ...
-├── .gitconfig          # Git config
-├── .tmux.conf          # Tmux config
-├── orb-vm/             # OrbStack VM setup
-│   ├── setup-orb-vm.sh # Setup script
-│   └── AGENTS.md       # Documentation
-├── Brewfile            # Homebrew packages
-└── setup               # macOS setup script
+├── .config/                 # shell/editor/terminal configs
+├── orb-vm/                  # OrbStack VM setup
+├── skills/                  # custom agent skills
+├── extensions/pi/           # Pi extensions
+├── prompts/                 # Pi prompt templates
+├── plugins/                 # plugin submodules
+├── scripts/build.py         # agent build/install system
+├── tests/                   # agent tooling tests
+└── Makefile                 # dotfiles + agent commands
 ```
 
 ## Notes
