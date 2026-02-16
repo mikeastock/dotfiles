@@ -30,9 +30,10 @@ alias vim="nvim"
 alias h="heroku"
 alias hc="heroku run env CONSOLE_USER=mike bin/rails console"
 
-# tmux
+# tmux / zellij
 alias mux="tmuxinator"
 alias tma="tmux att -t"
+alias zj="zellij"
 
 # Bundler
 alias b="bundle"
@@ -159,6 +160,18 @@ source ~/.orbstack/shell/init2.fish 2>/dev/null || :
 ###### History Search (atuin)
 if type -q atuin
   atuin init fish --disable-up-arrow | source
+end
+
+####### Zellij tab auto-rename
+function _zellij_tab_name --on-variable PWD --on-event fish_postexec
+  if set -q ZELLIJ
+    set -l branch (git symbolic-ref --short HEAD 2>/dev/null)
+    if test -n "$branch"
+      command zellij action rename-tab "$branch"
+    else
+      command zellij action rename-tab (basename $PWD)
+    end
+  end
 end
 
 ####### PROMPT CONFIG (starship)
