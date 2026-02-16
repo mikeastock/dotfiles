@@ -245,6 +245,28 @@ require("lazy").setup({
       end,
     },
 
+    -- fuzzy finder (fff)
+    {
+      "dmtrKovalenko/fff.nvim",
+      lazy = false,
+      build = function()
+        require("fff.download").download_or_build_binary()
+      end,
+      opts = {},
+      keys = {
+        {
+          "<Leader>ff",
+          function() require("fff").find_files() end,
+          desc = "fff find files",
+        },
+        {
+          "<Leader>fg",
+          function() require("fff").live_grep() end,
+          desc = "fff live grep",
+        },
+      },
+    },
+
     -- UI
 
     -- workflow
