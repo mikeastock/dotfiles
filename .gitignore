@@ -11,3 +11,13 @@
 
 # Plugin lock files (machine-specific)
 **/lazy-lock.json
+
+# Agent build output
+build/
+
+# Node.js
+node_modules/
+
+# Python
+__pycache__/
+*.pyc

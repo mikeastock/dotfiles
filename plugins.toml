@@ -1,0 +1,54 @@
+# plugins.toml - Plugin configuration for AI agent skills and extensions
+#
+# Each plugin is a table with fully qualified name (owner/repo):
+#   url             - Git repository URL (required)
+#   skills_path     - Glob pattern(s) to find skills (default: "skills/*")
+#   skills          - List of skills to install: ["*"] for all, [] or omit for none
+#   skills_skip_agents - Agents that should not receive this plugin's skills (optional)
+#   extensions_path - Glob pattern(s) to find extensions (default: "extensions/*.ts")
+#   extensions      - List of extensions to install: ["*"] for all, [] or omit for none
+#   prompts_path    - Glob pattern(s) to find prompt templates (default: "prompts/*.md")
+#   prompts         - List of prompt templates to install: ["*"] for all, [] or omit for none
+#   alias           - Optional prefix to prevent name collisions
+#
+# Plugin directories use hyphen separator: owner/repo -> plugins/owner-repo/
+
+["anthropics/skills"]
+url = "https://github.com/anthropics/skills"
+skills = [ "frontend-design" ]
+
+["EveryInc/compound-engineering-plugin"]
+url = "https://github.com/EveryInc/compound-engineering-plugin"
+skills_path = "plugins/*/skills/*"
+skills = [ "dspy-ruby" ]
+
+["SawyerHood/dev-browser"]
+url = "https://github.com/SawyerHood/dev-browser"
+skills = [ "*" ]                                  # Install all skills from this plugin
+
+["nicobailon/pi-interview-tool"]
+url = "https://github.com/nicobailon/pi-interview-tool"
+extensions_path = "."                                   # Extension files are at root level
+extensions = [ "*" ]                                    # Install all extensions from this plugin
+
+["steipete/agent-scripts"]
+url = "https://github.com/steipete/agent-scripts"
+skills = [ "create-cli" ]
+
+["vercel-labs/agent-skills"]
+url = "https://github.com/vercel-labs/agent-skills"
+skills = [ "react-best-practices" ]
+
+["openprose/prose"]
+url = "https://github.com/openprose/prose"
+skills = [ "open-prose" ]
+
+["mitsuhiko/agent-stuff"]
+url = "https://github.com/mitsuhiko/agent-stuff"
+extensions_path = "pi-extensions/*.ts"
+extensions = [ "review" ]
+
+["buildrtech/dotagents"]
+url = "https://github.com/buildrtech/dotagents"
+skills = [ "brainstorming", "dispatching-parallel-agents", "executing-plans", "receiving-code-review", "requesting-code-review", "semantic-commit", "systematic-debugging", "test-driven-development", "verification-before-completion", "writing-plans", "fetch-ci-build" ]
+skills_skip_agents = [ "amp" ]                  # Skip buildrtech skills for Amp

@@ -1,0 +1,45 @@
+{
+  "name": "Agents Sandbox",
+  "init": true,
+  "build": {
+    "dockerfile": "Dockerfile",
+    "args": {
+      "TZ": "${localEnv:TZ:UTC}",
+      "CLAUDE_CODE_VERSION": "latest",
+      "CODEX_VERSION": "latest"
+    }
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": false,
+      "installOhMyZsh": false,
+      "upgradePackages": false
+    }
+  },
+  "remoteUser": "dev",
+  "postCreateCommand": "uv run --no-sync /workspace/.devcontainer/post_install.py && gem install bundler -v 2.7.2 --no-document && bundle config set --global path 'vendor/bundle'",
+  "mounts": [
+    "source=commandhistory,target=/commandhistory,type=volume",
+    "source=${localEnv:HOME}/.claude,target=/home/dev/.claude,type=bind,consistency=cached",
+    "source=${localEnv:HOME}/.codex,target=/home/dev/.codex,type=bind,consistency=cached",
+    "source=${localEnv:HOME}/.pi,target=/home/dev/.pi,type=bind,consistency=cached",
+    "source=gh-config,target=/home/dev/.config/gh,type=volume",
+    "source=${localEnv:HOME}/.gitconfig,target=/home/dev/.gitconfig,type=bind,consistency=cached,readonly"
+  ],
+  "containerEnv": {
+    "NODE_OPTIONS": "--max-old-space-size=4096",
+    "CLAUDE_CONFIG_DIR": "/home/dev/.claude",
+    "CODEX_HOME": "/home/dev/.codex",
+    "BUNDLE_PATH": "vendor/bundle",
+    "CEREBRAS_API_KEY": "${localEnv:CEREBRAS_API_KEY}",
+    "BUILDKITE_API_TOKEN": "${localEnv:BUILDKITE_API_TOKEN}",
+    "BUILDKITE_ORGANIZATION_SLUG": "buildr",
+    "PGHOST": "host.docker.internal",
+    "REDIS_URL": "redis://host.docker.internal:6379",
+    "MEILISEARCH_URL": "http://host.docker.internal:7700",
+    "DOLT_HOST": "host.docker.internal",
+    "MINIO_ENDPOINT": "host.docker.internal:9000"
+  },
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
+  "workspaceFolder": "/workspace"
+}

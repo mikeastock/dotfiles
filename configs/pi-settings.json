@@ -1,0 +1,14 @@
+{
+  "lastChangelogVersion": "0.52.8",
+  "defaultProvider": "openai-codex",
+  "defaultModel": "gpt-5.3-codex",
+  "hideThinkingBlock": false,
+  "defaultThinkingLevel": "medium",
+  "steeringMode": "all",
+  "doubleEscapeAction": "tree",
+  "enabledModels": [
+    "anthropic/claude-opus-4-6",
+    "openai-codex/gpt-5.3-codex"
+  ],
+  "packages": []
+}
