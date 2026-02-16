@@ -47,11 +47,6 @@ url = "https://github.com/vercel-labs/agent-skills"
 commit = "e23951b8cad2f4b1e7e176c5731127c1263fe86f"
 skills = [ "react-best-practices" ]
 
-["openprose/prose"]
-url = "https://github.com/openprose/prose"
-commit = "c5780e0c493d17f2c6014671918485705f0d8424"
-skills = [ "open-prose" ]
-
 ["mitsuhiko/agent-stuff"]
 url = "https://github.com/mitsuhiko/agent-stuff"
 commit = "7e4dd947586ebf464dabb40d9a7eb2ba31234a84"
