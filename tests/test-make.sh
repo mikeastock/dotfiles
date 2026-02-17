@@ -80,6 +80,31 @@ test_make_build() {
         log_error "FAIL: Built skills missing SKILL.md files"
         TESTS_FAILED=$((TESTS_FAILED + 1))
     fi
+
+    # breadboard-reflection upstream skill has no frontmatter; build should add description
+    local breadboard_skill="$PROJECT_DIR/build/claude/breadboard-reflection/SKILL.md"
+    assert_file_exists "$breadboard_skill" "breadboard-reflection skill is built"
+
+    local breadboard_content
+    breadboard_content=$(<"$breadboard_skill")
+    assert_output_contains "$breadboard_content" "name: breadboard-reflection" "breadboard-reflection has normalized name"
+    assert_output_contains "$breadboard_content" "description:" "breadboard-reflection has synthesized description"
+
+    local has_lowercase_skill_md=false
+    for file in "$PROJECT_DIR/build/claude/breadboard-reflection"/*; do
+        if [ "$(basename "$file")" = "skill.md" ]; then
+            has_lowercase_skill_md=true
+            break
+        fi
+    done
+
+    if ! $has_lowercase_skill_md; then
+        log_info "PASS: breadboard-reflection keeps canonical SKILL.md filename"
+        TESTS_PASSED=$((TESTS_PASSED + 1))
+    else
+        log_error "FAIL: breadboard-reflection keeps canonical SKILL.md filename"
+        TESTS_FAILED=$((TESTS_FAILED + 1))
+    fi
 }
 
 # Test: make install-skills (with sandbox)

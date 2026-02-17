@@ -381,39 +381,92 @@ def strip_agents_from_frontmatter(content: str) -> str:
     return content[: match.start(1)] + new_frontmatter + content[match.end(1) :]
 
 
-def fix_skill_frontmatter_name(content: str, expected_name: str) -> str:
-    """
-    Fix the 'name' field in SKILL.md frontmatter to match the directory name.
+def extract_skill_description(content: str) -> str:
+    """Extract a description from skill body content."""
+    import re
 
-    Per the Agent Skills spec, the directory name is the source of truth.
-    This fixes upstream skills that have mismatched frontmatter names.
+    # Strip frontmatter if present
+    body = re.sub(r"^---\s*\n.*?\n---\s*\n?", "", content, flags=re.DOTALL)
+
+    for raw_line in body.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        if line.startswith("#"):
+            continue
+        if re.match(r"^[-*_]{3,}$", line):
+            continue
+        return line
+
+    return "Skill instructions"
+
+
+def normalize_skill_frontmatter(content: str, expected_name: str) -> str:
+    """
+    Ensure SKILL.md has valid frontmatter with name and description.
+
+    - If no frontmatter exists, create it.
+    - If name is missing or mismatched, set it to expected_name.
+    - If description is missing, derive one from the first body paragraph.
     """
     import re
 
-    # Match YAML frontmatter
     frontmatter_pattern = r"^---\s*\n(.*?)\n---"
     match = re.match(frontmatter_pattern, content, re.DOTALL)
+    description = extract_skill_description(content)
+
     if not match:
-        return content
+        return (
+            "---\n"
+            f"name: {expected_name}\n"
+            f"description: {description}\n"
+            "---\n\n"
+            f"{content.lstrip()}"
+        )
 
     frontmatter = match.group(1)
+    new_frontmatter = frontmatter
 
-    # Check if name field exists and differs from expected
+    # Ensure name matches directory name
     name_pattern = r"^name:\s*(.+)$"
-    name_match = re.search(name_pattern, frontmatter, re.MULTILINE)
-    if not name_match:
-        return content
+    name_match = re.search(name_pattern, new_frontmatter, re.MULTILINE)
+    if name_match:
+        new_frontmatter = re.sub(
+            name_pattern,
+            f"name: {expected_name}",
+            new_frontmatter,
+            flags=re.MULTILINE,
+        )
+    else:
+        new_frontmatter = f"name: {expected_name}\n{new_frontmatter}"
 
-    current_name = name_match.group(1).strip().strip("\"'")
-    if current_name == expected_name:
-        return content
-
-    # Replace the name in frontmatter
-    new_frontmatter = re.sub(
-        name_pattern, f"name: {expected_name}", frontmatter, flags=re.MULTILINE
-    )
+    # Ensure description exists
+    description_pattern = r"^description:\s*(.+)$"
+    if not re.search(description_pattern, new_frontmatter, re.MULTILINE):
+        # Keep description near the top for readability
+        lines = new_frontmatter.split("\n")
+        if lines and lines[0].startswith("name:"):
+            lines.insert(1, f"description: {description}")
+        else:
+            lines.insert(0, f"description: {description}")
+        new_frontmatter = "\n".join(lines)
 
     return content[: match.start(1)] + new_frontmatter + content[match.end(1) :]
+
+
+def find_skill_markdown(source: Path) -> Path | None:
+    """Find the skill markdown file in a skill directory."""
+    candidates = [
+        item
+        for item in source.iterdir()
+        if item.is_file() and item.name.lower() == "skill.md"
+    ]
+    if not candidates:
+        return None
+
+    # Prefer canonical name when present; otherwise keep selection deterministic.
+    candidates.sort(key=lambda path: (path.name != "SKILL.md", path.name))
+    return candidates[0]
 
 
 def build_skill(name: str, source: Path, agent: str) -> bool | None:
@@ -422,13 +475,12 @@ def build_skill(name: str, source: Path, agent: str) -> bool | None:
 
     Returns:
         True if built successfully
-        False if skipped due to missing SKILL.md
+        False if skipped due to missing skill markdown
         None if skipped due to agent filtering
     """
-    # Find SKILL.md
-    skill_md = source / "SKILL.md"
-    if not skill_md.exists():
-        print(f"    Warning: {source} has no SKILL.md, skipping")
+    skill_md = find_skill_markdown(source)
+    if skill_md is None:
+        print(f"    Warning: {source} has no SKILL.md/skill.md, skipping")
         return False
 
     # Read content and check agent filtering
@@ -447,8 +499,8 @@ def build_skill(name: str, source: Path, agent: str) -> bool | None:
     local_override = source / "overrides" / f"{agent}.md"
     dest_skill_md = dest / "SKILL.md"
 
-    # Process content: fix name and strip agents field
-    skill_content = fix_skill_frontmatter_name(raw_content, name)
+    # Process content: normalize frontmatter and strip agents field
+    skill_content = normalize_skill_frontmatter(raw_content, name)
     skill_content = strip_agents_from_frontmatter(skill_content)
 
     # In non-interactive mode, skip interactive overrides
@@ -470,12 +522,14 @@ def build_skill(name: str, source: Path, agent: str) -> bool | None:
 
     # Copy additional files
     for item in source.iterdir():
-        if item.name not in {"SKILL.md", "overrides"}:
-            dest_item = dest / item.name
-            if item.is_dir():
-                shutil.copytree(item, dest_item, dirs_exist_ok=True)
-            else:
-                shutil.copy(item, dest_item)
+        if item.name.lower() == "skill.md" or item.name == "overrides":
+            continue
+
+        dest_item = dest / item.name
+        if item.is_dir():
+            shutil.copytree(item, dest_item, dirs_exist_ok=True)
+        else:
+            shutil.copy(item, dest_item)
 
     return True
 
@@ -514,6 +568,8 @@ def build_skills(plugins: dict[str, Plugin]):
                 result = build_skill(name, path, agent)
                 if result is True:
                     built_for_agents.append(agent)
+                elif result is False:
+                    break
             if built_for_agents:
                 if set(built_for_agents) == set(AGENTS):
                     print(f"  {name} (from {plugin.name})")
@@ -540,6 +596,8 @@ def build_skills(plugins: dict[str, Plugin]):
                     result = build_skill(name, skill_dir, agent)
                     if result is True:
                         built_for_agents.append(agent)
+                    elif result is False:
+                        break
                 if built_for_agents:
                     if set(built_for_agents) == set(AGENTS):
                         print(f"  {name} (custom)")
