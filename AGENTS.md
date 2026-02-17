@@ -26,12 +26,11 @@ agents/
 │       └── <additional files>      # Supporting scripts/resources
 ├── skill-overrides/                # Agent-specific appends
 │   └── <skill>-<agent>.md          # Appended to SKILL.md during build
-├── extensions/                     # Custom extensions (Pi only)
-│   └── pi/
-│       ├── AskUserQuestion/
-│       ├── handoff/
-│       ├── protected-paths/
-│       └── <extension-name>/index.ts
+├── pi-extensions/                  # Custom Pi extensions (local)
+│   ├── AskUserQuestion/
+│   ├── handoff/
+│   ├── protected-paths/
+│   └── <extension-name>/index.ts
 ├── scripts/
 │   └── build.py                    # Python build system (requires Python 3.11+)
 ├── tests/                          # Test suite
@@ -149,7 +148,7 @@ Benefits:
 To add dependencies to an existing script: `uv add --script script.py 'package-name'`
 
 ### Extensions (TypeScript - Pi only)
-Location: `extensions/pi/<extension-name>/index.ts`
+Location: `pi-extensions/<extension-name>/index.ts`
 
 Fetch the latest documentation from [Pi Coding Agent extensions](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/extensions.md) for current extension API and format requirements.
 
@@ -191,7 +190,7 @@ Extensions use the unified `ExtensionAPI` which provides:
 
 ### Adding an Extension (Pi only)
 1. Fetch the [Pi Coding Agent extensions documentation](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/extensions.md) for the current API
-2. Create `extensions/pi/<extension-name>/index.ts` following the documentation
+2. Create `pi-extensions/<extension-name>/index.ts` following the documentation
 3. Run `make install-extensions`
 4. Update README.md: add to "Available Extensions" table and directory structure
 

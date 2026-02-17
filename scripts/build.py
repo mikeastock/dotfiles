@@ -65,7 +65,7 @@ PLUGINS_DIR = ROOT / "plugins"
 SKILLS_DIR = ROOT / "skills"
 PROMPTS_DIR = ROOT / "prompts"
 
-EXTENSIONS_DIR = ROOT / "extensions"
+PI_EXTENSIONS_DIR = ROOT / "pi-extensions"
 OVERRIDES_DIR = ROOT / "skill-overrides"
 BUILD_DIR = ROOT / "build"
 CONFIG_FILE = ROOT / "plugins.toml"
@@ -689,7 +689,7 @@ def install_extensions(plugins: dict[str, Plugin]):
             installed.add(name)
 
     # Custom extensions
-    custom_extensions = EXTENSIONS_DIR / "pi"
+    custom_extensions = PI_EXTENSIONS_DIR
     if custom_extensions.exists():
         for ext_dir in sorted(custom_extensions.iterdir()):
             if ext_dir.is_dir():
@@ -832,7 +832,7 @@ def clean(plugins: dict[str, Plugin]):
                 print(f"  Removed extension: {name}")
 
     # Custom extensions
-    custom_extensions = EXTENSIONS_DIR / "pi"
+    custom_extensions = PI_EXTENSIONS_DIR
     if custom_extensions.exists():
         for ext_dir in custom_extensions.iterdir():
             if ext_dir.is_dir():

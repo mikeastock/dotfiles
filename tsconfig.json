@@ -8,5 +8,5 @@
     "skipLibCheck": true,
     "esModuleInterop": true
   },
-  "include": ["extensions/pi/**/*.ts"]
+  "include": ["pi-extensions/**/*.ts"]
 }

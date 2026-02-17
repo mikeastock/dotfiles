@@ -50,7 +50,7 @@ dotfiles/
 ├── .config/                 # shell/editor/terminal configs
 ├── orb-vm/                  # OrbStack VM setup
 ├── skills/                  # custom agent skills
-├── extensions/pi/           # Pi extensions
+├── pi-extensions/           # Pi extensions
 ├── prompts/                 # Pi prompt templates
 ├── plugins/                 # plugin submodules
 ├── scripts/build.py         # agent build/install system
