@@ -76,6 +76,12 @@ alias tf="mise exec -- terraform"
 alias n="corepack pnpm"
 alias piu="npm install -g @mariozechner/pi-coding-agent"
 
+# app checkouts
+alias a1="cd ~/code/buildr/app"
+alias a2="cd ~/code/buildr/app2"
+alias a3="cd ~/code/buildr/app3"
+alias a4="cd ~/code/buildr/app4"
+
 function fco -d "Fuzzy-find and checkout a branch"
   git branch --all --sort=-committerdate | grep -v HEAD | string trim | fzf --header='[fuzzy:branch-checkout]' | xargs git checkout
 end
@@ -177,4 +183,12 @@ end
 ####### PROMPT CONFIG (starship)
 if type -q starship
   starship init fish | source
+end
+
+functions -c fish_prompt _original_fish_prompt 2>/dev/null
+function fish_prompt --description 'Write out the prompt'
+  if set -q ZMX_SESSION
+    echo -n "[$ZMX_SESSION] "
+  end
+  _original_fish_prompt
 end
