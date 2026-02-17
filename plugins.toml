@@ -43,6 +43,11 @@ url = "https://github.com/mitsuhiko/agent-stuff"
 extensions_path = "pi-extensions/*.ts"
 extensions = [ "review" ]
 
+["palkan/skills"]
+url = "https://github.com/palkan/skills"
+skills_path = "layered-rails/skills/*"
+skills = [ "layered-rails" ]
+
 ["buildrtech/dotagents"]
 url = "https://github.com/buildrtech/dotagents"
 skills = [ "brainstorming", "dispatching-parallel-agents", "executing-plans", "receiving-code-review", "requesting-code-review", "semantic-commit", "systematic-debugging", "test-driven-development", "verification-before-completion", "writing-plans", "fetch-ci-build" ]
