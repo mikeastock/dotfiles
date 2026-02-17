@@ -53,33 +53,33 @@ check-python:
 		(echo "Error: Python 3.11+ required (for tomllib)"; exit 1)
 
 install: check-python
-	@$(PYTHON) $(BUILD_SCRIPT) install
+	@$(PYTHON) "$(BUILD_SCRIPT)" install
 	@echo "All skills, prompt templates, and extensions installed"
 
 install-non-interactive: check-python
-	@$(PYTHON) $(BUILD_SCRIPT) install --non-interactive
+	@$(PYTHON) "$(BUILD_SCRIPT)" install --non-interactive
 	@echo "All skills, prompt templates, and extensions installed (non-interactive mode)"
 
 submodule-init:
-	@$(PYTHON) $(BUILD_SCRIPT) submodule-init
+	@$(PYTHON) "$(BUILD_SCRIPT)" submodule-init
 
 build: check-python
-	@$(PYTHON) $(BUILD_SCRIPT) build
+	@$(PYTHON) "$(BUILD_SCRIPT)" build
 
 install-skills: check-python
-	@$(PYTHON) $(BUILD_SCRIPT) install-skills
+	@$(PYTHON) "$(BUILD_SCRIPT)" install-skills
 
 install-extensions: check-python
-	@$(PYTHON) $(BUILD_SCRIPT) install-extensions
+	@$(PYTHON) "$(BUILD_SCRIPT)" install-extensions
 
 install-prompts: check-python
-	@$(PYTHON) $(BUILD_SCRIPT) install-prompts
+	@$(PYTHON) "$(BUILD_SCRIPT)" install-prompts
 
 install-configs: check-python
-	@$(PYTHON) $(BUILD_SCRIPT) install-configs
+	@$(PYTHON) "$(BUILD_SCRIPT)" install-configs
 
 clean: check-python
-	@$(PYTHON) $(BUILD_SCRIPT) clean
+	@$(PYTHON) "$(BUILD_SCRIPT)" clean
 
 plugin-update:
 	@echo "Updating plugin submodules..."
