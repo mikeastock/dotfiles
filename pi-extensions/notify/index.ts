@@ -1,15 +1,18 @@
 /**
  * Desktop Notification Extension
  *
- * Sends a native desktop notification when the agent finishes and is waiting for input.
- * Uses OSC 777 escape sequence - no external dependencies.
+ * Sends desktop notifications when the agent finishes and updates the terminal title
+ * with a per-pane state summary for panes that share the same tab label.
  *
- * Supported terminals: Ghostty, iTerm2, WezTerm, rxvt-unicode
+ * Tab label: PI_NOTIFY_TAB_BASE or basename(cwd)
+ * Pane label: ZMX_SESSION or pid
+ *
+ * Supported terminals for notifications via OSC 777: Ghostty, iTerm2, WezTerm, rxvt-unicode
  * Not supported: Kitty (uses OSC 99), Terminal.app, Windows Terminal, Alacritty
  */
 
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { mkdir, readFile, readdir, rename, stat, unlink, writeFile } from "node:fs/promises";
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { Markdown, type MarkdownTheme } from "@mariozechner/pi-tui";
@@ -86,13 +89,35 @@ type AgentState = "waiting" | "working";
 
 type StatusEntry = {
 	pid: number;
-	terminal: string;
+	tab: string;
+	pane: string;
 	state: AgentState;
 	updatedAt: number;
 };
 
 const STATUS_DIR = join(tmpdir(), "pi-notify-status");
 const STALE_MS = 1000 * 60 * 60 * 12;
+
+const sanitizeLabel = (value: string): string => value.replace(/[|/]/g, "-").trim();
+
+const getTabLabel = (cwd: string): string => {
+	const explicitBase = process.env.PI_NOTIFY_TAB_BASE?.trim();
+	if (explicitBase) {
+		return sanitizeLabel(explicitBase);
+	}
+	const cwdLabel = basename(cwd) || cwd;
+	return sanitizeLabel(cwdLabel);
+};
+
+const getPaneLabel = (): string => {
+	const zmxSession = process.env.ZMX_SESSION?.trim();
+	if (zmxSession) {
+		return sanitizeLabel(zmxSession);
+	}
+	return `pid:${process.pid}`;
+};
+
+const selfStatusPath = (): string => join(STATUS_DIR, `${process.pid}.json`);
 
 const isProcessAlive = (pid: number): boolean => {
 	try {
@@ -103,20 +128,17 @@ const isProcessAlive = (pid: number): boolean => {
 	}
 };
 
-const terminalSlug = (terminal: string): string => Buffer.from(terminal, "utf8").toString("base64url");
-
-const entryPath = (terminal: string, pid: number): string => join(STATUS_DIR, `${terminalSlug(terminal)}.${pid}.json`);
-
-const writeSelfEntry = async (terminal: string, state: AgentState): Promise<void> => {
+const writeSelfStatus = async (tab: string, pane: string, state: AgentState): Promise<void> => {
 	await mkdir(STATUS_DIR, { recursive: true });
 	const entry: StatusEntry = {
 		pid: process.pid,
-		terminal,
+		tab,
+		pane,
 		state,
 		updatedAt: Date.now(),
 	};
 
-	const finalPath = entryPath(terminal, process.pid);
+	const finalPath = selfStatusPath();
 	const tempPath = `${finalPath}.tmp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 	try {
 		await writeFile(tempPath, `${JSON.stringify(entry)}\n`, "utf8");
@@ -127,12 +149,8 @@ const writeSelfEntry = async (terminal: string, state: AgentState): Promise<void
 	}
 };
 
-const removeSelfEntry = async (terminal: string): Promise<void> => {
-	try {
-		await unlink(entryPath(terminal, process.pid));
-	} catch {
-		// Ignore if already removed.
-	}
+const removeSelfStatus = async (): Promise<void> => {
+	await unlink(selfStatusPath()).catch(() => undefined);
 };
 
 const deleteIfOld = async (path: string, now: number): Promise<void> => {
@@ -146,11 +164,11 @@ const deleteIfOld = async (path: string, now: number): Promise<void> => {
 	}
 };
 
-const countWaiting = async (terminal: string): Promise<number> => {
+const loadPaneStates = async (tab: string): Promise<Array<{ pane: string; state: AgentState; pid: number }>> => {
 	await mkdir(STATUS_DIR, { recursive: true });
 	const now = Date.now();
 	const files = await readdir(STATUS_DIR);
-	let waiting = 0;
+	const states: Array<{ pane: string; state: AgentState; pid: number }> = [];
 
 	for (const file of files) {
 		if (!file.endsWith(".json")) {
@@ -161,7 +179,12 @@ const countWaiting = async (terminal: string): Promise<number> => {
 		try {
 			const raw = await readFile(path, "utf8");
 			const entry = JSON.parse(raw) as Partial<StatusEntry>;
-			if (typeof entry.pid !== "number" || typeof entry.terminal !== "string") {
+			if (
+				typeof entry.pid !== "number" ||
+				typeof entry.tab !== "string" ||
+				typeof entry.pane !== "string" ||
+				(entry.state !== "waiting" && entry.state !== "working")
+			) {
 				await deleteIfOld(path, now);
 				continue;
 			}
@@ -169,79 +192,69 @@ const countWaiting = async (terminal: string): Promise<number> => {
 				await unlink(path).catch(() => undefined);
 				continue;
 			}
-			if (entry.terminal === terminal && entry.state === "waiting") {
-				waiting++;
+			if (entry.tab !== tab) {
+				continue;
 			}
+			states.push({ pane: entry.pane, state: entry.state, pid: entry.pid });
 		} catch {
 			await deleteIfOld(path, now);
 		}
 	}
 
-	return waiting;
+	states.sort((a, b) => {
+		if (a.pane === b.pane) {
+			return a.pid - b.pid;
+		}
+		return a.pane.localeCompare(b.pane);
+	});
+
+	return states;
+};
+
+const setStateTitle = async (
+	ctx: { hasUI: boolean; cwd: string; ui: { setTitle: (title: string) => void } },
+	state: AgentState,
+): Promise<void> => {
+	const tab = getTabLabel(ctx.cwd);
+	const pane = getPaneLabel();
+	await writeSelfStatus(tab, pane, state);
+
+	if (!ctx.hasUI) {
+		return;
+	}
+
+	const states = await loadPaneStates(tab);
+	const summary = states.map((entry) => `${entry.pane}:${entry.state === "waiting" ? "⏸" : "▶"}`).join("/");
+	const current = `${pane}:${state === "waiting" ? "⏸" : "▶"}`;
+	ctx.ui.setTitle(`${tab} | ${summary || current}`);
+};
+
+const notificationTitle = (title: string): string => {
+	const zmxSession = process.env.ZMX_SESSION?.trim();
+	if (!zmxSession) {
+		return title;
+	}
+	return `${title} ${zmxSession}`;
 };
 
 export default function (pi: ExtensionAPI) {
-	let terminalKeyPromise: Promise<string> | undefined;
-
-	const getTerminalKey = (): Promise<string> => {
-		if (terminalKeyPromise) {
-			return terminalKeyPromise;
-		}
-
-		terminalKeyPromise = (async () => {
-			const byEnv = process.env.TERM_SESSION_ID ?? process.env.ZELLIJ_SESSION_NAME ?? process.env.ZMX_SESSION;
-			if (byEnv) {
-				return byEnv;
-			}
-
-			try {
-				const result = await pi.exec("tty", [], { timeout: 1000 });
-				const tty = result.stdout.trim();
-				if (result.code === 0 && tty.startsWith("/")) {
-					return tty;
-				}
-			} catch {
-				// Fall through.
-			}
-
-			return `pty-${process.ppid}`;
-		})();
-
-		return terminalKeyPromise;
-	};
-
-	const updateStateAndRenderTitle = async (ctx: { hasUI: boolean; ui: { setTitle: (title: string) => void } }, state: AgentState) => {
-		const terminal = await getTerminalKey();
-		await writeSelfEntry(terminal, state);
-		const waitingCount = await countWaiting(terminal);
-		if (ctx.hasUI) {
-			const symbol = state === "waiting" ? "⏸" : "▶";
-			ctx.ui.setTitle(`pi ${symbol} [${waitingCount} waiting]`);
-		}
-	};
-
-	const removeSelf = async (): Promise<void> => {
-		const terminal = await getTerminalKey();
-		await removeSelfEntry(terminal);
-	};
-
 	pi.on("session_start", async (_event, ctx) => {
-		await updateStateAndRenderTitle(ctx, "waiting");
+		await setStateTitle(ctx, "waiting");
 	});
 
 	pi.on("agent_start", async (_event, ctx) => {
-		await updateStateAndRenderTitle(ctx, "working");
+		await setStateTitle(ctx, "working");
 	});
 
 	pi.on("agent_end", async (event, ctx) => {
-		await updateStateAndRenderTitle(ctx, "waiting");
+		await setStateTitle(ctx, "waiting");
 
 		const lastText = extractLastAssistantText(event.messages ?? []);
 		const { title, body } = formatNotification(lastText);
-		notify(title, body);
+		notify(notificationTitle(title), body);
 	});
 
 	pi.on("session_shutdown", async () => {
-		await removeSelf();
+		await removeSelfStatus();
 	});
 }
