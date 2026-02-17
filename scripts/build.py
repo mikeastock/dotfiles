@@ -255,6 +255,13 @@ def discover_items(plugin: Plugin, item_type: str) -> list[tuple[str, Path]]:
     return items
 
 
+def custom_extension_dirs() -> list[Path]:
+    """Return custom extension directories under pi-extensions/."""
+    if not PI_EXTENSIONS_DIR.exists():
+        return []
+    return [path for path in sorted(PI_EXTENSIONS_DIR.iterdir()) if path.is_dir()]
+
+
 def is_interactive_override(override_path: Path) -> bool:
     """Check if an override file is interactive-only."""
     filename = override_path.name
@@ -689,28 +696,25 @@ def install_extensions(plugins: dict[str, Plugin]):
             installed.add(name)
 
     # Custom extensions
-    custom_extensions = PI_EXTENSIONS_DIR
-    if custom_extensions.exists():
-        for ext_dir in sorted(custom_extensions.iterdir()):
-            if ext_dir.is_dir():
-                name = ext_dir.name
+    for ext_dir in custom_extension_dirs():
+        name = ext_dir.name
 
-                # Skip interactive extensions in non-interactive mode
-                if NON_INTERACTIVE and name in INTERACTIVE_EXTENSIONS:
-                    skipped_extensions.append(name)
-                    continue
+        # Skip interactive extensions in non-interactive mode
+        if NON_INTERACTIVE and name in INTERACTIVE_EXTENSIONS:
+            skipped_extensions.append(name)
+            continue
 
-                if name in installed:
-                    print(
-                        f"    Warning: Custom extension '{name}' conflicts with plugin extension"
-                    )
+        if name in installed:
+            print(
+                f"    Warning: Custom extension '{name}' conflicts with plugin extension"
+            )
 
-                dest_ext = dest / name
-                remove_path(dest_ext)
-                shutil.copytree(ext_dir, dest_ext)
+        dest_ext = dest / name
+        remove_path(dest_ext)
+        shutil.copytree(ext_dir, dest_ext)
 
-                print(f"  {name} (custom)")
-                installed.add(name)
+        print(f"  {name} (custom)")
+        installed.add(name)
 
     if skipped_plugins:
         print(
@@ -832,14 +836,11 @@ def clean(plugins: dict[str, Plugin]):
                 print(f"  Removed extension: {name}")
 
     # Custom extensions
-    custom_extensions = PI_EXTENSIONS_DIR
-    if custom_extensions.exists():
-        for ext_dir in custom_extensions.iterdir():
-            if ext_dir.is_dir():
-                installed = ext_dest / ext_dir.name
-                if installed.exists() or installed.is_symlink():
-                    remove_path(installed)
-                    print(f"  Removed extension: {ext_dir.name}")
+    for ext_dir in custom_extension_dirs():
+        installed = ext_dest / ext_dir.name
+        if installed.exists() or installed.is_symlink():
+            remove_path(installed)
+            print(f"  Removed extension: {ext_dir.name}")
 
     # Clean prompts
     prompts_dest = INSTALL_PATHS["pi"]["prompts"]

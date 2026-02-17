@@ -49,7 +49,7 @@ fi
 log_test "Type-checking Pi extensions..."
 TYPECHECK_OUTPUT=$(pnpm run typecheck 2>&1) || true
 
-if echo "$TYPECHECK_OUTPUT" | grep -q "error TS"; then
+if rg -q "error TS" <<< "$TYPECHECK_OUTPUT"; then
     log_error "FAIL: TypeScript errors found"
     echo "$TYPECHECK_OUTPUT"
     TESTS_FAILED=$((TESTS_FAILED + 1))
