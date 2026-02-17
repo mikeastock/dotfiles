@@ -22,3 +22,6 @@
 [submodule "plugins/buildrtech-dotagents"]
 	path = plugins/buildrtech-dotagents
 	url = https://github.com/buildrtech/dotagents
+[submodule "plugins/rjs-shaping-skills"]
+	path = plugins/rjs-shaping-skills
+	url = git@github.com:rjs/shaping-skills.git

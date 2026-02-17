@@ -47,3 +47,8 @@ extensions = [ "review" ]
 url = "https://github.com/buildrtech/dotagents"
 skills = [ "brainstorming", "dispatching-parallel-agents", "executing-plans", "receiving-code-review", "requesting-code-review", "semantic-commit", "systematic-debugging", "test-driven-development", "verification-before-completion", "writing-plans", "fetch-ci-build" ]
 skills_skip_agents = [ "amp" ]                  # Skip buildrtech skills for Amp
+
+["rjs/shaping-skills"]
+url = "git@github.com:rjs/shaping-skills.git"
+skills_path = "*"                                 # Skills are at root level
+skills = [ "*" ]                                  # Install all skills from this plugin
