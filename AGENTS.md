@@ -19,7 +19,6 @@ agents/
 ├── plugins/                        # Git submodules (skill sources, owner-repo format)
 │   ├── anthropics-skills/          # github.com/anthropics/skills
 │   ├── SawyerHood-dev-browser/     # github.com/SawyerHood/dev-browser
-│   ├── EveryInc-compound-engineering-plugin/  # github.com/EveryInc/compound-engineering-plugin
 │   └── mitsuhiko-agent-stuff/      # github.com/mitsuhiko/agent-stuff
 ├── skills/                         # Custom skills (local)
 │   └── <skill-name>/

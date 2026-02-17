@@ -17,11 +17,6 @@
 url = "https://github.com/anthropics/skills"
 skills = [ "frontend-design" ]
 
-["EveryInc/compound-engineering-plugin"]
-url = "https://github.com/EveryInc/compound-engineering-plugin"
-skills_path = "plugins/*/skills/*"
-skills = [ "dspy-ruby" ]
-
 ["SawyerHood/dev-browser"]
 url = "https://github.com/SawyerHood/dev-browser"
 skills = [ "*" ]                                  # Install all skills from this plugin
