@@ -43,6 +43,10 @@ make agents-clean            # clean agent build/install artifacts
 make plugin-update           # update plugin submodules
 ```
 
+### Notable custom skills
+
+- `layered-rails` — Rails layered architecture guidance (copied locally from `palkan/skills`, not managed as a plugin)
+
 ## Structure
 
 ```text
