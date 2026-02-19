@@ -78,9 +78,13 @@ alias piu="npm install -g @mariozechner/pi-coding-agent"
 
 # app checkouts
 alias a1="cd ~/code/buildr/app"
+alias a1pi="cd ~/code/buildr/app && zmx attach app1 pi"
 alias a2="cd ~/code/buildr/app2"
+alias a2pi="cd ~/code/buildr/app2 && zmx attach app2 pi"
 alias a3="cd ~/code/buildr/app3"
+alias a3pi="cd ~/code/buildr/app3 && zmx attach app3 pi"
 alias a4="cd ~/code/buildr/app4"
+alias a4pi="cd ~/code/buildr/app4 && zmx attach app4 pi"
 
 function fco -d "Fuzzy-find and checkout a branch"
   git branch --all --sort=-committerdate | grep -v HEAD | string trim | fzf --header='[fuzzy:branch-checkout]' | xargs git checkout
