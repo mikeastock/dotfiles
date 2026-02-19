@@ -14,16 +14,17 @@ import type {
 	ToolResultEvent,
 	SessionShutdownEvent,
 } from "@mariozechner/pi-coding-agent";
-import type { AgentMessage } from "@mariozechner/pi-agent-core";
-import type { AssistantMessage, StopReason } from "@mariozechner/pi-ai";
+import type { StopReason } from "@mariozechner/pi-ai";
 import { basename } from "node:path";
 
-type StatusState = "new" | "running" | "doneCommitted" | "doneNoCommit" | "timeout";
+type StatusState = "new" | "running" | "doneCommitted" | "doneNoCommit" | "blocked";
 
 type StatusTracker = {
 	state: StatusState;
 	running: boolean;
 	sawCommit: boolean;
+	awaitingAskUserQuestion: boolean;
+	askUserQuestionCancelled: boolean;
 };
 
 const STATUS_TEXT: Record<StatusState, string> = {
@@ -31,7 +32,7 @@ const STATUS_TEXT: Record<StatusState, string> = {
 	running: ":running...",
 	doneCommitted: ":✅",
 	doneNoCommit: ":🚧",
-	timeout: ":🛑",
+	blocked: ":🛑",
 };
 
 const INACTIVE_TIMEOUT_MS = 180_000;
@@ -42,6 +43,8 @@ export default function (pi: ExtensionAPI) {
 		state: "new",
 		running: false,
 		sawCommit: false,
+		awaitingAskUserQuestion: false,
+		askUserQuestionCancelled: false,
 	};
 	let timeoutId: ReturnType<typeof setTimeout> | undefined;
 	const nativeClearTimeout = globalThis.clearTimeout;
@@ -64,13 +67,14 @@ export default function (pi: ExtensionAPI) {
 		clearTabTimeout();
 		timeoutId = setTimeout(() => {
 			if (status.running && status.state === "running") {
-				setTitle(ctx, "timeout");
+				setTitle(ctx, "blocked");
 			}
 		}, INACTIVE_TIMEOUT_MS);
 	};
 
 	const markActivity = (ctx: ExtensionContext): void => {
-		if (status.state === "timeout") {
+		if (status.awaitingAskUserQuestion) return;
+		if (status.state === "blocked") {
 			setTitle(ctx, "running");
 		}
 		if (!status.running) return;
@@ -80,6 +84,8 @@ export default function (pi: ExtensionAPI) {
 	const resetState = (ctx: ExtensionContext, next: StatusState): void => {
 		status.running = false;
 		status.sawCommit = false;
+		status.awaitingAskUserQuestion = false;
+		status.askUserQuestionCancelled = false;
 		clearTabTimeout();
 		setTitle(ctx, next);
 	};
@@ -87,93 +93,92 @@ export default function (pi: ExtensionAPI) {
 	const beginRun = (ctx: ExtensionContext): void => {
 		status.running = true;
 		status.sawCommit = false;
+		status.awaitingAskUserQuestion = false;
+		status.askUserQuestionCancelled = false;
 		setTitle(ctx, "running");
 		resetTimeout(ctx);
 	};
 
-	const getStopReason = (messages: AgentMessage[]): StopReason | undefined => {
+	const getStopReason = (messages: AgentEndEvent["messages"]): StopReason | undefined => {
 		for (let i = messages.length - 1; i >= 0; i -= 1) {
 			const message = messages[i];
-			if (message.role === "assistant") {
-				return (message as AssistantMessage).stopReason;
+			if (message.role === "assistant" && "stopReason" in message) {
+				return message.stopReason;
 			}
 		}
 		return undefined;
 	};
 
-	const handlers = [
-		[
-			"session_start",
-			async (_event: SessionStartEvent, ctx: ExtensionContext) => {
-				resetState(ctx, "new");
-			},
-		],
-		[
-			"session_switch",
-			async (event: SessionSwitchEvent, ctx: ExtensionContext) => {
-				resetState(ctx, event.reason === "new" ? "new" : "doneCommitted");
-			},
-		],
-		[
-			"before_agent_start",
-			async (_event: BeforeAgentStartEvent, ctx: ExtensionContext) => {
-				markActivity(ctx);
-			},
-		],
-		[
-			"agent_start",
-			async (_event: AgentStartEvent, ctx: ExtensionContext) => {
-				beginRun(ctx);
-			},
-		],
-		[
-			"turn_start",
-			async (_event: TurnStartEvent, ctx: ExtensionContext) => {
-				markActivity(ctx);
-			},
-		],
-		[
-			"tool_call",
-			async (event: ToolCallEvent, ctx: ExtensionContext) => {
-				if (event.toolName === "bash") {
-					const command = typeof event.input.command === "string" ? event.input.command : "";
-					if (command && GIT_COMMIT_RE.test(command)) {
-						status.sawCommit = true;
-					}
-				}
-				markActivity(ctx);
-			},
-		],
-		[
-			"tool_result",
-			async (_event: ToolResultEvent, ctx: ExtensionContext) => {
-				markActivity(ctx);
-			},
-		],
-		[
-			"agent_end",
-			async (event: AgentEndEvent, ctx: ExtensionContext) => {
-				status.running = false;
-				clearTabTimeout();
-				const stopReason = getStopReason(event.messages);
-				if (stopReason === "error") {
-					setTitle(ctx, "timeout");
-					return;
-				}
-				setTitle(ctx, status.sawCommit ? "doneCommitted" : "doneNoCommit");
-			},
-		],
-		[
-			"session_shutdown",
-			async (_event: SessionShutdownEvent, ctx: ExtensionContext) => {
-				clearTabTimeout();
-				if (!ctx.hasUI) return;
-				ctx.ui.setTitle(`pi - ${cwdBase(ctx)}`);
-			},
-		],
-	] as const;
+	const isAskUserQuestionCancelled = (event: ToolResultEvent): boolean => {
+		if (event.toolName !== "AskUserQuestion") return false;
+		if (!event.details || typeof event.details !== "object") return false;
+		const details = event.details as Record<string, unknown>;
+		return details.cancelled === true;
+	};
 
-	for (const [event, handler] of handlers) {
-		pi.on(event, handler as (event: unknown, ctx: ExtensionContext) => void);
-	}
+	pi.on("session_start", async (_event: SessionStartEvent, ctx: ExtensionContext) => {
+		resetState(ctx, "new");
+	});
+
+	pi.on("session_switch", async (event: SessionSwitchEvent, ctx: ExtensionContext) => {
+		resetState(ctx, event.reason === "new" ? "new" : "doneCommitted");
+	});
+
+	pi.on("before_agent_start", async (_event: BeforeAgentStartEvent, ctx: ExtensionContext) => {
+		markActivity(ctx);
+	});
+
+	pi.on("agent_start", async (_event: AgentStartEvent, ctx: ExtensionContext) => {
+		beginRun(ctx);
+	});
+
+	pi.on("turn_start", async (_event: TurnStartEvent, ctx: ExtensionContext) => {
+		markActivity(ctx);
+	});
+
+	pi.on("tool_call", async (event: ToolCallEvent, ctx: ExtensionContext) => {
+		if (event.toolName === "bash") {
+			const command = typeof event.input.command === "string" ? event.input.command : "";
+			if (command && GIT_COMMIT_RE.test(command)) {
+				status.sawCommit = true;
+			}
+		}
+		if (event.toolName === "AskUserQuestion") {
+			status.awaitingAskUserQuestion = true;
+			clearTabTimeout();
+			setTitle(ctx, "blocked");
+			return;
+		}
+		markActivity(ctx);
+	});
+
+	pi.on("tool_result", async (event: ToolResultEvent, ctx: ExtensionContext) => {
+		if (event.toolName === "AskUserQuestion") {
+			status.awaitingAskUserQuestion = false;
+			if (isAskUserQuestionCancelled(event)) {
+				status.askUserQuestionCancelled = true;
+				clearTabTimeout();
+				setTitle(ctx, "blocked");
+				return;
+			}
+		}
+		markActivity(ctx);
+	});
+
+	pi.on("agent_end", async (event: AgentEndEvent, ctx: ExtensionContext) => {
+		status.running = false;
+		clearTabTimeout();
+		const stopReason = getStopReason(event.messages);
+		if (stopReason === "error" || status.askUserQuestionCancelled) {
+			setTitle(ctx, "blocked");
+			return;
+		}
+		setTitle(ctx, status.sawCommit ? "doneCommitted" : "doneNoCommit");
+	});
+
+	pi.on("session_shutdown", async (_event: SessionShutdownEvent, ctx: ExtensionContext) => {
+		clearTabTimeout();
+		if (!ctx.hasUI) return;
+		ctx.ui.setTitle(`pi - ${cwdBase(ctx)}`);
+	});
 }
