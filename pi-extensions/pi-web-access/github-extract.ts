@@ -2,7 +2,6 @@ import { existsSync, readFileSync, rmSync, statSync, readdirSync, openSync, read
 import { execFile } from "node:child_process";
 import { homedir } from "node:os";
 import { join, extname } from "node:path";
-import { activityMonitor } from "./activity.js";
 import type { ExtractedContent } from "./extract.js";
 import { checkGhAvailable, checkRepoSize, fetchViaApi, showGhHint } from "./github-api.js";
 
@@ -451,14 +450,11 @@ export async function extractGitHub(
 		return fetchViaApi(url, owner, repo, info, sizeNote);
 	}
 
-	const activityId = activityMonitor.logStart({ type: "fetch", url: `github.com/${owner}/${repo}` });
-
 	if (!forceClone) {
 		const sizeKB = await checkRepoSize(owner, repo);
 		if (sizeKB !== null) {
 			const sizeMB = sizeKB / 1024;
 			if (sizeMB > config.maxRepoSizeMB) {
-				activityMonitor.logComplete(activityId, 200);
 				const sizeNote =
 					`Note: Repository is ${Math.round(sizeMB)}MB (threshold: ${config.maxRepoSizeMB}MB). ` +
 					`Showing API-fetched content instead of full clone. Ask the user if they'd like to clone the full repo -- ` +
@@ -480,15 +476,12 @@ export async function extractGitHub(
 
 	if (!result) {
 		cloneCache.delete(key);
-		activityMonitor.logError(activityId, "clone failed");
-
 		const apiFallback = await fetchViaApi(url, owner, repo, info);
 		if (apiFallback) return apiFallback;
 
 		return null;
 	}
 
-	activityMonitor.logComplete(activityId, 200);
 	const content = generateContent(result, info);
 	const title = info.path ? `${owner}/${repo} - ${info.path}` : `${owner}/${repo}`;
 	return { url, title, content, error: null };
