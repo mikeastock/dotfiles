@@ -68,7 +68,7 @@ export default function (pi: ExtensionAPI) {
 			.catch((err) => {
 				if (!sessionActive || !pendingFetches.has(fetchId)) return;
 				const message = err instanceof Error ? err.message : String(err);
-				const isAbort = err.name === "AbortError" || message.toLowerCase().includes("abort");
+				const isAbort = (err instanceof Error && err.name === "AbortError") || message.toLowerCase().includes("abort");
 				if (!isAbort) {
 					pi.sendMessage({
 						customType: "web-search-error",
@@ -153,7 +153,7 @@ export default function (pi: ExtensionAPI) {
 					const { answer, results } = await search(query, {
 						provider: params.provider as SearchProvider | undefined,
 						numResults: params.numResults,
-						recencyFilter: params.recencyFilter,
+						recencyFilter: params.recencyFilter as "day" | "week" | "month" | "year" | undefined,
 						domainFilter: params.domainFilter,
 						signal,
 					});
@@ -450,7 +450,7 @@ export default function (pi: ExtensionAPI) {
 			urlIndex: Type.Optional(Type.Number({ description: "Get content for URL at index" })),
 		}),
 
-		async execute(_toolCallId, params) {
+		async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
 			const data = getResult(params.responseId);
 			if (!data) {
 				return {
