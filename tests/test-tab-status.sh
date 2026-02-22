@@ -30,7 +30,7 @@ test_titles_and_ghostty_signals() {
 
 	assert_output_contains "$output" "TITLE pi - dotfiles 󱞩" "new title is set"
 	assert_output_contains "$output" "TITLE pi - dotfiles " "running title is set"
-	assert_output_contains "$output" "TITLE pi - dotfiles " "waiting for user input title is set"
+	assert_output_contains "$output" "TITLE pi - dotfiles " "waiting for user input title is set"
 	assert_output_contains "$output" "TITLE pi - dotfiles " "failed title is set"
 	assert_output_contains "$output" "TITLE pi - dotfiles " "completion title is set"
 	assert_output_contains "$output" "TITLE pi - dotfiles" "session shutdown restores base title"

@@ -37,7 +37,7 @@ type LastNotification = {
 const STATUS_TEXT: Record<StatusState, string> = {
 	new: " 󱞩",
 	running: " ",
-	waitingInput: " ",
+	waitingInput: " ",
 	stalled: " ",
 	done: " ",
 	failed: " ",

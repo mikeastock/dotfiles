@@ -1,4 +1,5 @@
 font-family = "FiraCode Nerd Font"
+window-title-font-family = "FiraCode Nerd Font"
 theme = Catppuccin Mocha
 copy-on-select = false
 keybind = shift+enter=text:\n
