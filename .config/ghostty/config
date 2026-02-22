@@ -10,3 +10,13 @@ keybind = super+ctrl+l=goto_split:right
 
 # Disable default clear-screen binding
 keybind = super+k=ignore
+
+# Tmux-style leader bindings
+keybind = ctrl+a>h=goto_split:left
+keybind = ctrl+a>j=goto_split:down
+keybind = ctrl+a>k=goto_split:up
+keybind = ctrl+a>l=goto_split:right
+keybind = ctrl+a>n=new_tab
+keybind = ctrl+a>s=new_split:down
+keybind = ctrl+a>v=new_split:right
+keybind = ctrl+a>ctrl+a=text:\x01
