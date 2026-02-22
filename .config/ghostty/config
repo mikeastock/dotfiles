@@ -2,6 +2,10 @@ font-family = "Fira Code"
 theme = Catppuccin Mocha
 copy-on-select = false
 keybind = shift+enter=text:\n
+# Shift+arrow tab switching
+keybind = shift+arrow_left=previous_tab
+keybind = shift+arrow_right=next_tab
+
 # Vim-like split navigation
 keybind = super+ctrl+h=goto_split:left
 keybind = super+ctrl+j=goto_split:down
