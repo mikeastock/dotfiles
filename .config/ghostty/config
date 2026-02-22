@@ -2,3 +2,11 @@ font-family = "Fira Code"
 theme = Catppuccin Mocha
 copy-on-select = false
 keybind = shift+enter=text:\n
+# Vim-like split navigation
+keybind = super+ctrl+h=goto_split:left
+keybind = super+ctrl+j=goto_split:down
+keybind = super+ctrl+k=goto_split:up
+keybind = super+ctrl+l=goto_split:right
+
+# Disable default clear-screen binding
+keybind = super+k=ignore
