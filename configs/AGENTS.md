@@ -4,6 +4,38 @@
 **ALWAYS** use `rg` instead of `grep`
 **ALWAYS** set a non-interactive editor env for git continuation commands (e.g. `GIT_EDITOR=true`) when running commands like `git rebase --continue`, `git merge --continue`, or similar.
 
+## Background Processes with zmx
+
+- We use `zmx` as a lightweight persistent session runner for long-lived/background terminal work (tests, dev servers, build jobs, migrations, one-off scripts).
+- Prefer `zmx run` when work should continue independently of the current terminal/agent invocation.
+- Use stable, descriptive session names (e.g. `tests`, `server-api`, `build-ios`) so sessions are easy to inspect and reuse.
+
+### Non-interactive safety rule (important)
+
+- `zmx run` can hang agent tool execution in non-interactive environments because the daemon may keep inherited stdio open.
+- When running `zmx run` from an agent/tool, **always redirect stdout/stderr** so the command returns promptly:
+  - `zmx run <session> <command> >/dev/null 2>&1`
+  - or redirect to a file if output must be captured.
+
+### Recommended background process flow
+
+1. Start/dispatch work:
+   - `zmx run <session> <command> >/dev/null 2>&1`
+2. Wait for task completion when needed:
+   - `zmx wait <session>`
+3. Inspect output/history:
+   - `zmx history <session>`
+4. Check active sessions:
+   - `zmx list`
+5. Clean up stale/finished sessions when appropriate:
+   - `zmx kill <session>`
+
+### Practical guidance
+
+- Use one session per concern (don’t mix unrelated jobs in one session).
+- Reuse a session when iterative commands should share shell state; create a new session when isolation is safer.
+- For recurring workflows, keep session names consistent across runs.
+
 ## Mindset & Process
 
 - Think a lot before acting.
