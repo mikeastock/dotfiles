@@ -190,8 +190,8 @@ test_make_install_extensions() {
         TESTS_PASSED=$((TESTS_PASSED + 1))
     fi
 
-    assert_file_not_exists "$SANDBOX_DIR/.pi/agent/extensions/tab-status" "tab-status extension disabled in build"
-    assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/cmux-status" "cmux-status extension installed"
+    assert_file_not_exists "$SANDBOX_DIR/.pi/agent/extensions/cmux-status" "cmux-status extension disabled in build"
+    assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/tab-status" "tab-status extension installed"
 }
 
 # Test: make install-prompts (with sandbox)

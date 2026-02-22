@@ -47,7 +47,7 @@ NON_INTERACTIVE = False
 
 # Custom extensions excluded from installation/build output
 DISABLED_CUSTOM_EXTENSIONS = {
-    "tab-status",  # Replaced by cmux-status
+    "cmux-status",  # Reverted to tab-status
 }
 
 
