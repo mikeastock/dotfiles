@@ -16,6 +16,11 @@ if ! command -v pnpm &>/dev/null; then
 	exit 1
 fi
 
+if ! command -v rg &>/dev/null; then
+	log_error "rg (ripgrep) is required but not installed"
+	exit 1
+fi
+
 cd "$PROJECT_DIR"
 
 run_harness() {
