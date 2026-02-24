@@ -1,3 +1,0 @@
-packages:
-  - "pi-extensions/*"
-  - "!pi-extensions/* 2"

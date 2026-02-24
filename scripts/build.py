@@ -174,9 +174,11 @@ def load_config() -> dict[str, Plugin]:
     return {name: Plugin.from_dict(name, cfg) for name, cfg in data.items()}
 
 
-def run_cmd(cmd: list[str], check: bool = True) -> subprocess.CompletedProcess:
+def run_cmd(
+    cmd: list[str], check: bool = True, cwd: Path | None = None
+) -> subprocess.CompletedProcess:
     """Run a shell command."""
-    return subprocess.run(cmd, check=check, capture_output=True, text=True)
+    return subprocess.run(cmd, check=check, capture_output=True, text=True, cwd=cwd)
 
 
 def init_submodules():
@@ -764,6 +766,16 @@ def install_themes():
     print(f"  pi: {count} themes -> {dest}")
 
 
+def install_extension_dependencies(extension_dir: Path, extension_name: str):
+    """Install npm dependencies for an extension when package.json is present."""
+    package_json = extension_dir / "package.json"
+    if not package_json.exists():
+        return
+
+    print(f"    {extension_name}: running npm install")
+    run_cmd(["npm", "install"], cwd=extension_dir)
+
+
 def install_extensions(plugins: dict[str, Plugin]):
     """Install extensions from plugins and custom extensions directory."""
     print("Installing extensions...")
@@ -811,6 +823,7 @@ def install_extensions(plugins: dict[str, Plugin]):
             else:
                 shutil.copytree(path, dest_ext, dirs_exist_ok=True)
 
+            install_extension_dependencies(dest_ext, name)
             print(f"  {name} (from {plugin.name})")
             installed.add(name)
 
@@ -832,6 +845,7 @@ def install_extensions(plugins: dict[str, Plugin]):
         remove_path(dest_ext)
         shutil.copytree(ext_dir, dest_ext)
 
+        install_extension_dependencies(dest_ext, name)
         print(f"  {name} (custom)")
         installed.add(name)
 
