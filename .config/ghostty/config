@@ -1,6 +1,6 @@
 font-family = "FiraCode Nerd Font"
 window-title-font-family = "FiraCode Nerd Font"
-theme = Catppuccin Mocha
+theme = dark:Catppuccin Mocha,light:Catppuccin Latte
 copy-on-select = false
 keybind = shift+enter=text:\n
 # Shift+arrow tab switching
