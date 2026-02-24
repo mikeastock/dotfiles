@@ -1,5 +1,5 @@
 {
-  "lastChangelogVersion": "0.52.8",
+  "lastChangelogVersion": "0.54.2",
   "defaultProvider": "openai-codex",
   "defaultModel": "gpt-5.3-codex",
   "hideThinkingBlock": false,
@@ -11,5 +11,6 @@
     "openai-codex/gpt-5.3-codex",
     "accounts/fireworks/models/kimi-k2p5"
   ],
-  "packages": []
+  "packages": [],
+  "theme": "catppuccin-mocha"
 }
