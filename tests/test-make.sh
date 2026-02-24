@@ -24,6 +24,7 @@ test_make_help() {
     assert_output_contains "$output" "Usage:" "Help shows usage"
     assert_output_contains "$output" "make install" "Help shows install command"
     assert_output_contains "$output" "make install-prompts" "Help shows install-prompts command"
+    assert_output_contains "$output" "make install-themes" "Help shows install-themes command"
     assert_output_contains "$output" "make build" "Help shows build command"
     assert_output_contains "$output" "make clean" "Help shows clean command"
     assert_output_contains "$output" "Dotfiles:" "Help shows dotfiles section"
@@ -53,6 +54,9 @@ test_make_build() {
     assert_dir_exists "$PROJECT_DIR/build/pi" "Build created pi directory"
     assert_dir_exists "$PROJECT_DIR/build/prompts/pi" "Build created Pi prompt directory"
     assert_file_exists "$PROJECT_DIR/build/prompts/pi/refactor-pass.md" "Build created refactor-pass prompt template"
+    assert_dir_exists "$PROJECT_DIR/build/themes/pi" "Build created Pi themes directory"
+    assert_file_exists "$PROJECT_DIR/build/themes/pi/catppuccin-latte.json" "Build created catppuccin-latte theme"
+    assert_file_exists "$PROJECT_DIR/build/themes/pi/catppuccin-mocha.json" "Build created catppuccin-mocha theme"
 
     # Check that skills were built (at least one skill should exist)
     local skill_count
@@ -206,6 +210,19 @@ test_make_install_prompts() {
     assert_file_exists "$SANDBOX_DIR/.pi/agent/prompts/refactor-pass.md" "Pi prompt template installed"
 }
 
+# Test: make install-themes (with sandbox)
+test_make_install_themes() {
+    log_test "Testing 'make install-themes' (sandboxed)"
+    cd "$PROJECT_DIR"
+
+    local output
+    output=$(HOME="$SANDBOX_DIR" make install-themes 2>&1)
+
+    assert_output_contains "$output" "Installing themes" "Install shows theme progress"
+    assert_file_exists "$SANDBOX_DIR/.pi/agent/themes/catppuccin-latte.json" "Pi latte theme installed"
+    assert_file_exists "$SANDBOX_DIR/.pi/agent/themes/catppuccin-mocha.json" "Pi mocha theme installed"
+}
+
 # Test: make install (with sandbox)
 test_make_install() {
     log_test "Testing 'make install' (sandboxed)"
@@ -221,8 +238,9 @@ test_make_install() {
     local output
     output=$(HOME="$SANDBOX_DIR" make install 2>&1)
 
-    assert_output_contains "$output" "All skills, prompt templates, and extensions installed" "Install shows completion message"
+    assert_output_contains "$output" "All skills, prompt templates, themes, and extensions installed" "Install shows completion message"
     assert_file_exists "$SANDBOX_DIR/.pi/agent/prompts/refactor-pass.md" "Install includes Pi prompts"
+    assert_file_exists "$SANDBOX_DIR/.pi/agent/themes/catppuccin-latte.json" "Install includes Pi themes"
 }
 
 # Test: make clean (with sandbox)
@@ -298,6 +316,7 @@ main() {
     test_make_install_skills
     test_make_install_extensions
     test_make_install_prompts
+    test_make_install_themes
     test_make_install
     test_make_clean
 

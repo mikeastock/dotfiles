@@ -33,9 +33,10 @@ This repo also contains reusable skills, prompt templates, and extensions for Am
 ### Agent commands
 
 ```bash
-make install                 # install agent skills/prompts/extensions
+make install                 # install agent skills/prompts/themes/extensions
 make install-skills
 make install-prompts
+make install-themes
 make install-extensions
 make install-configs
 make build                   # build agent artifacts only
@@ -55,6 +56,7 @@ dotfiles/
 ├── orb-vm/                  # OrbStack VM setup
 ├── skills/                  # custom agent skills
 ├── pi-extensions/           # Pi extensions
+├── pi-themes/               # Pi themes
 ├── prompts/                 # Pi prompt templates
 ├── plugins/                 # plugin submodules
 ├── scripts/build.py         # agent build/install system

@@ -1,5 +1,5 @@
 # Agents Makefile
-# Installs skills and extensions for AI coding agents
+# Installs skills, prompt templates, themes, and extensions for AI coding agents
 #
 # Configuration is in plugins.toml. Run `make install` to build and install.
 # Requires Python 3.11+ (uses tomllib from stdlib).
@@ -17,7 +17,7 @@ HOME_LINKS := .bin .gitconfig .ideavimrc .psqlrc .tmux.conf .tmuxinator .vscode
 # .config directories to symlink entirely
 CONFIG_DIRS := alacritty stylua lvim zellij direnv atuin ghostty
 
-.PHONY: all install install-non-interactive install-skills install-extensions install-prompts install-configs build clean help submodule-init plugin-update check-python \
+.PHONY: all install install-non-interactive install-skills install-extensions install-prompts install-themes install-configs build clean help submodule-init plugin-update check-python \
 	dot-all dot-icloud-link dot-home-symlinks dot-config-symlinks dot-macos-defaults dot-clean
 
 all: help
@@ -31,8 +31,9 @@ help:
 	@echo "  make install-skills          Install skills only (Amp, Claude Code, Codex, Pi agent)"
 	@echo "  make install-extensions      Install extensions only (Pi agent)"
 	@echo "  make install-prompts         Install prompt templates only (Pi agent)"
+	@echo "  make install-themes          Install themes only (Pi agent)"
 	@echo "  make install-configs         Install all agent configs (Amp, Codex, Pi)"
-	@echo "  make build                   Build skills with overrides (without installing)"
+	@echo "  make build                   Build skills/prompts/themes (without installing)"
 	@echo "  make plugin-update           Update all plugin submodules to latest"
 	@echo "  make clean                   Remove all installed skills, extensions, and build artifacts"
 	@echo ""
@@ -54,11 +55,11 @@ check-python:
 
 install: check-python
 	@$(PYTHON) "$(BUILD_SCRIPT)" install
-	@echo "All skills, prompt templates, and extensions installed"
+	@echo "All skills, prompt templates, themes, and extensions installed"
 
 install-non-interactive: check-python
 	@$(PYTHON) "$(BUILD_SCRIPT)" install --non-interactive
-	@echo "All skills, prompt templates, and extensions installed (non-interactive mode)"
+	@echo "All skills, prompt templates, themes, and extensions installed (non-interactive mode)"
 
 submodule-init:
 	@$(PYTHON) "$(BUILD_SCRIPT)" submodule-init
@@ -74,6 +75,9 @@ install-extensions: check-python
 
 install-prompts: check-python
 	@$(PYTHON) "$(BUILD_SCRIPT)" install-prompts
+
+install-themes: check-python
+	@$(PYTHON) "$(BUILD_SCRIPT)" install-themes
 
 install-configs: check-python
 	@$(PYTHON) "$(BUILD_SCRIPT)" install-configs

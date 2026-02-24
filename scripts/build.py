@@ -52,8 +52,8 @@ DISABLED_CUSTOM_EXTENSIONS = {
 
 
 def remove_path(path: Path) -> None:
-    """Remove a path, handling both symlinks and directories."""
-    if path.is_symlink():
+    """Remove a path, handling symlinks, files, and directories."""
+    if path.is_symlink() or path.is_file():
         path.unlink()
     elif path.exists():
         shutil.rmtree(path)
@@ -71,6 +71,7 @@ SKILLS_DIR = ROOT / "skills"
 PROMPTS_DIR = ROOT / "prompts"
 
 PI_EXTENSIONS_DIR = ROOT / "pi-extensions"
+PI_THEMES_DIR = ROOT / "pi-themes"
 OVERRIDES_DIR = ROOT / "skill-overrides"
 BUILD_DIR = ROOT / "build"
 CONFIG_FILE = ROOT / "plugins.toml"
@@ -95,6 +96,7 @@ INSTALL_PATHS = {
         "skills": HOME / ".pi" / "agent" / "skills",
         "extensions": HOME / ".pi" / "agent" / "extensions",
         "prompts": HOME / ".pi" / "agent" / "prompts",
+        "themes": HOME / ".pi" / "agent" / "themes",
     },
 }
 
@@ -690,6 +692,34 @@ def install_skills():
         print(f"  {agent}: {count} skills -> {dest}")
 
 
+def build_themes():
+    """Build Pi themes from custom pi-themes directory."""
+    import json
+
+    print("Building themes...")
+
+    build_themes_dir = BUILD_DIR / "themes" / "pi"
+    if build_themes_dir.exists():
+        shutil.rmtree(build_themes_dir)
+    build_themes_dir.mkdir(parents=True, exist_ok=True)
+
+    if not PI_THEMES_DIR.exists():
+        print("  No pi-themes directory found, skipping")
+        return
+
+    built = 0
+    for theme_file in sorted(PI_THEMES_DIR.glob("*.json")):
+        # Validate JSON so bad theme files fail fast during build.
+        with open(theme_file) as f:
+            json.load(f)
+
+        shutil.copy(theme_file, build_themes_dir / theme_file.name)
+        print(f"  {theme_file.stem} (custom)")
+        built += 1
+
+    print(f"  Built {built} themes")
+
+
 def install_prompts():
     """Install built prompt templates to Pi prompt directory."""
     print("Installing prompt templates...")
@@ -712,6 +742,26 @@ def install_prompts():
         count += 1
 
     print(f"  pi: {count} prompts -> {dest}")
+
+
+def install_themes():
+    """Install built Pi themes."""
+    print("Installing themes...")
+
+    source = BUILD_DIR / "themes" / "pi"
+    if not source.exists():
+        print("  No built themes found, skipping")
+        return
+
+    dest = INSTALL_PATHS["pi"]["themes"]
+    dest.mkdir(parents=True, exist_ok=True)
+
+    count = 0
+    for theme_file in sorted(source.glob("*.json")):
+        shutil.copy(theme_file, dest / theme_file.name)
+        count += 1
+
+    print(f"  pi: {count} themes -> {dest}")
 
 
 def install_extensions(plugins: dict[str, Plugin]):
@@ -917,6 +967,15 @@ def clean(plugins: dict[str, Plugin]):
         remove_path(prompts_dest)
         print(f"  Removed prompts from {prompts_dest}")
 
+    # Clean managed Pi themes
+    themes_dest = INSTALL_PATHS["pi"]["themes"]
+    if PI_THEMES_DIR.exists() and themes_dest.exists():
+        for theme_file in sorted(PI_THEMES_DIR.glob("*.json")):
+            installed_theme = themes_dest / theme_file.name
+            if installed_theme.exists() or installed_theme.is_symlink():
+                remove_path(installed_theme)
+                print(f"  Removed theme: {theme_file.stem}")
+
     # Clean build directory
     if BUILD_DIR.exists():
         shutil.rmtree(BUILD_DIR)
@@ -947,6 +1006,7 @@ def main():
             "install-skills",
             "install-extensions",
             "install-prompts",
+            "install-themes",
             "install-configs",
             "clean",
             "submodule-init",
@@ -972,14 +1032,17 @@ def main():
             print("Building in non-interactive mode...")
         build_skills(plugins)
         build_prompts(plugins)
+        build_themes()
     elif args.command == "install":
         if NON_INTERACTIVE:
             print("Installing in non-interactive mode...")
         init_submodules()
         build_skills(plugins)
         build_prompts(plugins)
+        build_themes()
         install_skills()
         install_prompts()
+        install_themes()
         install_extensions(plugins)
         install_configs()
         print("\nAll done!")
@@ -991,6 +1054,9 @@ def main():
     elif args.command == "install-prompts":
         build_prompts(plugins)
         install_prompts()
+    elif args.command == "install-themes":
+        build_themes()
+        install_themes()
     elif args.command == "install-configs":
         install_configs()
     elif args.command == "clean":
