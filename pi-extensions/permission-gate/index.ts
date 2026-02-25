@@ -2,7 +2,7 @@
  * Permission Gate Extension
  *
  * Prompts for confirmation before running potentially dangerous bash commands.
- * Patterns checked: rm -rf, sudo, chmod/chown 777, heroku sensitive commands
+ * Patterns checked: rm -rf, chmod/chown 777, heroku sensitive commands
  *
  * SSH commands are excluded since they run on remote machines.
  */
@@ -13,7 +13,6 @@ export default function (pi: ExtensionAPI) {
 	const dangerousPatterns = [
 		// File system destructive operations
 		/\brm\s+(-rf?|--recursive)/i,
-		/\bsudo\b/i,
 		/\b(chmod|chown)\b.*777/i,
 
 		// Heroku database commands (direct access, resets, data movement)
