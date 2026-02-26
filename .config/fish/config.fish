@@ -108,7 +108,7 @@ function ssm-connect
 end
 
 function aic -d "Use pi with a fast model to commit"
-  pi --models zai-glm-4.7 -p "commit"
+  pi --no-session --models zai-glm-4.7 -p "commit"
 end
 
 ####### PATH SETUP
