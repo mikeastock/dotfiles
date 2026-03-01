@@ -18,7 +18,6 @@ agents/
 ├── plugins.toml                    # Plugin configuration (URLs, enabled items, paths)
 ├── plugins/                        # Git submodules (skill sources, owner-repo format)
 │   ├── anthropics-skills/          # github.com/anthropics/skills
-│   ├── SawyerHood-dev-browser/     # github.com/SawyerHood/dev-browser
 │   └── mitsuhiko-agent-stuff/      # github.com/mitsuhiko/agent-stuff
 ├── skills/                         # Custom skills (local)
 │   └── <skill-name>/

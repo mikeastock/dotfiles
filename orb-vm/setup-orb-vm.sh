@@ -509,9 +509,6 @@ MISECONFIG
 echo "Writing Claude Code config..."
 write_file '~/.claude/settings.json' << 'CLAUDECONFIG'
 {
-  "enabledPlugins": {
-    "dev-browser@dev-browser-marketplace": true
-  },
   "statusLine": {
     "type": "command",
     "command": "bash /home/mikeastock/.claude/statusline-git.sh"

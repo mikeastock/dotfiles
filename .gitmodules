@@ -1,6 +1,3 @@
-[submodule "plugins/SawyerHood-dev-browser"]
-	path = plugins/SawyerHood-dev-browser
-	url = https://github.com/SawyerHood/dev-browser.git
 [submodule "plugins/anthropics-skills"]
 	path = plugins/anthropics-skills
 	url = https://github.com/anthropics/skills.git
