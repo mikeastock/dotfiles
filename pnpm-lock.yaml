@@ -17,15 +17,27 @@ importers:
       '@mariozechner/pi-tui':
         specifier: ^0.54.2
         version: 0.54.2
+      '@mozilla/readability':
+        specifier: ^0.5.0
+        version: 0.5.0
       '@sinclair/typebox':
         specifier: ^0.34.48
         version: 0.34.48
       '@types/node':
         specifier: ^25.2.0
         version: 25.2.0
+      linkedom:
+        specifier: ^0.16.0
+        version: 0.16.11
+      p-limit:
+        specifier: ^6.1.0
+        version: 6.2.0
       tsx:
         specifier: ^4.21.0
         version: 4.21.0
+      turndown:
+        specifier: ^7.2.0
+        version: 7.2.2
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
