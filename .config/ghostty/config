@@ -3,9 +3,6 @@ window-title-font-family = "FiraCode Nerd Font"
 theme = dark:Catppuccin Mocha,light:Catppuccin Latte
 copy-on-select = false
 keybind = shift+enter=text:\n
-# Shift+arrow tab switching
-keybind = shift+arrow_left=previous_tab
-keybind = shift+arrow_right=next_tab
 
 # Vim-like split navigation
 keybind = super+ctrl+h=goto_split:left
@@ -25,3 +22,7 @@ keybind = ctrl+a>c=new_tab
 keybind = ctrl+a>s=new_split:down
 keybind = ctrl+a>v=new_split:right
 keybind = ctrl+a>ctrl+a=text:\x01
+
+# Shift+arrow tab switching
+keybind = shift+arrow_left=previous_tab
+keybind = shift+arrow_right=next_tab
