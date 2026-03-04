@@ -445,6 +445,12 @@ export async function extractGitHub(
 	const cached = cloneCache.get(key);
 	if (cached) return awaitCachedClone(cached, url, owner, repo, info, signal);
 
+	// Reuse no-ref clone for ref'd requests (ref is usually the default branch)
+	if (info.ref) {
+		const noRefCached = cloneCache.get(cacheKey(owner, repo));
+		if (noRefCached) return awaitCachedClone(noRefCached, url, owner, repo, info, signal);
+	}
+
 	if (info.refIsFullSha) {
 		const sizeNote = `Note: Commit SHA URLs use the GitHub API instead of cloning.`;
 		return fetchViaApi(url, owner, repo, info, sizeNote);
