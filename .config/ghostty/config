@@ -7,22 +7,22 @@ keybind = shift+enter=text:\n
 # Disable default clear-screen binding
 keybind = super+k=ignore
 
-# # Tmux-style leader bindings
-# keybind = ctrl+a>h=goto_split:left
-# keybind = ctrl+a>j=goto_split:down
-# keybind = ctrl+a>k=goto_split:up
-# keybind = ctrl+a>l=goto_split:right
-# keybind = ctrl+a>c=new_tab
-# keybind = ctrl+a>s=new_split:down
-# keybind = ctrl+a>v=new_split:right
-# keybind = ctrl+a>ctrl+a=text:\x01
-#
-# # Vim-like split navigation
-# keybind = super+ctrl+h=goto_split:left
-# keybind = super+ctrl+j=goto_split:down
-# keybind = super+ctrl+k=goto_split:up
-# keybind = super+ctrl+l=goto_split:right
-#
-# # Shift+arrow tab switching
-# keybind = shift+arrow_left=previous_tab
-# keybind = shift+arrow_right=next_tab
+# Tmux-style leader bindings
+keybind = ctrl+a>h=goto_split:left
+keybind = ctrl+a>j=goto_split:down
+keybind = ctrl+a>k=goto_split:up
+keybind = ctrl+a>l=goto_split:right
+keybind = ctrl+a>c=new_tab
+keybind = ctrl+a>s=new_split:down
+keybind = ctrl+a>v=new_split:right
+keybind = ctrl+a>ctrl+a=text:\x01
+
+# Vim-like split navigation
+keybind = super+ctrl+h=goto_split:left
+keybind = super+ctrl+j=goto_split:down
+keybind = super+ctrl+k=goto_split:up
+keybind = super+ctrl+l=goto_split:right
+
+# Shift+arrow tab switching
+keybind = shift+arrow_left=previous_tab
+keybind = shift+arrow_right=next_tab
