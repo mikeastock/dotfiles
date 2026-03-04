@@ -1,0 +1,24 @@
+{
+  "name": "web-access",
+  "version": "0.1.0",
+  "description": "Web search and content extraction for Pi coding agent, powered by Exa AI",
+  "type": "module",
+  "keywords": [
+    "pi-package",
+    "pi",
+    "pi-coding-agent",
+    "extension",
+    "web-search",
+    "exa",
+    "fetch"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "p-limit": "^6.1.0"
+  },
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}
