@@ -47,7 +47,7 @@ NON_INTERACTIVE = False
 
 # Custom extensions excluded from installation/build output
 DISABLED_CUSTOM_EXTENSIONS = {
-    "cmux-status",  # Reverted to tab-status
+    "tab-status",  # Replaced by cmux-status
     "pi-web-access",  # Replaced by web-access (Exa-based)
 }
 
