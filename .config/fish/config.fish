@@ -175,11 +175,12 @@ end
 ####### Zellij tab auto-rename
 function _zellij_tab_name --on-variable PWD --on-event fish_postexec
   if set -q ZELLIJ
+    set -l dir (basename $PWD)
     set -l branch (git symbolic-ref --short HEAD 2>/dev/null)
     if test -n "$branch"
-      command zellij action rename-tab "$branch"
+      command zellij action rename-tab "$dir - $branch"
     else
-      command zellij action rename-tab (basename $PWD)
+      command zellij action rename-tab "$dir"
     end
   end
 end
