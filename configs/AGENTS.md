@@ -66,6 +66,7 @@
 - Keep service object interfaces lean: remove unused params/dependencies instead of carrying them forward.
 - Prefer intent-revealing private method names over clever abstractions.
 - Prefer memoization for DB-backed lookups inside a service/object lifecycle to prevent accidental repeat queries and N+1-style footguns.
+- Only use trailing conditionals (`return if ...`, `raise if ...`) for early returns/guards. Never use them for real logic checks; use standard `if`/`unless` blocks instead.
 
 ## Testing Philosophy
 
