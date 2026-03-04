@@ -26,6 +26,7 @@ const emit = async (eventName: string, event: unknown): Promise<void> => {
 };
 
 const main = async (): Promise<void> => {
+	// Run 1: normal completion with AskUserQuestion
 	await emit("agent_start", { type: "agent_start" });
 	await emit("tool_call", {
 		type: "tool_call",
@@ -39,17 +40,12 @@ const main = async (): Promise<void> => {
 		toolName: "AskUserQuestion",
 		input: {},
 	});
-	await emit("tool_call", {
-		type: "tool_call",
-		toolCallId: "call-3",
-		toolName: "bash",
-		input: { command: "git commit -m 'done'" },
-	});
 	await emit("agent_end", {
 		type: "agent_end",
 		messages: [{ role: "assistant", stopReason: "endTurn", content: [] }],
 	});
 
+	// Run 2: error stop
 	await emit("agent_start", { type: "agent_start" });
 	await emit("agent_end", {
 		type: "agent_end",

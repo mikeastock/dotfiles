@@ -1,5 +1,5 @@
 /**
- * Send high-signal Pi run notifications via cmux only.
+ * Update cmux sidebar status pill to reflect Pi agent lifecycle.
  */
 import type {
 	ExtensionAPI,
@@ -13,20 +13,8 @@ import type {
 } from "@mariozechner/pi-coding-agent";
 import type { StopReason } from "@mariozechner/pi-ai";
 import { execFile } from "node:child_process";
-import { basename } from "node:path";
 
-type TrackerState = {
-	sawCommit: boolean;
-	askUserQuestionCancelled: boolean;
-};
-
-type LastNotification = {
-	key: string;
-	sentAt: number;
-};
-
-const DEFAULT_DEDUPE_SECONDS = 30;
-const GIT_COMMIT_RE = /\bgit\b[^\n]*\bcommit\b/;
+const DEFAULT_STATUS_KEY = "pi";
 
 const execFileAsync = (file: string, args: string[]): Promise<void> =>
 	new Promise((resolve, reject) => {
@@ -39,74 +27,47 @@ const execFileAsync = (file: string, args: string[]): Promise<void> =>
 		});
 	});
 
-const parseDedupeWindowMs = (): number => {
-	const rawSeconds = process.env.PI_CMUX_NOTIFY_DEDUPE_SECONDS;
-	if (rawSeconds === undefined) return DEFAULT_DEDUPE_SECONDS * 1_000;
-
-	const seconds = Number(rawSeconds);
-	if (!Number.isFinite(seconds) || seconds < 0) {
-		return DEFAULT_DEDUPE_SECONDS * 1_000;
-	}
-	return Math.floor(seconds * 1_000);
+const parseStatusKey = (): string => {
+	const raw = process.env.PI_CMUX_STATUS_KEY;
+	if (!raw) return DEFAULT_STATUS_KEY;
+	const trimmed = raw.trim();
+	return trimmed.length > 0 ? trimmed : DEFAULT_STATUS_KEY;
 };
 
 export default function (pi: ExtensionAPI) {
-	const state: TrackerState = {
-		sawCommit: false,
-		askUserQuestionCancelled: false,
-	};
-	const dedupeWindowMs = parseDedupeWindowMs();
+	let askUserQuestionCancelled = false;
+	const statusKey = parseStatusKey();
 	let cmuxMissing = false;
-	let lastNotification: LastNotification | undefined;
+	let currentStatus: string | undefined;
 
-	const cwdBase = (ctx: ExtensionContext): string => basename(ctx.cwd || "pi");
-
-	const notifyRouteArgs = (): string[] => {
-		const args: string[] = [];
-		const tabId = process.env.CMUX_TAB_ID;
-		const panelId = process.env.CMUX_PANEL_ID;
-		if (tabId) args.push("--tab", tabId);
-		if (panelId) args.push("--panel", panelId);
-		return args;
-	};
-
-	const recentlyNotified = (key: string): boolean => {
-		if (dedupeWindowMs <= 0) return false;
-		if (!lastNotification) return false;
-		if (lastNotification.key !== key) return false;
-		return Date.now() - lastNotification.sentAt < dedupeWindowMs;
-	};
-
-	const notify = async (ctx: ExtensionContext, subtitle: string, body: string): Promise<void> => {
-		if (cmuxMissing) return;
-
-		const title = `Pi · ${cwdBase(ctx)}`;
-		const dedupeKey = `${title}\n${subtitle}\n${body}`;
-		if (recentlyNotified(dedupeKey)) return;
-
+	const runCmux = async (args: string[]): Promise<boolean> => {
+		if (cmuxMissing) return false;
 		try {
-			await execFileAsync("cmux", [
-				"notify",
-				"--title",
-				title,
-				"--subtitle",
-				subtitle,
-				"--body",
-				body,
-				...notifyRouteArgs(),
-			]);
-			lastNotification = { key: dedupeKey, sentAt: Date.now() };
+			await execFileAsync("cmux", args);
+			return true;
 		} catch (error) {
 			const err = error as NodeJS.ErrnoException;
 			if (err.code === "ENOENT") {
 				cmuxMissing = true;
 			}
+			return false;
 		}
 	};
 
-	const resetRunState = (): void => {
-		state.sawCommit = false;
-		state.askUserQuestionCancelled = false;
+	const setStatus = async (value: string): Promise<void> => {
+		if (currentStatus === value) return;
+		const ok = await runCmux(["set-status", statusKey, value]);
+		if (ok) {
+			currentStatus = value;
+		}
+	};
+
+	const clearStatus = async (): Promise<void> => {
+		if (!currentStatus) return;
+		const ok = await runCmux(["clear-status", statusKey]);
+		if (ok) {
+			currentStatus = undefined;
+		}
 	};
 
 	const getStopReason = (messages: AgentEndEvent["messages"]): StopReason | undefined => {
@@ -127,47 +88,38 @@ export default function (pi: ExtensionAPI) {
 	};
 
 	pi.on("session_start", async (_event: SessionStartEvent) => {
-		resetRunState();
+		askUserQuestionCancelled = false;
+		await clearStatus();
 	});
 
 	pi.on("session_switch", async (_event: SessionSwitchEvent) => {
-		resetRunState();
+		askUserQuestionCancelled = false;
+		await clearStatus();
 	});
 
 	pi.on("agent_start", async (_event: AgentStartEvent) => {
-		resetRunState();
+		askUserQuestionCancelled = false;
+		await setStatus("running");
 	});
 
-	pi.on("tool_call", async (event: ToolCallEvent, ctx: ExtensionContext) => {
-		if (event.toolName === "bash") {
-			const command = typeof event.input.command === "string" ? event.input.command : "";
-			if (command && GIT_COMMIT_RE.test(command)) {
-				state.sawCommit = true;
-			}
-		}
-
+	pi.on("tool_call", async (event: ToolCallEvent, _ctx: ExtensionContext) => {
 		if (event.toolName === "AskUserQuestion") {
-			await notify(ctx, "Needs input", "Pi is waiting for your answer.");
+			await setStatus("waiting-input");
 		}
 	});
 
-	pi.on("tool_result", async (event: ToolResultEvent, ctx: ExtensionContext) => {
+	pi.on("tool_result", async (event: ToolResultEvent, _ctx: ExtensionContext) => {
 		if (!isAskUserQuestionCancelled(event)) return;
-		state.askUserQuestionCancelled = true;
-		await notify(ctx, "Failed", "Pi question was cancelled.");
+		askUserQuestionCancelled = true;
+		await setStatus("failed");
 	});
 
-	pi.on("agent_end", async (event: AgentEndEvent, ctx: ExtensionContext) => {
+	pi.on("agent_end", async (event: AgentEndEvent, _ctx: ExtensionContext) => {
 		const stopReason = getStopReason(event.messages);
-		if (stopReason === "error" || state.askUserQuestionCancelled) {
-			const body = state.askUserQuestionCancelled
-				? "Run ended after a cancelled question."
-				: "Run ended with an error.";
-			await notify(ctx, "Failed", body);
+		if (stopReason === "error" || askUserQuestionCancelled) {
+			await setStatus("failed");
 			return;
 		}
-
-		const body = state.sawCommit ? "Run complete (commit detected)." : "Run complete.";
-		await notify(ctx, "Complete", body);
+		await setStatus("complete");
 	});
 }

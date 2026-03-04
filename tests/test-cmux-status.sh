@@ -27,8 +27,8 @@ run_harness() {
 	pnpm exec tsx tests/cmux-status-harness.ts >/dev/null
 }
 
-test_cmux_notifications_and_dedupe() {
-	log_test "cmux notifications route to tab/panel and dedupe repeats"
+test_status_lifecycle() {
+	log_test "set-status reflects agent lifecycle states"
 
 	local bin_dir
 	bin_dir=$(mktemp -d)
@@ -46,79 +46,71 @@ EOF
 
 	PATH="$bin_dir:$PATH" \
 	CMUX_LOG="$cmux_log" \
-	CMUX_TAB_ID="tab-123" \
-	CMUX_PANEL_ID="panel-456" \
-	PI_CMUX_NOTIFY_DEDUPE_SECONDS="120" \
 	run_harness
 
 	assert_file_exists "$cmux_log" "cmux was invoked"
 
-	local notify_count
-	notify_count=$(rg -c "^notify$" "$cmux_log")
-	assert_equals "$notify_count" "3" "high-signal notifications only (needs input, complete, failed)"
+	local set_status_count
+	set_status_count=$(rg -c "^set-status$" "$cmux_log")
+	assert_equals "$set_status_count" "5" "set-status called for each lifecycle transition"
 
-	local needs_input_count
-	needs_input_count=$(rg -c "^Needs input$" "$cmux_log")
-	assert_equals "$needs_input_count" "1" "AskUserQuestion duplicate notifications are deduped"
+	if ! rg -q "^notify$" "$cmux_log"; then
+		log_info "PASS: no notifications emitted (status-only extension)"
+		TESTS_PASSED=$((TESTS_PASSED + 1))
+	else
+		log_error "FAIL: unexpected notify calls found"
+		TESTS_FAILED=$((TESTS_FAILED + 1))
+	fi
 
-	local complete_count
-	complete_count=$(rg -c "^Complete$" "$cmux_log")
-	assert_equals "$complete_count" "1" "completion notification emitted once"
-
-	local failed_count
-	failed_count=$(rg -c "^Failed$" "$cmux_log")
-	assert_equals "$failed_count" "1" "failure notification emitted once"
-
-	local tab_count
-	tab_count=$(rg -c "^--tab$" "$cmux_log")
-	assert_equals "$tab_count" "3" "notifications include cmux tab routing"
-
-	local panel_count
-	panel_count=$(rg -c "^--panel$" "$cmux_log")
-	assert_equals "$panel_count" "3" "notifications include cmux panel routing"
+	# Verify status transitions: running → waiting-input → complete, then running → failed
+	local values
+	values=$(rg -A2 "^set-status$" "$cmux_log" | rg -v "^set-status$|^pi$|^--|^---$" | tr '\n' ',')
+	assert_equals "$values" "running,waiting-input,complete,running,failed," "status transitions match expected lifecycle"
 
 	rm -rf "$bin_dir"
 	rm -f "$cmux_log"
 }
 
-test_no_osascript_fallback() {
-	log_test "cmux-only mode does not call osascript fallback"
+test_no_routing_flags() {
+	log_test "no explicit routing flags (cmux auto-routes via env vars)"
 
 	local bin_dir
 	bin_dir=$(mktemp -d)
-	local osascript_log
-	osascript_log=$(mktemp)
+	local cmux_log
+	cmux_log=$(mktemp)
 
-	cat >"$bin_dir/osascript" <<'EOF'
+	cat >"$bin_dir/cmux" <<'EOF'
 #!/usr/bin/env bash
-printf '%s\n' "called" >> "$OSASCRIPT_LOG"
+for arg in "$@"; do
+	printf '%s\n' "$arg" >> "$CMUX_LOG"
+done
+printf '%s\n' '---' >> "$CMUX_LOG"
 EOF
-	chmod +x "$bin_dir/osascript"
+	chmod +x "$bin_dir/cmux"
 
 	PATH="$bin_dir:$PATH" \
-	OSASCRIPT_LOG="$osascript_log" \
-	PI_CMUX_NOTIFY_DEDUPE_SECONDS="120" \
+	CMUX_LOG="$cmux_log" \
+	CMUX_WORKSPACE_ID="workspace:123" \
+	CMUX_SURFACE_ID="surface:456" \
 	run_harness
 
-	assert_output_not_contains "$(<"$PROJECT_DIR/pi-extensions/cmux-status/index.ts")" "osascript" "extension source has no osascript fallback"
-
-	if [ -s "$osascript_log" ]; then
-		log_error "FAIL: osascript was called in cmux-only mode"
-		TESTS_FAILED=$((TESTS_FAILED + 1))
-	else
-		log_info "PASS: osascript fallback not used"
+	if ! rg -q "^--workspace$\|^--surface$\|^--tab$\|^--panel$" "$cmux_log"; then
+		log_info "PASS: no explicit routing flags in cmux calls"
 		TESTS_PASSED=$((TESTS_PASSED + 1))
+	else
+		log_error "FAIL: unexpected routing flags found in cmux calls"
+		TESTS_FAILED=$((TESTS_FAILED + 1))
 	fi
 
 	rm -rf "$bin_dir"
-	rm -f "$osascript_log"
+	rm -f "$cmux_log"
 }
 
 main() {
 	setup_sandbox
 
-	test_cmux_notifications_and_dedupe
-	test_no_osascript_fallback
+	test_status_lifecycle
+	test_no_routing_flags
 
 	print_summary
 }
