@@ -3,6 +3,8 @@ import cmuxStatus from "../pi-extensions/cmux-status/index.ts";
 type Handler = (event: unknown, ctx: unknown) => Promise<void> | void;
 
 const handlers = new Map<string, Handler[]>();
+const titles: string[] = [];
+const oscWrites: string[] = [];
 
 const pi = {
 	on(event: string, handler: Handler) {
@@ -12,11 +14,22 @@ const pi = {
 	},
 } as const;
 
+const originalWrite = process.stdout.write.bind(process.stdout);
+(process.stdout as unknown as { write: typeof process.stdout.write }).write = ((chunk: unknown) => {
+	oscWrites.push(String(chunk));
+	return true;
+}) as typeof process.stdout.write;
+
 cmuxStatus(pi as never);
 
 const ctx = {
 	cwd: "/tmp/dotfiles",
-	hasUI: false,
+	hasUI: true,
+	ui: {
+		setTitle(title: string) {
+			titles.push(title);
+		},
+	},
 } as const;
 
 const emit = async (eventName: string, event: unknown): Promise<void> => {
@@ -25,8 +38,12 @@ const emit = async (eventName: string, event: unknown): Promise<void> => {
 	}
 };
 
+const formatOsc = (value: string): string =>
+	value.replace(/\u001b/g, "<ESC>").replace(/\u0007/g, "<BEL>");
+
 const main = async (): Promise<void> => {
-	// Run 1: normal completion with AskUserQuestion
+	// Scenario 1: Normal completion with AskUserQuestion answered
+	await emit("session_start", { type: "session_start" });
 	await emit("agent_start", { type: "agent_start" });
 	await emit("tool_call", {
 		type: "tool_call",
@@ -34,26 +51,58 @@ const main = async (): Promise<void> => {
 		toolName: "AskUserQuestion",
 		input: {},
 	});
-	await emit("tool_call", {
-		type: "tool_call",
-		toolCallId: "call-2",
+	await emit("tool_result", {
+		type: "tool_result",
+		toolCallId: "call-1",
 		toolName: "AskUserQuestion",
-		input: {},
+		details: { cancelled: false },
 	});
 	await emit("agent_end", {
 		type: "agent_end",
 		messages: [{ role: "assistant", stopReason: "endTurn", content: [] }],
 	});
 
-	// Run 2: error stop
+	// Scenario 2: Cancelled AskUserQuestion
+	await emit("agent_start", { type: "agent_start" });
+	await emit("tool_call", {
+		type: "tool_call",
+		toolCallId: "call-2",
+		toolName: "AskUserQuestion",
+		input: {},
+	});
+	await emit("tool_result", {
+		type: "tool_result",
+		toolCallId: "call-2",
+		toolName: "AskUserQuestion",
+		details: { cancelled: true },
+	});
+	await emit("agent_end", {
+		type: "agent_end",
+		messages: [{ role: "assistant", stopReason: "error", content: [] }],
+	});
+
+	// Scenario 3: Direct error stop
 	await emit("agent_start", { type: "agent_start" });
 	await emit("agent_end", {
 		type: "agent_end",
 		messages: [{ role: "assistant", stopReason: "error", content: [] }],
 	});
+
+	// Scenario 4: Session shutdown clears status
+	await emit("session_shutdown", { type: "session_shutdown" });
 };
 
-main().catch((error) => {
-	console.error(error);
-	process.exit(1);
-});
+main()
+	.catch((error) => {
+		originalWrite(`HARNESS_ERROR ${String(error)}\n`);
+		process.exitCode = 1;
+	})
+	.finally(() => {
+		(process.stdout as unknown as { write: typeof process.stdout.write }).write = originalWrite;
+		for (const title of titles) {
+			originalWrite(`TITLE ${title}\n`);
+		}
+		for (const value of oscWrites) {
+			originalWrite(`OSC ${formatOsc(value)}\n`);
+		}
+	});
