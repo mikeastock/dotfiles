@@ -1,27 +1,16 @@
-import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
+import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { Text } from "@mariozechner/pi-tui";
 import { Type } from "@sinclair/typebox";
 import { StringEnum } from "@mariozechner/pi-ai";
 import { searchWithExa, parseDomainFilters } from "./exa.js";
-import { fetchAllContent, type ExtractedContent } from "./extract.js";
+import { fetchAllContent } from "./extract.js";
 import { clearCloneCache } from "./github-extract.js";
-import {
-	clearResults,
-	deleteResult,
-	generateId,
-	getAllResults,
-	getResult,
-	restoreFromSession,
-	storeResult,
-	type QueryResultData,
-	type SearchResult,
-	type StoredSearchData,
-} from "./storage.js";
 
-const pendingFetches = new Map<string, AbortController>();
-let sessionActive = false;
-
-const MAX_INLINE_CONTENT = 30000;
+interface SearchResult {
+	title: string;
+	url: string;
+	text: string;
+}
 
 function formatSearchSummary(results: SearchResult[], answer: string): string {
 	let output = answer ? `${answer}\n\n---\n\n**Sources:**\n` : "";
@@ -29,82 +18,14 @@ function formatSearchSummary(results: SearchResult[], answer: string): string {
 	return output;
 }
 
-function abortPendingFetches(): void {
-	for (const controller of pendingFetches.values()) {
-		controller.abort();
-	}
-	pendingFetches.clear();
-}
-
-function handleSessionChange(ctx: ExtensionContext): void {
-	abortPendingFetches();
-	clearCloneCache();
-	sessionActive = true;
-	restoreFromSession(ctx);
-}
-
 export default function (pi: ExtensionAPI) {
-	function startBackgroundFetch(urls: string[]): string | null {
-		if (urls.length === 0) return null;
-		const fetchId = generateId();
-		const controller = new AbortController();
-		pendingFetches.set(fetchId, controller);
-
-		fetchAllContent(urls, controller.signal)
-			.then((fetched) => {
-				if (!sessionActive || !pendingFetches.has(fetchId)) return;
-				const data: StoredSearchData = {
-					id: fetchId, type: "fetch", timestamp: Date.now(), urls: fetched,
-				};
-				storeResult(fetchId, data);
-				pi.appendEntry("web-search-results", data);
-				const ok = fetched.filter(f => !f.error).length;
-				pi.sendMessage({
-					customType: "web-search-content-ready",
-					content: `Content fetched for ${ok}/${fetched.length} URLs [${fetchId}]. Full page content now available.`,
-					display: true,
-				}, { triggerTurn: true });
-			})
-			.catch((err) => {
-				if (!sessionActive || !pendingFetches.has(fetchId)) return;
-				const message = err instanceof Error ? err.message : String(err);
-				const isAbort = (err instanceof Error && err.name === "AbortError") || message.toLowerCase().includes("abort");
-				if (!isAbort) {
-					pi.sendMessage({
-						customType: "web-search-error",
-						content: `Content fetch failed [${fetchId}]: ${message}`,
-						display: true,
-					}, { triggerTurn: false });
-				}
-			})
-			.finally(() => { pendingFetches.delete(fetchId); });
-
-		return fetchId;
-	}
-
-	function storeAndPublishSearch(results: QueryResultData[]): string {
-		const id = generateId();
-		const data: StoredSearchData = {
-			id, type: "search", timestamp: Date.now(), queries: results,
-		};
-		storeResult(id, data);
-		pi.appendEntry("web-search-results", data);
-		return id;
-	}
-
 	// --- Session lifecycle ---
 
-	pi.on("session_start", async (_event, ctx) => handleSessionChange(ctx));
-	pi.on("session_switch", async (_event, ctx) => handleSessionChange(ctx));
-	pi.on("session_fork", async (_event, ctx) => handleSessionChange(ctx));
-	pi.on("session_tree", async (_event, ctx) => handleSessionChange(ctx));
-
-	pi.on("session_shutdown", () => {
-		sessionActive = false;
-		abortPendingFetches();
-		clearCloneCache();
-		clearResults();
-	});
+	pi.on("session_start", async () => clearCloneCache());
+	pi.on("session_switch", async () => clearCloneCache());
+	pi.on("session_fork", async () => clearCloneCache());
+	pi.on("session_tree", async () => clearCloneCache());
+	pi.on("session_shutdown", () => clearCloneCache());
 
 	// --- Tools ---
 
@@ -136,6 +57,14 @@ export default function (pi: ExtensionAPI) {
 			}
 
 			const domainFilters = params.domainFilter ? parseDomainFilters(params.domainFilter) : null;
+
+			interface QueryResultData {
+				query: string;
+				answer: string;
+				results: SearchResult[];
+				error: string | null;
+			}
+
 			const searchResults: QueryResultData[] = [];
 
 			for (let i = 0; i < queryList.length; i++) {
@@ -179,8 +108,6 @@ export default function (pi: ExtensionAPI) {
 				else output += formatSearchSummary(results, answer) + "\n\n";
 			}
 
-			const searchId = storeAndPublishSearch(searchResults);
-
 			return {
 				content: [{ type: "text", text: output.trim() }],
 				details: {
@@ -188,7 +115,6 @@ export default function (pi: ExtensionAPI) {
 					queryCount: queryList.length,
 					successfulQueries: sc,
 					totalResults: tr,
-					searchId,
 				},
 			};
 		},
@@ -265,8 +191,7 @@ export default function (pi: ExtensionAPI) {
 		description:
 			"Fetch URL(s) and extract readable content as markdown. " +
 			"GitHub URLs are cloned locally for full file access. " +
-			"All other URLs are extracted via Exa AI's content parser. " +
-			"Content is stored and can be retrieved with get_search_content.",
+			"All other URLs are extracted via Exa AI's content parser.",
 		parameters: Type.Object({
 			url: Type.Optional(Type.String({ description: "Single URL to fetch" })),
 			urls: Type.Optional(Type.Array(Type.String(), { description: "Multiple URLs (parallel)" })),
@@ -295,55 +220,39 @@ export default function (pi: ExtensionAPI) {
 			const successful = fetchResults.filter((r) => !r.error).length;
 			const totalChars = fetchResults.reduce((sum, r) => sum + r.content.length, 0);
 
-			const responseId = generateId();
-			const data: StoredSearchData = {
-				id: responseId, type: "fetch", timestamp: Date.now(), urls: fetchResults,
-			};
-			storeResult(responseId, data);
-			pi.appendEntry("web-search-results", data);
-
-			// Single URL: return content directly (possibly truncated)
 			if (urlList.length === 1) {
 				const result = fetchResults[0];
 				if (result.error) {
 					return {
 						content: [{ type: "text", text: `Error: ${result.error}` }],
-						details: { urls: urlList, urlCount: 1, successful: 0, error: result.error, responseId },
+						details: { urls: urlList, urlCount: 1, successful: 0, error: result.error },
 					};
 				}
 
-				const fullLength = result.content.length;
-				const truncated = fullLength > MAX_INLINE_CONTENT;
-				let output = truncated
-					? result.content.slice(0, MAX_INLINE_CONTENT) + "\n\n[Content truncated...]"
-					: result.content;
-
-				if (truncated) {
-					output += `\n\n---\nShowing ${MAX_INLINE_CONTENT} of ${fullLength} chars. ` +
-						`Use get_search_content({ responseId: "${responseId}", urlIndex: 0 }) for full content.`;
-				}
-
 				return {
-					content: [{ type: "text", text: output }],
+					content: [{ type: "text", text: result.content }],
 					details: {
 						urls: urlList, urlCount: 1, successful: 1,
-						totalChars: fullLength, title: result.title,
-						responseId, truncated,
+						totalChars: result.content.length, title: result.title,
 					},
 				};
 			}
 
-			// Multi-URL: summary + responseId
-			let output = "## Fetched URLs\n\n";
+			let output = "";
 			for (const { url, title, content, error } of fetchResults) {
-				if (error) output += `- ${url}: Error - ${error}\n`;
-				else output += `- ${title || url} (${content.length} chars)\n`;
+				output += `## ${title || url}\n`;
+				output += `URL: ${url}\n\n`;
+				if (error) {
+					output += `Error: ${error}\n\n`;
+				} else {
+					output += `${content}\n\n`;
+				}
+				output += "---\n\n";
 			}
-			output += `\n---\nUse get_search_content({ responseId: "${responseId}", urlIndex: 0 }) to retrieve full content.`;
 
 			return {
-				content: [{ type: "text", text: output }],
-				details: { urls: urlList, urlCount: urlList.length, successful, totalChars, responseId },
+				content: [{ type: "text", text: output.trim() }],
+				details: { urls: urlList, urlCount: urlList.length, successful, totalChars },
 			};
 		},
 
@@ -375,8 +284,6 @@ export default function (pi: ExtensionAPI) {
 				totalChars?: number;
 				error?: string;
 				title?: string;
-				truncated?: boolean;
-				responseId?: string;
 				phase?: string;
 				progress?: number;
 			};
@@ -393,8 +300,7 @@ export default function (pi: ExtensionAPI) {
 
 			if (details?.urlCount === 1) {
 				const title = details?.title || "Untitled";
-				let statusLine = theme.fg("success", title) + theme.fg("muted", ` (${details?.totalChars ?? 0} chars)`);
-				if (details?.truncated) statusLine += theme.fg("warning", " [truncated]");
+				const statusLine = theme.fg("success", title) + theme.fg("muted", ` (${details?.totalChars ?? 0} chars)`);
 
 				const textContent = result.content.find((c) => c.type === "text")?.text || "";
 				if (!expanded) {
@@ -406,224 +312,11 @@ export default function (pi: ExtensionAPI) {
 			}
 
 			const countColor = (details?.successful ?? 0) > 0 ? "success" : "error";
-			const statusLine = theme.fg(countColor, `${details?.successful}/${details?.urlCount} URLs`) + theme.fg("muted", " (content stored)");
+			const statusLine = theme.fg(countColor, `${details?.successful}/${details?.urlCount} URLs`) + theme.fg("muted", ` (${details?.totalChars ?? 0} chars)`);
 			if (!expanded) return new Text(statusLine, 0, 0);
 			const textContent = result.content.find((c) => c.type === "text")?.text || "";
 			const preview = textContent.length > 500 ? textContent.slice(0, 500) + "..." : textContent;
 			return new Text(statusLine + "\n" + theme.fg("dim", preview), 0, 0);
-		},
-	});
-
-	pi.registerTool({
-		name: "get_search_content",
-		label: "Get Search Content",
-		description: "Retrieve full content from a previous web_search or fetch_content call.",
-		parameters: Type.Object({
-			responseId: Type.String({ description: "The responseId from web_search or fetch_content" }),
-			query: Type.Optional(Type.String({ description: "Get content for this query (web_search)" })),
-			queryIndex: Type.Optional(Type.Number({ description: "Get content for query at index" })),
-			url: Type.Optional(Type.String({ description: "Get content for this URL" })),
-			urlIndex: Type.Optional(Type.Number({ description: "Get content for URL at index" })),
-		}),
-
-		async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
-			const data = getResult(params.responseId);
-			if (!data) {
-				return {
-					content: [{ type: "text", text: `Error: No stored results for "${params.responseId}"` }],
-					details: { error: "Not found", responseId: params.responseId },
-				};
-			}
-
-			if (data.type === "search" && data.queries) {
-				let queryData: QueryResultData | undefined;
-
-				if (params.query !== undefined) {
-					queryData = data.queries.find((q) => q.query === params.query);
-					if (!queryData) {
-						const available = data.queries.map((q) => `"${q.query}"`).join(", ");
-						return {
-							content: [{ type: "text", text: `Query "${params.query}" not found. Available: ${available}` }],
-							details: { error: "Query not found" },
-						};
-					}
-				} else if (params.queryIndex !== undefined) {
-					queryData = data.queries[params.queryIndex];
-					if (!queryData) {
-						return {
-							content: [{ type: "text", text: `Index ${params.queryIndex} out of range (0-${data.queries.length - 1})` }],
-							details: { error: "Index out of range" },
-						};
-					}
-				} else {
-					const available = data.queries.map((q, i) => `${i}: "${q.query}"`).join(", ");
-					return {
-						content: [{ type: "text", text: `Specify query or queryIndex. Available: ${available}` }],
-						details: { error: "No query specified" },
-					};
-				}
-
-				if (queryData.error) {
-					return {
-						content: [{ type: "text", text: `Error for "${queryData.query}": ${queryData.error}` }],
-						details: { error: queryData.error, query: queryData.query },
-					};
-				}
-
-				let output = `## Results for: "${queryData.query}"\n\n`;
-				if (queryData.answer) output += `${queryData.answer}\n\n---\n\n`;
-				for (const r of queryData.results) {
-					output += `### ${r.title}\n${r.url}\n`;
-					if (r.text) output += `\n${r.text}\n`;
-					output += "\n";
-				}
-
-				return {
-					content: [{ type: "text", text: output }],
-					details: { query: queryData.query, resultCount: queryData.results.length },
-				};
-			}
-
-			if (data.type === "fetch" && data.urls) {
-				let urlData: ExtractedContent | undefined;
-
-				if (params.url !== undefined) {
-					urlData = data.urls.find((u) => u.url === params.url);
-					if (!urlData) {
-						const available = data.urls.map((u) => u.url).join("\n  ");
-						return {
-							content: [{ type: "text", text: `URL not found. Available:\n  ${available}` }],
-							details: { error: "URL not found" },
-						};
-					}
-				} else if (params.urlIndex !== undefined) {
-					urlData = data.urls[params.urlIndex];
-					if (!urlData) {
-						return {
-							content: [{ type: "text", text: `Index ${params.urlIndex} out of range (0-${data.urls.length - 1})` }],
-							details: { error: "Index out of range" },
-						};
-					}
-				} else {
-					const available = data.urls.map((u, i) => `${i}: ${u.url}`).join("\n  ");
-					return {
-						content: [{ type: "text", text: `Specify url or urlIndex. Available:\n  ${available}` }],
-						details: { error: "No URL specified" },
-					};
-				}
-
-				if (urlData.error) {
-					return {
-						content: [{ type: "text", text: `Error for ${urlData.url}: ${urlData.error}` }],
-						details: { error: urlData.error, url: urlData.url },
-					};
-				}
-
-				return {
-					content: [{ type: "text", text: `# ${urlData.title}\n\n${urlData.content}` }],
-					details: { url: urlData.url, title: urlData.title, contentLength: urlData.content.length },
-				};
-			}
-
-			return {
-				content: [{ type: "text", text: "Invalid stored data format" }],
-				details: { error: "Invalid data" },
-			};
-		},
-
-		renderCall(args, theme) {
-			const { responseId, query, queryIndex, url, urlIndex } = args as {
-				responseId: string; query?: string; queryIndex?: number; url?: string; urlIndex?: number;
-			};
-			let target = "";
-			if (query) target = `query="${query}"`;
-			else if (queryIndex !== undefined) target = `queryIndex=${queryIndex}`;
-			else if (url) target = url.length > 30 ? url.slice(0, 27) + "..." : url;
-			else if (urlIndex !== undefined) target = `urlIndex=${urlIndex}`;
-			return new Text(theme.fg("toolTitle", theme.bold("get_content ")) + theme.fg("accent", target || responseId.slice(0, 8)), 0, 0);
-		},
-
-		renderResult(result, { expanded }, theme) {
-			const details = result.details as {
-				error?: string; query?: string; url?: string;
-				title?: string; resultCount?: number; contentLength?: number;
-			};
-
-			if (details?.error) {
-				return new Text(theme.fg("error", `Error: ${details.error}`), 0, 0);
-			}
-
-			let statusLine: string;
-			if (details?.query) {
-				statusLine = theme.fg("success", `"${details.query}"`) + theme.fg("muted", ` (${details.resultCount} results)`);
-			} else {
-				statusLine = theme.fg("success", details?.title || "Content") + theme.fg("muted", ` (${details?.contentLength ?? 0} chars)`);
-			}
-
-			if (!expanded) return new Text(statusLine, 0, 0);
-			const textContent = result.content.find((c) => c.type === "text")?.text || "";
-			const preview = textContent.length > 500 ? textContent.slice(0, 500) + "..." : textContent;
-			return new Text(statusLine + "\n" + theme.fg("dim", preview), 0, 0);
-		},
-	});
-
-	// --- Commands ---
-
-	pi.registerCommand("search", {
-		description: "Browse stored web search results",
-		handler: async (_args, ctx) => {
-			const results = getAllResults();
-			if (results.length === 0) {
-				ctx.ui.notify("No stored search results", "info");
-				return;
-			}
-
-			const options = results.map((r) => {
-				const age = Math.floor((Date.now() - r.timestamp) / 60000);
-				const ageStr = age < 60 ? `${age}m ago` : `${Math.floor(age / 60)}h ago`;
-				if (r.type === "search" && r.queries) {
-					const query = r.queries[0]?.query || "unknown";
-					return `[${r.id.slice(0, 6)}] "${query}" (${r.queries.length} queries) - ${ageStr}`;
-				}
-				if (r.type === "fetch" && r.urls) {
-					return `[${r.id.slice(0, 6)}] ${r.urls.length} URLs fetched - ${ageStr}`;
-				}
-				return `[${r.id.slice(0, 6)}] ${r.type} - ${ageStr}`;
-			});
-
-			const choice = await ctx.ui.select("Stored Search Results", options);
-			if (!choice) return;
-
-			const match = choice.match(/^\[([a-z0-9]+)\]/);
-			if (!match) return;
-
-			const selected = results.find((r) => r.id.startsWith(match[1]));
-			if (!selected) return;
-
-			const action = await ctx.ui.select(`Result ${selected.id.slice(0, 6)}`, ["View details", "Delete"]);
-
-			if (action === "Delete") {
-				deleteResult(selected.id);
-				ctx.ui.notify(`Deleted ${selected.id.slice(0, 6)}`, "info");
-			} else if (action === "View details") {
-				let info = `ID: ${selected.id}\nType: ${selected.type}\nAge: ${Math.floor((Date.now() - selected.timestamp) / 60000)}m\n\n`;
-				if (selected.type === "search" && selected.queries) {
-					info += "Queries:\n";
-					for (const q of selected.queries.slice(0, 10)) {
-						info += `- "${q.query}" (${q.results.length} results)\n`;
-					}
-					if (selected.queries.length > 10) info += `... and ${selected.queries.length - 10} more\n`;
-				}
-				if (selected.type === "fetch" && selected.urls) {
-					info += "URLs:\n";
-					for (const u of selected.urls.slice(0, 10)) {
-						const urlDisplay = u.url.length > 50 ? u.url.slice(0, 47) + "..." : u.url;
-						info += `- ${urlDisplay} (${u.error || `${u.content.length} chars`})\n`;
-					}
-					if (selected.urls.length > 10) info += `... and ${selected.urls.length - 10} more\n`;
-				}
-				ctx.ui.notify(info, "info");
-			}
 		},
 	});
 }

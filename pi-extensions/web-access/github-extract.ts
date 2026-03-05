@@ -51,11 +51,7 @@ interface GitHubCloneConfig {
 
 const cloneCache = new Map<string, CachedClone>();
 
-let cachedConfig: GitHubCloneConfig | null = null;
-
 function loadGitHubConfig(): GitHubCloneConfig {
-	if (cachedConfig) return cachedConfig;
-
 	const defaults: GitHubCloneConfig = {
 		enabled: true,
 		maxRepoSizeMB: 350,
@@ -67,20 +63,18 @@ function loadGitHubConfig(): GitHubCloneConfig {
 		if (existsSync(CONFIG_PATH)) {
 			const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
 			const gc = raw.githubClone ?? {};
-			cachedConfig = {
+			return {
 				enabled: gc.enabled ?? defaults.enabled,
 				maxRepoSizeMB: gc.maxRepoSizeMB ?? defaults.maxRepoSizeMB,
 				cloneTimeoutSeconds: gc.cloneTimeoutSeconds ?? defaults.cloneTimeoutSeconds,
 				clonePath: gc.clonePath ?? defaults.clonePath,
 			};
-			return cachedConfig;
 		}
 	} catch {
 		// ignore parse errors
 	}
 
-	cachedConfig = defaults;
-	return cachedConfig;
+	return defaults;
 }
 
 const NON_CODE_SEGMENTS = new Set([
@@ -500,5 +494,4 @@ export function clearCloneCache(): void {
 		} catch { /* ignore */ }
 	}
 	cloneCache.clear();
-	cachedConfig = null;
 }

@@ -5,16 +5,12 @@ import type { GitHubUrlInfo } from "./github-extract.js";
 const MAX_TREE_ENTRIES = 200;
 const MAX_INLINE_FILE_CHARS = 100_000;
 
-let ghAvailable: boolean | null = null;
 let ghHintShown = false;
 
 export async function checkGhAvailable(): Promise<boolean> {
-	if (ghAvailable !== null) return ghAvailable;
-
 	return new Promise((resolve) => {
 		execFile("gh", ["--version"], { timeout: 5000 }, (err) => {
-			ghAvailable = !err;
-			resolve(ghAvailable);
+			resolve(!err);
 		});
 	});
 }

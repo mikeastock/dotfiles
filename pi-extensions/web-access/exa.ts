@@ -51,21 +51,15 @@ interface WebSearchConfig {
 	exaApiKey?: string;
 }
 
-let cachedConfig: WebSearchConfig | null = null;
-
 function loadConfig(): WebSearchConfig {
-	if (cachedConfig) return cachedConfig;
 	if (existsSync(CONFIG_PATH)) {
 		try {
-			cachedConfig = JSON.parse(readFileSync(CONFIG_PATH, "utf-8")) as WebSearchConfig;
-			return cachedConfig;
+			return JSON.parse(readFileSync(CONFIG_PATH, "utf-8")) as WebSearchConfig;
 		} catch {
-			cachedConfig = {};
+			return {};
 		}
-	} else {
-		cachedConfig = {};
 	}
-	return cachedConfig;
+	return {};
 }
 
 function getApiKey(): string {
