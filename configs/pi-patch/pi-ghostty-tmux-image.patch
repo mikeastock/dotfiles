@@ -1,0 +1,204 @@
+diff -ruN a/components/image.js b/components/image.js
+--- a/components/image.js	2026-03-05 16:06:41
++++ b/components/image.js	2026-03-05 16:06:41
+@@ -41,16 +41,22 @@
+                 if (result.imageId) {
+                     this.imageId = result.imageId;
+                 }
+-                // Return `rows` lines so TUI accounts for image height
+-                // First (rows-1) lines are empty (TUI clears them)
+-                // Last line: move cursor back up, then output image sequence
+-                lines = [];
+-                for (let i = 0; i < result.rows - 1; i++) {
+-                    lines.push("");
++                if (result.placeholderLines) {
++                    lines = [...result.placeholderLines];
++                    lines[0] = result.sequence + lines[0];
+                 }
+-                // Move cursor up to first row, then output image
+-                const moveUp = result.rows > 1 ? `\x1b[${result.rows - 1}A` : "";
+-                lines.push(moveUp + result.sequence);
++                else {
++                    // Return `rows` lines so TUI accounts for image height
++                    // First (rows-1) lines are empty (TUI clears them)
++                    // Last line: move cursor back up, then output image sequence
++                    lines = [];
++                    for (let i = 0; i < result.rows - 1; i++) {
++                        lines.push("");
++                    }
++                    // Move cursor up to first row, then output image
++                    const moveUp = result.rows > 1 ? `\x1b[${result.rows - 1}A` : "";
++                    lines.push(moveUp + result.sequence);
++                }
+             }
+             else {
+                 const fallback = imageFallback(this.mimeType, this.dimensions, this.options.filename);
+diff -ruN a/terminal-image.js b/terminal-image.js
+--- a/terminal-image.js	2026-03-05 16:06:41
++++ b/terminal-image.js	2026-03-05 16:06:41
+@@ -1,3 +1,4 @@
++import { PLACEHOLDER_DIACRITICS } from "./placeholder-diacritics.js";
+ let cachedCapabilities = null;
+ // Default cell dimensions - updated by TUI when terminal responds to query
+ let cellDimensions = { widthPx: 9, heightPx: 18 };
+@@ -41,15 +42,29 @@
+ export function resetCapabilitiesCache() {
+     cachedCapabilities = null;
+ }
++export function isInTmux() {
++    return !!process.env.TMUX;
++}
+ const KITTY_PREFIX = "\x1b_G";
+ const ITERM2_PREFIX = "\x1b]1337;File=";
++const PLACEHOLDER_CHAR = "\u{10EEEE}";
++export function wrapTmuxPassthrough(sequence) {
++    if (!isInTmux()) {
++        return sequence;
++    }
++    return `\x1bPtmux;${sequence.replace(/\x1b/g, "\x1b\x1b")}\x1b\\`;
++}
+ export function isImageLine(line) {
+     // Fast path: sequence at line start (single-row images)
+     if (line.startsWith(KITTY_PREFIX) || line.startsWith(ITERM2_PREFIX)) {
+         return true;
+     }
+     // Slow path: sequence elsewhere (multi-row images have cursor-up prefix)
+-    return line.includes(KITTY_PREFIX) || line.includes(ITERM2_PREFIX);
++    if (line.includes(KITTY_PREFIX) || line.includes(ITERM2_PREFIX)) {
++        return true;
++    }
++    // Unicode placeholder lines (kitty protocol in tmux)
++    return line.includes(PLACEHOLDER_CHAR);
+ }
+ /**
+  * Generate a random image ID for Kitty graphics protocol.
+@@ -60,6 +75,64 @@
+     // Use random ID in range [1, 0xffffffff] to avoid collisions
+     return Math.floor(Math.random() * 0xfffffffe) + 1;
+ }
++export function allocatePlaceholderImageId() {
++    return Math.floor(Math.random() * 0xfffffe) + 1;
++}
++function encodeKittyTransmit(base64Data, imageId) {
++    const CHUNK_SIZE = 4096;
++    const params = [`a=t`, "f=100", "q=2", `i=${imageId}`];
++    if (base64Data.length <= CHUNK_SIZE) {
++        return wrapTmuxPassthrough(`\x1b_G${params.join(",")};${base64Data}\x1b\\`);
++    }
++    const chunks = [];
++    let offset = 0;
++    let isFirst = true;
++    while (offset < base64Data.length) {
++        const chunk = base64Data.slice(offset, offset + CHUNK_SIZE);
++        const isLast = offset + CHUNK_SIZE >= base64Data.length;
++        if (isFirst) {
++            chunks.push(wrapTmuxPassthrough(`\x1b_G${params.join(",")},m=1;${chunk}\x1b\\`));
++            isFirst = false;
++        }
++        else if (isLast) {
++            chunks.push(wrapTmuxPassthrough(`\x1b_Gm=0;${chunk}\x1b\\`));
++        }
++        else {
++            chunks.push(wrapTmuxPassthrough(`\x1b_Gm=1;${chunk}\x1b\\`));
++        }
++        offset += CHUNK_SIZE;
++    }
++    return chunks.join("");
++}
++function generatePlaceholderLines(imageId, columns, rows) {
++    const r = (imageId >> 16) & 0xff;
++    const g = (imageId >> 8) & 0xff;
++    const b = imageId & 0xff;
++    const colorStart = `\x1b[38;2;${r};${g};${b}m`;
++    const colorEnd = `\x1b[39m`;
++    const lines = [];
++    for (let row = 0; row < rows; row++) {
++        const rowDiacritic = String.fromCodePoint(PLACEHOLDER_DIACRITICS[row]);
++        let line = colorStart + PLACEHOLDER_CHAR + rowDiacritic;
++        for (let col = 1; col < columns; col++) {
++            line += PLACEHOLDER_CHAR;
++        }
++        line += colorEnd;
++        lines.push(line);
++    }
++    return lines;
++}
++export function renderKittyUnicodePlaceholder(base64Data, options) {
++    const { columns, rows, imageId } = options;
++    const transmitSeq = encodeKittyTransmit(base64Data, imageId);
++    const placementSeq = wrapTmuxPassthrough(`\x1b_Ga=p,U=1,i=${imageId},c=${columns},r=${rows},q=2\x1b\\`);
++    const placeholderLines = generatePlaceholderLines(imageId, columns, rows);
++    return {
++        transmitSequence: transmitSeq + placementSeq,
++        placeholderLines,
++        imageId,
++    };
++}
+ export function encodeKitty(base64Data, options = {}) {
+     const CHUNK_SIZE = 4096;
+     const params = ["a=T", "f=100", "q=2"];
+@@ -70,7 +143,7 @@
+     if (options.imageId)
+         params.push(`i=${options.imageId}`);
+     if (base64Data.length <= CHUNK_SIZE) {
+-        return `\x1b_G${params.join(",")};${base64Data}\x1b\\`;
++        return wrapTmuxPassthrough(`\x1b_G${params.join(",")};${base64Data}\x1b\\`);
+     }
+     const chunks = [];
+     let offset = 0;
+@@ -90,21 +163,21 @@
+         }
+         offset += CHUNK_SIZE;
+     }
+-    return chunks.join("");
++    return wrapTmuxPassthrough(chunks.join(""));
+ }
+ /**
+  * Delete a Kitty graphics image by ID.
+  * Uses uppercase 'I' to also free the image data.
+  */
+ export function deleteKittyImage(imageId) {
+-    return `\x1b_Ga=d,d=I,i=${imageId}\x1b\\`;
++    return wrapTmuxPassthrough(`\x1b_Ga=d,d=I,i=${imageId}\x1b\\`);
+ }
+ /**
+  * Delete all visible Kitty graphics images.
+  * Uses uppercase 'A' to also free the image data.
+  */
+ export function deleteAllKittyImages() {
+-    return `\x1b_Ga=d,d=A\x1b\\`;
++    return wrapTmuxPassthrough(`\x1b_Ga=d,d=A\x1b\\`);
+ }
+ export function encodeITerm2(base64Data, options = {}) {
+     const params = [`inline=${options.inline !== false ? 1 : 0}`];
+@@ -119,7 +192,7 @@
+     if (options.preserveAspectRatio === false) {
+         params.push("preserveAspectRatio=0");
+     }
+-    return `\x1b]1337;File=${params.join(";")}:${base64Data}\x07`;
++    return wrapTmuxPassthrough(`\x1b]1337;File=${params.join(";")}:${base64Data}\x07`);
+ }
+ export function calculateImageRows(imageDimensions, targetWidthCells, cellDimensions = { widthPx: 9, heightPx: 18 }) {
+     const targetWidthPx = targetWidthCells * cellDimensions.widthPx;
+@@ -262,6 +335,21 @@
+     const maxWidth = options.maxWidthCells ?? 80;
+     const rows = calculateImageRows(imageDimensions, maxWidth, getCellDimensions());
+     if (caps.images === "kitty") {
++        if (isInTmux()) {
++            const imageId = (options.imageId ?? allocatePlaceholderImageId()) & 0xffffff;
++            const placeholderRows = Math.min(rows, PLACEHOLDER_DIACRITICS.length);
++            const result = renderKittyUnicodePlaceholder(base64Data, {
++                columns: maxWidth,
++                rows: placeholderRows,
++                imageId,
++            });
++            return {
++                sequence: result.transmitSequence,
++                rows: placeholderRows,
++                imageId: result.imageId,
++                placeholderLines: result.placeholderLines,
++            };
++        }
+         // Only use imageId if explicitly provided - static images don't need IDs
+         const sequence = encodeKitty(base64Data, { columns: maxWidth, rows, imageId: options.imageId });
+         return { sequence, rows, imageId: options.imageId };
