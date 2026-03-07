@@ -109,7 +109,7 @@ end
 
 function aic -d "Use pi with a fast model to commit"
   # pi --no-session --models zai-glm-4.7 -p "commit"
-  codex exec -m gpt-5.3-codex-spark "commit"
+  codex exec --yolo -m gpt-5.3-codex-spark "commit"
 end
 
 ####### PATH SETUP
