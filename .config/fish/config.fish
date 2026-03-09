@@ -187,12 +187,25 @@ function __workspace_git_branch
   command git rev-parse --short HEAD 2>/dev/null
 end
 
+function __workspace_repo_name --argument-names dir
+  switch "$dir"
+    case bizops
+      echo biz
+    case bizops-infra
+      echo binfra
+    case dotfiles
+      echo dot
+    case '*'
+      echo "$dir"
+  end
+end
+
 function __workspace_title
-  set -l dir (basename "$PWD")
+  set -l dir (__workspace_repo_name (basename "$PWD"))
   set -l branch (__workspace_git_branch)
 
   if test -n "$branch"
-    echo "$dir - $branch"
+    echo "$dir · $branch"
   else
     echo "$dir"
   end
