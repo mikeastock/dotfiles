@@ -192,7 +192,7 @@ function __workspace_repo_name --argument-names dir
     case bizops
       echo biz
     case bizops-infra
-      echo binfra
+      echo b-inf
     case dotfiles
       echo dot
     case '*'
