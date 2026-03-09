@@ -2,7 +2,7 @@ font-family = "FiraCode Nerd Font"
 window-title-font-family = "FiraCode Nerd Font"
 theme = dark:Catppuccin Mocha,light:Catppuccin Latte
 copy-on-select = false
-keybind = shift+enter=text:\n
+# keybind = shift+enter=text:\n
 
 # Disable default clear-screen binding
 keybind = super+k=ignore
