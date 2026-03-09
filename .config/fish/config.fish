@@ -205,7 +205,7 @@ function __workspace_title
   set -l branch (__workspace_git_branch)
 
   if test -n "$branch"
-    echo "$dir · $branch"
+    echo "$dir  $branch"
   else
     echo "$dir"
   end
