@@ -903,6 +903,8 @@ def install_codex_config():
 
 def install_pi_settings():
     """Install Pi agent settings."""
+    import json
+
     print("Installing Pi settings...")
 
     if not PI_SETTINGS_FILE.exists():
@@ -912,7 +914,22 @@ def install_pi_settings():
     dest = HOME / ".pi" / "agent" / "settings.json"
     dest.parent.mkdir(parents=True, exist_ok=True)
 
-    shutil.copy(PI_SETTINGS_FILE, dest)
+    with open(PI_SETTINGS_FILE) as f:
+        managed_settings = json.load(f)
+
+    if dest.exists():
+        with open(dest) as f:
+            settings = json.load(f)
+    else:
+        settings = {}
+
+    for key, value in managed_settings.items():
+        settings[key] = value
+
+    with open(dest, "w") as f:
+        json.dump(settings, f, indent=2)
+        f.write("\n")
+
     print(f"  Installed to {dest}")
 
 

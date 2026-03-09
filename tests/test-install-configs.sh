@@ -72,6 +72,35 @@ EOF
     assert_json_field "$amp_json" '."amp.showCosts"' "false" "Amp: showCosts preserved"
 }
 
+# Test: Pi config preserves changelog version while updating managed settings
+test_pi_preserve_changelog_version() {
+    log_test "Testing 'make install-configs' preserves Pi changelog version"
+    cd "$PROJECT_DIR"
+
+    mkdir -p "$SANDBOX_DIR/.pi/agent"
+    cat > "$SANDBOX_DIR/.pi/agent/settings.json" <<'EOF'
+{
+  "lastChangelogVersion": "9.9.9",
+  "defaultProvider": "openai-codex",
+  "defaultModel": "old-model",
+  "enabledModels": [
+    "old/provider"
+  ],
+  "customSetting": true
+}
+EOF
+
+    HOME="$SANDBOX_DIR" make install-configs >/dev/null 2>&1
+
+    local pi_json
+    pi_json=$(cat "$SANDBOX_DIR/.pi/agent/settings.json")
+
+    assert_json_field "$pi_json" '.lastChangelogVersion' "9.9.9" "Pi: lastChangelogVersion preserved"
+    assert_json_field "$pi_json" '.defaultModel' "gpt-5.4" "Pi: defaultModel updated from repo config"
+    assert_json_field "$pi_json" '.enabledModels | join(",")' "anthropic/claude-opus-4-6,openai-codex/gpt-5.4" "Pi: enabledModels updated from repo config"
+    assert_json_field "$pi_json" '.customSetting' "true" "Pi: custom unmanaged settings preserved"
+}
+
 # Test: install-configs is idempotent (running twice has same result)
 test_config_idempotent() {
     log_test "Testing 'make install-configs' is idempotent"
@@ -206,6 +235,7 @@ main() {
     test_config_creates_directories
     test_config_new_files
     test_amp_preserve_existing
+    test_pi_preserve_changelog_version
     test_config_idempotent
     test_amp_json_validity
 

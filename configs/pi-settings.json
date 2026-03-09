@@ -1,15 +1,13 @@
 {
-  "lastChangelogVersion": "0.54.2",
   "defaultProvider": "openai-codex",
-  "defaultModel": "gpt-5.3-codex",
+  "defaultModel": "gpt-5.4",
   "hideThinkingBlock": false,
   "defaultThinkingLevel": "medium",
   "steeringMode": "all",
   "doubleEscapeAction": "tree",
   "enabledModels": [
     "anthropic/claude-opus-4-6",
-    "openai-codex/gpt-5.3-codex",
-    "accounts/fireworks/models/kimi-k2p5"
+    "openai-codex/gpt-5.4"
   ],
   "packages": [],
   "theme": "catppuccin-mocha"
