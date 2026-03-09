@@ -173,18 +173,47 @@ if type -q atuin
   atuin init fish --disable-up-arrow | source
 end
 
-####### Zellij tab auto-rename
-function _zellij_tab_name --on-variable PWD --on-event fish_postexec
-  if set -q ZELLIJ
-    set -l dir (basename $PWD)
-    set -l branch (git symbolic-ref --short HEAD 2>/dev/null)
-    if test -n "$branch"
-      command zellij action rename-tab "$dir - $branch"
-    else
-      command zellij action rename-tab "$dir"
-    end
+####### Workspace title helpers
+function __workspace_git_branch
+  command git rev-parse --is-inside-work-tree >/dev/null 2>&1
+  or return
+
+  set -l branch (command git symbolic-ref --short HEAD 2>/dev/null)
+  if test -n "$branch"
+    echo $branch
+    return
+  end
+
+  command git rev-parse --short HEAD 2>/dev/null
+end
+
+function __workspace_title
+  set -l dir (basename "$PWD")
+  set -l branch (__workspace_git_branch)
+
+  if test -n "$branch"
+    echo "$dir - $branch"
+  else
+    echo "$dir"
   end
 end
+
+####### tmux window auto-rename
+function _tmux_window_name --on-variable PWD --on-event fish_postexec
+  if not set -q TMUX
+    return
+  end
+
+  set -l title (__workspace_title)
+  if test "$title" = "$__last_tmux_window_name"
+    return
+  end
+
+  command tmux rename-window "$title"
+  set -g __last_tmux_window_name "$title"
+end
+
+_tmux_window_name
 
 ####### PROMPT CONFIG (starship)
 if type -q starship
