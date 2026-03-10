@@ -37,7 +37,7 @@ skills = [ "open-prose" ]
 ["mitsuhiko/agent-stuff"]
 url = "https://github.com/mitsuhiko/agent-stuff"
 extensions_path = "pi-extensions/*.ts"
-extensions = [ "review", "todos" ]
+extensions = [ "review" ]
 
 ["buildrtech/dotagents"]
 url = "https://github.com/buildrtech/dotagents"
