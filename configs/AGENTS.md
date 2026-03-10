@@ -3,7 +3,26 @@
 **ALWAYS** use `fd` instead of `find`
 **ALWAYS** use `rg` instead of `grep`
 **ALWAYS** set a non-interactive editor env for git continuation commands (e.g. `GIT_EDITOR=true`) when running commands like `git rebase --continue`, `git merge --continue`, or similar.
-**ALWAYS** use a hard cutover approach and never implement backward compatibility.
+
+## Hard-Cut Product Policy
+
+- This application currently has no external installed user base; optimize for one canonical current-state implementation, not compatibility with historical local states.
+- Do not preserve or introduce compatibility bridges, migration shims, fallback paths, compact adapters, or dual behavior for old local states unless the user explicitly asks for that support.
+- Prefer:
+  - one canonical current-state codepath
+  - fail-fast diagnostics
+  - explicit recovery steps
+- Over:
+  - automatic migration
+  - compatibility glue
+  - silent fallbacks
+  - “temporary” second paths
+- If temporary migration or compatibility code is introduced for debugging or a narrowly scoped transition, call it out in the same diff with:
+  - why it exists
+  - why the canonical path is insufficient
+  - exact deletion criteria
+  - the ADR/task that tracks its removal
+- Default stance across the app: delete old-state compatibility code rather than carrying it forward.
 
 ## Background Processes with zmx
 
