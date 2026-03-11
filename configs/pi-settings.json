@@ -12,5 +12,14 @@
   ],
   "packages": [
   ],
-  "theme": "catppuccin-mocha"
+  "theme": "catppuccin-mocha",
+  "pi-memory-md": {
+    "enabled": true,
+    "repoUrl": "https://github.com/mikeastock/pi-memory",
+    "localPath": "~/.pi/memory-md",
+    "injection": "message-append",
+    "autoSync": {
+      "onSessionStart": true
+    }
+  }
 }
