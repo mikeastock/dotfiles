@@ -49,6 +49,11 @@ make plugin-update           # update plugin submodules
 - `layered-rails` — Rails layered architecture guidance (copied locally from `palkan/skills`, not managed as a plugin)
 - `babysit-pr` — GitHub PR monitoring/babysitting workflow imported from `openai/codex` commit `7e569f1`
 
+### Notable custom Pi extensions
+
+- `web-access` — Exa-powered web search and content extraction tools for Pi
+- `pi-memory-md` — Git-backed markdown memory for Pi with per-project indexes, memory tools, and slash commands
+
 ## Structure
 
 ```text
