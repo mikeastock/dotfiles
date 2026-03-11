@@ -1,4 +1,5 @@
 {
+  "lastChangelogVersion": "0.57.1",
   "defaultProvider": "openai-codex",
   "defaultModel": "gpt-5.4",
   "hideThinkingBlock": false,
@@ -9,6 +10,13 @@
     "anthropic/claude-opus-4-6",
     "openai-codex/gpt-5.4"
   ],
-  "packages": [],
-  "theme": "catppuccin-mocha"
+  "packages": [
+    "npm:pi-memory-md"
+  ],
+  "theme": "catppuccin-mocha",
+  "pi-memory-md": {
+    "enabled": true,
+    "repoUrl": "git@github.com:mikeastock/pi-memory.git",
+    "localPath": "~/.pi/memory-md"
+  }
 }
