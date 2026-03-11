@@ -11,12 +11,6 @@
     "openai-codex/gpt-5.4"
   ],
   "packages": [
-    "npm:pi-memory-md"
   ],
-  "theme": "catppuccin-mocha",
-  "pi-memory-md": {
-    "enabled": true,
-    "repoUrl": "git@github.com:mikeastock/pi-memory.git",
-    "localPath": "~/.pi/memory-md"
-  }
+  "theme": "catppuccin-mocha"
 }
