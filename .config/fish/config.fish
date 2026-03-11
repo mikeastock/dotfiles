@@ -160,11 +160,6 @@ if test -d ~/.lmstudio
   fish_add_path ~/.lmstudio/bin
 end
 
-####### 1Password Plugins
-if test -d ~/.config/op
-  source ~/.config/op/plugins.sh
-end
-
 ###### Orbstack
 source ~/.orbstack/shell/init2.fish 2>/dev/null || :
 
