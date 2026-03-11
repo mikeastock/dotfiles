@@ -36,6 +36,14 @@ interface MemorySettings {
   injection: "message-append" | "system-prompt";
 }
 
+function requireRepoUrl(settings: MemorySettings): string {
+  const repoUrl = settings.repoUrl?.trim();
+  if (!repoUrl) {
+    throw new Error("pi-memory-md requires pi-memory-md.repoUrl in ~/.pi/agent/settings.json");
+  }
+  return repoUrl;
+}
+
 interface GitCommandResult {
   success: boolean;
   stdout: string;
@@ -521,12 +529,7 @@ function hasMemoryFiles(memoryDir: string): boolean {
 }
 
 async function syncRepository(pi: ExtensionAPI, settings: MemorySettings, signal?: AbortSignal): Promise<SyncResult> {
-  if (!settings.repoUrl) {
-    if (isGitRepo(settings.localPath)) {
-      return { success: true, message: `Memory repository ready at ${settings.localPath}` };
-    }
-    return { success: false, message: "Memory repoUrl is not configured" };
-  }
+  const repoUrl = requireRepoUrl(settings);
 
   if (fs.existsSync(settings.localPath) && !isGitRepo(settings.localPath)) {
     return {
@@ -537,7 +540,7 @@ async function syncRepository(pi: ExtensionAPI, settings: MemorySettings, signal
 
   if (!fs.existsSync(settings.localPath)) {
     fs.mkdirSync(path.dirname(settings.localPath), { recursive: true });
-    const cloneResult = await runGit(pi, path.dirname(settings.localPath), ["clone", settings.repoUrl, settings.localPath], signal);
+    const cloneResult = await runGit(pi, path.dirname(settings.localPath), ["clone", repoUrl, settings.localPath], signal);
     if (!cloneResult.success) {
       return { success: false, message: cloneResult.stderr || "Failed to clone memory repository" };
     }
@@ -606,6 +609,8 @@ export default function piMemoryMd(pi: ExtensionAPI) {
   }
 
   async function ensureProjectReady(ctx: { cwd: string }, signal?: AbortSignal) {
+    requireRepoUrl(settings);
+
     if (!project || project.cwd !== ctx.cwd) {
       await refreshProject(ctx);
     }
@@ -623,6 +628,15 @@ export default function piMemoryMd(pi: ExtensionAPI) {
     await refreshProject(ctx);
 
     if (!settings.enabled || !project) {
+      return;
+    }
+
+    try {
+      requireRepoUrl(settings);
+    } catch (error) {
+      if (ctx.hasUI) {
+        ctx.ui.notify(error instanceof Error ? error.message : String(error), "warning");
+      }
       return;
     }
 
@@ -647,6 +661,12 @@ export default function piMemoryMd(pi: ExtensionAPI) {
 
   pi.on("before_agent_start", async (event, ctx) => {
     if (!settings.enabled) {
+      return undefined;
+    }
+
+    try {
+      requireRepoUrl(settings);
+    } catch {
       return undefined;
     }
 
@@ -957,6 +977,13 @@ export default function piMemoryMd(pi: ExtensionAPI) {
     handler: async (_args, ctx) => {
       await ensureProjectReady(ctx);
       if (!project) return;
+
+      try {
+        requireRepoUrl(settings);
+      } catch (error) {
+        ctx.ui.notify(error instanceof Error ? error.message : String(error), "warning");
+        return;
+      }
 
       const fileCount = buildMemoryIndex(project.memoryDir).fileCount;
       const status = isGitRepo(settings.localPath) ? "git-backed" : "not initialized";

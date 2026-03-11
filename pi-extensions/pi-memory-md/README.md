@@ -37,7 +37,7 @@ Add this to `~/.pi/agent/settings.json`:
 | Key | Default | Meaning |
 | --- | --- | --- |
 | `enabled` | `true` | Turns the extension on/off |
-| `repoUrl` | unset | Remote git repo to clone/pull/push |
+| `repoUrl` | required | Remote git repo to clone/pull/push |
 | `localPath` | `~/.pi/memory-md` | Local checkout for the memory repo |
 | `injection` | `message-append` | How the memory index is exposed to the model |
 | `autoSync.onSessionStart` | `true` | Pull from the repo when a session starts |
@@ -138,8 +138,8 @@ The extension also registers:
 ## Notes
 
 - Paths passed to memory tools must stay inside the current project's memory directory
+- `repoUrl` is required; the extension only supports a git-backed memory repository
 - Project identity prefers git remote metadata when available; otherwise it falls back to the local project path
-- If `repoUrl` is omitted, the extension still works against a local memory directory, but sync operations requiring a remote will fail fast
 
 ## Install in this repo
 
