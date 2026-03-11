@@ -72,7 +72,7 @@ alias s="git status"
 alias ci="git ci-status -v"
 alias glist="git for-each-ref --sort=-committerdate refs/heads/ --format='%(committerdate:short) %(refname:short)' | head -n 10"
 
-alias tf="mise exec -- terraform"
+alias tf="mise exec terraform -- terraform"
 alias n="corepack pnpm"
 alias piu="npm install -g @mariozechner/pi-coding-agent"
 
