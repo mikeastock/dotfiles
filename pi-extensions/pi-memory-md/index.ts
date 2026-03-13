@@ -376,6 +376,14 @@ function readMemoryFile(filePath: string): MemoryDocument {
   return parseMemoryDocument(fs.readFileSync(filePath, "utf8"));
 }
 
+function tryReadMemoryFile(filePath: string): MemoryDocument | null {
+  try {
+    return readMemoryFile(filePath);
+  } catch {
+    return null;
+  }
+}
+
 function writeMemoryFile(filePath: string, document: MemoryDocument): void {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
   fs.writeFileSync(filePath, formatMemoryDocument(document.frontmatter, document.content));
@@ -391,16 +399,16 @@ function buildMemoryIndex(memoryDir: string): { text: string; fileCount: number 
 
   const entries: MemoryIndexEntry[] = [];
   for (const filePath of files) {
-    try {
-      const document = readMemoryFile(filePath);
-      entries.push({
-        relativePath: path.relative(memoryDir, filePath),
-        description: document.frontmatter.description,
-        tags: document.frontmatter.tags ?? [],
-      });
-    } catch {
+    const document = tryReadMemoryFile(filePath);
+    if (!document) {
       continue;
     }
+
+    entries.push({
+      relativePath: path.relative(memoryDir, filePath),
+      description: document.frontmatter.description,
+      tags: document.frontmatter.tags ?? [],
+    });
   }
 
   if (entries.length === 0) {
@@ -909,7 +917,11 @@ export default function piMemoryMd(pi: ExtensionAPI) {
       const matches: string[] = [];
 
       for (const filePath of listMarkdownFiles(currentProject.memoryDir)) {
-        const document = readMemoryFile(filePath);
+        const document = tryReadMemoryFile(filePath);
+        if (!document) {
+          continue;
+        }
+
         const relativePath = path.relative(currentProject.memoryDir, filePath);
         let matchedLine: string | undefined;
 
@@ -1022,9 +1034,9 @@ export default function piMemoryMd(pi: ExtensionAPI) {
       await ensureProjectReady(ctx);
       if (!project) return;
 
-      cachedIndex = buildMemoryIndex(project.memoryDir).text;
-      memoryInjected = false;
-      const fileCount = buildMemoryIndex(project.memoryDir).fileCount;
+      const index = buildMemoryIndex(project.memoryDir);
+      cachedIndex = index.text;
+      const fileCount = index.fileCount;
 
       if (settings.injection === "message-append" && cachedIndex) {
         pi.sendMessage({
@@ -1032,6 +1044,9 @@ export default function piMemoryMd(pi: ExtensionAPI) {
           content: cachedIndex,
           display: false,
         });
+        memoryInjected = true;
+      } else {
+        memoryInjected = false;
       }
 
       ctx.ui.notify(`Memory refreshed for ${project.projectName}: ${fileCount} indexed file${fileCount === 1 ? "" : "s"}`, "info");
