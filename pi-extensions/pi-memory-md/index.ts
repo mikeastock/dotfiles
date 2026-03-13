@@ -389,7 +389,7 @@ function writeMemoryFile(filePath: string, document: MemoryDocument): void {
   fs.writeFileSync(filePath, formatMemoryDocument(document.frontmatter, document.content));
 }
 
-function buildMemoryIndex(memoryDir: string): { text: string; fileCount: number } {
+export function buildMemoryIndex(memoryDir: string): { text: string; fileCount: number } {
   const coreDir = path.join(memoryDir, "core");
   const files = listMarkdownFiles(coreDir);
 

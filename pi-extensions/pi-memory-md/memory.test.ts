@@ -10,7 +10,7 @@ import {
   parseMemoryDocument,
   resolveMemoryFilePath,
   resolveProjectKey,
-} from "./memory";
+} from "./index";
 
 const tempDirs: string[] = [];
 
