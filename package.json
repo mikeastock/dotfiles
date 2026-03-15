@@ -14,7 +14,7 @@
     "@sinclair/typebox": "^0.34.48",
     "@types/node": "^25.2.0",
     "linkedom": "^0.16.0",
-    "p-limit": "^6.1.0",
+    "p-limit": "^7.3.0",
     "tsx": "^4.21.0",
     "turndown": "^7.2.0",
     "typescript": "^5.9.3"
