@@ -18,7 +18,7 @@ HOME_LINKS := .bin .gitconfig .ideavimrc .psqlrc .tmux.conf .tmuxinator .vscode
 CONFIG_DIRS := alacritty stylua lvim zellij direnv atuin ghostty
 
 .PHONY: all install install-non-interactive install-skills install-extensions install-prompts install-themes install-configs build clean help submodule-init plugin-update check-python \
-	dot-all dot-icloud-link dot-home-symlinks dot-config-symlinks dot-macos-defaults dot-clean
+	dot-all dot-install dot-icloud-link dot-home-symlinks dot-config-symlinks dot-macos-defaults dot-clean
 
 all: help
 
@@ -39,6 +39,7 @@ help:
 	@echo ""
 	@echo "Dotfiles:"
 	@echo "  make dot-all                Run all dotfile setup tasks"
+	@echo "  make dot-install            Install required Homebrew packages"
 	@echo "  make dot-icloud-link        Create iCloud drive symlink"
 	@echo "  make dot-home-symlinks      Symlink dotfiles to home directory"
 	@echo "  make dot-config-symlinks    Symlink .config files and directories"
@@ -106,7 +107,13 @@ endef
 
 # Dotfiles targets
 
-dot-all: dot-icloud-link dot-home-symlinks dot-config-symlinks dot-macos-defaults
+dot-all: dot-install dot-icloud-link dot-home-symlinks dot-config-symlinks dot-macos-defaults
+
+# Install required Homebrew packages from Brewfile
+dot-install:
+	@which brew >/dev/null 2>&1 || (echo "✗ Error: Homebrew not installed"; exit 1)
+	@brew bundle --file=$(DOTFILES_DIR)/Brewfile
+	@echo "✓ Brew packages installed"
 
 # Create iCloud drive symlink (skip if using custom DOTFILES_DIR)
 dot-icloud-link:
