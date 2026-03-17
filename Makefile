@@ -7,10 +7,6 @@
 PYTHON := python3
 BUILD_SCRIPT := $(CURDIR)/scripts/build.py
 
-# Dotfiles configuration
-# DOTFILES_DIR can be overridden: make DOTFILES_DIR=~/code/personal/dotfiles dot-all
-DOTFILES_DIR ?= $(HOME)/icloud-drive/dotfiles
-
 # Home directory symlinks
 HOME_LINKS := .bin .gitconfig .ideavimrc .psqlrc .tmux.conf .tmuxinator .vscode
 
@@ -18,7 +14,7 @@ HOME_LINKS := .bin .gitconfig .ideavimrc .psqlrc .tmux.conf .tmuxinator .vscode
 CONFIG_DIRS := alacritty stylua lvim zellij direnv atuin ghostty
 
 .PHONY: all install install-non-interactive install-skills install-extensions install-prompts install-themes install-configs build clean help submodule-init plugin-update check-python \
-	dot-all dot-install dot-icloud-link dot-home-symlinks dot-config-symlinks dot-macos-defaults dot-clean
+	dot-all dot-install dot-home-symlinks dot-config-symlinks dot-macos-defaults dot-clean
 
 all: help
 
@@ -40,7 +36,6 @@ help:
 	@echo "Dotfiles:"
 	@echo "  make dot-all                Run all dotfile setup tasks"
 	@echo "  make dot-install            Install required Homebrew packages"
-	@echo "  make dot-icloud-link        Create iCloud drive symlink"
 	@echo "  make dot-home-symlinks      Symlink dotfiles to home directory"
 	@echo "  make dot-config-symlinks    Symlink .config files and directories"
 	@echo "  make dot-macos-defaults     Set macOS defaults"
@@ -107,25 +102,16 @@ endef
 
 # Dotfiles targets
 
-dot-all: dot-install dot-icloud-link dot-home-symlinks dot-config-symlinks dot-macos-defaults
+dot-all: dot-install dot-home-symlinks dot-config-symlinks dot-macos-defaults
 
 # Install required Homebrew packages from Brewfile
 dot-install:
 	@which brew >/dev/null 2>&1 || (echo "✗ Error: Homebrew not installed"; exit 1)
-	@brew bundle --file=$(DOTFILES_DIR)/Brewfile
+	@brew bundle --file=$(CURDIR)/Brewfile
 	@echo "✓ Brew packages installed"
 
-# Create iCloud drive symlink (skip if using custom DOTFILES_DIR)
-dot-icloud-link:
-ifeq ($(DOTFILES_DIR),$(HOME)/icloud-drive/dotfiles)
-	@test -L $(HOME)/icloud-drive || ln -s "$(HOME)/Library/Mobile Documents/com~apple~CloudDocs" $(HOME)/icloud-drive
-	@echo "✓ iCloud drive linked"
-else
-	@echo "✓ Using custom DOTFILES_DIR: $(DOTFILES_DIR)"
-endif
-
 # Symlink dotfiles to home directory
-dot-home-symlinks: dot-icloud-link
+dot-home-symlinks:
 	@for link in $(HOME_LINKS); do \
 		if [ -L $(HOME)/$$link ]; then \
 			:; \
@@ -134,13 +120,13 @@ dot-home-symlinks: dot-icloud-link
 			echo "  Run 'make dot-clean' first or remove it manually"; \
 			exit 1; \
 		else \
-			ln -s $(DOTFILES_DIR)/$$link $(HOME)/$$link; \
+			ln -s $(CURDIR)/$$link $(HOME)/$$link; \
 		fi; \
 	done
 	@echo "✓ Home symlinks created"
 
 # Symlink .config files and directories
-dot-config-symlinks: dot-icloud-link
+dot-config-symlinks:
 	@mkdir -p $(HOME)/.config
 	@mkdir -p $(HOME)/.config/nvim
 	@mkdir -p $(HOME)/.config/fish
@@ -153,7 +139,7 @@ dot-config-symlinks: dot-icloud-link
 			echo "  Run 'make dot-clean' first or remove it manually"; \
 			exit 1; \
 		else \
-			ln -s $(DOTFILES_DIR)/.config/$$dir $(HOME)/.config/$$dir; \
+			ln -s $(CURDIR)/.config/$$dir $(HOME)/.config/$$dir; \
 		fi; \
 	done
 	@# nvim (individual files - only if nvim dir is not already a symlink)
@@ -163,13 +149,13 @@ dot-config-symlinks: dot-icloud-link
 			echo "✗ Error: $(HOME)/.config/nvim/init.lua exists and is not a symlink"; \
 			echo "  Run 'make dot-clean' first or remove it manually"; \
 			exit 1; \
-		else ln -s $(DOTFILES_DIR)/.config/nvim/init.lua $(HOME)/.config/nvim/init.lua; fi; \
+		else ln -s $(CURDIR)/.config/nvim/init.lua $(HOME)/.config/nvim/init.lua; fi; \
 		if [ -L $(HOME)/.config/nvim/autoload ]; then :; \
 		elif [ -e $(HOME)/.config/nvim/autoload ]; then \
 			echo "✗ Error: $(HOME)/.config/nvim/autoload exists and is not a symlink"; \
 			echo "  Run 'make dot-clean' first or remove it manually"; \
 			exit 1; \
-		else ln -s $(DOTFILES_DIR)/.config/nvim/autoload $(HOME)/.config/nvim/autoload; fi; \
+		else ln -s $(CURDIR)/.config/nvim/autoload $(HOME)/.config/nvim/autoload; fi; \
 	fi
 	@# fish (config.fish and functions/ - only if fish dir is not already a symlink)
 	@if [ ! -L $(HOME)/.config/fish ]; then \
@@ -178,16 +164,16 @@ dot-config-symlinks: dot-icloud-link
 			echo "✗ Error: $(HOME)/.config/fish/config.fish exists and is not a symlink"; \
 			echo "  Run 'make dot-clean' first or remove it manually"; \
 			exit 1; \
-		else ln -s $(DOTFILES_DIR)/.config/fish/config.fish $(HOME)/.config/fish/config.fish; fi; \
+		else ln -s $(CURDIR)/.config/fish/config.fish $(HOME)/.config/fish/config.fish; fi; \
 		if [ -L $(HOME)/.config/fish/functions ]; then :; \
 		elif [ -e $(HOME)/.config/fish/functions ]; then \
 			echo "✗ Error: $(HOME)/.config/fish/functions exists and is not a symlink"; \
 			echo "  Run 'make dot-clean' first or remove it manually"; \
 			exit 1; \
-		else ln -s $(DOTFILES_DIR)/.config/fish/functions $(HOME)/.config/fish/functions; fi; \
+		else ln -s $(CURDIR)/.config/fish/functions $(HOME)/.config/fish/functions; fi; \
 	fi
 	@# starship.toml (single file)
-	$(call safe_symlink,$(DOTFILES_DIR)/.config/starship.toml,$(HOME)/.config/starship.toml)
+	$(call safe_symlink,$(CURDIR)/.config/starship.toml,$(HOME)/.config/starship.toml)
 	@echo "✓ Config symlinks created"
 
 # Remove all managed dotfile symlinks (only removes if target is a symlink)
