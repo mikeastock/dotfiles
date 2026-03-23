@@ -597,4 +597,5 @@ vim.opt.tabline = "%!v:lua.MyBufferline()"
 -- LAST
 -- vim.cmd.colorscheme "tokyonight-night"
 -- vim.cmd.colorscheme "tokyonight-day"
+-- vim.cmd.colorscheme "catppuccin-latte"
 vim.cmd.colorscheme "catppuccin-mocha"
