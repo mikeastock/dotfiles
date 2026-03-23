@@ -923,8 +923,16 @@ def install_pi_settings():
     else:
         settings = {}
 
+    preserved_settings = {
+        key: settings[key]
+        for key in ("lastChangelogVersion",)
+        if key in settings
+    }
+
     for key, value in managed_settings.items():
         settings[key] = value
+
+    settings.update(preserved_settings)
 
     with open(dest, "w") as f:
         json.dump(settings, f, indent=2)
