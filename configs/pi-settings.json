@@ -1,5 +1,5 @@
 {
-  "lastChangelogVersion": "0.57.1",
+  "lastChangelogVersion": "0.62.0",
   "defaultProvider": "openai-codex",
   "defaultModel": "gpt-5.4",
   "hideThinkingBlock": false,
@@ -11,6 +11,8 @@
     "openai-codex/gpt-5.4"
   ],
   "packages": [
+    "https://github.com/davebcn87/pi-autoresearch",
+    "npm:pi-verbosity-control"
   ],
   "theme": "catppuccin-mocha"
 }
