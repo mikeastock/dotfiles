@@ -59,6 +59,9 @@ const tmuxCommand = (...args: string[]): Promise<string> =>
 export default function (pi: ExtensionAPI) {
 	if (!process.env.TMUX) return;
 
+	const paneId = process.env.TMUX_PANE;
+	if (!paneId) return;
+
 	const stallTimeoutMs = parseNumberWithFallback(
 		process.env.PI_TMUX_STATUS_STALL_TIMEOUT_MS,
 		DEFAULT_STALL_TIMEOUT_MS,
@@ -71,20 +74,36 @@ export default function (pi: ExtensionAPI) {
 	let timeoutId: ReturnType<typeof setTimeout> | undefined;
 	let hasEmittedState = false;
 	let baseWindowName: string | undefined;
+	let windowId: string | undefined;
 
 	// ── tmux window name ──
+	//
+	// `tmux rename-window` without -t targets the *focused* window, not the
+	// pane's window.  We resolve the window ID from $TMUX_PANE once on startup
+	// and always pass `-t <window_id>` so we rename the correct window even
+	// when the user is looking at a different one.
+
+	const resolveWindowId = async (): Promise<string | undefined> => {
+		try {
+			return await tmuxCommand("display-message", "-t", paneId, "-p", "#{window_id}");
+		} catch {
+			return undefined;
+		}
+	};
 
 	const readWindowName = async (): Promise<string> => {
+		if (!windowId) return "";
 		try {
-			return await tmuxCommand("display-message", "-p", "#W");
+			return await tmuxCommand("display-message", "-t", windowId, "-p", "#W");
 		} catch {
 			return "";
 		}
 	};
 
 	const setWindowName = async (name: string): Promise<void> => {
+		if (!windowId) return;
 		try {
-			await tmuxCommand("rename-window", name);
+			await tmuxCommand("rename-window", "-t", windowId, name);
 		} catch {
 			// Swallow — tmux may have gone away.
 		}
@@ -172,11 +191,13 @@ export default function (pi: ExtensionAPI) {
 	// ── Event handlers ──
 
 	pi.on("session_start", async (_event: SessionStartEvent, _ctx: ExtensionContext) => {
+		windowId = await resolveWindowId();
 		baseWindowName = await readWindowName();
 		await resetState("new");
 	});
 
 	pi.on("session_switch", async (event: SessionSwitchEvent, _ctx: ExtensionContext) => {
+		if (!windowId) windowId = await resolveWindowId();
 		if (!baseWindowName) baseWindowName = await readWindowName();
 		await resetState(event.reason === "new" ? "new" : "done");
 	});

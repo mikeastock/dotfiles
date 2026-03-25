@@ -208,11 +208,11 @@ end
 
 ####### tmux window auto-rename
 function _tmux_window_name --on-variable PWD --on-event fish_postexec
-  if not set -q TMUX
+  if not set -q TMUX; or not set -q TMUX_PANE
     return
   end
 
-  command tmux rename-window (__workspace_title)
+  command tmux rename-window -t "$TMUX_PANE" (__workspace_title)
 end
 
 _tmux_window_name
