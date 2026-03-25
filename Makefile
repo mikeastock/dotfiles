@@ -13,7 +13,7 @@ HOME_LINKS := .bin .gitconfig .ideavimrc .psqlrc .tmux.conf .tmuxinator .vscode
 # .config directories to symlink entirely
 CONFIG_DIRS := alacritty stylua lvim zellij direnv atuin ghostty
 
-.PHONY: all install install-non-interactive install-skills install-extensions install-prompts install-themes install-configs build clean help submodule-init plugin-update check-python \
+.PHONY: all install install-non-interactive install-skills install-extensions install-prompts install-subagents install-themes install-configs build clean help submodule-init plugin-update check-python \
 	dot-all dot-install dot-home-symlinks dot-config-symlinks dot-macos-defaults dot-clean
 
 all: help
@@ -27,6 +27,7 @@ help:
 	@echo "  make install-skills          Install skills only (Amp, Claude Code, Codex, Pi agent)"
 	@echo "  make install-extensions      Install extensions only (Pi agent)"
 	@echo "  make install-prompts         Install prompt templates only (Pi agent)"
+	@echo "  make install-subagents       Install subagent definitions only (Pi agent)"
 	@echo "  make install-themes          Install themes only (Pi agent)"
 	@echo "  make install-configs         Install all agent configs (Amp, Codex, Pi)"
 	@echo "  make build                   Build skills/prompts/themes (without installing)"
@@ -71,6 +72,9 @@ install-extensions: check-python
 
 install-prompts: check-python
 	@$(PYTHON) "$(BUILD_SCRIPT)" install-prompts
+
+install-subagents: check-python
+	@$(PYTHON) "$(BUILD_SCRIPT)" install-subagents
 
 install-themes: check-python
 	@$(PYTHON) "$(BUILD_SCRIPT)" install-themes

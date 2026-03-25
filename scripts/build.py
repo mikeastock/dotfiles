@@ -3,7 +3,7 @@
 Build system for AI agent plugins.
 
 Reads plugins.toml and builds/installs skills, prompt templates,
-and extensions for Claude Code, Codex CLI, and Pi Agent.
+subagents, and extensions for Claude Code, Codex CLI, and Pi Agent.
 
 Requires Python 3.11+ (uses tomllib from stdlib).
 """
@@ -69,6 +69,7 @@ import tomllib
 ROOT = Path(__file__).parent.parent
 PLUGINS_DIR = ROOT / "plugins"
 SKILLS_DIR = ROOT / "skills"
+SUBAGENTS_DIR = ROOT / "subagents"
 PROMPTS_DIR = ROOT / "prompts"
 
 PI_EXTENSIONS_DIR = ROOT / "pi-extensions"
@@ -97,6 +98,7 @@ INSTALL_PATHS = {
         "skills": HOME / ".pi" / "agent" / "skills",
         "extensions": HOME / ".pi" / "agent" / "extensions",
         "prompts": HOME / ".pi" / "agent" / "prompts",
+        "subagents": HOME / ".pi" / "agent" / "agents",
         "themes": HOME / ".pi" / "agent" / "themes",
     },
 }
@@ -122,6 +124,8 @@ class Plugin:
     extensions: list[str] = field(default_factory=list)  # Empty = none, ["*"] = all
     prompts_path: list[str] = field(default_factory=lambda: ["prompts/*.md"])
     prompts: list[str] = field(default_factory=list)  # Empty = none, ["*"] = all
+    subagents_path: list[str] = field(default_factory=lambda: ["agents/*.md"])
+    subagents: list[str] = field(default_factory=list)  # Empty = none, ["*"] = all
     alias: str | None = None
 
     @property
@@ -160,6 +164,8 @@ class Plugin:
             extensions=normalize_items(data.get("extensions")),
             prompts_path=normalize_path(data.get("prompts_path", "prompts/*.md")),
             prompts=normalize_items(data.get("prompts")),
+            subagents_path=normalize_path(data.get("subagents_path", "agents/*.md")),
+            subagents=normalize_items(data.get("subagents")),
             alias=data.get("alias"),
         )
 
@@ -233,6 +239,9 @@ def discover_items(plugin: Plugin, item_type: str) -> list[tuple[str, Path]]:
     elif item_type == "prompts":
         patterns = plugin.prompts_path
         enabled = plugin.prompts
+    elif item_type == "subagents":
+        patterns = plugin.subagents_path
+        enabled = plugin.subagents
     else:
         raise ValueError(f"Unknown item type: {item_type}")
 
@@ -250,6 +259,8 @@ def discover_items(plugin: Plugin, item_type: str) -> list[tuple[str, Path]]:
         elif item_type == "extensions" and path.is_file() and path.suffix == ".ts":
             name = path.stem
         elif item_type == "prompts" and path.is_file() and path.suffix == ".md":
+            name = path.stem
+        elif item_type == "subagents" and path.is_file() and path.suffix == ".md":
             name = path.stem
         else:
             continue
@@ -664,6 +675,46 @@ def build_prompts(plugins: dict[str, Plugin]):
     print(f"  Built {len(built)} prompt templates")
 
 
+def build_subagents(plugins: dict[str, Plugin]):
+    """Build subagent definitions for Pi from plugins and custom subagents directory."""
+    print("Building subagents...")
+
+    build_subagents_dir = BUILD_DIR / "subagents" / "pi"
+    if build_subagents_dir.exists():
+        shutil.rmtree(build_subagents_dir)
+    build_subagents_dir.mkdir(parents=True, exist_ok=True)
+
+    built = set()
+
+    # Process plugin subagents
+    for plugin in plugins.values():
+        for name, path in discover_items(plugin, "subagents"):
+            if name in built:
+                print(
+                    f"    Warning: Subagent '{name}' already exists, skipping duplicate from {plugin.name}"
+                )
+                continue
+
+            shutil.copy(path, build_subagents_dir / f"{name}.md")
+            print(f"  {name} (from {plugin.name})")
+            built.add(name)
+
+    # Process custom subagents
+    if SUBAGENTS_DIR.exists():
+        for agent_file in sorted(SUBAGENTS_DIR.glob("*.md")):
+            name = agent_file.stem
+            if name in built:
+                print(
+                    f"    Warning: Custom subagent '{name}' conflicts with plugin subagent"
+                )
+
+            shutil.copy(agent_file, build_subagents_dir / f"{name}.md")
+            print(f"  {name} (custom)")
+            built.add(name)
+
+    print(f"  Built {len(built)} subagents")
+
+
 def install_skills():
     """Install built skills to agent directories."""
     print("Installing skills...")
@@ -745,6 +796,30 @@ def install_prompts():
         count += 1
 
     print(f"  pi: {count} prompts -> {dest}")
+
+
+def install_subagents():
+    """Install built subagent definitions to Pi agents directory."""
+    print("Installing subagents...")
+
+    source = BUILD_DIR / "subagents" / "pi"
+    if not source.exists():
+        print("  No built subagents found, skipping")
+        return
+
+    dest = INSTALL_PATHS["pi"]["subagents"]
+
+    # Clear existing agents directory for a fresh install
+    if dest.exists():
+        shutil.rmtree(dest)
+    dest.mkdir(parents=True, exist_ok=True)
+
+    count = 0
+    for agent_file in sorted(source.glob("*.md")):
+        shutil.copy(agent_file, dest / agent_file.name)
+        count += 1
+
+    print(f"  pi: {count} subagents -> {dest}")
 
 
 def install_themes():
@@ -1007,6 +1082,12 @@ def clean(plugins: dict[str, Plugin]):
         remove_path(prompts_dest)
         print(f"  Removed prompts from {prompts_dest}")
 
+    # Clean subagents
+    subagents_dest = INSTALL_PATHS["pi"]["subagents"]
+    if subagents_dest.exists() or subagents_dest.is_symlink():
+        remove_path(subagents_dest)
+        print(f"  Removed subagents from {subagents_dest}")
+
     # Clean managed Pi themes
     themes_dest = INSTALL_PATHS["pi"]["themes"]
     if PI_THEMES_DIR.exists() and themes_dest.exists():
@@ -1046,6 +1127,7 @@ def main():
             "install-skills",
             "install-extensions",
             "install-prompts",
+            "install-subagents",
             "install-themes",
             "install-configs",
             "clean",
@@ -1072,6 +1154,7 @@ def main():
             print("Building in non-interactive mode...")
         build_skills(plugins)
         build_prompts(plugins)
+        build_subagents(plugins)
         build_themes()
     elif args.command == "install":
         if NON_INTERACTIVE:
@@ -1079,9 +1162,11 @@ def main():
         init_submodules()
         build_skills(plugins)
         build_prompts(plugins)
+        build_subagents(plugins)
         build_themes()
         install_skills()
         install_prompts()
+        install_subagents()
         install_themes()
         install_extensions(plugins)
         install_configs()
@@ -1094,6 +1179,9 @@ def main():
     elif args.command == "install-prompts":
         build_prompts(plugins)
         install_prompts()
+    elif args.command == "install-subagents":
+        build_subagents(plugins)
+        install_subagents()
     elif args.command == "install-themes":
         build_themes()
         install_themes()

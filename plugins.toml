@@ -9,6 +9,8 @@
 #   extensions      - List of extensions to install: ["*"] for all, [] or omit for none
 #   prompts_path    - Glob pattern(s) to find prompt templates (default: "prompts/*.md")
 #   prompts         - List of prompt templates to install: ["*"] for all, [] or omit for none
+#   subagents_path  - Glob pattern(s) to find subagent definitions (default: "agents/*.md")
+#   subagents       - List of subagents to install: ["*"] for all, [] or omit for none
 #   alias           - Optional prefix to prevent name collisions
 #
 # Plugin directories use hyphen separator: owner/repo -> plugins/owner-repo/
@@ -55,6 +57,7 @@ skills = [
   "fetch-ci-build",
 ]
 skills_skip_agents = [ "amp" ] # Skip buildrtech skills for Amp
+subagents = [ "*" ]
 
 ["rjs/shaping-skills"]
 url = "git@github.com:rjs/shaping-skills.git"
