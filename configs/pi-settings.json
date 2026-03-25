@@ -12,7 +12,8 @@
   ],
   "packages": [
     "https://github.com/davebcn87/pi-autoresearch",
-    "npm:pi-verbosity-control"
+    "npm:pi-verbosity-control",
+    "npm:pi-subagents"
   ],
   "theme": "catppuccin-mocha"
 }
