@@ -36,6 +36,8 @@ const STATUS_ICON: Record<StatusState, string> = {
 	failed: "\u{f0156}",       // 󰅖 nf-md-close
 };
 
+const ALL_ICONS = new Set(Object.values(STATUS_ICON));
+
 const DEFAULT_STALL_TIMEOUT_MS = 180_000;
 
 const parseNumberWithFallback = (raw: string | undefined, fallback: number): number => {
@@ -91,10 +93,20 @@ export default function (pi: ExtensionAPI) {
 		}
 	};
 
+	const stripStatusIcon = (name: string): string => {
+		for (const icon of ALL_ICONS) {
+			if (name.endsWith(` ${icon}`)) {
+				return name.slice(0, -(icon.length + 1));
+			}
+		}
+		return name;
+	};
+
 	const readWindowName = async (): Promise<string> => {
 		if (!windowId) return "";
 		try {
-			return await tmuxCommand("display-message", "-t", windowId, "-p", "#W");
+			const raw = await tmuxCommand("display-message", "-t", windowId, "-p", "#W");
+			return stripStatusIcon(raw);
 		} catch {
 			return "";
 		}
