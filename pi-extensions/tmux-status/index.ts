@@ -1,9 +1,10 @@
 /**
  * Append an agent status icon to the tmux window name.
  *
- * Reads the window name on session start, then updates it with a trailing
- * status icon as the agent state changes.  On shutdown the original name is
- * restored so the fish `_tmux_window_name` function resumes cleanly.
+ * Computes the base window name from ctx.cwd (via the fish __workspace_title
+ * function) so the name is always correct regardless of what other tmux
+ * panes or sessions might do.  On shutdown the base name is restored so
+ * the fish _tmux_window_name function resumes cleanly.
  *
  * States:  new → running → waitingInput / stalled → done / failed
  *
@@ -24,6 +25,7 @@ import type {
 } from "@mariozechner/pi-coding-agent";
 import type { StopReason } from "@mariozechner/pi-ai";
 import { execFile } from "node:child_process";
+import { basename } from "node:path";
 
 type StatusState = "new" | "running" | "waitingInput" | "stalled" | "done" | "failed";
 
@@ -36,8 +38,6 @@ const STATUS_ICON: Record<StatusState, string> = {
 	failed: "\u{f0156}",       // 󰅖 nf-md-close
 };
 
-const ALL_ICONS = new Set(Object.values(STATUS_ICON));
-
 const DEFAULT_STALL_TIMEOUT_MS = 180_000;
 
 const parseNumberWithFallback = (raw: string | undefined, fallback: number): number => {
@@ -47,9 +47,9 @@ const parseNumberWithFallback = (raw: string | undefined, fallback: number): num
 	return Math.floor(value);
 };
 
-const tmuxCommand = (...args: string[]): Promise<string> =>
+const execCommand = (cmd: string, args: string[], options?: { cwd?: string }): Promise<string> =>
 	new Promise((resolve, reject) => {
-		execFile("tmux", args, { timeout: 3_000 }, (error, stdout) => {
+		execFile(cmd, args, { timeout: 3_000, ...options }, (error, stdout) => {
 			if (error) {
 				reject(error);
 				return;
@@ -57,6 +57,8 @@ const tmuxCommand = (...args: string[]): Promise<string> =>
 			resolve(stdout.trimEnd());
 		});
 	});
+
+const tmuxCommand = (...args: string[]): Promise<string> => execCommand("tmux", args);
 
 export default function (pi: ExtensionAPI) {
 	if (!process.env.TMUX) return;
@@ -80,10 +82,13 @@ export default function (pi: ExtensionAPI) {
 
 	// ── tmux window name ──
 	//
+	// We compute the base window name from ctx.cwd instead of reading the
+	// current tmux window name.  This avoids races where another pane/session
+	// renames our window between shutdown and startup (e.g. during /reload).
+	//
 	// `tmux rename-window` without -t targets the *focused* window, not the
 	// pane's window.  We resolve the window ID from $TMUX_PANE once on startup
-	// and always pass `-t <window_id>` so we rename the correct window even
-	// when the user is looking at a different one.
+	// and always pass `-t <window_id>`.
 
 	const resolveWindowId = async (): Promise<string | undefined> => {
 		try {
@@ -93,22 +98,22 @@ export default function (pi: ExtensionAPI) {
 		}
 	};
 
-	const stripStatusIcon = (name: string): string => {
-		for (const icon of ALL_ICONS) {
-			if (name.endsWith(` ${icon}`)) {
-				return name.slice(0, -(icon.length + 1));
-			}
-		}
-		return name;
-	};
-
-	const readWindowName = async (): Promise<string> => {
-		if (!windowId) return "";
+	const computeBaseWindowName = async (cwd: string): Promise<string> => {
+		// Prefer the fish __workspace_title function for consistency with the
+		// fish _tmux_window_name handler (includes repo aliases and nerd font
+		// git branch icon).
 		try {
-			const raw = await tmuxCommand("display-message", "-t", windowId, "-p", "#W");
-			return stripStatusIcon(raw);
+			return await execCommand("fish", ["-c", "__workspace_title"], { cwd });
 		} catch {
-			return "";
+			// Fallback: dir + git branch (no aliases or icons).
+		}
+
+		const dir = basename(cwd);
+		try {
+			const branch = await execCommand("git", ["-C", cwd, "symbolic-ref", "--short", "HEAD"]);
+			return branch ? `${dir} ${branch}` : dir;
+		} catch {
+			return dir;
 		}
 	};
 
@@ -202,15 +207,15 @@ export default function (pi: ExtensionAPI) {
 
 	// ── Event handlers ──
 
-	pi.on("session_start", async (_event: SessionStartEvent, _ctx: ExtensionContext) => {
+	pi.on("session_start", async (_event: SessionStartEvent, ctx: ExtensionContext) => {
 		windowId = await resolveWindowId();
-		baseWindowName = await readWindowName();
+		baseWindowName = await computeBaseWindowName(ctx.cwd);
 		await resetState("new");
 	});
 
-	pi.on("session_switch", async (event: SessionSwitchEvent, _ctx: ExtensionContext) => {
+	pi.on("session_switch", async (event: SessionSwitchEvent, ctx: ExtensionContext) => {
 		if (!windowId) windowId = await resolveWindowId();
-		if (!baseWindowName) baseWindowName = await readWindowName();
+		baseWindowName = await computeBaseWindowName(ctx.cwd);
 		await resetState(event.reason === "new" ? "new" : "done");
 	});
 
