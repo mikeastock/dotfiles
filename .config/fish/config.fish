@@ -212,13 +212,7 @@ function _tmux_window_name --on-variable PWD --on-event fish_postexec
     return
   end
 
-  set -l title (__workspace_title)
-  if test "$title" = "$__last_tmux_window_name"
-    return
-  end
-
-  command tmux rename-window "$title"
-  set -g __last_tmux_window_name "$title"
+  command tmux rename-window (__workspace_title)
 end
 
 _tmux_window_name
