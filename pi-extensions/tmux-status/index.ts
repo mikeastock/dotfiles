@@ -23,6 +23,7 @@ import type {
 	ToolResultEvent,
 	SessionShutdownEvent,
 } from "@mariozechner/pi-coding-agent";
+import { isBashToolResult } from "@mariozechner/pi-coding-agent";
 import type { StopReason } from "@mariozechner/pi-ai";
 import { execFile } from "node:child_process";
 import { basename } from "node:path";
@@ -39,6 +40,8 @@ const STATUS_ICON: Record<StatusState, string> = {
 };
 
 const DEFAULT_STALL_TIMEOUT_MS = 180_000;
+
+const GIT_BRANCH_CHANGE_RE = /\bgit\s+(checkout|switch|rebase|merge|pull|reset|bisect|cherry-pick|worktree)\b/;
 
 const parseNumberWithFallback = (raw: string | undefined, fallback: number): number => {
 	if (raw === undefined) return fallback;
@@ -241,7 +244,7 @@ export default function (pi: ExtensionAPI) {
 		await markActivity();
 	});
 
-	pi.on("tool_result", async (event: ToolResultEvent, _ctx: ExtensionContext) => {
+	pi.on("tool_result", async (event: ToolResultEvent, ctx: ExtensionContext) => {
 		if (event.toolName === "AskUserQuestion") {
 			awaitingAskUserQuestion = false;
 			if (isAskUserQuestionCancelled(event)) {
@@ -251,6 +254,18 @@ export default function (pi: ExtensionAPI) {
 				return;
 			}
 		}
+
+		if (isBashToolResult(event) && !event.isError) {
+			const command = (event.input as Record<string, unknown>).command;
+			if (typeof command === "string" && GIT_BRANCH_CHANGE_RE.test(command)) {
+				const newBase = await computeBaseWindowName(ctx.cwd);
+				if (newBase !== baseWindowName) {
+					baseWindowName = newBase;
+					await updateWindowName(state);
+				}
+			}
+		}
+
 		await markActivity();
 	});
 
