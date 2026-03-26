@@ -22,3 +22,6 @@
 [submodule "plugins/rjs-shaping-skills"]
 	path = plugins/rjs-shaping-skills
 	url = git@github.com:rjs/shaping-skills.git
+[submodule "plugins/bobcats-pi-extensions"]
+	path = plugins/bobcats-pi-extensions
+	url = https://github.com/bobcats/pi-extensions

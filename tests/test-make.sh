@@ -195,7 +195,8 @@ test_make_install_extensions() {
     fi
 
     assert_file_not_exists "$SANDBOX_DIR/.pi/agent/extensions/tab-status" "tab-status extension disabled in build"
-    assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/cmux-status" "cmux-status extension installed"
+    assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/tmux-status" "tmux-status extension installed"
+    assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/subagent" "subagent plugin extension installed"
 }
 
 # Test: make install-prompts (with sandbox)
@@ -241,6 +242,11 @@ test_make_install() {
     assert_output_contains "$output" "All skills, prompt templates, themes, and extensions installed" "Install shows completion message"
     assert_file_exists "$SANDBOX_DIR/.pi/agent/prompts/refactor-pass.md" "Install includes Pi prompts"
     assert_file_exists "$SANDBOX_DIR/.pi/agent/themes/catppuccin-latte.json" "Install includes Pi themes"
+    assert_file_exists "$SANDBOX_DIR/.pi/agent/settings.json" "Install includes Pi settings"
+
+    local pi_settings
+    pi_settings=$(<"$SANDBOX_DIR/.pi/agent/settings.json")
+    assert_output_not_contains "$pi_settings" "npm:pi-subagents" "Pi settings omit pi-subagents package"
 }
 
 # Test: make clean (with sandbox)

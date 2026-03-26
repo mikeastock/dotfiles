@@ -47,7 +47,7 @@ NON_INTERACTIVE = False
 
 # Custom extensions excluded from installation/build output
 DISABLED_CUSTOM_EXTENSIONS = {
-    "tab-status",  # Replaced by cmux-status
+    "tab-status",  # Replaced by tmux-status
     "pi-web-access",  # Replaced by web-access (Exa-based)
 }
 
@@ -256,8 +256,17 @@ def discover_items(plugin: Plugin, item_type: str) -> list[tuple[str, Path]]:
     for path in glob_paths(plugin_dir, patterns):
         if item_type == "skills" and path.is_dir():
             name = path.name
-        elif item_type == "extensions" and path.is_file() and path.suffix == ".ts":
-            name = path.stem
+        elif item_type == "extensions":
+            if path.is_dir() and (path / "index.ts").exists():
+                name = path.name
+            elif path.is_file() and path.suffix == ".ts":
+                if path.name == "index.ts" and path.parent != plugin_dir:
+                    path = path.parent
+                    name = path.name
+                else:
+                    name = path.stem
+            else:
+                continue
         elif item_type == "prompts" and path.is_file() and path.suffix == ".md":
             name = path.stem
         elif item_type == "subagents" and path.is_file() and path.suffix == ".md":
