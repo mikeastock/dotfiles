@@ -45,12 +45,6 @@ INTERACTIVE_OVERRIDES = {
 # Global flag for non-interactive mode
 NON_INTERACTIVE = False
 
-# Custom extensions excluded from installation/build output
-DISABLED_CUSTOM_EXTENSIONS = {
-    "tab-status",  # Replaced by tmux-status
-    "pi-web-access",  # Replaced by web-access (Exa-based)
-}
-
 
 def remove_path(path: Path) -> None:
     """Remove a path, handling symlinks, files, and directories."""
@@ -285,17 +279,12 @@ def discover_items(plugin: Plugin, item_type: str) -> list[tuple[str, Path]]:
     return items
 
 
-def custom_extension_dirs(*, include_disabled: bool = False) -> list[Path]:
+def custom_extension_dirs() -> list[Path]:
     """Return custom extension directories under pi-extensions/."""
     if not PI_EXTENSIONS_DIR.exists():
         return []
 
-    return [
-        path
-        for path in sorted(PI_EXTENSIONS_DIR.iterdir())
-        if path.is_dir()
-        and (include_disabled or path.name not in DISABLED_CUSTOM_EXTENSIONS)
-    ]
+    return [path for path in sorted(PI_EXTENSIONS_DIR.iterdir()) if path.is_dir()]
 
 
 def is_interactive_override(override_path: Path) -> bool:
@@ -1079,7 +1068,7 @@ def clean(plugins: dict[str, Plugin]):
                 print(f"  Removed extension: {name}")
 
     # Custom extensions
-    for ext_dir in custom_extension_dirs(include_disabled=True):
+    for ext_dir in custom_extension_dirs():
         installed = ext_dest / ext_dir.name
         if installed.exists() or installed.is_symlink():
             remove_path(installed)

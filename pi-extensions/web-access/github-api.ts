@@ -18,7 +18,7 @@ export async function checkGhAvailable(): Promise<boolean> {
 export function showGhHint(): void {
 	if (!ghHintShown) {
 		ghHintShown = true;
-		console.error("[pi-web-access] Install `gh` CLI for better GitHub repo access including private repos.");
+		console.error("[web-access] Install `gh` CLI for better GitHub repo access including private repos.");
 	}
 }
 

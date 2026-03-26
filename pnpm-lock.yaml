@@ -42,21 +42,6 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
-  pi-extensions/pi-web-access:
-    dependencies:
-      '@mozilla/readability':
-        specifier: ^0.5.0
-        version: 0.5.0
-      linkedom:
-        specifier: ^0.16.0
-        version: 0.16.11
-      p-limit:
-        specifier: ^6.1.0
-        version: 6.2.0
-      turndown:
-        specifier: ^7.2.0
-        version: 7.2.2
-
 packages:
 
   '@anthropic-ai/sdk@0.73.0':
