@@ -30,8 +30,8 @@ importers:
         specifier: ^0.16.0
         version: 0.16.11
       p-limit:
-        specifier: ^6.1.0
-        version: 6.2.0
+        specifier: ^7.3.0
+        version: 7.3.0
       tsx:
         specifier: ^4.21.0
         version: 4.21.0
@@ -1117,9 +1117,9 @@ packages:
       zod:
         optional: true
 
-  p-limit@6.2.0:
-    resolution: {integrity: sha512-kuUqqHNUqoIWp/c467RI4X6mmyuojY5jGutNU0wVTmEOOfcuwLqyMVoAi9MKi2Ak+5i9+nhmrK4ufZE8069kHA==}
-    engines: {node: '>=18'}
+  p-limit@7.3.0:
+    resolution: {integrity: sha512-7cIXg/Z0M5WZRblrsOla88S4wAK+zOQQWeBYfV3qJuJXMr+LnbYjaadrFaS0JILfEDPVqHyKnZ1Z/1d6J9VVUw==}
+    engines: {node: '>=20'}
 
   p-retry@4.6.2:
     resolution: {integrity: sha512-312Id396EbJdvRONlngUx0NydfrIQ5lsYu0znKVUzVvArzEIt08V1qhtyESbGVd1FGX7UKtiFp5uwKZdM8wIuQ==}
@@ -2761,7 +2761,7 @@ snapshots:
       ws: 8.19.0
       zod: 3.25.76
 
-  p-limit@6.2.0:
+  p-limit@7.3.0:
     dependencies:
       yocto-queue: 1.2.2
 
