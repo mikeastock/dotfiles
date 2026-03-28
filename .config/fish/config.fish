@@ -190,6 +190,10 @@ function __workspace_repo_name --argument-names dir
       echo b-inf
     case dotfiles
       echo dot
+    case marketing
+      echo mkt
+    case release-notes
+      echo rel
     case '*'
       echo "$dir"
   end
