@@ -1,14 +1,16 @@
 {
-  "lastChangelogVersion": "0.62.0",
-  "defaultProvider": "openai-codex",
-  "defaultModel": "gpt-5.4",
+  "lastChangelogVersion": "0.64.0",
+  "defaultProvider": "anthropic",
+  "defaultModel": "claude-opus-4-6",
   "hideThinkingBlock": false,
   "defaultThinkingLevel": "medium",
   "steeringMode": "all",
   "doubleEscapeAction": "tree",
   "enabledModels": [
     "anthropic/claude-opus-4-6",
-    "openai-codex/gpt-5.4"
+    "openai-codex/gpt-5.4",
+    "atlas/zai-org/glm-5-turbo",
+    "fireworks/accounts/fireworks/routers/kimi-k2p5-turbo"
   ],
   "packages": [
     "https://github.com/davebcn87/pi-autoresearch",
