@@ -108,8 +108,8 @@ function ssm-connect
 end
 
 function aic -d "Use pi with a fast model to commit"
-  # pi --no-session --models zai-glm-4.7 -p "commit"
-  codex exec --yolo -m gpt-5.3-codex-spark "use the semantic commit skill"
+  # codex exec --yolo -m gpt-5.3-codex-spark "use the semantic commit skill"
+  pi --no-session --models "fireworks/accounts/fireworks/routers/kimi-k2p5-turbo" -p "use the semantic commit skill to commit"
 end
 
 ####### PATH SETUP
