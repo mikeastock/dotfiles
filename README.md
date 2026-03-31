@@ -44,6 +44,17 @@ make agents-clean            # clean agent build/install artifacts
 make plugin-update           # update plugin submodules
 ```
 
+### Canonical Pi install
+
+```bash
+bin/pi-install
+bin/pi
+```
+
+- Canonical Pi prefix: `~/.local/share/pi-coding-agent`
+- `bin/pi-install` installs or updates Pi there, runs `make install-configs`, and applies `configs/pi-patch/` to the canonical package root
+- `bin/pi` is the stable launcher for that canonical install
+
 ### Notable custom skills
 
 - `layered-rails` — Rails layered architecture guidance (copied locally from `palkan/skills`, not managed as a plugin)

@@ -194,6 +194,14 @@ function __workspace_repo_name --argument-names dir
       echo mkt
     case release-notes
       echo rel
+    case app
+      echo a1
+    case app2
+      echo a2
+    case app3
+      echo a3
+    case app4
+      echo a4
     case '*'
       echo "$dir"
   end
