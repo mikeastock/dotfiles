@@ -18,8 +18,8 @@ importers:
         specifier: ^0.64.0
         version: 0.64.0
       '@mozilla/readability':
-        specifier: ^0.5.0
-        version: 0.5.0
+        specifier: ^0.6.0
+        version: 0.6.0
       '@sinclair/typebox':
         specifier: ^0.34.48
         version: 0.34.48
@@ -449,8 +449,8 @@ packages:
   '@mixmark-io/domino@2.2.0':
     resolution: {integrity: sha512-Y28PR25bHXUg88kCV7nivXrP2Nj2RueZ3/l/jdx6J9f8J4nsEGcgX0Qe6lt7Pa+J79+kPiJU3LguR6O/6zrLOw==}
 
-  '@mozilla/readability@0.5.0':
-    resolution: {integrity: sha512-Z+CZ3QaosfFaTqvhQsIktyGrjFjSC0Fa4EMph4mqKnWhmyoGICsV/8QK+8HpXut6zV7zwfWwqDmEjtk1Qf6EgQ==}
+  '@mozilla/readability@0.6.0':
+    resolution: {integrity: sha512-juG5VWh4qAivzTAeMzvY9xs9HY5rAcr2E4I7tiSSCokRFi7XIZCAu92ZkSTsIj1OPceCifL3cpfteP3pDT9/QQ==}
     engines: {node: '>=14.0.0'}
 
   '@protobufjs/aspromise@1.1.2':
@@ -1934,7 +1934,7 @@ snapshots:
 
   '@mixmark-io/domino@2.2.0': {}
 
-  '@mozilla/readability@0.5.0': {}
+  '@mozilla/readability@0.6.0': {}
 
   '@protobufjs/aspromise@1.1.2': {}
 
