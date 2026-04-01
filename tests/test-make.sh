@@ -196,7 +196,7 @@ test_make_install_extensions() {
 
     assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/tmux-status" "tmux-status extension installed"
     assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/web-access" "web-access extension installed"
-    assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/subagent" "subagent plugin extension installed"
+    assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/subagent" "subagent extension installed"
     assert_file_not_exists "$SANDBOX_DIR/.pi/agent/extensions/pi-web-access" "pi-web-access extension removed"
 }
 

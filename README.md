@@ -60,6 +60,10 @@ bin/pi
 - `layered-rails` — Rails layered architecture guidance (copied locally from `palkan/skills`, not managed as a plugin)
 - `babysit-pr` — GitHub PR monitoring/babysitting workflow imported from `openai/codex` commit `7e569f1`
 
+### Notable custom Pi extensions
+
+- `subagent` — vendored locally in `pi-extensions/subagent/` as the canonical subagent extension
+
 ## Structure
 
 ```text

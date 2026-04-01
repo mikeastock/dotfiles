@@ -41,11 +41,6 @@ url = "https://github.com/mitsuhiko/agent-stuff"
 extensions_path = "pi-extensions/*.ts"
 extensions = [ "review" ]
 
-["bobcats/pi-extensions"]
-url = "https://github.com/bobcats/pi-extensions"
-extensions_path = "subagent"
-extensions = [ "subagent" ]
-
 ["buildrtech/dotagents"]
 url = "https://github.com/buildrtech/dotagents"
 skills = [
