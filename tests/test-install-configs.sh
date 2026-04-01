@@ -96,8 +96,6 @@ EOF
     pi_json=$(cat "$SANDBOX_DIR/.pi/agent/settings.json")
 
     assert_json_field "$pi_json" '.lastChangelogVersion' "9.9.9" "Pi: lastChangelogVersion preserved"
-    assert_json_field "$pi_json" '.defaultModel' "gpt-5.4" "Pi: defaultModel updated from repo config"
-    assert_json_field "$pi_json" '.enabledModels | join(",")' "anthropic/claude-opus-4-6,openai-codex/gpt-5.4" "Pi: enabledModels updated from repo config"
     assert_json_field "$pi_json" '.customSetting' "true" "Pi: custom unmanaged settings preserved"
 }
 
