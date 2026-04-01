@@ -8,7 +8,7 @@ PYTHON := python3
 BUILD_SCRIPT := $(CURDIR)/scripts/build.py
 
 # Home directory symlinks
-HOME_LINKS := .bin .gitconfig .ideavimrc .psqlrc .tmux.conf .tmuxinator .vscode
+HOME_LINKS := .gitconfig .ideavimrc .psqlrc .tmux.conf .tmuxinator .vscode
 
 # .config directories to symlink entirely
 CONFIG_DIRS := alacritty stylua lvim zellij direnv atuin ghostty
@@ -127,6 +127,20 @@ dot-home-symlinks:
 			ln -s $(CURDIR)/$$link $(HOME)/$$link; \
 		fi; \
 	done
+	@# Symlink bin/ scripts into ~/.local/bin/
+	@mkdir -p $(HOME)/.local/bin
+	@for script in $(CURDIR)/bin/*; do \
+		name=$$(basename $$script); \
+		if [ -L $(HOME)/.local/bin/$$name ]; then \
+			:; \
+		elif [ -e $(HOME)/.local/bin/$$name ]; then \
+			echo "✗ Error: $(HOME)/.local/bin/$$name exists and is not a symlink"; \
+			echo "  Remove it manually to proceed"; \
+			exit 1; \
+		else \
+			ln -s $$script $(HOME)/.local/bin/$$name; \
+		fi; \
+	done
 	@echo "✓ Home symlinks created"
 
 # Symlink .config files and directories
@@ -186,6 +200,11 @@ dot-clean:
 	@# Home symlinks
 	@for link in $(HOME_LINKS); do \
 		[ -L $(HOME)/$$link ] && rm $(HOME)/$$link || true; \
+	done
+	@# ~/.local/bin scripts
+	@for script in $(CURDIR)/bin/*; do \
+		name=$$(basename $$script); \
+		[ -L $(HOME)/.local/bin/$$name ] && rm $(HOME)/.local/bin/$$name || true; \
 	done
 	@# Config directories
 	@for dir in $(CONFIG_DIRS); do \
