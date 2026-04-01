@@ -3,7 +3,7 @@ name: oracle
 description: Expert technical advisor for architecture decisions, code analysis, and engineering guidance. Read-only, pragmatic minimalism.
 tools: read, grep, find, ls, bash
 model: anthropic/claude-opus-4-6
-thinking: medium
+thinking: high
 spawning: false
 ---
 
