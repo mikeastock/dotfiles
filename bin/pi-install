@@ -21,6 +21,16 @@ source "$SCRIPT_DIR/pi-paths.sh"
 
 PATCH_SCRIPT="${PI_PATCH_SCRIPT:-$REPO_ROOT/configs/pi-patch/apply-pi-ghostty-tmux-image-patch.sh}"
 
+current_version() {
+  local pkg="$PI_ROOT/package.json"
+
+  if [[ -f "$pkg" ]]; then
+    node -e "console.log(require('$pkg').version)"
+  else
+    echo "unknown"
+  fi
+}
+
 require_command() {
   local name="$1"
 
@@ -44,6 +54,9 @@ main() {
   require_command make
   require_file "$PATCH_SCRIPT"
 
+  local old_version
+  old_version="$(current_version)"
+
   npm install -g --prefix "$PI_PREFIX" @mariozechner/pi-coding-agent
 
   if [[ ! -d "$PI_ROOT" ]]; then
@@ -63,9 +76,16 @@ main() {
 
   "$PATCH_SCRIPT" "$PI_ROOT"
 
-  echo "Pi installed at: $PI_ROOT"
-  echo "Pi launcher: $PI_BIN"
-  echo "Use: bin/pi"
+  local new_version
+  new_version="$(current_version)"
+
+  if [[ "$old_version" == "unknown" ]]; then
+    echo "Pi installed: $new_version"
+  elif [[ "$old_version" == "$new_version" ]]; then
+    echo "Pi up to date: $new_version"
+  else
+    echo "Pi updated: $old_version → $new_version"
+  fi
 }
 
 main "$@"
