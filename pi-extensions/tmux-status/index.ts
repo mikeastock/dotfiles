@@ -27,8 +27,8 @@ import { isBashToolResult } from "@mariozechner/pi-coding-agent";
 import type { StopReason } from "@mariozechner/pi-ai";
 import { execFile } from "node:child_process";
 import { basename } from "node:path";
-
-type StatusState = "new" | "running" | "waitingInput" | "stalled" | "done" | "failed";
+import { SUBAGENT_RUN_END_EVENT, SUBAGENT_RUN_START_EVENT, type SubagentRunEndEvent, type SubagentRunStartEvent } from "../subagent/events.js";
+import { TmuxStatusState, type StatusState } from "./state.js";
 
 const STATUS_ICON: Record<StatusState, string> = {
 	new: "\u{f011b}",          // 󰄛 nf-md-robot
@@ -76,6 +76,7 @@ export default function (pi: ExtensionAPI) {
 
 	let state: StatusState = "new";
 	let running = false;
+	const statusTracker = new TmuxStatusState();
 	let awaitingAskUserQuestion = false;
 	let askUserQuestionCancelled = false;
 	let timeoutId: ReturnType<typeof setTimeout> | undefined;
@@ -173,12 +174,12 @@ export default function (pi: ExtensionAPI) {
 		resetStallTimeout();
 	};
 
-	const resetState = async (next: StatusState): Promise<void> => {
+	const resetState = async (next: Extract<StatusState, "new" | "done" | "failed">): Promise<void> => {
 		running = false;
 		awaitingAskUserQuestion = false;
 		askUserQuestionCancelled = false;
 		clearStallTimeout();
-		await setState(next);
+		await setState(statusTracker.reset(next));
 	};
 
 	const beginRun = async (): Promise<void> => {
@@ -187,6 +188,11 @@ export default function (pi: ExtensionAPI) {
 		askUserQuestionCancelled = false;
 		await setState("running");
 		resetStallTimeout();
+	};
+
+	const applyTerminalState = async (next: Extract<StatusState, "done" | "failed">): Promise<void> => {
+		statusTracker.setTerminalState(next);
+		await setState(statusTracker.getIdleState());
 	};
 
 	// ── Helpers ──
@@ -206,6 +212,20 @@ export default function (pi: ExtensionAPI) {
 		if (!event.details || typeof event.details !== "object") return false;
 		const details = event.details as Record<string, unknown>;
 		return details.cancelled === true;
+	};
+
+	const isAsyncSubagentRunStartEvent = (data: unknown): data is SubagentRunStartEvent => {
+		if (!data || typeof data !== "object") return false;
+		const event = data as Record<string, unknown>;
+		return typeof event.id === "string" && event.execution === "async";
+	};
+
+	const isAsyncSubagentRunEndEvent = (data: unknown): data is SubagentRunEndEvent => {
+		if (!isAsyncSubagentRunStartEvent(data)) return false;
+		return (data as { status?: unknown }).status === "completed"
+			|| (data as { status?: unknown }).status === "failed"
+				? typeof (data as { exitCode?: unknown }).exitCode === "number"
+				: false;
 	};
 
 	// ── Event handlers ──
@@ -276,11 +296,26 @@ export default function (pi: ExtensionAPI) {
 
 		const stopReason = getStopReason(event.messages);
 		if (stopReason === "error" || askUserQuestionCancelled) {
-			await setState("failed");
+			await applyTerminalState("failed");
 			return;
 		}
 
-		await setState("done");
+		await applyTerminalState("done");
+	});
+
+	pi.events.on(SUBAGENT_RUN_START_EVENT, async (data: unknown) => {
+		if (!isAsyncSubagentRunStartEvent(data)) return;
+		const next = statusTracker.handleAsyncStart(data.id);
+		if (!next || running || awaitingAskUserQuestion) return;
+		clearStallTimeout();
+		await setState(next);
+	});
+
+	pi.events.on(SUBAGENT_RUN_END_EVENT, async (data: unknown) => {
+		if (!isAsyncSubagentRunEndEvent(data)) return;
+		const next = statusTracker.handleAsyncEnd(data.id, data.status);
+		if (!next || running || awaitingAskUserQuestion) return;
+		await setState(next);
 	});
 
 	pi.on("session_shutdown", async (_event: SessionShutdownEvent, _ctx: ExtensionContext) => {
