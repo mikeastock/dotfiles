@@ -710,6 +710,23 @@ def build_subagents(plugins: dict[str, Plugin]):
             print(f"  {name} (custom)")
             built.add(name)
 
+    # Process subagents bundled with extensions
+    for ext_dir in custom_extension_dirs():
+        agents_dir = ext_dir / "agents"
+        if not agents_dir.exists():
+            continue
+        for agent_file in sorted(agents_dir.glob("*.md")):
+            name = agent_file.stem
+            if name in built:
+                print(
+                    f"    Warning: Extension subagent '{name}' from {ext_dir.name} conflicts with existing subagent"
+                )
+                continue
+
+            shutil.copy(agent_file, build_subagents_dir / f"{name}.md")
+            print(f"  {name} (from extension {ext_dir.name})")
+            built.add(name)
+
     print(f"  Built {len(built)} subagents")
 
 
