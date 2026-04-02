@@ -188,6 +188,8 @@ function __workspace_repo_name --argument-names dir
       echo biz
     case bizops-infra
       echo b-inf
+    case infrastructure
+      echo m-inf
     case dotfiles
       echo dot
     case marketing
