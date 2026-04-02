@@ -23,7 +23,7 @@ import type {
 	ToolResultEvent,
 	SessionShutdownEvent,
 } from "@mariozechner/pi-coding-agent";
-import { isBashToolResult } from "@mariozechner/pi-coding-agent";
+
 import type { StopReason } from "@mariozechner/pi-ai";
 import { execFile } from "node:child_process";
 import { basename } from "node:path";
@@ -40,8 +40,6 @@ const STATUS_ICON: Record<StatusState, string> = {
 };
 
 const DEFAULT_STALL_TIMEOUT_MS = 180_000;
-
-const GIT_BRANCH_CHANGE_RE = /\bgit\s+(checkout|switch|rebase|merge|pull|reset|bisect|cherry-pick|worktree)\b/;
 
 const parseNumberWithFallback = (raw: string | undefined, fallback: number): number => {
 	if (raw === undefined) return fallback;
@@ -81,6 +79,7 @@ export default function (pi: ExtensionAPI) {
 	let askUserQuestionCancelled = false;
 	let timeoutId: ReturnType<typeof setTimeout> | undefined;
 	let hasEmittedState = false;
+	let currentCwd: string | undefined;
 	let baseWindowName: string | undefined;
 	let windowId: string | undefined;
 
@@ -131,13 +130,15 @@ export default function (pi: ExtensionAPI) {
 	};
 
 	const updateWindowName = async (next: StatusState): Promise<void> => {
-		if (!baseWindowName) return;
+		if (!currentCwd) return;
+		baseWindowName = await computeBaseWindowName(currentCwd);
 		await setWindowName(`${baseWindowName} ${STATUS_ICON[next]}`);
 	};
 
 	const restoreWindowName = async (): Promise<void> => {
-		if (!baseWindowName) return;
-		await setWindowName(baseWindowName);
+		if (!currentCwd) return;
+		const name = await computeBaseWindowName(currentCwd);
+		await setWindowName(name);
 		baseWindowName = undefined;
 	};
 
@@ -232,13 +233,13 @@ export default function (pi: ExtensionAPI) {
 
 	pi.on("session_start", async (_event: SessionStartEvent, ctx: ExtensionContext) => {
 		windowId = await resolveWindowId();
-		baseWindowName = await computeBaseWindowName(ctx.cwd);
+		currentCwd = ctx.cwd;
 		await resetState("new");
 	});
 
 	pi.on("session_switch", async (event: SessionSwitchEvent, ctx: ExtensionContext) => {
 		if (!windowId) windowId = await resolveWindowId();
-		baseWindowName = await computeBaseWindowName(ctx.cwd);
+		currentCwd = ctx.cwd;
 		await resetState(event.reason === "new" ? "new" : "done");
 	});
 
@@ -264,7 +265,7 @@ export default function (pi: ExtensionAPI) {
 		await markActivity();
 	});
 
-	pi.on("tool_result", async (event: ToolResultEvent, ctx: ExtensionContext) => {
+	pi.on("tool_result", async (event: ToolResultEvent, _ctx: ExtensionContext) => {
 		if (event.toolName === "AskUserQuestion") {
 			awaitingAskUserQuestion = false;
 			if (isAskUserQuestionCancelled(event)) {
@@ -272,17 +273,6 @@ export default function (pi: ExtensionAPI) {
 				clearStallTimeout();
 				await setState("failed");
 				return;
-			}
-		}
-
-		if (isBashToolResult(event) && !event.isError) {
-			const command = (event.input as Record<string, unknown>).command;
-			if (typeof command === "string" && GIT_BRANCH_CHANGE_RE.test(command)) {
-				const newBase = await computeBaseWindowName(ctx.cwd);
-				if (newBase !== baseWindowName) {
-					baseWindowName = newBase;
-					await updateWindowName(state);
-				}
 			}
 		}
 
