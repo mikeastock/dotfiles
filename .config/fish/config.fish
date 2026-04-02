@@ -221,12 +221,45 @@ function __workspace_title
 end
 
 ####### tmux window auto-rename
+function _update_sibling_tmux_windows --argument-names repo_root branch
+  set -l my_window (command tmux display-message -p '#{window_id}')
+
+  for win_id in (command tmux list-windows -F '#{window_id}')
+    if test "$win_id" = "$my_window"
+      continue
+    end
+
+    set -l pane_path (command tmux display-message -t "$win_id" -p '#{pane_current_path}')
+    set -l pane_repo (command git -C "$pane_path" rev-parse --show-toplevel 2>/dev/null)
+    if test "$pane_repo" = "$repo_root"
+      set -l dir (__workspace_repo_name (basename "$pane_path"))
+      command tmux rename-window -t "$win_id" "$dir $branch"
+    end
+  end
+end
+
 function _tmux_window_name --on-variable PWD --on-event fish_postexec
   if not set -q TMUX; or not set -q TMUX_PANE
     return
   end
 
-  command tmux rename-window -t "$TMUX_PANE" (__workspace_title)
+  set -l title (__workspace_title)
+  command tmux rename-window -t "$TMUX_PANE" "$title"
+
+  # When the branch changes within the same repo, update sibling windows
+  set -l repo_root (command git rev-parse --show-toplevel 2>/dev/null)
+  set -l branch (__workspace_git_branch)
+
+  if test -n "$repo_root" -a -n "$branch"
+    if test "$repo_root" = "$__tmux_last_repo" -a "$branch" != "$__tmux_last_branch"
+      _update_sibling_tmux_windows "$repo_root" "$branch"
+    end
+    set -g __tmux_last_repo "$repo_root"
+    set -g __tmux_last_branch "$branch"
+  else
+    set -e __tmux_last_repo
+    set -e __tmux_last_branch
+  end
 end
 
 _tmux_window_name
