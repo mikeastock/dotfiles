@@ -16,5 +16,6 @@
     "https://github.com/davebcn87/pi-autoresearch",
     "npm:pi-verbosity-control"
   ],
-  "theme": "catppuccin-mocha"
+  "theme": "catppuccin-mocha",
+  "transport": "websocket"
 }
