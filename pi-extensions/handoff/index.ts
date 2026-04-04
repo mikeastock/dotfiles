@@ -12,15 +12,15 @@
  *   /handoff now implement this for teams as well
  *   /handoff execute phase one of the plan
  *   /handoff check other places that need this fix
+ *
+ * The generated prompt appears as a draft in the editor for review/editing.
  */
 
 import { complete, type Message } from "@mariozechner/pi-ai";
 import type { ExtensionAPI, ExtensionCommandContext, ExtensionContext, SessionEntry } from "@mariozechner/pi-coding-agent";
 import { BorderedLoader, convertToLlm, serializeConversation } from "@mariozechner/pi-coding-agent";
 import { Type } from "@sinclair/typebox";
-import { completePendingHandoff, finalizeGeneratedHandoff, queueToolHandoff } from "./flow.js";
-import { createPendingHandoffStore } from "./pending.js";
-import { buildFinalPrompt, buildInitialUserMessage } from "./prompt.js";
+import { buildFinalPrompt } from "./prompt.js";
 
 const SYSTEM_PROMPT = `You are a context transfer assistant. Given a conversation history and the user's goal for a new thread, generate a focused prompt that:
 
@@ -44,24 +44,15 @@ Files involved:
 ## Task
 [Clear description of what to do next based on user's goal]`;
 
-async function createHandoffSession(
-	ctx: ExtensionCommandContext,
-	parentSession: string | undefined,
-	finalPrompt: string,
-): Promise<{ cancelled: boolean }> {
-	return ctx.newSession({
-		parentSession,
-		setup: async (sm) => {
-			sm.appendMessage(buildInitialUserMessage(finalPrompt));
-		},
-	});
-}
-
+/**
+ * Core handoff logic. Returns an error string on failure, or undefined on success.
+ */
 async function performHandoff(
 	pi: ExtensionAPI,
 	ctx: ExtensionContext,
 	goal: string,
-	pendingStore: ReturnType<typeof createPendingHandoffStore>,
+	pendingHandoff: { prompt: string; parentSession: string | undefined } | null,
+	setPendingHandoff: (v: { prompt: string; parentSession: string | undefined } | null) => void,
 	fromTool = false,
 ): Promise<string | undefined> {
 	if (!ctx.hasUI) {
@@ -85,7 +76,8 @@ async function performHandoff(
 	const conversationText = serializeConversation(llmMessages);
 	const currentSessionFile = ctx.sessionManager.getSessionFile();
 
-	const generatedPrompt = await ctx.ui.custom<string | null>((tui, theme, _kb, done) => {
+	// Generate the handoff prompt with loader UI
+	const result = await ctx.ui.custom<string | null>((tui, theme, _kb, done) => {
 		const loader = new BorderedLoader(tui, theme, `Generating handoff prompt...`);
 		loader.onAbort = () => done(null);
 
@@ -132,40 +124,146 @@ async function performHandoff(
 		return loader;
 	});
 
-	const finalPrompt = buildFinalPrompt({
-		goal,
-		generatedPrompt: generatedPrompt ?? "",
-		parentSession: currentSessionFile,
-	});
-	const finalized = finalizeGeneratedHandoff({ generatedPrompt, finalPrompt });
-	if (!finalized.ok) {
+	if (result === null) {
 		return "Handoff cancelled.";
 	}
 
-	if (!fromTool && "newSession" in ctx) {
-		const result = await createHandoffSession(ctx as ExtensionCommandContext, currentSessionFile, finalized.finalPrompt);
-		if (result.cancelled) return;
-		ctx.ui.notify("Handoff created in the new session.", "info");
-		return undefined;
-	}
+	const finalPrompt = buildFinalPrompt({
+		goal,
+		generatedPrompt: result,
+		parentSession: currentSessionFile,
+	});
 
-	const queued = queueToolHandoff(
-		pendingStore,
-		{ finalPrompt: finalized.finalPrompt, parentSession: currentSessionFile },
-		(message, options) => {
-			pi.sendUserMessage(message, options);
-		},
-	);
-	if (!queued.ok) {
-		return queued.error;
+	if (!fromTool && "newSession" in ctx) {
+		// Command path: full reset via ctx.newSession()
+		const cmdCtx = ctx as ExtensionCommandContext;
+		const newSessionResult = await cmdCtx.newSession({ parentSession: currentSessionFile });
+		if (newSessionResult.cancelled) return;
+		pi.sendUserMessage(finalPrompt);
+	} else {
+		// Tool path: defer session switch to agent_end handler.
+		// We can't call ctx.newSession() from tool context (only ExtensionCommandContext
+		// has it). Instead, we store the handoff data and let the agent_end handler
+		// perform the session switch after the current agent loop completes.
+		// The context event handler ensures the LLM only sees new-session messages.
+		setPendingHandoff({ prompt: finalPrompt, parentSession: currentSessionFile });
 	}
 
 	return undefined;
 }
 
 export default function (pi: ExtensionAPI) {
-	const pendingStore = createPendingHandoffStore();
+	// Shared state for tool-path handoff coordination between handlers
+	let pendingHandoff: { prompt: string; parentSession: string | undefined } | null = null;
 
+	// Timestamp marking when the handoff session switch occurred.
+	// Used by the context event handler to filter out pre-handoff messages
+	// from agent.state.messages (which aren't cleared by the low-level switch).
+	let handoffTimestamp: number | null = null;
+
+	const setPendingHandoff = (v: typeof pendingHandoff) => {
+		pendingHandoff = v;
+	};
+
+	// --- Event handlers for tool-path handoff ---
+	//
+	// WHY IS THIS SO COMPLICATED?
+	//
+	// The /handoff command path is simple: it has ExtensionCommandContext with
+	// ctx.newSession() which does a full agent state reset (agent.reset() +
+	// UI clear + queue reset + event emission). But the tool path only gets
+	// ExtensionContext, which lacks newSession().
+	//
+	// Simpler approaches don't work:
+	// - sendUserMessage("/new") doesn't expand slash commands
+	// - There's no public API to programmatically invoke commands from tool context
+	// - sessionManager.newSession() only switches the session file; it does NOT
+	//   clear agent.state.messages, so the LLM would still see the entire old
+	//   conversation
+	// - We can't call agent.reset() from tool context either
+	//
+	// The solution uses three coordinated event handlers:
+	//
+	// 1. agent_end: Defers the session switch until after the agent loop completes.
+	//    This ensures the tool_result is recorded in the old session first, and
+	//    avoids concurrent _runLoop instances. Uses sessionManager.newSession()
+	//    for the file switch, then setTimeout(() => sendUserMessage()) to start
+	//    the new session in the next macrotask.
+	//
+	// 2. context: Filters pre-handoff messages using a timestamp. Since we can't
+	//    call agent.reset(), old messages remain in agent.state.messages, but the
+	//    context event's transformContext mechanism lets us control what the LLM
+	//    actually sees. This is safe because getContextUsage() uses the last
+	//    assistant's actual usage data (correct after the first response), and
+	//    auto-compaction checks assistant usage tokens rather than the messages
+	//    array length.
+	//
+	// 3. session_start: Clears the context filter when a proper session switch
+	//    occurs (e.g., /new), since those fully reset agent.state.messages and
+	//    our filter would incorrectly hide the new session's messages.
+
+	// After the agent loop ends, perform the deferred session switch.
+	// At this point:
+	// - The tool_result has been recorded in the OLD session
+	// - The agent is idle (isStreaming = false)
+	// - We can safely switch sessions and start a new prompt
+	pi.on("agent_end", (_event, ctx) => {
+		if (!pendingHandoff) return;
+
+		const { prompt, parentSession } = pendingHandoff;
+		pendingHandoff = null;
+
+		// Record timestamp BEFORE switching - all old messages have timestamps
+		// before this, all new messages will have timestamps after.
+		handoffTimestamp = Date.now();
+
+		// Low-level session switch: creates new session file, resets entries.
+		// This does NOT clear agent.state.messages (we handle that via context event).
+		(ctx.sessionManager as any).newSession({ parentSession });
+
+		// Defer sendUserMessage to the next macrotask to ensure the old agent
+		// loop's _runLoop cleanup has fully completed (isStreaming reset,
+		// runningPrompt resolved). Without this, we'd have two concurrent
+		// _runLoop instances with conflicting state.
+		setTimeout(() => {
+			pi.sendUserMessage(prompt);
+		}, 0);
+	});
+
+	// Before each LLM call, filter out pre-handoff messages.
+	// After a tool-path handoff, agent.state.messages still contains all old
+	// messages (since we can't call agent.reset()). The context event lets us
+	// replace what the LLM sees without affecting agent internals.
+	//
+	// This is safe because:
+	// - getContextUsage() uses the last assistant message's usage data, which
+	//   will reflect the small new-session context after the first response
+	// - Auto-compaction checks the assistant message's usage tokens, not
+	//   agent.state.messages, so won't trigger incorrectly
+	// - The session file only contains new-session entries (correct for
+	//   token/cost display and session persistence)
+	pi.on("context", (event) => {
+		const minTimestamp = handoffTimestamp;
+		if (minTimestamp === null) return;
+
+		const newMessages = event.messages.filter((m: any) => m.timestamp >= minTimestamp);
+		if (newMessages.length > 0) {
+			return { messages: newMessages };
+		}
+		// No messages pass the filter - shouldn't happen in normal flow,
+		// but don't break things by returning empty messages
+	});
+
+	// When a proper session switch occurs (e.g., /new, tree navigation, /switch),
+	// agent.state.messages is fully reset by AgentSession.newSession(). Clear our
+	// filter so we don't interfere with the properly-reset state.
+	pi.on("session_start", (event) => {
+		if (event.reason === "new" || event.reason === "resume" || event.reason === "fork") {
+			handoffTimestamp = null;
+		}
+	});
+
+	// /handoff command
 	pi.registerCommand("handoff", {
 		description: "Transfer context to a new focused session",
 		handler: async (args, ctx) => {
@@ -175,29 +273,14 @@ export default function (pi: ExtensionAPI) {
 				return;
 			}
 
-			const error = await performHandoff(pi, ctx, goal, pendingStore);
+			const error = await performHandoff(pi, ctx, goal, pendingHandoff, setPendingHandoff);
 			if (error) {
 				ctx.ui.notify(error, "error");
 			}
 		},
 	});
 
-	pi.registerCommand("__handoff-complete", {
-		description: "Complete a pending handoff",
-		handler: async (_args, ctx) => {
-			const result = await completePendingHandoff(pendingStore, async (pending) => {
-				return createHandoffSession(ctx, pending.parentSession, pending.finalPrompt);
-			});
-			if (!result.ok) {
-				ctx.ui.notify(result.error, "error");
-				return;
-			}
-			if (!result.cancelled) {
-				ctx.ui.notify("Handoff created in the new session.", "info");
-			}
-		},
-	});
-
+	// handoff tool (agent-callable)
 	pi.registerTool({
 		name: "handoff",
 		label: "Handoff",
@@ -206,10 +289,11 @@ export default function (pi: ExtensionAPI) {
 		parameters: Type.Object({
 			goal: Type.String({ description: "The goal/task for the new session" }),
 		}),
+
 		async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
-			const error = await performHandoff(pi, ctx, params.goal, pendingStore, true);
+			const error = await performHandoff(pi, ctx, params.goal, pendingHandoff, setPendingHandoff, true);
 			return {
-				content: [{ type: "text", text: error ?? "Queued /__handoff-complete as a follow-up command." }],
+				content: [{ type: "text", text: error ?? "Handoff initiated. The session will switch after the current turn completes." }],
 				details: { ok: error === undefined },
 			};
 		},
