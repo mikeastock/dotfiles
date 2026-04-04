@@ -96,6 +96,8 @@ export async function fetchAllContent(
 	);
 	results.push(...ghResults);
 
+	if (signal?.aborted) return results;
+
 	// Regular URLs: batch through Exa /contents
 	if (regularUrls.length > 0) {
 		try {

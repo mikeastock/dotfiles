@@ -67,7 +67,13 @@ export default function (pi: ExtensionAPI) {
 
 			const searchResults: QueryResultData[] = [];
 
+			let cancelled = false;
 			for (let i = 0; i < queryList.length; i++) {
+				if (signal?.aborted) {
+					cancelled = true;
+					break;
+				}
+
 				const query = queryList[i];
 				onUpdate?.({
 					content: [{ type: "text", text: `Searching ${i + 1}/${queryList.length}: "${query}"...` }],
@@ -92,6 +98,10 @@ export default function (pi: ExtensionAPI) {
 
 					searchResults.push({ query, answer: response.answer, results, error: null });
 				} catch (err) {
+					if (signal?.aborted) {
+						cancelled = true;
+						break;
+					}
 					const message = err instanceof Error ? err.message : String(err);
 					searchResults.push({ query, answer: "", results: [], error: message });
 				}
@@ -100,7 +110,15 @@ export default function (pi: ExtensionAPI) {
 			const sc = searchResults.filter(r => !r.error).length;
 			const tr = searchResults.reduce((sum, r) => sum + r.results.length, 0);
 
+			if (cancelled && searchResults.length === 0) {
+				return {
+					content: [{ type: "text", text: "Search cancelled." }],
+					details: { cancelled: true, queries: queryList, queryCount: queryList.length, successfulQueries: 0, totalResults: 0 },
+				};
+			}
+
 			let output = "";
+			if (cancelled) output += "*Search cancelled — showing partial results.*\n\n";
 			for (const { query, answer, results, error } of searchResults) {
 				if (queryList.length > 1) output += `## Query: "${query}"\n\n`;
 				if (error) output += `Error: ${error}\n\n`;
@@ -111,6 +129,7 @@ export default function (pi: ExtensionAPI) {
 			return {
 				content: [{ type: "text", text: output.trim() }],
 				details: {
+					cancelled,
 					queries: queryList,
 					queryCount: queryList.length,
 					successfulQueries: sc,
@@ -149,6 +168,7 @@ export default function (pi: ExtensionAPI) {
 				phase?: string;
 				progress?: number;
 				currentQuery?: string;
+				cancelled?: boolean;
 			};
 
 			if (isPartial) {
@@ -156,15 +176,20 @@ export default function (pi: ExtensionAPI) {
 				const bar = "\u2588".repeat(Math.floor(progress * 10)) + "\u2591".repeat(10 - Math.floor(progress * 10));
 				const query = details?.currentQuery || "";
 				const display = query.length > 40 ? query.slice(0, 37) + "..." : query;
-				return new Text(theme.fg("accent", `[${bar}] ${display}`), 0, 0);
+				return new Text(theme.fg("accent", `[${bar}] ${display}`) + theme.fg("dim", "  (esc to cancel)"), 0, 0);
+			}
+
+			if (details?.cancelled && (details?.totalResults ?? 0) === 0) {
+				return new Text(theme.fg("warning", "Cancelled"), 0, 0);
 			}
 
 			if (details?.error) {
 				return new Text(theme.fg("error", `Error: ${details.error}`), 0, 0);
 			}
 
+			const cancelledTag = details?.cancelled ? theme.fg("warning", " (cancelled)") : "";
 			const queryInfo = details?.queryCount === 1 ? "" : `${details?.successfulQueries}/${details?.queryCount} queries, `;
-			const statusLine = theme.fg("success", `${queryInfo}${details?.totalResults ?? 0} sources`);
+			const statusLine = theme.fg("success", `${queryInfo}${details?.totalResults ?? 0} sources`) + cancelledTag;
 
 			if (!expanded) {
 				const textContent = result.content.find((c) => c.type === "text")?.text || "";
@@ -209,6 +234,13 @@ export default function (pi: ExtensionAPI) {
 				};
 			}
 
+			if (signal?.aborted) {
+				return {
+					content: [{ type: "text", text: "Fetch cancelled." }],
+					details: { cancelled: true, urls: urlList, urlCount: urlList.length, successful: 0, totalChars: 0 },
+				};
+			}
+
 			onUpdate?.({
 				content: [{ type: "text", text: `Fetching ${urlList.length} URL(s)...` }],
 				details: { phase: "fetch", progress: 0 },
@@ -217,15 +249,25 @@ export default function (pi: ExtensionAPI) {
 			const fetchResults = await fetchAllContent(urlList, signal, {
 				forceClone: params.forceClone,
 			});
+
+			const cancelled = signal?.aborted ?? false;
 			const successful = fetchResults.filter((r) => !r.error).length;
 			const totalChars = fetchResults.reduce((sum, r) => sum + r.content.length, 0);
+
+			if (cancelled && successful === 0) {
+				return {
+					content: [{ type: "text", text: "Fetch cancelled." }],
+					details: { cancelled: true, urls: urlList, urlCount: urlList.length, successful: 0, totalChars: 0 },
+				};
+			}
 
 			if (urlList.length === 1) {
 				const result = fetchResults[0];
 				if (result.error) {
+					const isCancelled = cancelled || result.error === "Aborted";
 					return {
-						content: [{ type: "text", text: `Error: ${result.error}` }],
-						details: { urls: urlList, urlCount: 1, successful: 0, error: result.error },
+						content: [{ type: "text", text: isCancelled ? "Fetch cancelled." : `Error: ${result.error}` }],
+						details: { cancelled: isCancelled, urls: urlList, urlCount: 1, successful: 0, error: isCancelled ? undefined : result.error },
 					};
 				}
 
@@ -239,6 +281,7 @@ export default function (pi: ExtensionAPI) {
 			}
 
 			let output = "";
+			if (cancelled) output += "*Fetch cancelled — showing partial results.*\n\n";
 			for (const { url, title, content, error } of fetchResults) {
 				output += `## ${title || url}\n`;
 				output += `URL: ${url}\n\n`;
@@ -252,7 +295,7 @@ export default function (pi: ExtensionAPI) {
 
 			return {
 				content: [{ type: "text", text: output.trim() }],
-				details: { urls: urlList, urlCount: urlList.length, successful, totalChars },
+				details: { cancelled, urls: urlList, urlCount: urlList.length, successful, totalChars },
 			};
 		},
 
@@ -286,12 +329,17 @@ export default function (pi: ExtensionAPI) {
 				title?: string;
 				phase?: string;
 				progress?: number;
+				cancelled?: boolean;
 			};
 
 			if (isPartial) {
 				const progress = details?.progress ?? 0;
 				const bar = "\u2588".repeat(Math.floor(progress * 10)) + "\u2591".repeat(10 - Math.floor(progress * 10));
-				return new Text(theme.fg("accent", `[${bar}] ${details?.phase || "fetching"}`), 0, 0);
+				return new Text(theme.fg("accent", `[${bar}] ${details?.phase || "fetching"}`) + theme.fg("dim", "  (esc to cancel)"), 0, 0);
+			}
+
+			if (details?.cancelled && (details?.successful ?? 0) === 0) {
+				return new Text(theme.fg("warning", "Cancelled"), 0, 0);
 			}
 
 			if (details?.error) {
@@ -311,8 +359,9 @@ export default function (pi: ExtensionAPI) {
 				return new Text(statusLine + "\n" + theme.fg("dim", preview), 0, 0);
 			}
 
+			const cancelledTag = details?.cancelled ? theme.fg("warning", " (cancelled)") : "";
 			const countColor = (details?.successful ?? 0) > 0 ? "success" : "error";
-			const statusLine = theme.fg(countColor, `${details?.successful}/${details?.urlCount} URLs`) + theme.fg("muted", ` (${details?.totalChars ?? 0} chars)`);
+			const statusLine = theme.fg(countColor, `${details?.successful}/${details?.urlCount} URLs`) + theme.fg("muted", ` (${details?.totalChars ?? 0} chars)`) + cancelledTag;
 			if (!expanded) return new Text(statusLine, 0, 0);
 			const textContent = result.content.find((c) => c.type === "text")?.text || "";
 			const preview = textContent.length > 500 ? textContent.slice(0, 500) + "..." : textContent;
