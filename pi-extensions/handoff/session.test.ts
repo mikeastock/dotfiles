@@ -22,7 +22,9 @@ describe("handoff session seeding", () => {
     sm.appendMessage(buildInitialUserMessage("Carry this context forward", 123));
 
     const entries = sm.getEntries();
-    const messageEntries = entries.filter((entry: any) => entry.type === "message");
+    const messageEntries = entries.filter(
+      (entry): entry is Extract<(typeof entries)[number], { type: "message" }> => entry.type === "message",
+    );
     assert.equal(messageEntries.length, 1);
     assert.equal(messageEntries[0].message.role, "user");
     assert.deepEqual(messageEntries[0].message.content, [{ type: "text", text: "Carry this context forward" }]);
