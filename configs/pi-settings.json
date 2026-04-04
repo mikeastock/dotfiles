@@ -9,7 +9,6 @@
   "enabledModels": [
     "anthropic/claude-opus-4-6",
     "openai-codex/gpt-5.4",
-    "atlas/zai-org/glm-5-turbo",
     "fireworks/accounts/fireworks/routers/kimi-k2p5-turbo"
   ],
   "packages": [
