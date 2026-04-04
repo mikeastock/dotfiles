@@ -199,7 +199,7 @@ export default function (pi: ExtensionAPI) {
 	//    auto-compaction checks assistant usage tokens rather than the messages
 	//    array length.
 	//
-	// 3. session_switch: Clears the context filter when a proper session switch
+	// 3. session_start: Clears the context filter when a proper session switch
 	//    occurs (e.g., /new), since those fully reset agent.state.messages and
 	//    our filter would incorrectly hide the new session's messages.
 
@@ -258,8 +258,10 @@ export default function (pi: ExtensionAPI) {
 	// When a proper session switch occurs (e.g., /new, tree navigation, /switch),
 	// agent.state.messages is fully reset by AgentSession.newSession(). Clear our
 	// filter so we don't interfere with the properly-reset state.
-	pi.on("session_switch", () => {
-		handoffTimestamp = null;
+	pi.on("session_start", (event) => {
+		if (event.reason === "new" || event.reason === "resume" || event.reason === "fork") {
+			handoffTimestamp = null;
+		}
 	});
 
 	// /handoff command

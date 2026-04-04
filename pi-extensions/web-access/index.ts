@@ -22,8 +22,6 @@ export default function (pi: ExtensionAPI) {
 	// --- Session lifecycle ---
 
 	pi.on("session_start", async () => clearCloneCache());
-	pi.on("session_switch", async () => clearCloneCache());
-	pi.on("session_fork", async () => clearCloneCache());
 	pi.on("session_tree", async () => clearCloneCache());
 	pi.on("session_shutdown", () => clearCloneCache());
 

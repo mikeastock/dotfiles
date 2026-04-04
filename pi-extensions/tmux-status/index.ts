@@ -14,7 +14,6 @@ import type {
 	ExtensionAPI,
 	ExtensionContext,
 	SessionStartEvent,
-	SessionSwitchEvent,
 	BeforeAgentStartEvent,
 	AgentStartEvent,
 	AgentEndEvent,
@@ -231,16 +230,10 @@ export default function (pi: ExtensionAPI) {
 
 	// ── Event handlers ──
 
-	pi.on("session_start", async (_event: SessionStartEvent, ctx: ExtensionContext) => {
-		windowId = await resolveWindowId();
-		currentCwd = ctx.cwd;
-		await resetState("new");
-	});
-
-	pi.on("session_switch", async (event: SessionSwitchEvent, ctx: ExtensionContext) => {
+	pi.on("session_start", async (event: SessionStartEvent, ctx: ExtensionContext) => {
 		if (!windowId) windowId = await resolveWindowId();
 		currentCwd = ctx.cwd;
-		await resetState(event.reason === "new" ? "new" : "done");
+		await resetState(event.reason === "resume" || event.reason === "fork" ? "done" : "new");
 	});
 
 	pi.on("before_agent_start", async (_event: BeforeAgentStartEvent, _ctx: ExtensionContext) => {
