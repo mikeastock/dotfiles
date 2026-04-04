@@ -20,6 +20,7 @@ import { complete, type Message } from "@mariozechner/pi-ai";
 import type { ExtensionAPI, ExtensionCommandContext, ExtensionContext, SessionEntry } from "@mariozechner/pi-coding-agent";
 import { BorderedLoader, convertToLlm, serializeConversation } from "@mariozechner/pi-coding-agent";
 import { Type } from "@sinclair/typebox";
+import { buildFinalPrompt } from "./prompt.js";
 
 const SYSTEM_PROMPT = `You are a context transfer assistant. Given a conversation history and the user's goal for a new thread, generate a focused prompt that:
 
@@ -127,13 +128,11 @@ async function performHandoff(
 		return "Handoff cancelled.";
 	}
 
-	// Build the final prompt with user's goal first for easy identification
-	let finalPrompt = result;
-	if (currentSessionFile) {
-		finalPrompt = `${goal}\n\n/skill:session-query\n\n**Parent session:** \`${currentSessionFile}\`\n\n${result}`;
-	} else {
-		finalPrompt = `${goal}\n\n${result}`;
-	}
+	const finalPrompt = buildFinalPrompt({
+		goal,
+		generatedPrompt: result,
+		parentSession: currentSessionFile,
+	});
 
 	if (!fromTool && "newSession" in ctx) {
 		// Command path: full reset via ctx.newSession()
