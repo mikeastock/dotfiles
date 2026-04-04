@@ -28,10 +28,6 @@ extensions = [ "*" ]                                    # Install all extensions
 url = "https://github.com/steipete/agent-scripts"
 skills = [ "create-cli" ]
 
-["vercel-labs/agent-skills"]
-url = "https://github.com/vercel-labs/agent-skills"
-skills = [ "react-best-practices" ]
-
 ["openprose/prose"]
 url = "https://github.com/openprose/prose"
 skills = [ "open-prose" ]
