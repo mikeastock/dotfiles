@@ -59,3 +59,8 @@ subagents = [ "*" ]
 url = "git@github.com:rjs/shaping-skills.git"
 skills_path = "*"                                                # Skills are at root level
 skills = [ "shaping", "breadboarding", "breadboard-reflection" ]
+
+["mattpocock/skills"]
+url = "https://github.com/mattpocock/skills"
+skills_path = "*"                                                # Skills are at root level
+skills = [ "improve-codebase-architecture" ]

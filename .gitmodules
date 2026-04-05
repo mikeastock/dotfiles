@@ -19,3 +19,6 @@
 [submodule "plugins/rjs-shaping-skills"]
 	path = plugins/rjs-shaping-skills
 	url = git@github.com:rjs/shaping-skills.git
+[submodule "plugins/mattpocock-skills"]
+	path = plugins/mattpocock-skills
+	url = https://github.com/mattpocock/skills
