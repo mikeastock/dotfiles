@@ -1,3 +1,5 @@
+// Repo-native local version of:
+// https://github.com/ben-vargas/pi-packages/tree/main/packages/pi-openai-fast
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
