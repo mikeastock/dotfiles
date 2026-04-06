@@ -67,6 +67,7 @@ bin/pi
 ### Notable custom Pi extensions
 
 - `subagent` — vendored locally in `pi-extensions/subagent/` as the canonical subagent extension
+- `openai-fast` — local `/fast` toggle that applies OpenAI `service_tier=priority` for configured models
 
 ## Structure
 
