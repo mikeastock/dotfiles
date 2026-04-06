@@ -13,8 +13,7 @@
   ],
   "packages": [
     "https://github.com/davebcn87/pi-autoresearch",
-    "npm:pi-verbosity-control",
-    "npm:@benvargas/pi-openai-fast"
+    "npm:pi-verbosity-control"
   ],
   "theme": "catppuccin-mocha",
   "transport": "websocket"
