@@ -1,14 +1,28 @@
 # dotfiles
 
-Personal dotfiles for macOS, plus AI agent skills/extensions infrastructure migrated from `dotagents`.
+Personal dotfiles for macOS, with Ubuntu 24.x/Linuxbrew support for the shell, tmux, and agent-tooling setup.
 
-## Quick Start (macOS)
+## Quick Start
+
+### macOS
 
 ```bash
-git clone git@github.com:mikeastock/dotfiles.git ~/code/personal/dotfiles
+git clone https://github.com/mikeastock/dotfiles.git ~/code/personal/dotfiles
 cd ~/code/personal/dotfiles
-./setup
+make dot-all
 ```
+
+### Ubuntu 24.x
+
+Install Homebrew/Linuxbrew first, then:
+
+```bash
+git clone https://github.com/mikeastock/dotfiles.git ~/code/personal/dotfiles
+cd ~/code/personal/dotfiles
+make dot-all
+```
+
+`make dot-all` skips macOS-only defaults on Linux.
 
 ## Agent Skills / Extensions Tooling
 
@@ -18,6 +32,7 @@ This repo also contains reusable skills, prompt templates, and extensions for Am
 
 - Python 3.11+
 - Git
+- Homebrew or Linuxbrew for `make dot-install`
 
 ### Agent commands
 
@@ -67,6 +82,20 @@ dotfiles/
 ├── tests/                   # agent tooling tests
 └── Makefile                 # dotfiles + agent commands
 ```
+
+## Ubuntu notes
+
+Recommended apt packages before or after `make dot-all`:
+
+```bash
+sudo apt update
+sudo apt install -y fish tmux ripgrep fd-find xclip wl-clipboard xsel fonts-firacode
+```
+
+- Linux clipboard integration in tmux uses the first available tool from: `wl-copy`, `xclip`, `xsel`
+- `tmux-mem-cpu-load` is optional; the tmux status bar falls back to `uptime`
+- Install the configured fonts (`Fira Code` / `FiraCode Nerd Font`) if you want terminal rendering to match macOS
+- If you prefer one package manager across macOS and Linux, install Homebrew/Linuxbrew and use `make dot-install`
 
 ## Notes
 

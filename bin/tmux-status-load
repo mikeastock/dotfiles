@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if command -v tmux-mem-cpu-load >/dev/null 2>&1; then
+  exec tmux-mem-cpu-load --interval 2 --graph-lines 0 --averages-count 0
+fi
+
+if command -v uptime >/dev/null 2>&1; then
+  uptime | sed 's/^.*load averages\{0,1\}: /load /'
+  exit 0
+fi
+
+echo "load unavailable"
