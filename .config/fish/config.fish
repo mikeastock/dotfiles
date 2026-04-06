@@ -160,8 +160,6 @@ if test -d ~/.lmstudio
   fish_add_path ~/.lmstudio/bin
 end
 
-###### Orbstack
-source ~/.orbstack/shell/init2.fish 2>/dev/null || :
 
 ###### History Search (atuin)
 if type -q atuin
