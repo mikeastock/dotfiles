@@ -21,6 +21,7 @@ import type { ExtensionAPI, ExtensionCommandContext, ExtensionContext, SessionEn
 import { BorderedLoader, convertToLlm, serializeConversation } from "@mariozechner/pi-coding-agent";
 import { Type } from "@sinclair/typebox";
 
+import { getEffectiveHandoffOptions, type HandoffOptions } from "./lib/effective-options.js";
 import { loadModeSpec } from "./lib/mode-utils.js";
 
 // Cross-session communication for command-path handoff.
@@ -106,11 +107,6 @@ async function generateContextSummary(
 		.join("\n");
 }
 
-type HandoffOptions = {
-	mode?: string;
-	model?: string;
-};
-
 /**
  * Apply -mode and -model options after a session switch.
  * For -mode, reads mode spec from modes.json and applies model+thinking.
@@ -191,6 +187,10 @@ async function performHandoff(
 	}
 
 	const currentSessionFile = ctx.sessionManager.getSessionFile();
+	const effectiveOptions = getEffectiveHandoffOptions(
+		options,
+		ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : undefined,
+	);
 
 	// Generate the handoff prompt with loader UI
 	const result = await ctx.ui.custom<string | null>((tui, theme, _kb, done) => {
@@ -234,7 +234,7 @@ async function performHandoff(
 		// stash the prompt on globalThis for the new instance's session_start
 		// handler to pick up and send.
 		const cmdCtx = ctx as ExtensionCommandContext;
-		setPendingHandoffGlobal({ prompt: finalPrompt, options });
+		setPendingHandoffGlobal({ prompt: finalPrompt, options: effectiveOptions });
 		const newSessionResult = await cmdCtx.newSession({ parentSession: currentSessionFile });
 		if (newSessionResult.cancelled) {
 			setPendingHandoffGlobal(null);
@@ -248,7 +248,7 @@ async function performHandoff(
 		// has it). Instead, we store the handoff data and let the agent_end handler
 		// perform the session switch after the current agent loop completes.
 		// The context event handler ensures the LLM only sees new-session messages.
-		setPendingHandoff({ prompt: finalPrompt, parentSession: currentSessionFile, options });
+		setPendingHandoff({ prompt: finalPrompt, parentSession: currentSessionFile, options: effectiveOptions });
 	}
 
 	return undefined;
