@@ -1,6 +1,6 @@
 # dotfiles
 
-Personal dotfiles for macOS and OrbStack Linux VMs, plus AI agent skills/extensions infrastructure migrated from `dotagents`.
+Personal dotfiles for macOS, plus AI agent skills/extensions infrastructure migrated from `dotagents`.
 
 ## Quick Start (macOS)
 
@@ -9,17 +9,6 @@ git clone git@github.com:mikeastock/dotfiles.git ~/code/personal/dotfiles
 cd ~/code/personal/dotfiles
 ./setup
 ```
-
-## OrbStack VM Setup
-
-For setting up a consistent dev environment in OrbStack Linux VMs:
-
-```bash
-cd ~/code/personal/dotfiles/orb-vm
-./setup-orb-vm.sh ubuntu
-```
-
-See [orb-vm/README.md](orb-vm/README.md) for full documentation.
 
 ## Agent Skills / Extensions Tooling
 
@@ -69,7 +58,6 @@ bin/pi
 ```text
 dotfiles/
 ├── .config/                 # shell/editor/terminal configs
-├── orb-vm/                  # OrbStack VM setup
 ├── skills/                  # custom agent skills
 ├── pi-extensions/           # Pi extensions
 ├── pi-themes/               # Pi themes
