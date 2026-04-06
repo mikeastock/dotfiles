@@ -21,6 +21,7 @@ import type { ExtensionAPI, ExtensionCommandContext, ExtensionContext, SessionEn
 import { BorderedLoader, convertToLlm, serializeConversation } from "@mariozechner/pi-coding-agent";
 import { Type } from "@sinclair/typebox";
 
+import { buildHandoffActivityEvent, HANDOFF_ACTIVITY_END_EVENT, HANDOFF_ACTIVITY_START_EVENT, type HandoffActivityPhase } from "./events.js";
 import { getEffectiveHandoffOptions, type HandoffOptions } from "./lib/effective-options.js";
 import { loadModeSpec } from "./lib/mode-utils.js";
 
@@ -160,6 +161,10 @@ async function applyHandoffOptions(
 /**
  * Core handoff logic. Returns an error string on failure, or undefined on success.
  */
+const emitHandoffActivity = (pi: ExtensionAPI, eventName: string, phase: HandoffActivityPhase) => {
+	pi.events.emit(eventName, buildHandoffActivityEvent({ phase }));
+};
+
 async function performHandoff(
 	pi: ExtensionAPI,
 	ctx: ExtensionContext,
@@ -192,6 +197,8 @@ async function performHandoff(
 		ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : undefined,
 	);
 
+	emitHandoffActivity(pi, HANDOFF_ACTIVITY_START_EVENT, "generation");
+
 	// Generate the handoff prompt with loader UI
 	const result = await ctx.ui.custom<string | null>((tui, theme, _kb, done) => {
 		const loader = new BorderedLoader(tui, theme, `Generating handoff prompt...`);
@@ -214,6 +221,8 @@ async function performHandoff(
 
 		return loader;
 	});
+
+	emitHandoffActivity(pi, HANDOFF_ACTIVITY_END_EVENT, "generation");
 
 	if (result === null) {
 		return "Handoff cancelled.";
@@ -337,7 +346,10 @@ export default function (pi: ExtensionAPI) {
 		setTimeout(() => {
 			applyHandoffOptions(pi, ctx, options)
 				.catch((err) => console.error("Handoff option apply failed:", err))
-				.then(() => pi.sendUserMessage(prompt));
+				.then(() => {
+					emitHandoffActivity(pi, HANDOFF_ACTIVITY_START_EVENT, "seeding");
+					pi.sendUserMessage(prompt);
+				});
 		}, 0);
 	});
 
@@ -379,8 +391,14 @@ export default function (pi: ExtensionAPI) {
 			const pending = getPendingHandoffGlobal();
 			if (pending) {
 				setPendingHandoffGlobal(null);
-				await applyHandoffOptions(pi, ctx, pending.options);
-				pi.sendUserMessage(pending.prompt);
+				setTimeout(() => {
+					applyHandoffOptions(pi, ctx, pending.options)
+						.catch((err) => console.error("Handoff option apply failed:", err))
+						.then(() => {
+							emitHandoffActivity(pi, HANDOFF_ACTIVITY_START_EVENT, "seeding");
+							pi.sendUserMessage(pending.prompt);
+						});
+				}, 0);
 			}
 		}
 	});

@@ -33,4 +33,23 @@ describe("TmuxStatusState", () => {
 		state.handleAsyncEnd("run-1", "completed");
 		assert.equal(state.handleAsyncEnd("run-1", "completed"), null);
 	});
+
+	it("treats handoff activity as running until it ends", () => {
+		const state = new TmuxStatusState();
+
+		state.reset("new");
+		assert.equal(state.startExternalActivity("handoff"), "running");
+		assert.equal(state.getIdleState(), "running");
+		assert.equal(state.endExternalActivity("handoff"), "new");
+	});
+
+	it("keeps running while handoff activity overlaps async subagent work", () => {
+		const state = new TmuxStatusState();
+
+		state.reset("done");
+		state.startExternalActivity("handoff");
+		state.handleAsyncStart("run-1");
+		assert.equal(state.endExternalActivity("handoff"), "running");
+		assert.equal(state.handleAsyncEnd("run-1", "completed"), "done");
+	});
 });

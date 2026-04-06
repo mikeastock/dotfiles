@@ -3,13 +3,17 @@ export type AsyncSubagentStatus = "completed" | "failed";
 
 type TerminalState = Extract<StatusState, "new" | "done" | "failed">;
 
+type ExternalActivity = "handoff";
+
 export class TmuxStatusState {
 	private readonly activeAsyncRunIds = new Set<string>();
+	private readonly externalActivities = new Set<ExternalActivity>();
 	private terminalState: TerminalState = "new";
 	private asyncFailureOccurred = false;
 
 	reset(next: TerminalState): StatusState {
 		this.activeAsyncRunIds.clear();
+		this.externalActivities.clear();
 		this.terminalState = next;
 		this.asyncFailureOccurred = false;
 		return next;
@@ -32,8 +36,20 @@ export class TmuxStatusState {
 		return this.getIdleState();
 	}
 
+	startExternalActivity(activity: ExternalActivity): StatusState | null {
+		if (this.externalActivities.has(activity)) return null;
+		this.externalActivities.add(activity);
+		return "running";
+	}
+
+	endExternalActivity(activity: ExternalActivity): StatusState | null {
+		if (!this.externalActivities.has(activity)) return null;
+		this.externalActivities.delete(activity);
+		return this.getIdleState();
+	}
+
 	getIdleState(): StatusState {
-		if (this.activeAsyncRunIds.size > 0) return "running";
+		if (this.activeAsyncRunIds.size > 0 || this.externalActivities.size > 0) return "running";
 		if (this.asyncFailureOccurred) return "failed";
 		return this.terminalState;
 	}

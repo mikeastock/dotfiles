@@ -26,6 +26,7 @@ import type {
 import type { StopReason } from "@mariozechner/pi-ai";
 import { execFile } from "node:child_process";
 import { basename } from "node:path";
+import { HANDOFF_ACTIVITY_END_EVENT, HANDOFF_ACTIVITY_START_EVENT, type HandoffActivityEvent } from "../handoff/events.js";
 import { SUBAGENT_RUN_END_EVENT, SUBAGENT_RUN_START_EVENT, type SubagentRunEndEvent, type SubagentRunStartEvent } from "../subagent/events.js";
 import { TmuxStatusState, type StatusState } from "./state.js";
 
@@ -228,6 +229,12 @@ export default function (pi: ExtensionAPI) {
 				: false;
 	};
 
+	const isHandoffActivityEvent = (data: unknown): data is HandoffActivityEvent => {
+		if (!data || typeof data !== "object") return false;
+		const event = data as Record<string, unknown>;
+		return event.phase === "generation" || event.phase === "seeding";
+	};
+
 	// ── Event handlers ──
 
 	pi.on("session_start", async (event: SessionStartEvent, ctx: ExtensionContext) => {
@@ -284,6 +291,21 @@ export default function (pi: ExtensionAPI) {
 		}
 
 		await applyTerminalState("done");
+	});
+
+	pi.events.on(HANDOFF_ACTIVITY_START_EVENT, async (data: unknown) => {
+		if (!isHandoffActivityEvent(data)) return;
+		const next = statusTracker.startExternalActivity("handoff");
+		if (!next || running || awaitingAskUserQuestion) return;
+		clearStallTimeout();
+		await setState(next);
+	});
+
+	pi.events.on(HANDOFF_ACTIVITY_END_EVENT, async (data: unknown) => {
+		if (!isHandoffActivityEvent(data)) return;
+		const next = statusTracker.endExternalActivity("handoff");
+		if (!next || running || awaitingAskUserQuestion) return;
+		await setState(next);
 	});
 
 	pi.events.on(SUBAGENT_RUN_START_EVENT, async (data: unknown) => {
