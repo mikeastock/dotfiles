@@ -10,8 +10,32 @@ set -gx OBJC_DISABLE_INITIALIZE_FORK_SAFETY 'YES'
 set -gx MINIO_ROOT_USER access_key_id
 set -gx MINIO_ROOT_PASSWORD secret_access_key
 
+function __load_env_file --argument-names env_file
+  test -f "$env_file"
+  or return
+
+  while read -l line
+    set line (string trim -- "$line")
+
+    if test -z "$line"
+      continue
+    end
+
+    if string match -qr '^#' -- "$line"
+      continue
+    end
+
+    if not string match -qr '^[A-Za-z_][A-Za-z0-9_]*=' -- "$line"
+      continue
+    end
+
+    set -l parts (string split -m 1 '=' -- "$line")
+    set -gx "$parts[1]" "$parts[2]"
+  end < "$env_file"
+end
+
 # Load ~/.env
-export (grep "^[^#]" ~/.env | xargs -L 1)
+__load_env_file ~/.env
 
 ####### ALIASES
 
@@ -115,10 +139,12 @@ end
 ####### PATH SETUP
 
 ####### Homebrew (macOS) / Linuxbrew (Linux)
-if test -d /opt/homebrew
-  fish_add_path /opt/homebrew/bin
-else if test -d /home/linuxbrew/.linuxbrew
+if test -x /opt/homebrew/bin/brew
+  eval (/opt/homebrew/bin/brew shellenv)
+else if test -x /home/linuxbrew/.linuxbrew/bin/brew
   eval (/home/linuxbrew/.linuxbrew/bin/brew shellenv)
+else if type -q brew
+  eval (brew shellenv)
 end
 
 ####### Tailscale
@@ -127,8 +153,10 @@ if test -d "/Applications/Tailscale.app/Contents/MacOS"
 end
 
 ####### Mise
-set -g MISE_FISH_AUTO_ACTIVATE 0
-mise activate fish | source
+if type -q mise
+  set -g MISE_FISH_AUTO_ACTIVATE 0
+  mise activate fish | source
+end
 
 # Local bin dirs - Added after Mise so that these take precedence
 fish_add_path ~/.local/bin

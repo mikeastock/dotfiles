@@ -6,6 +6,7 @@
 
 PYTHON := python3
 BUILD_SCRIPT := $(CURDIR)/scripts/build.py
+UNAME_S := $(shell uname -s)
 
 # Home directory symlinks
 HOME_LINKS := .gitconfig .ideavimrc .psqlrc .tmux.conf .tmuxinator .vscode
@@ -14,7 +15,7 @@ HOME_LINKS := .gitconfig .ideavimrc .psqlrc .tmux.conf .tmuxinator .vscode
 CONFIG_DIRS := alacritty stylua lvim zellij direnv atuin ghostty
 
 .PHONY: all install install-non-interactive install-skills install-extensions install-prompts install-subagents install-themes install-configs build clean help submodule-init plugin-update check-python \
-	dot-all dot-install dot-home-symlinks dot-config-symlinks dot-macos-defaults dot-clean
+	dot-all dot-install dot-home-symlinks dot-config-symlinks dot-platform-defaults dot-macos-defaults dot-clean
 
 all: help
 
@@ -36,9 +37,10 @@ help:
 	@echo ""
 	@echo "Dotfiles:"
 	@echo "  make dot-all                Run all dotfile setup tasks"
-	@echo "  make dot-install            Install required Homebrew packages"
+	@echo "  make dot-install            Install required Homebrew/Linuxbrew packages"
 	@echo "  make dot-home-symlinks      Symlink dotfiles to home directory"
 	@echo "  make dot-config-symlinks    Symlink .config files and directories"
+	@echo "  make dot-platform-defaults  Apply supported platform defaults"
 	@echo "  make dot-macos-defaults     Set macOS defaults"
 	@echo "  make dot-clean              Remove all managed dotfile symlinks"
 	@echo ""
@@ -106,13 +108,21 @@ endef
 
 # Dotfiles targets
 
-dot-all: dot-install dot-home-symlinks dot-config-symlinks dot-macos-defaults
+dot-all: dot-install dot-home-symlinks dot-config-symlinks dot-platform-defaults
 
-# Install required Homebrew packages from Brewfile
+# Install required Homebrew/Linuxbrew packages from Brewfile
 dot-install:
-	@which brew >/dev/null 2>&1 || (echo "✗ Error: Homebrew not installed"; exit 1)
+	@which brew >/dev/null 2>&1 || (echo "✗ Error: Homebrew/Linuxbrew not installed"; exit 1)
 	@brew bundle --file=$(CURDIR)/Brewfile
 	@echo "✓ Brew packages installed"
+
+# Apply platform-specific defaults when supported
+dot-platform-defaults:
+ifeq ($(UNAME_S),Darwin)
+	@$(MAKE) dot-macos-defaults
+else
+	@echo "✓ No platform defaults to apply for $(UNAME_S)"
+endif
 
 # Symlink dotfiles to home directory
 dot-home-symlinks:
@@ -222,6 +232,10 @@ dot-clean:
 
 # Set macOS defaults
 dot-macos-defaults:
+	@if [ "$(UNAME_S)" != "Darwin" ]; then \
+		echo "✗ Error: dot-macos-defaults is only supported on macOS"; \
+		exit 1; \
+	fi
 	@# Disable shadows on window screenshots
 	@defaults write com.apple.screencapture disable-shadow -bool true
 	@echo "✓ macOS defaults set"

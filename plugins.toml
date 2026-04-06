@@ -56,6 +56,6 @@ skills_skip_agents = [ "amp" ] # Skip buildrtech skills for Amp
 subagents = [ "*" ]
 
 ["rjs/shaping-skills"]
-url = "git@github.com:rjs/shaping-skills.git"
+url = "https://github.com/rjs/shaping-skills.git"
 skills_path = "*"                                                # Skills are at root level
 skills = [ "shaping", "breadboarding", "breadboard-reflection" ]
