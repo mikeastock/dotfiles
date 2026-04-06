@@ -1,9 +1,9 @@
 {
-  "lastChangelogVersion": "0.64.0",
-  "defaultProvider": "anthropic",
-  "defaultModel": "claude-opus-4-6",
+  "lastChangelogVersion": "0.65.2",
+  "defaultProvider": "openai-codex",
+  "defaultModel": "gpt-5.4",
   "hideThinkingBlock": false,
-  "defaultThinkingLevel": "high",
+  "defaultThinkingLevel": "medium",
   "steeringMode": "all",
   "doubleEscapeAction": "tree",
   "enabledModels": [
@@ -13,7 +13,8 @@
   ],
   "packages": [
     "https://github.com/davebcn87/pi-autoresearch",
-    "npm:pi-verbosity-control"
+    "npm:pi-verbosity-control",
+    "npm:@benvargas/pi-openai-fast"
   ],
   "theme": "catppuccin-mocha",
   "transport": "websocket"
