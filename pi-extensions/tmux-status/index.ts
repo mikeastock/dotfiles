@@ -113,7 +113,9 @@ export default function (pi: ExtensionAPI) {
 
 		const dir = basename(cwd);
 		try {
-			const branch = await execCommand("git", ["-C", cwd, "symbolic-ref", "--short", "HEAD"]);
+			let branch = await execCommand("git", ["-C", cwd, "symbolic-ref", "--short", "HEAD"]);
+			if (!branch) branch = await execCommand("git", ["-C", cwd, "rev-parse", "--short", "HEAD"]);
+			if (branch && branch.length > 20) branch = branch.slice(0, 19) + "…";
 			return branch ? `${dir} ${branch}` : dir;
 		} catch {
 			return dir;

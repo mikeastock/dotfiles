@@ -202,12 +202,17 @@ function __workspace_git_branch
   or return
 
   set -l branch (command git symbolic-ref --short HEAD 2>/dev/null)
-  if test -n "$branch"
-    echo $branch
-    return
+  if test -z "$branch"
+    set branch (command git rev-parse --short HEAD 2>/dev/null)
   end
 
-  command git rev-parse --short HEAD 2>/dev/null
+  if test -n "$branch"; and test (string length "$branch") -gt 20
+    set branch (string sub -l 19 "$branch")…
+  end
+
+  if test -n "$branch"
+    echo $branch
+  end
 end
 
 function __workspace_repo_name --argument-names dir
@@ -261,7 +266,12 @@ function _update_sibling_tmux_windows --argument-names repo_root branch
     set -l pane_repo (command git -C "$pane_path" rev-parse --show-toplevel 2>/dev/null)
     if test "$pane_repo" = "$repo_root"
       set -l dir (__workspace_repo_name (basename "$pane_path"))
-      command tmux rename-window -t "$win_id" "$dir $branch"
+      set -l branch (__workspace_git_branch)
+      if test -n "$branch"
+        command tmux rename-window -t "$win_id" "$dir $branch"
+      else
+        command tmux rename-window -t "$win_id" "$dir"
+      end
     end
   end
 end
