@@ -11,8 +11,21 @@ export default function (pi: ExtensionAPI) {
         name: "MiniMax M2.7 (Novita)",
         reasoning: false,
         input: ["text"],
-        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-        contextWindow: 131072,
+        cost: { input: 0.3, output: 1.2, cacheRead: 0.06, cacheWrite: 0 },
+        contextWindow: 204800,
+        maxTokens: 131072,
+        compat: {
+          supportsDeveloperRole: false,
+          maxTokensField: "max_tokens",
+        },
+      },
+      {
+        id: "zai-org/glm-5.1",
+        name: "GLM 5.1 (Novita)",
+        reasoning: true,
+        input: ["text"],
+        cost: { input: 1.4, output: 4.4, cacheRead: 0.26, cacheWrite: 0 },
+        contextWindow: 204800,
         maxTokens: 131072,
         compat: {
           supportsDeveloperRole: false,
