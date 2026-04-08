@@ -4,6 +4,17 @@
 **ALWAYS** use `rg` instead of `grep`
 **ALWAYS** set a non-interactive editor env for git continuation commands (e.g. `GIT_EDITOR=true`) when running commands like `git rebase --continue`, `git merge --continue`, or similar.
 
+## Language Guidance
+
+### Ruby
+
+- Prefer straightforward Ruby control flow over defensive branching when invariants are already enforced upstream.
+- In Ruby services, optimize for linear readability: fetch records, transform data, execute side effects.
+- Keep service object interfaces lean: remove unused params/dependencies instead of carrying them forward.
+- Prefer intent-revealing private method names over clever abstractions.
+- Prefer memoization for DB-backed lookups inside a service/object lifecycle to prevent accidental repeat queries and N+1-style footguns.
+- Only use trailing conditionals (`return if ...`, `raise if ...`) for early returns/guards. Never use them for real logic checks; use standard `if`/`unless` blocks instead.
+
 ## Hard-Cut Product Policy
 
 - This application currently has no external installed user base; optimize for one canonical current-state implementation, not compatibility with historical local states.
@@ -21,7 +32,6 @@
   - why it exists
   - why the canonical path is insufficient
   - exact deletion criteria
-  - the ADR/task that tracks its removal
 - Default stance across the app: delete old-state compatibility code rather than carrying it forward.
 
 ## Background Processes with zmx
@@ -62,30 +72,12 @@
 - **No breadcrumbs**. If you delete or move code, do not leave a comment in the old place. No "// moved to X", no "relocated". Just remove it.
 - **Think hard, do not lose the plot**.
 - Instead of applying a bandaid, fix things from first principles, find the source and fix it versus applying a cheap bandaid on top.
-- When taking on new work, follow this order:
-  1. Think about the architecture.
-  1. Research official docs, blogs, or papers on the best architecture.
-  1. Review the existing codebase.
-  1. Compare the research with the codebase to choose the best fit.
-  1. Implement the fix or ask about the tradeoffs the user is willing to make.
+- Fix small papercuts when you trip over them. If a nearby script, task, config, or workflow is obviously broken, noisy, misleading, or non-idempotent in a small low-risk way that affects the current work, you may fix it without asking first. Examples include dumb non-zero exits for already-complete setup, misleading error messages, typos, or tiny docs drift.
+- Raise larger cleanups before expanding scope. If the better fix turns into a broader refactor, changes architecture or user-visible behavior, touches multiple subsystems, adds dependencies, or needs substantial new testing, stop and ask the user before continuing.
 - Write idiomatic, simple, maintainable code. Always ask yourself if this is the most simple intuitive solution to the problem.
 - Leave each repo better than how you found it. If something is giving a code smell, fix it for the next person.
 - Clean up unused code ruthlessly. If a function no longer needs a parameter or a helper is dead, delete it and update the callers instead of letting the junk linger.
 - **Search before pivoting**. If you are stuck or uncertain, do a quick web search for official docs or specs, then continue with the current approach. Do not change direction unless asked.
-- If code is very confusing or hard to understand:
-  1. Try to simplify it.
-  1. Add an ASCII art diagram in a code comment if it would help.
-
-## Language Guidance
-
-### Ruby
-
-- Prefer straightforward Ruby control flow over defensive branching when invariants are already enforced upstream.
-- In Ruby services, optimize for linear readability: fetch records, transform data, execute side effects.
-- Keep service object interfaces lean: remove unused params/dependencies instead of carrying them forward.
-- Prefer intent-revealing private method names over clever abstractions.
-- Prefer memoization for DB-backed lookups inside a service/object lifecycle to prevent accidental repeat queries and N+1-style footguns.
-- Only use trailing conditionals (`return if ...`, `raise if ...`) for early returns/guards. Never use them for real logic checks; use standard `if`/`unless` blocks instead.
 
 ## Testing Philosophy
 
