@@ -3,6 +3,28 @@ import { describe, it } from "node:test";
 import { _test } from "./index.js";
 
 describe("openai-fast", () => {
+	it("builds footer right-side candidates with thinking level", () => {
+		assert.deepEqual(
+			_test.buildFooterRightSideCandidates(
+				{ provider: "openai-codex", id: "gpt-5.4", reasoning: true } as any,
+				"medium",
+			),
+			["(openai-codex) gpt-5.4 • medium", "gpt-5.4 • medium"],
+		);
+	});
+
+	it("injects FAST inline after the model thinking section", () => {
+		assert.equal(
+			_test.injectFastIntoFooterLine(
+				"cwd branch                      (openai-codex) gpt-5.4 • medium",
+				{ provider: "openai-codex", id: "gpt-5.4", reasoning: true } as any,
+				"medium",
+				"⚡",
+			),
+			"cwd branch                    (openai-codex) gpt-5.4 • medium • ⚡",
+		);
+	});
+
 	it("parses supported model keys", () => {
 		assert.deepEqual(_test.parseSupportedModelKey("openai/gpt-5.4"), {
 			provider: "openai",
