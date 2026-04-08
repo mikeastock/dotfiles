@@ -194,6 +194,11 @@ test_make_install_extensions() {
         TESTS_PASSED=$((TESTS_PASSED + 1))
     fi
 
+    assert_output_contains "$output" "handoff (from buildrtech/dotagents)" "handoff comes from buildrtech plugin"
+    assert_output_contains "$output" "session-query (from buildrtech/dotagents)" "session-query comes from buildrtech plugin"
+
+    assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/handoff" "handoff extension installed"
+    assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/session-query" "session-query extension installed"
     assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/tmux-status" "tmux-status extension installed"
     assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/web-access" "web-access extension installed"
     assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/subagent" "subagent extension installed"

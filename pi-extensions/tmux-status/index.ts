@@ -26,9 +26,15 @@ import type {
 import type { StopReason } from "@mariozechner/pi-ai";
 import { execFile } from "node:child_process";
 import { basename } from "node:path";
-import { HANDOFF_ACTIVITY_END_EVENT, HANDOFF_ACTIVITY_START_EVENT, type HandoffActivityEvent } from "../handoff/events.js";
 import { SUBAGENT_RUN_END_EVENT, SUBAGENT_RUN_START_EVENT, type SubagentRunEndEvent, type SubagentRunStartEvent } from "../subagent/events.js";
 import { TmuxStatusState, type StatusState } from "./state.js";
+
+const HANDOFF_ACTIVITY_START_EVENT = "handoff:activity_start";
+const HANDOFF_ACTIVITY_END_EVENT = "handoff:activity_end";
+
+type HandoffActivityEvent = {
+	phase: "generation" | "seeding";
+};
 
 const STATUS_ICON: Record<StatusState, string> = {
 	new: "\u{f011b}",          // 󰄛 nf-md-robot

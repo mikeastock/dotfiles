@@ -53,6 +53,8 @@ skills = [
   "fetch-ci-build",
 ]
 skills_skip_agents = [ "amp" ] # Skip buildrtech skills for Amp
+extensions_path = "pi-extensions/*"
+extensions = [ "handoff", "session-query" ]
 subagents = [ "*" ]
 
 ["rjs/shaping-skills"]

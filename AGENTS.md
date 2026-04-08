@@ -27,7 +27,6 @@ agents/
 │   └── <skill>-<agent>.md          # Appended to SKILL.md during build
 ├── pi-extensions/                  # Custom Pi extensions (local)
 │   ├── AskUserQuestion/
-│   ├── handoff/
 │   ├── protected-paths/
 │   └── <extension-name>/index.ts
 ├── scripts/
