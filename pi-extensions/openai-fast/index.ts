@@ -94,12 +94,11 @@ function getFastIndicator(
 	active: boolean,
 	supportedModels: FastSupportedModel[],
 ): string | undefined {
-	if (!active) {
+	if (!active || !isFastSupportedModel(ctx.model, supportedModels)) {
 		return undefined;
 	}
 
-	const color = isFastSupportedModel(ctx.model, supportedModels) ? "success" : "warning";
-	return ctx.ui.theme.fg(color, "⚡");
+	return ctx.ui.theme.fg("success", "⚡");
 }
 
 function buildFooterRightSideCandidates(model: FooterModel, thinkingLevel: string | undefined): string[] {
