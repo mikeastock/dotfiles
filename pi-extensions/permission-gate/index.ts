@@ -9,10 +9,71 @@
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 
+const SAFE_TMP_PREFIXES = ["/tmp", "tmp/", ".tmp"];
+const RECURSIVE_RM_PATTERN = /\brm\s+(-rf?|--recursive)/i;
+
+function tokenizeCommand(command: string): string[] {
+	return command.match(/'[^']*'|"(?:\\.|[^"\\])*"|[^\s]+/g) ?? [];
+}
+
+function stripWrappingQuotes(token: string): string {
+	if (token.length < 2) return token;
+
+	const first = token[0];
+	const last = token[token.length - 1];
+	if ((first === '"' && last === '"') || (first === "'" && last === "'")) {
+		return token.slice(1, -1);
+	}
+
+	return token;
+}
+
+function getRecursiveRmTargets(command: string): string[] | null {
+	const tokens = tokenizeCommand(command.trim());
+	if (tokens[0] !== "rm") return null;
+
+	let isRecursive = false;
+	let parsingOptions = true;
+	const targets: string[] = [];
+
+	for (const rawToken of tokens.slice(1)) {
+		const token = stripWrappingQuotes(rawToken);
+
+		if (parsingOptions && token === "--") {
+			parsingOptions = false;
+			continue;
+		}
+
+		if (parsingOptions && token.startsWith("-") && token !== "-") {
+			if (token.startsWith("--")) {
+				if (token === "--recursive") {
+					isRecursive = true;
+				}
+			} else if (/[rR]/.test(token.slice(1))) {
+				isRecursive = true;
+			}
+			continue;
+		}
+
+		parsingOptions = false;
+		targets.push(token);
+	}
+
+	if (!isRecursive || targets.length === 0) return null;
+	return targets;
+}
+
+export function isSafeTmpRmCommand(command: string): boolean {
+	const targets = getRecursiveRmTargets(command);
+	if (!targets) return false;
+
+	return targets.every((target) => SAFE_TMP_PREFIXES.some((prefix) => target.startsWith(prefix)));
+}
+
 export default function (pi: ExtensionAPI) {
 	const dangerousPatterns = [
 		// File system destructive operations
-		/\brm\s+(-rf?|--recursive)/i,
+		RECURSIVE_RM_PATTERN,
 		/\b(chmod|chown)\b.*777/i,
 
 		// Heroku database commands (direct access, resets, data movement)
@@ -48,6 +109,10 @@ export default function (pi: ExtensionAPI) {
 
 		// Skip SSH commands - they run on remote machines
 		if (sshPattern.test(command)) {
+			return undefined;
+		}
+
+		if (isSafeTmpRmCommand(command)) {
 			return undefined;
 		}
 
