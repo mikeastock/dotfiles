@@ -204,6 +204,7 @@ keybinds {
 }
 
 plugins {
+    vertical-tabs location="file:~/.config/zellij/plugins/zellij-vertical-tabs.wasm"
     tab-bar location="zellij:tab-bar"
     status-bar location="zellij:status-bar"
     strider location="zellij:strider"
@@ -222,25 +223,27 @@ plugins {
 
 simplified_ui true
 pane_frames false
-default_layout "compact"
+mouse_mode false
+copy_command "/Users/mikeastock/.local/bin/clipboard-copy"
+default_layout "vertical-tabs-left"
 show_release_notes false
 show_startup_tips false
 scroll_buffer_size 100000
 
 themes {
-    muted {
-        fg 170 170 170
-        bg 35 35 35
-        red 174 90 90
-        green 120 160 120
-        yellow 190 170 100
-        blue 100 130 170
-        magenta 150 100 150
-        orange 180 130 80
-        cyan 100 170 170
-        black 20 20 20
-        white 200 200 200
+    nord-tmux {
+        fg 216 222 233
+        bg 67 76 94
+        red 191 97 106
+        green 163 190 140
+        yellow 235 203 139
+        blue 129 161 193
+        magenta 180 142 173
+        orange 208 135 112
+        cyan 136 192 208
+        black 59 66 82
+        white 236 239 244
     }
 }
 
-theme "muted"
+theme "nord-tmux"

@@ -1,0 +1,22 @@
+layout {
+    default_tab_template {
+        pane split_direction="vertical" {
+            pane size=22 borderless=true {
+                plugin location="vertical-tabs" {
+                    format "#[fg=#8f97aa] {index}:{name}"
+                    format_active "#[bg=#4c566a,fg=#eceff4,fill][{index}:{name}]"
+                    indicator_active ""
+                    indicator_fullscreen ""
+                    indicator_sync ""
+                    max_name_length 18
+                    border "#[fg=#434c5e]│"
+                    start_index 1
+                }
+            }
+            children
+        }
+        pane size=1 borderless=true {
+            plugin location="status-bar"
+        }
+    }
+}
