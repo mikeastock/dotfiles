@@ -195,9 +195,12 @@ test_make_install_extensions() {
     fi
 
     assert_output_contains "$output" "handoff (from buildrtech/dotagents)" "handoff comes from buildrtech plugin"
+    assert_output_contains "$output" "openai-fast (from buildrtech/dotagents)" "openai-fast comes from buildrtech plugin"
     assert_output_contains "$output" "session-query (from buildrtech/dotagents)" "session-query comes from buildrtech plugin"
+    assert_output_not_contains "$output" "openai-fast (custom)" "openai-fast is no longer installed from the local copy"
 
     assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/handoff" "handoff extension installed"
+    assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/openai-fast" "openai-fast extension installed"
     assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/session-query" "session-query extension installed"
     assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/tmux-status" "tmux-status extension installed"
     assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/web-access" "web-access extension installed"
