@@ -89,7 +89,7 @@ INSTALL_PATHS = {
         "skills": HOME / ".codex" / "skills",
     },
     "pi": {
-        "skills": HOME / ".pi" / "agent" / "skills",
+        "skills": HOME / ".agents" / "skills",
         "extensions": HOME / ".pi" / "agent" / "extensions",
         "prompts": HOME / ".pi" / "agent" / "prompts",
         "subagents": HOME / ".pi" / "agent" / "agents",

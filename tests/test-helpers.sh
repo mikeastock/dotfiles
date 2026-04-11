@@ -230,7 +230,7 @@ assert_json_field() {
 }
 
 # Setup sandbox environment with agent directories
-# Creates a temporary HOME directory with .claude, .codex, .pi structures
+# Creates a temporary HOME directory with .claude, .codex, .agents, and .pi structures
 setup_sandbox() {
     log_info "Setting up sandbox environment..."
 
@@ -241,7 +241,7 @@ setup_sandbox() {
     # Create agent directories in sandbox
     mkdir -p "$SANDBOX_DIR/.claude/skills"
     mkdir -p "$SANDBOX_DIR/.codex/skills"
-    mkdir -p "$SANDBOX_DIR/.pi/agent/skills"
+    mkdir -p "$SANDBOX_DIR/.agents/skills"
     mkdir -p "$SANDBOX_DIR/.pi/agent/tools"
     mkdir -p "$SANDBOX_DIR/.pi/agent/hooks"
 

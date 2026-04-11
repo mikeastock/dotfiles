@@ -170,7 +170,7 @@ Extensions use the unified `ExtensionAPI` which provides:
 | Amp | `~/.config/agents/skills/` | N/A |
 | Claude Code | `~/.claude/skills/` | N/A |
 | Codex CLI | `~/.codex/skills/` | N/A |
-| Pi Agent | `~/.pi/agent/skills/` | `~/.pi/agent/extensions/` |
+| Pi Agent | `~/.agents/skills/` | `~/.pi/agent/extensions/` |
 
 ## Adding New Content
 

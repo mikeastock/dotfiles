@@ -154,7 +154,7 @@ test_make_install_skills() {
     fi
 
     local pi_skills_count
-    pi_skills_count=$(find "$SANDBOX_DIR/.pi/agent/skills" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
+    pi_skills_count=$(find "$SANDBOX_DIR/.agents/skills" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
     if [ "$pi_skills_count" -gt 0 ]; then
         log_info "PASS: Pi skills installed ($pi_skills_count directories)"
         TESTS_PASSED=$((TESTS_PASSED + 1))
@@ -167,7 +167,7 @@ test_make_install_skills() {
     assert_file_not_exists "$SANDBOX_DIR/.config/agents/skills/writing-plans" "Amp skips buildr superpower skills"
     assert_dir_exists "$SANDBOX_DIR/.claude/skills/writing-plans" "Claude still installs buildr superpower skills"
     assert_dir_exists "$SANDBOX_DIR/.codex/skills/writing-plans" "Codex still installs buildr superpower skills"
-    assert_dir_exists "$SANDBOX_DIR/.pi/agent/skills/writing-plans" "Pi still installs buildr superpower skills"
+    assert_dir_exists "$SANDBOX_DIR/.agents/skills/writing-plans" "Pi still installs buildr superpower skills"
 }
 
 # Test: make install-extensions (with sandbox)
@@ -241,7 +241,7 @@ test_make_install() {
     # Clean sandbox first
     rm -rf "$SANDBOX_DIR/.claude/skills"/* 2>/dev/null || true
     rm -rf "$SANDBOX_DIR/.codex/skills"/* 2>/dev/null || true
-    rm -rf "$SANDBOX_DIR/.pi/agent/skills"/* 2>/dev/null || true
+    rm -rf "$SANDBOX_DIR/.agents/skills"/* 2>/dev/null || true
     rm -rf "$SANDBOX_DIR/.pi/agent/extensions"/* 2>/dev/null || true
 
     # Run full install with sandbox HOME
