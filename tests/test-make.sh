@@ -88,6 +88,9 @@ test_make_build() {
     # breadboard-reflection upstream skill has no frontmatter; build should add description
     local breadboard_skill="$PROJECT_DIR/build/claude/breadboard-reflection/SKILL.md"
     assert_file_exists "$breadboard_skill" "breadboard-reflection skill is built"
+    assert_file_exists "$PROJECT_DIR/skills/how/SKILL.md" "how skill is vendored locally"
+    assert_file_exists "$PROJECT_DIR/skills/how/references/explainer-prompt.md" "how references are vendored locally"
+    assert_file_exists "$PROJECT_DIR/build/claude/how/SKILL.md" "how skill is built"
 
     local breadboard_content
     breadboard_content=$(<"$breadboard_skill")
@@ -168,6 +171,9 @@ test_make_install_skills() {
     assert_dir_exists "$SANDBOX_DIR/.claude/skills/writing-plans" "Claude still installs buildr superpower skills"
     assert_dir_exists "$SANDBOX_DIR/.codex/skills/writing-plans" "Codex still installs buildr superpower skills"
     assert_dir_exists "$SANDBOX_DIR/.agents/skills/writing-plans" "Pi still installs buildr superpower skills"
+    assert_dir_exists "$SANDBOX_DIR/.claude/skills/how" "Claude installs how skill"
+    assert_dir_exists "$SANDBOX_DIR/.codex/skills/how" "Codex installs how skill"
+    assert_dir_exists "$SANDBOX_DIR/.agents/skills/how" "Pi installs how skill"
 }
 
 # Test: make install-extensions (with sandbox)

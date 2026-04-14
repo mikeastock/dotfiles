@@ -63,6 +63,7 @@ bin/pi
 
 - `layered-rails` — Rails layered architecture guidance (copied locally from `palkan/skills`, not managed as a plugin)
 - `babysit-pr` — GitHub PR monitoring/babysitting workflow imported from `openai/codex` commit `7e569f1`
+- `how` — architectural explanation and critique skill vendored from `poteto/how`
 
 ### Notable custom Pi extensions
 
