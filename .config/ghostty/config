@@ -26,3 +26,5 @@ keybind = super+k=ignore
 # # Shift+arrow tab switching
 # keybind = shift+arrow_left=previous_tab
 # keybind = shift+arrow_right=next_tab
+
+keybind = cmd+e=text:\x01\x14
