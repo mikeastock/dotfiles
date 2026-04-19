@@ -1,4 +1,5 @@
 ---
+argument-hint: <code, file, or area>
 description: Brainstorm a code simplification plan before implementation
 ---
 I want to design a code simplification pass for: $@
