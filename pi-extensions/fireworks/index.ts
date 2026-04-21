@@ -19,6 +19,19 @@ export default function (pi: ExtensionAPI) {
           maxTokensField: "max_tokens",
         },
       },
+      {
+        id: "accounts/fireworks/models/kimi-k2p6",
+        name: "K2.6 (Fireworks)",
+        reasoning: false,
+        input: ["text", "image"],
+        cost: { input: 0.95, output: 4, cacheRead: 0.16, cacheWrite: 0 },
+        contextWindow: 262000,
+        maxTokens: 65536,
+        compat: {
+          supportsDeveloperRole: false,
+          maxTokensField: "max_tokens",
+        },
+      },
     ],
   });
 }
