@@ -337,33 +337,6 @@ require("lazy").setup({
       end,
     },
 
-    -- Tree sitter
-    {
-      "nvim-treesitter/nvim-treesitter",
-      branch = "master",
-      lazy = false,
-      build = ":TSUpdate",
-      config = function()
-        local configs = require("nvim-treesitter.configs")
-
-        configs.setup({
-          ensure_installed = {
-            "astro",
-            "css",
-            "html",
-            "javascript",
-            "lua",
-            "ruby",
-            "tsx",
-            "typescript",
-          },
-          sync_install = false,
-          highlight = { enable = true },
-          indent = { enable = true },
-        })
-      end,
-    },
-
     -- Formatting
     {
       "stevearc/conform.nvim",
@@ -483,6 +456,19 @@ require("lazy").setup({
 --##############################################################################
 
 vim.cmd.filetype({ "plugin", "indent", "on" })
+
+-- Treesitter highlighting (built-in to Neovim 0.12+)
+-- nvim-treesitter is archived; parsers/queries copied to ~/.config/nvim/
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = { "astro", "css", "html", "javascript", "lua", "ruby", "typescriptreact", "typescript" },
+  callback = function(ev)
+    local lang_map = {
+      typescriptreact = "tsx",
+    }
+    local lang = lang_map[ev.match] or ev.match
+    vim.treesitter.start(ev.buf, lang)
+  end,
+})
 
 vim.cmd([[
 augroup indentation
