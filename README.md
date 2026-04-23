@@ -61,6 +61,7 @@ bin/pi
 
 ### Notable custom skills
 
+- `browser-harness` — Direct browser control via CDP for automation, scraping, testing, and interaction with web pages (connects to user's already-running Chrome)
 - `layered-rails` — Rails layered architecture guidance (copied locally from `palkan/skills`, not managed as a plugin)
 - `babysit-pr` — GitHub PR monitoring/babysitting workflow imported from `openai/codex` commit `7e569f1`
 - `how` — architectural explanation and critique skill vendored from `poteto/how`
