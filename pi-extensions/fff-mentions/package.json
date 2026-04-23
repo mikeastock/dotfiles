@@ -1,0 +1,18 @@
+{
+  "name": "fff-mentions",
+  "version": "0.1.0",
+  "description": "Pi extension: FFF-backed @ file autocomplete (extracted from SamuelLHuber/pi-fff)",
+  "type": "module",
+  "license": "MIT",
+  "dependencies": {
+    "@ff-labs/fff-node": "^0.6.0"
+  },
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "trustedDependencies": [
+    "ffi-rs"
+  ]
+}

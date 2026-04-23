@@ -12,8 +12,7 @@
   ],
   "packages": [
     "https://github.com/davebcn87/pi-autoresearch",
-    "npm:pi-verbosity-control",
-    "git:github.com/SamuelLHuber/pi-fff@v0.2.5"
+    "npm:pi-verbosity-control"
   ],
   "theme": "catppuccin-mocha",
   "transport": "websocket",
