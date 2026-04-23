@@ -156,7 +156,7 @@ if type -q mise
 end
 
 # Local bin dirs - Added after Mise so that these take precedence
-fish_add_path ~/.local/bin
+fish_add_path --move ~/.local/bin
 alias claude="claude --allow-dangerously-skip-permissions"
 
 ####### Bun
