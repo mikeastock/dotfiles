@@ -31,7 +31,7 @@ help:
 	@echo "  make install-subagents       Install subagent definitions only (Pi agent)"
 	@echo "  make install-themes          Install themes only (Pi agent)"
 	@echo "  make install-configs         Install all agent configs (Amp, Codex, Pi)"
-	@echo "  make uidotsh                 Ensure mcporter uidotsh config exists and regenerate ~/.local/bin/uidotsh"
+	@echo "  make uidotsh                 Configure mcporter uidotsh from UIDOTSH_TOKEN and regenerate ~/.local/bin/uidotsh"
 	@echo "  make build                   Build skills/prompts/themes (without installing)"
 	@echo "  make plugin-update           Update all plugin submodules to latest"
 	@echo "  make clean                   Remove all installed skills, extensions, and build artifacts"
@@ -89,14 +89,15 @@ uidotsh:
 	@which mcporter >/dev/null 2>&1 || (echo "✗ Error: mcporter not installed"; exit 1)
 	@mkdir -p $(HOME)/.mcporter $(HOME)/.mcporter/generated $(HOME)/.local/bin
 	@if [ ! -f $(HOME)/.mcporter/mcporter.json ] || ! rg -q '"uidotsh"' $(HOME)/.mcporter/mcporter.json; then \
-		if [ -f $(HOME)/.claude.json ]; then \
-			mcporter config import claude --path $(HOME)/.claude.json --filter uidotsh --copy >/dev/null; \
-		elif [ -f $(HOME)/.codex/config.toml ]; then \
-			mcporter config import codex --path $(HOME)/.codex/config.toml --filter uidotsh --copy >/dev/null; \
-		else \
-			echo "✗ Error: could not find uidotsh config in ~/.claude.json or ~/.codex/config.toml"; \
+		if [ -z "$${UIDOTSH_TOKEN:-}" ]; then \
+			echo "✗ Error: uidotsh config missing and UIDOTSH_TOKEN is not set"; \
+			echo "  First-time setup: UIDOTSH_TOKEN=<token> make uidotsh"; \
+			echo "  Optional ui.sh agent setup: npx @uidotsh/install <token>"; \
 			exit 1; \
 		fi; \
+		mcporter config add uidotsh "https://ui.sh/mcp?agent=mcporter" \
+			--header "Authorization=Bearer $${UIDOTSH_TOKEN}" \
+			--scope home >/dev/null; \
 	fi
 	@mcporter generate-cli \
 		--server uidotsh \
