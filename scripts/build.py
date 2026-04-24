@@ -259,6 +259,19 @@ def discover_items(plugin: Plugin, item_type: str) -> list[tuple[str, Path]]:
                     name = path.name
                 else:
                     name = path.stem
+            elif path.is_dir():
+                # Directory without index.ts: scan for .ts extension files
+                for ts_file in sorted(path.glob("*.ts")):
+                    if not ts_file.is_file():
+                        continue
+                    ts_name = ts_file.stem
+                    if not include_all and ts_name not in enabled:
+                        continue
+                    final_name = (
+                        f"{plugin.alias}-{ts_name}" if plugin.alias else ts_name
+                    )
+                    items.append((final_name, ts_file))
+                continue
             else:
                 continue
         elif item_type == "prompts" and path.is_file() and path.suffix == ".md":
