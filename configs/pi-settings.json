@@ -1,13 +1,13 @@
 {
-  "lastChangelogVersion": "0.68.1",
+  "lastChangelogVersion": "0.70.2",
   "defaultProvider": "openai-codex",
-  "defaultModel": "gpt-5.4",
+  "defaultModel": "gpt-5.5",
   "hideThinkingBlock": false,
   "defaultThinkingLevel": "high",
   "steeringMode": "all",
   "doubleEscapeAction": "tree",
   "enabledModels": [
-    "openai-codex/gpt-5.4",
+    "openai-codex/gpt-5.5",
     "fireworks/accounts/fireworks/models/kimi-k2p6"
   ],
   "packages": [
