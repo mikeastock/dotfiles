@@ -19,3 +19,6 @@
 [submodule "plugins/rjs-shaping-skills"]
 	path = plugins/rjs-shaping-skills
 	url = https://github.com/rjs/shaping-skills.git
+[submodule "plugins/earendil-works-pi-review"]
+	path = plugins/earendil-works-pi-review
+	url = https://github.com/earendil-works/pi-review

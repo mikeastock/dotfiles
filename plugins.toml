@@ -61,3 +61,8 @@ subagents = [ "*" ]
 url = "https://github.com/rjs/shaping-skills.git"
 skills_path = "*"                                                # Skills are at root level
 skills = [ "shaping", "breadboarding", "breadboard-reflection" ]
+
+["earendil-works/pi-review"]
+url = "https://github.com/earendil-works/pi-review"
+extensions_path = "."                                              # Extension file is at root level
+extensions = [ "*" ]                                               # Install all extensions from this plugin
