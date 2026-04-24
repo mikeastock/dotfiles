@@ -1,20 +1,10 @@
 approval_policy = "never"
 sandbox_mode = "danger-full-access"
-model = "gpt-5.4"
+model = "gpt-5.5"
 model_reasoning_effort = "medium"
 
 # Keep local CLI quiet about unstable features.
 suppress_unstable_features_warning = true
-
-# Leave room for native compaction near the 272–273k context window.
-# Formula: 273000 - (tool_output_token_limit + 15000)
-# With tool_output_token_limit=25000 ⇒ 273000 - (25000 + 15000) = 233000
-model_auto_compact_token_limit = 233000
-# model_context_window = 1000000
-# model_auto_compact_token_limit = 900000
-service_tier = "fast"
-
-# tool_output_token_limit = 25000
 
 [notice]
 hide_rate_limit_model_nudge = true
@@ -31,13 +21,7 @@ status_line = [
 ]
 
 [features]
-apply_patch_freeform = true
-collaboration_modes = true
-ghost_commit = false
-js_repl = true
-multi_agent = true
-prevent_idle_sleep = true
-unified_exec = true
+remote_connections = true
 
 [projects."/Users/mikeastock/code"]
 trust_level = "trusted"
