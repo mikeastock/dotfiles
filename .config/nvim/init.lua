@@ -5,6 +5,11 @@
 
 HOME = os.getenv("HOME")
 
+local mise_shims = HOME .. "/.local/share/mise/shims"
+if vim.fn.isdirectory(mise_shims) == 1 then
+  vim.env.PATH = mise_shims .. ":" .. vim.env.PATH
+end
+
 -- HELPER FUNCTIONS
 function map(mode, shortcut, command)
   vim.api.nvim_set_keymap(mode, shortcut, command, { noremap = true, silent = true })
@@ -195,6 +200,17 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
+local treesitter_languages = {
+  "astro",
+  "css",
+  "html",
+  "javascript",
+  "lua",
+  "ruby",
+  "tsx",
+  "typescript",
+}
+
 require("lazy").setup({
   spec = {
     -- fuzzy finding
@@ -284,6 +300,22 @@ require("lazy").setup({
       setup = function()
         -- may set any options here
         vim.g.matchup_matchparen_offscreen = { method = "popup" }
+      end,
+    },
+
+    -- Tree sitter parser/query manager
+    {
+      "neovim-treesitter/nvim-treesitter",
+      branch = "main",
+      dependencies = { "neovim-treesitter/treesitter-parser-registry" },
+      lazy = false,
+      build = ":TSUpdate",
+      config = function()
+        require("nvim-treesitter").setup({
+          install_dir = vim.fn.stdpath("data") .. "/site",
+        })
+
+        require("nvim-treesitter").install(treesitter_languages):wait(300000)
       end,
     },
 
@@ -390,13 +422,9 @@ require("lazy").setup({
     {
       "neovim/nvim-lspconfig",
       config = function()
-        vim.lsp.enable("astro")
-        vim.lsp.enable("gopls")
-        vim.lsp.enable("ruby_lsp")
-        vim.lsp.enable("ruff")
-        vim.lsp.enable("tailwindcss")
-        vim.lsp.enable("ts_ls")
-        vim.lsp.enable("ty")
+        vim.lsp.config("ruby_lsp", {
+          cmd = { "mise", "exec", "ruby", "--", "ruby-lsp" },
+        })
 
         vim.lsp.config("ty", {
           settings = {
@@ -405,6 +433,14 @@ require("lazy").setup({
             },
           },
         })
+
+        vim.lsp.enable("astro")
+        vim.lsp.enable("gopls")
+        vim.lsp.enable("ruby_lsp")
+        vim.lsp.enable("ruff")
+        vim.lsp.enable("tailwindcss")
+        vim.lsp.enable("ts_ls")
+        vim.lsp.enable("ty")
 
         vim.diagnostic.config({
           virtual_lines = {
@@ -458,7 +494,6 @@ require("lazy").setup({
 vim.cmd.filetype({ "plugin", "indent", "on" })
 
 -- Treesitter highlighting (built-in to Neovim 0.12+)
--- nvim-treesitter is archived; parsers/queries copied to ~/.config/nvim/
 vim.api.nvim_create_autocmd("FileType", {
   pattern = { "astro", "css", "html", "javascript", "lua", "ruby", "typescriptreact", "typescript" },
   callback = function(ev)
