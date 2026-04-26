@@ -48,6 +48,17 @@ make agents-clean            # clean agent build/install artifacts
 make plugin-update           # update plugin submodules
 ```
 
+### Canonical Pi install
+
+```bash
+bin/pi-install
+bin/pi
+```
+
+- Canonical Pi prefix: `~/.local/share/pi-coding-agent`
+- `bin/pi-install` installs or updates Pi there, runs `make install-configs`, and applies `configs/pi-patch/` to the canonical package root
+- `bin/pi` is the stable launcher for that canonical install
+
 ### Notable custom skills
 
 - `browser-harness` — Direct browser control via CDP for automation, scraping, testing, and interaction with web pages (connects to user's already-running Chrome)
