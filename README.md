@@ -59,7 +59,6 @@ make plugin-update           # update plugin submodules
 
 - `subagent` — vendored locally in `pi-extensions/subagent/` as the canonical subagent extension
 - `openai-fast` — installed from `buildrtech/dotagents`; provides a `/fast` toggle that applies OpenAI `service_tier=priority` for configured models
-- `fff-mentions` — FFF-backed `@` file autocomplete extracted from `SamuelLHuber/pi-fff` (just the mention provider, no `find`/`grep` overrides)
 
 ## Structure
 
