@@ -210,7 +210,7 @@ test_make_install_extensions() {
     assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/session-query" "session-query extension installed"
     assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/tmux-status" "tmux-status extension installed"
     assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/web-access" "web-access extension installed"
-    assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/subagent" "subagent extension installed"
+    assert_file_not_exists "$SANDBOX_DIR/.pi/agent/extensions/subagent" "subagent extension removed"
     assert_file_not_exists "$SANDBOX_DIR/.pi/agent/extensions/pi-web-access" "pi-web-access extension removed"
 }
 
@@ -261,7 +261,7 @@ test_make_install() {
 
     local pi_settings
     pi_settings=$(<"$SANDBOX_DIR/.pi/agent/settings.json")
-    assert_output_not_contains "$pi_settings" "npm:pi-subagents" "Pi settings omit pi-subagents package"
+    assert_output_contains "$pi_settings" "https://github.com/nicobailon/pi-subagents" "Pi settings include official pi-subagents package"
 }
 
 # Test: make clean (with sandbox)

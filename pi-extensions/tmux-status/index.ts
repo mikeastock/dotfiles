@@ -26,14 +26,32 @@ import type {
 import type { StopReason } from "@mariozechner/pi-ai";
 import { execFile } from "node:child_process";
 import { basename } from "node:path";
-import { SUBAGENT_RUN_END_EVENT, SUBAGENT_RUN_START_EVENT, type SubagentRunEndEvent, type SubagentRunStartEvent } from "../subagent/events.js";
 import { TmuxStatusState, type StatusState } from "./state.js";
 
 const HANDOFF_ACTIVITY_START_EVENT = "handoff:activity_start";
 const HANDOFF_ACTIVITY_END_EVENT = "handoff:activity_end";
+const SUBAGENT_RUN_START_EVENT = "subagent:run_start";
+const SUBAGENT_RUN_END_EVENT = "subagent:run_end";
 
 type HandoffActivityEvent = {
 	phase: "generation" | "seeding";
+};
+
+type SubagentRunStartEvent = {
+	id: string;
+	agent: string;
+	task: string;
+	mode: "single" | "parallel";
+	windowName?: string;
+};
+
+type SubagentRunEndEvent = {
+	id: string;
+	status: "completed" | "failed";
+	agent: string;
+	task: string;
+	mode: "single" | "parallel";
+	windowName?: string;
 };
 
 const STATUS_ICON: Record<StatusState, string> = {
