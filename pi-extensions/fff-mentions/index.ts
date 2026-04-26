@@ -6,19 +6,15 @@
  */
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
-import { CustomEditor, getAgentDir } from "@mariozechner/pi-coding-agent";
+import { CustomEditor } from "@mariozechner/pi-coding-agent";
 import type {
   AutocompleteItem,
   AutocompleteProvider,
   AutocompleteSuggestions,
 } from "@mariozechner/pi-tui";
 import { FileFinder } from "@ff-labs/fff-node";
-import { mkdirSync } from "fs";
-import { join } from "path";
+import type { MixedItem } from "@ff-labs/fff-node";
 
-const FFF_DB_DIR = join(getAgentDir(), "fff");
-const FRECENCY_DB_PATH = join(FFF_DB_DIR, "frecency.mdb");
-const HISTORY_DB_PATH = join(FFF_DB_DIR, "history.mdb");
 const MENTION_MAX_RESULTS = 20;
 
 function extractAtPrefix(textBeforeCursor: string): string | null {
@@ -26,80 +22,96 @@ function extractAtPrefix(textBeforeCursor: string): string | null {
   return match?.[1] ?? null;
 }
 
-function parseAtPrefix(prefix: string): { raw: string; quoted: boolean } {
-  if (prefix.startsWith('@"')) {
-    return { raw: prefix.slice(2), quoted: true };
-  }
-  return { raw: prefix.slice(1), quoted: false };
+function buildAtCompletionValue(path: string): string {
+  return path.includes(" ") ? `@"${path}"` : `@${path}`;
 }
 
-function buildAtCompletionValue(path: string, quotedPrefix: boolean): string {
-  if (quotedPrefix || path.includes(" ")) {
-    return `@"${path}"`;
-  }
-  return `@${path}`;
-}
+function createFffMentionProvider(
+  getItems: (query: string, signal: AbortSignal) => Promise<AutocompleteItem[]>,
+): AutocompleteProvider {
+  return {
+    async getSuggestions(
+      lines: string[],
+      cursorLine: number,
+      cursorCol: number,
+      options: { signal: AbortSignal; force?: boolean },
+    ): Promise<AutocompleteSuggestions | null> {
+      const currentLine = lines[cursorLine] || "";
+      const prefix = extractAtPrefix(currentLine.slice(0, cursorCol));
+      if (!prefix || options.signal.aborted) return null;
 
-class FffAtMentionProvider implements AutocompleteProvider {
-  constructor(
-    private base: AutocompleteProvider,
-    private getItems: (
-      query: string,
-      quotedPrefix: boolean,
-      signal: AbortSignal,
-    ) => Promise<AutocompleteItem[]>,
-  ) {}
+      const query = prefix.startsWith('@"') ? prefix.slice(2) : prefix.slice(1);
+      const items = await getItems(query, options.signal);
+      return options.signal.aborted || items.length === 0 ? null : { items, prefix };
+    },
 
-  async getSuggestions(
-    lines: string[],
-    cursorLine: number,
-    cursorCol: number,
-    options: { signal: AbortSignal; force?: boolean },
-  ): Promise<AutocompleteSuggestions | null> {
-    const currentLine = lines[cursorLine] || "";
-    const textBeforeCursor = currentLine.slice(0, cursorCol);
-    const atPrefix = extractAtPrefix(textBeforeCursor);
-
-    if (!atPrefix) {
-      return this.base.getSuggestions(lines, cursorLine, cursorCol, options);
-    }
-
-    const { raw, quoted } = parseAtPrefix(atPrefix);
-    if (options.signal.aborted) return null;
-
-    try {
-      const items = await this.getItems(raw, quoted, options.signal);
-      if (options.signal.aborted) return null;
-      if (items.length === 0) return null;
-      return { items, prefix: atPrefix };
-    } catch {
-      return this.base.getSuggestions(lines, cursorLine, cursorCol, options);
-    }
-  }
-
-  applyCompletion(
-    lines: string[],
-    cursorLine: number,
-    cursorCol: number,
-    item: AutocompleteItem,
-    prefix: string,
-  ) {
-    return this.base.applyCompletion(lines, cursorLine, cursorCol, item, prefix);
-  }
+    applyCompletion(lines, cursorLine, cursorCol, item, prefix) {
+      const currentLine = lines[cursorLine] || "";
+      const before = currentLine.slice(0, cursorCol - prefix.length);
+      const after = currentLine.slice(cursorCol);
+      const newLine = before + item.value + after;
+      return {
+        lines: [...lines.slice(0, cursorLine), newLine, ...lines.slice(cursorLine + 1)],
+        cursorLine,
+        cursorCol: cursorCol - prefix.length + item.value.length,
+      };
+    },
+  };
 }
 
 class FffEditor extends CustomEditor {
+  private baseProvider: AutocompleteProvider | undefined;
+
   constructor(
     tui: any,
     theme: any,
     keybindings: any,
-    private createProvider: (base: AutocompleteProvider) => AutocompleteProvider,
+    private getMentionItems: (
+      query: string,
+      signal: AbortSignal,
+    ) => Promise<AutocompleteItem[]>,
   ) {
     super(tui, theme, keybindings);
   }
 
   override setAutocompleteProvider(provider: AutocompleteProvider): void {
-    super.setAutocompleteProvider(this.createProvider(provider));
+    this.baseProvider = provider;
+    const mentionProvider = createFffMentionProvider(this.getMentionItems);
+    const compositeProvider: AutocompleteProvider = {
+      getSuggestions: async (lines, cursorLine, cursorCol, options) => {
+        const mentionResult = await mentionProvider.getSuggestions(
+          lines,
+          cursorLine,
+          cursorCol,
+          options,
+        );
+        if (mentionResult) return mentionResult;
+        return (
+          this.baseProvider?.getSuggestions(lines, cursorLine, cursorCol, options) ?? null
+        );
+      },
+      applyCompletion: (lines, cursorLine, cursorCol, item, prefix) => {
+        if (prefix?.startsWith("@")) {
+          return mentionProvider.applyCompletion!(
+            lines,
+            cursorLine,
+            cursorCol,
+            item,
+            prefix,
+          );
+        }
+        return (
+          this.baseProvider?.applyCompletion?.(
+            lines,
+            cursorLine,
+            cursorCol,
+            item,
+            prefix,
+          ) ?? { lines, cursorLine, cursorCol }
+        );
+      },
+    };
+    super.setAutocompleteProvider(compositeProvider);
   }
 }
 
@@ -107,12 +119,6 @@ export default function fffMentionsExtension(pi: ExtensionAPI) {
   let finder: FileFinder | null = null;
   let finderCwd: string | null = null;
   let activeCwd = process.cwd();
-
-  try {
-    mkdirSync(FFF_DB_DIR, { recursive: true });
-  } catch {
-    // ignore
-  }
 
   async function ensureFinder(cwd: string): Promise<FileFinder> {
     if (finder && !finder.isDestroyed && finderCwd === cwd) return finder;
@@ -124,8 +130,6 @@ export default function fffMentionsExtension(pi: ExtensionAPI) {
 
     const result = FileFinder.create({
       basePath: cwd,
-      frecencyDbPath: FRECENCY_DB_PATH,
-      historyDbPath: HISTORY_DB_PATH,
       aiMode: true,
     });
 
@@ -149,21 +153,29 @@ export default function fffMentionsExtension(pi: ExtensionAPI) {
 
   async function getMentionItems(
     query: string,
-    quotedPrefix: boolean,
     signal: AbortSignal,
   ): Promise<AutocompleteItem[]> {
     if (signal.aborted) return [];
     const f = await ensureFinder(activeCwd);
     if (signal.aborted) return [];
 
-    const searchResult = f.fileSearch(query, { pageSize: MENTION_MAX_RESULTS });
+    const searchResult = f.mixedSearch(query, { pageSize: MENTION_MAX_RESULTS });
     if (!searchResult.ok) return [];
 
-    return searchResult.value.items.slice(0, MENTION_MAX_RESULTS).map((item) => ({
-      value: buildAtCompletionValue(item.relativePath, quotedPrefix),
-      label: item.fileName,
-      description: item.relativePath,
-    }));
+    return searchResult.value.items.slice(0, MENTION_MAX_RESULTS).map((mixed: MixedItem) => {
+      if (mixed.type === "directory") {
+        return {
+          value: buildAtCompletionValue(mixed.item.relativePath),
+          label: mixed.item.dirName,
+          description: mixed.item.relativePath,
+        };
+      }
+      return {
+        value: buildAtCompletionValue(mixed.item.relativePath),
+        label: mixed.item.fileName,
+        description: mixed.item.relativePath,
+      };
+    });
   }
 
   pi.on("session_start", async (_event, ctx) => {
@@ -171,9 +183,7 @@ export default function fffMentionsExtension(pi: ExtensionAPI) {
       activeCwd = ctx.cwd;
       await ensureFinder(activeCwd);
       ctx.ui.setEditorComponent((tui: any, theme: any, keybindings: any) =>
-        new FffEditor(tui, theme, keybindings, (baseProvider) =>
-          new FffAtMentionProvider(baseProvider, getMentionItems),
-        ),
+        new FffEditor(tui, theme, keybindings, getMentionItems),
       );
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
