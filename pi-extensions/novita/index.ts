@@ -32,6 +32,19 @@ export default function (pi: ExtensionAPI) {
           maxTokensField: "max_tokens",
         },
       },
+      {
+        id: "deepseek/deepseek-v4-pro",
+        name: "DeepSeek V4 Pro (Novita)",
+        reasoning: true,
+        input: ["text"],
+        cost: { input: 1.74, output: 3.48, cacheRead: 0.145, cacheWrite: 0 },
+        contextWindow: 1048576,
+        maxTokens: 393216,
+        compat: {
+          supportsDeveloperRole: false,
+          maxTokensField: "max_tokens",
+        },
+      },
     ],
   });
 }
