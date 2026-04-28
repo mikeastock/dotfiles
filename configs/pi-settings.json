@@ -1,5 +1,5 @@
 {
-  "lastChangelogVersion": "0.70.2",
+  "lastChangelogVersion": "0.70.5",
   "defaultProvider": "openai-codex",
   "defaultModel": "gpt-5.5",
   "hideThinkingBlock": false,
@@ -11,9 +11,9 @@
     "fireworks/accounts/fireworks/models/kimi-k2p6"
   ],
   "packages": [
-    "https://github.com/davebcn87/pi-autoresearch",
     "npm:pi-verbosity-control",
-    "https://github.com/nicobailon/pi-subagents"
+    "https://github.com/nicobailon/pi-subagents",
+    "npm:pi-autoresearch"
   ],
   "theme": "catppuccin-mocha",
   "transport": "websocket",
