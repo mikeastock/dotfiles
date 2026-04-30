@@ -93,7 +93,7 @@ On a fresh watcher state file, existing pending review feedback may be surfaced 
 When you agree with a comment and it is actionable:
 
 1. Patch code locally.
-2. Commit with `codex: address PR review feedback (#<n>)`.
+2. Use the `semantic-commit` skill to create a clear Conventional Commit message that describes the actual fix. Do not use a generic placeholder such as `fu`.
 3. Push to the PR head branch.
 4. After the push succeeds, mark the associated GitHub review thread/comment as resolved.
 5. Resume watching on the new SHA immediately (do not stop after reporting the push).
@@ -113,10 +113,11 @@ If a code review comment/thread is already marked as resolved in GitHub, treat i
 - Do not run multiple concurrent `--watch` processes for the same PR/state file; keep one watcher session active and reuse it until it stops or you intentionally restart it.
 - A push is not a terminal outcome; continue the monitoring loop unless a strict stop condition is met.
 
-Commit message defaults:
+Commit message requirements:
 
-- `codex: fix CI failure on PR #<n>`
-- `codex: address PR review feedback (#<n>)`
+- Use the `semantic-commit` skill whenever creating a commit.
+- Write a Conventional Commit message that explains the specific change, for example `fix(auth): handle expired review token` or `test(api): update PR watcher fixture`.
+- Do not use generic placeholder messages such as `fu`, `fix`, `updates`, or `address feedback`.
 
 ## Monitoring Loop Pattern
 Use this loop in a live Codex session:
