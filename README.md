@@ -70,6 +70,7 @@ bin/pi
 ### Notable custom Pi extensions
 
 - `openai-fast` — installed from `buildrtech/dotagents`; provides a `/fast` toggle that applies OpenAI `service_tier=priority` for configured models
+- `pi-prompt-shelf` — local copy of `tanishqkancharla/pi-prompt-shelf`; shelves editor prompts per session with shortcuts and `/shelf`
 
 ## Structure
 
