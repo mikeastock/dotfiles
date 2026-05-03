@@ -38,7 +38,7 @@ help:
 	@echo ""
 	@echo "Dotfiles:"
 	@echo "  make dot-all                Run all dotfile setup tasks"
-	@echo "  make dot-install            Install required Homebrew/Linuxbrew packages"
+	@echo "  make dot-install            Install required Homebrew/Linuxbrew packages and tmux plugins"
 	@echo "  make dot-home-symlinks      Symlink dotfiles to home directory"
 	@echo "  make dot-config-symlinks    Symlink .config files and directories"
 	@echo "  make dot-platform-defaults  Apply supported platform defaults"
@@ -133,11 +133,23 @@ endef
 
 dot-all: dot-install dot-home-symlinks dot-config-symlinks dot-platform-defaults
 
-# Install required Homebrew/Linuxbrew packages from Brewfile
+# Install required Homebrew/Linuxbrew packages from Brewfile and tmux plugins
 dot-install:
 	@which brew >/dev/null 2>&1 || (echo "✗ Error: Homebrew/Linuxbrew not installed"; exit 1)
 	@brew bundle --file=$(CURDIR)/Brewfile
 	@echo "✓ Brew packages installed"
+	@mkdir -p $(HOME)/.tmux/plugins
+	@if [ -d $(HOME)/.tmux/plugins/tpm/.git ]; then \
+		git -C $(HOME)/.tmux/plugins/tpm pull --ff-only; \
+	elif [ -e $(HOME)/.tmux/plugins/tpm ]; then \
+		echo "✗ Error: $(HOME)/.tmux/plugins/tpm exists and is not a git checkout"; \
+		exit 1; \
+	else \
+		git clone https://github.com/tmux-plugins/tpm $(HOME)/.tmux/plugins/tpm; \
+	fi
+	@tmux start-server \; set-environment -g TMUX_PLUGIN_MANAGER_PATH $(HOME)/.tmux/plugins/ \; source-file $(CURDIR)/.tmux.conf
+	@$(HOME)/.tmux/plugins/tpm/bin/install_plugins
+	@echo "✓ tmux plugins installed"
 
 # Apply platform-specific defaults when supported
 dot-platform-defaults:
