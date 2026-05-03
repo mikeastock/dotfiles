@@ -22,7 +22,8 @@ source "$SCRIPT_DIR/pi-paths.sh"
 PATCH_SCRIPT="${PI_PATCH_SCRIPT:-$REPO_ROOT/configs/pi-patch/apply-pi-ghostty-tmux-image-patch.sh}"
 
 current_version() {
-  local pkg="$PI_ROOT/package.json"
+  local pi_root="$1"
+  local pkg="$pi_root/package.json"
 
   if [[ -f "$pkg" ]]; then
     node -e "console.log(require('$pkg').version)"
@@ -50,22 +51,25 @@ require_file() {
 }
 
 main() {
-  require_command npm
+  require_command mise
   require_command make
   require_file "$PATCH_SCRIPT"
 
-  local old_version
-  old_version="$(current_version)"
-
-  npm install -g --prefix "$PI_PREFIX" @mariozechner/pi-coding-agent
-
-  if [[ ! -d "$PI_ROOT" ]]; then
-    echo "Canonical Pi install missing after npm install: $PI_ROOT" >&2
-    exit 1
+  local old_root old_version
+  old_root="$(pi_package_root 2>/dev/null || true)"
+  old_version="unknown"
+  if [[ -n "$old_root" ]]; then
+    old_version="$(current_version "$old_root")"
   fi
 
-  if [[ ! -x "$PI_BIN" ]]; then
-    echo "Canonical Pi launcher missing after npm install: $PI_BIN" >&2
+  mise use -g "$PI_MISE_TOOL"
+  mise install
+
+  local pi_root
+  pi_root="$(pi_package_root)"
+
+  if [[ ! -d "$pi_root" ]]; then
+    echo "Mise-managed Pi package missing after install: $pi_root" >&2
     exit 1
   fi
 
@@ -74,10 +78,10 @@ main() {
     make install-configs
   )
 
-  "$PATCH_SCRIPT" "$PI_ROOT"
+  "$PATCH_SCRIPT" "$pi_root"
 
   local new_version
-  new_version="$(current_version)"
+  new_version="$(current_version "$pi_root")"
 
   if [[ "$old_version" == "unknown" ]]; then
     echo "Pi installed: $new_version"

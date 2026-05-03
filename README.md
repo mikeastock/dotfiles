@@ -51,13 +51,13 @@ make plugin-update           # update plugin submodules
 ### Canonical Pi install
 
 ```bash
-bin/pi-install
-bin/pi
+pi-install
+pi
 ```
 
-- Canonical Pi prefix: `~/.local/share/pi-coding-agent`
-- `bin/pi-install` installs or updates Pi there, runs `make install-configs`, and applies `configs/pi-patch/` to the canonical package root
-- `bin/pi` is the stable launcher for that canonical install
+- Canonical Pi tool: `npm:@mariozechner/pi-coding-agent@latest` in global mise config
+- `pi-install` installs or updates Pi through mise, runs `make install-configs`, and applies `configs/pi-patch/` to the mise-managed package root
+- `pi` is provided by mise after installation/reshim
 
 ### Notable custom skills
 
