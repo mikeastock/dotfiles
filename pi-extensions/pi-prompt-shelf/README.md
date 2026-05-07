@@ -1,6 +1,6 @@
 # pi-prompt-shelf
 
-A [Pi](https://github.com/mariozechner/pi-coding-agent) extension that lets you stash prompts from the editor into a persistent, per-session shelf instead of submitting them. Each session in each project gets its own shelf, and shelved prompts survive restarts. The shelf is always visible as a widget above the editor input.
+A [Pi](https://github.com/earendil-works/pi-mono) extension that lets you stash prompts from the editor into a persistent, per-session shelf instead of submitting them. Each session in each project gets its own shelf, and shelved prompts survive restarts. The shelf is always visible as a widget above the editor input.
 
 https://github.com/user-attachments/assets/cb8b28b4-bd8b-41d4-9e0f-a3dc3bac4981
 

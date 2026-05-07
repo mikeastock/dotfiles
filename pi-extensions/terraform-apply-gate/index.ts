@@ -5,7 +5,7 @@
  * Prevents accidental infrastructure changes by requiring user approval.
  */
 
-import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
 export default function (pi: ExtensionAPI) {
 	// Match terraform apply or tf apply (with optional flags before/after)

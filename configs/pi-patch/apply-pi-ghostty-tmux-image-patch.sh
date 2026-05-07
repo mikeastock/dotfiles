@@ -25,7 +25,7 @@ resolve_pi_root() {
       return
     fi
 
-    local by_version="$NODE_INSTALLS_DIR/$arg/lib/node_modules/@mariozechner/pi-coding-agent"
+    local by_version="$NODE_INSTALLS_DIR/$arg/lib/node_modules/@earendil-works/pi-coding-agent"
     if [[ -d "$by_version" ]]; then
       echo "$by_version"
       return
@@ -43,7 +43,7 @@ resolve_pi_root() {
     exit 1
   fi
 
-  local root="$NODE_INSTALLS_DIR/$latest_version/lib/node_modules/@mariozechner/pi-coding-agent"
+  local root="$NODE_INSTALLS_DIR/$latest_version/lib/node_modules/@earendil-works/pi-coding-agent"
   if [[ ! -d "$root" ]]; then
     echo "Install found but pi package path missing: $root" >&2
     exit 1
@@ -93,7 +93,7 @@ main() {
 
   local pi_root tui_dist version backup_dir
   pi_root="$(resolve_pi_root "${1:-}")"
-  tui_dist="$pi_root/node_modules/@mariozechner/pi-tui/dist"
+  tui_dist="$pi_root/node_modules/@earendil-works/pi-tui/dist"
   version="$(extract_version "$pi_root")"
 
   if [[ ! -d "$tui_dist" ]]; then

@@ -7,7 +7,7 @@
  * SSH commands are excluded since they run on remote machines.
  */
 
-import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
 const SAFE_TMP_PREFIXES = ["/tmp", "tmp/", ".tmp"];
 const RECURSIVE_RM_PATTERN = /\brm\s+(-rf?|--recursive)/i;

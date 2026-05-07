@@ -21,9 +21,9 @@ import type {
 	ToolCallEvent,
 	ToolResultEvent,
 	SessionShutdownEvent,
-} from "@mariozechner/pi-coding-agent";
+} from "@earendil-works/pi-coding-agent";
 
-import type { StopReason } from "@mariozechner/pi-ai";
+import type { StopReason } from "@earendil-works/pi-ai";
 import { execFile } from "node:child_process";
 import { basename } from "node:path";
 import { TmuxStatusState, type StatusState } from "./state.js";

@@ -22,13 +22,13 @@ setup_test_path() {
 #!/usr/bin/env bash
 set -euo pipefail
 printf '%s\n' "$*" >> "$TEST_LOG_DIR/mise.log"
-install_root="$HOME/.local/share/mise/installs/npm-mariozechner-pi-coding-agent/latest"
+install_root="$HOME/.local/share/mise/installs/npm-earendil-works-pi-coding-agent/latest"
 case "$1" in
   use)
     exit 0
     ;;
   install)
-    mkdir -p "$install_root/bin" "$install_root/lib/node_modules/@mariozechner/pi-coding-agent"
+    mkdir -p "$install_root/bin" "$install_root/lib/node_modules/@earendil-works/pi-coding-agent"
     cat > "$install_root/bin/pi" <<'SCRIPT'
 #!/usr/bin/env bash
 set -euo pipefail
@@ -84,7 +84,7 @@ test_pi_install_uses_mise_npm_backend() {
 
     local mise_args
     mise_args=$(cat "$LOG_DIR/mise.log")
-    assert_output_contains "$mise_args" 'use -g npm:@mariozechner/pi-coding-agent@latest' "Installer records Pi as global mise npm tool"
+    assert_output_contains "$mise_args" 'use -g npm:@earendil-works/pi-coding-agent@latest' "Installer records Pi as global mise npm tool"
     assert_output_contains "$mise_args" 'install' "Installer installs configured mise tools"
 }
 
@@ -98,7 +98,7 @@ test_pi_install_is_idempotent() {
     local mise_log
     mise_log=$(cat "$LOG_DIR/mise.log")
     local use_count
-    use_count=$(printf '%s\n' "$mise_log" | rg -c --fixed-strings -- 'use -g npm:@mariozechner/pi-coding-agent@latest')
+    use_count=$(printf '%s\n' "$mise_log" | rg -c --fixed-strings -- 'use -g npm:@earendil-works/pi-coding-agent@latest')
     assert_equals "$use_count" "2" "Installer uses same mise tool on repeat runs"
 }
 
@@ -121,7 +121,7 @@ test_pi_install_validates_root_and_runs_patch() {
 
     local patch_args
     patch_args=$(cat "$LOG_DIR/patch.log")
-    assert_output_contains "$patch_args" "$SANDBOX_DIR/.local/share/mise/installs/npm-mariozechner-pi-coding-agent/latest/lib/node_modules/@mariozechner/pi-coding-agent" "Installer patches mise-managed package root"
+    assert_output_contains "$patch_args" "$SANDBOX_DIR/.local/share/mise/installs/npm-earendil-works-pi-coding-agent/latest/lib/node_modules/@earendil-works/pi-coding-agent" "Installer patches mise-managed package root"
 }
 
 test_pi_install_works_via_symlink() {
@@ -137,7 +137,7 @@ test_pi_install_works_via_symlink() {
 
     local patch_args
     patch_args=$(cat "$LOG_DIR/patch.log")
-    assert_output_contains "$patch_args" "$SANDBOX_DIR/.local/share/mise/installs/npm-mariozechner-pi-coding-agent/latest/lib/node_modules/@mariozechner/pi-coding-agent" "Symlinked installer patches mise-managed package root"
+    assert_output_contains "$patch_args" "$SANDBOX_DIR/.local/share/mise/installs/npm-earendil-works-pi-coding-agent/latest/lib/node_modules/@earendil-works/pi-coding-agent" "Symlinked installer patches mise-managed package root"
 }
 
 main() {

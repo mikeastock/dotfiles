@@ -1,7 +1,7 @@
-import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
-import { Text } from "@mariozechner/pi-tui";
-import { Type } from "@sinclair/typebox";
-import { StringEnum } from "@mariozechner/pi-ai";
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { Text } from "@earendil-works/pi-tui";
+import { Type } from "typebox";
+import { StringEnum } from "@earendil-works/pi-ai";
 import { searchWithExa, parseDomainFilters } from "./exa.js";
 import { fetchAllContent } from "./extract.js";
 import { clearCloneCache } from "./github-extract.js";

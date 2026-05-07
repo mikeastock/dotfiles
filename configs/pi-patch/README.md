@@ -1,6 +1,6 @@
 # Pi Ghostty/tmux image patch
 
-This directory contains a local patch for Pi's bundled `@mariozechner/pi-tui` build.
+This directory contains a local patch for Pi's bundled `@earendil-works/pi-tui` build.
 
 ## Files
 
@@ -30,7 +30,7 @@ Apply to an explicit Pi package path:
 
 ```bash
 configs/pi-patch/apply-pi-ghostty-tmux-image-patch.sh \
-  ~/.local/share/mise/installs/node/24.14.0/lib/node_modules/@mariozechner/pi-coding-agent
+  ~/.local/share/mise/installs/node/24.14.0/lib/node_modules/@earendil-works/pi-coding-agent
 ```
 
 ## Behavior

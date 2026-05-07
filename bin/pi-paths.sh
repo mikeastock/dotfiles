@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-PI_MISE_TOOL="npm:@mariozechner/pi-coding-agent@latest"
-PI_PACKAGE_NAME="@mariozechner/pi-coding-agent"
+PI_MISE_TOOL="npm:@earendil-works/pi-coding-agent@latest"
+PI_PACKAGE_NAME="@earendil-works/pi-coding-agent"
 PI_PACKAGE_RELATIVE_PATH="lib/node_modules/$PI_PACKAGE_NAME"
 
 pi_mise_install_root() {

@@ -1,4 +1,4 @@
-import { wrapTextWithAnsi } from "@mariozechner/pi-tui";
+import { wrapTextWithAnsi } from "@earendil-works/pi-tui";
 
 export function wrapQuestionLines(prompt: string, width: number, indent = " "): string[] {
   const safeIndent = indent ?? "";

@@ -55,7 +55,7 @@ pi-install
 pi
 ```
 
-- Canonical Pi tool: `npm:@mariozechner/pi-coding-agent@latest` in global mise config
+- Canonical Pi tool: `npm:@earendil-works/pi-coding-agent@latest` in global mise config
 - `pi-install` installs or updates Pi through mise, runs `make install-configs`, and applies `configs/pi-patch/` to the mise-managed package root
 - `pi` is provided by mise after installation/reshim
 
