@@ -19,6 +19,11 @@
 url = "https://github.com/anthropics/skills"
 skills = [ "frontend-design" ]
 
+["mattpocock/skills"]
+url = "https://github.com/mattpocock/skills"
+skills_path = "skills/*/*" # Skills are grouped by category directories
+skills = [ "prototype", "zoom-out", "grill-me", "write-a-skill", "grill-with-docs" ]
+
 ["nicobailon/pi-interview-tool"]
 url = "https://github.com/nicobailon/pi-interview-tool"
 extensions_path = "."                                   # Extension files are at root level

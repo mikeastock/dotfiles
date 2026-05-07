@@ -22,3 +22,6 @@
 [submodule "plugins/earendil-works-pi-review"]
 	path = plugins/earendil-works-pi-review
 	url = https://github.com/earendil-works/pi-review
+[submodule "plugins/mattpocock-skills"]
+	path = plugins/mattpocock-skills
+	url = https://github.com/mattpocock/skills
