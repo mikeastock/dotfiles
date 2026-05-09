@@ -30,7 +30,6 @@ Example (update the path for your agent):
 
 - Pi: `~/.agents/skills/nano-banana-pro/scripts/generate_image.py`
 - Claude: `~/.claude/skills/nano-banana-pro/scripts/generate_image.py`
-- Pi: `~/.pi/agent/skills/nano-banana-pro/scripts/generate_image.py`
 
 ```
 uv run <nanoBananaDir>/scripts/generate_image.py \
