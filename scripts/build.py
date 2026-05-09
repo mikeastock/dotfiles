@@ -85,9 +85,7 @@ INSTALL_PATHS = {
     "claude": {
         "skills": HOME / ".claude" / "skills",
     },
-    "codex": {
-        "skills": HOME / ".codex" / "skills",
-    },
+    "codex": {},
     "pi": {
         "skills": HOME / ".agents" / "skills",
         "extensions": HOME / ".pi" / "agent" / "extensions",
@@ -97,7 +95,7 @@ INSTALL_PATHS = {
     },
 }
 
-AGENTS = ["amp", "claude", "codex", "pi"]  # Agents that get skill builds
+AGENTS = ["amp", "claude", "pi"]  # Agents that get skill builds
 
 
 def plugin_dir_name(name: str) -> str:

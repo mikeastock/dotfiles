@@ -50,7 +50,6 @@ test_make_build() {
     # Check build directories were created
     assert_dir_exists "$PROJECT_DIR/build/amp" "Build created amp directory"
     assert_dir_exists "$PROJECT_DIR/build/claude" "Build created claude directory"
-    assert_dir_exists "$PROJECT_DIR/build/codex" "Build created codex directory"
     assert_dir_exists "$PROJECT_DIR/build/pi" "Build created pi directory"
     assert_dir_exists "$PROJECT_DIR/build/prompts/pi" "Build created Pi prompt directory"
     assert_file_exists "$PROJECT_DIR/build/prompts/pi/refactor-pass.md" "Build created refactor-pass prompt template"
@@ -146,15 +145,7 @@ test_make_install_skills() {
         TESTS_FAILED=$((TESTS_FAILED + 1))
     fi
 
-    local codex_skills_count
-    codex_skills_count=$(find "$SANDBOX_DIR/.codex/skills" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
-    if [ "$codex_skills_count" -gt 0 ]; then
-        log_info "PASS: Codex skills installed ($codex_skills_count directories)"
-        TESTS_PASSED=$((TESTS_PASSED + 1))
-    else
-        log_error "FAIL: No Codex skills installed"
-        TESTS_FAILED=$((TESTS_FAILED + 1))
-    fi
+
 
     local pi_skills_count
     pi_skills_count=$(find "$SANDBOX_DIR/.agents/skills" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
@@ -169,10 +160,8 @@ test_make_install_skills() {
     # buildrtech/dotagents superpower skills should be skipped for Amp only
     assert_file_not_exists "$SANDBOX_DIR/.config/agents/skills/writing-plans" "Amp skips buildr superpower skills"
     assert_dir_exists "$SANDBOX_DIR/.claude/skills/writing-plans" "Claude still installs buildr superpower skills"
-    assert_dir_exists "$SANDBOX_DIR/.codex/skills/writing-plans" "Codex still installs buildr superpower skills"
     assert_dir_exists "$SANDBOX_DIR/.agents/skills/writing-plans" "Pi still installs buildr superpower skills"
     assert_dir_exists "$SANDBOX_DIR/.claude/skills/how" "Claude installs how skill"
-    assert_dir_exists "$SANDBOX_DIR/.codex/skills/how" "Codex installs how skill"
     assert_dir_exists "$SANDBOX_DIR/.agents/skills/how" "Pi installs how skill"
 }
 
@@ -246,7 +235,6 @@ test_make_install() {
 
     # Clean sandbox first
     rm -rf "$SANDBOX_DIR/.claude/skills"/* 2>/dev/null || true
-    rm -rf "$SANDBOX_DIR/.codex/skills"/* 2>/dev/null || true
     rm -rf "$SANDBOX_DIR/.agents/skills"/* 2>/dev/null || true
     rm -rf "$SANDBOX_DIR/.pi/agent/extensions"/* 2>/dev/null || true
 

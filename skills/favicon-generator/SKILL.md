@@ -28,7 +28,7 @@ Use the Nano Banana Pro skill to generate the PNG. Run from your project directo
 
 Example (update the path for your agent):
 
-- Codex: `~/.codex/skills/nano-banana-pro/scripts/generate_image.py`
+- Pi: `~/.agents/skills/nano-banana-pro/scripts/generate_image.py`
 - Claude: `~/.claude/skills/nano-banana-pro/scripts/generate_image.py`
 - Pi: `~/.pi/agent/skills/nano-banana-pro/scripts/generate_image.py`
 

@@ -25,7 +25,7 @@ help:
 	@echo "Usage:"
 	@echo "  make install                 Initialize submodules and install skills and extensions"
 	@echo "  make install-non-interactive Install for headless/automated environments (skips interactive extensions)"
-	@echo "  make install-skills          Install skills only (Amp, Claude Code, Codex, Pi agent)"
+	@echo "  make install-skills          Install skills only (Amp, Claude Code, Pi agent)"
 	@echo "  make install-extensions      Install extensions only (Pi agent)"
 	@echo "  make install-prompts         Install prompt templates only (Pi agent)"
 	@echo "  make install-subagents       Install subagent definitions only (Pi agent)"

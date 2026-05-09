@@ -7,7 +7,6 @@ This file provides guidance for AI assistants working with this codebase.
 This repository manages reusable skills and extensions for AI coding agents including:
 - **Claude Code** (Anthropic)
 - **Pi Coding Agent** (badlogic)
-- **Codex CLI** (OpenAI)
 
 Skills are specialized instruction sets that guide AI agents through specific tasks. The repository aggregates skills from multiple sources (git submodules) and custom implementations, applies agent-specific overrides, and installs them to the appropriate locations.
 
@@ -39,7 +38,7 @@ agents/
 │   └── run-all.sh                  # Run all tests
 ├── build/                          # Generated during build (gitignored)
 │   ├── claude/                     # Skills built for Claude Code
-│   └── pi/                         # Skills built for Pi/Codex
+│   └── pi/                         # Skills built for Pi
 ├── Makefile                        # Build and install automation
 └── README.md                       # User documentation
 ```
@@ -110,8 +109,8 @@ GitHub Actions runs `./tests/run-all.sh` on push/PR to main/master branches.
   ```yaml
   ---
   name: my-skill
-  description: Only for codex
-  agents: [codex]  # Only install for codex (omit for all agents)
+  description: Only for claude
+  agents: [claude]  # Only install for claude (omit for all agents)
   ---
   ```
   The `agents` field is stripped from the built skill.
@@ -169,7 +168,6 @@ Extensions use the unified `ExtensionAPI` which provides:
 |-------|--------|------------|
 | Amp | `~/.config/agents/skills/` | N/A |
 | Claude Code | `~/.claude/skills/` | N/A |
-| Codex CLI | `~/.codex/skills/` | N/A |
 | Pi Agent | `~/.agents/skills/` | `~/.pi/agent/extensions/` |
 
 ## Adding New Content
@@ -177,7 +175,7 @@ Extensions use the unified `ExtensionAPI` which provides:
 ### Adding a Custom Skill
 1. Fetch the [Agent Skills specification](https://agentskills.io/specification.md) for the current format
 2. Create `skills/<skill-name>/SKILL.md` following the specification
-3. Optionally add `agents: [claude, codex, pi]` to frontmatter to limit installation to specific agents
+3. Optionally add `agents: [claude, pi]` to frontmatter to limit installation to specific agents
 4. Add any supporting files to the same directory
 5. Run `make install` to build and install
 6. Update README.md: add to "Custom Skills" table and directory structure
@@ -207,6 +205,6 @@ Extensions use the unified `ExtensionAPI` which provides:
 - Skills are **copied** (not symlinked) during installation
 - The `build/` directory is regenerated on each build
 - Running `make clean` removes both installed files and build artifacts
-- Use `make pi-skills-config` after installation to prevent duplicate skill warnings in Pi when using Claude/Codex skill directories
+- Use `make pi-skills-config` after installation to prevent duplicate skill warnings in Pi when using Claude skill directories
 - **Keep README.md up to date**: When adding, removing, or renaming skills or extensions, update the corresponding tables and directory structure in README.md
 - **Requires Python 3.11+** for the build system (uses `tomllib` from stdlib)

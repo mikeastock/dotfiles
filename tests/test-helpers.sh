@@ -240,7 +240,6 @@ setup_sandbox() {
 
     # Create agent directories in sandbox
     mkdir -p "$SANDBOX_DIR/.claude/skills"
-    mkdir -p "$SANDBOX_DIR/.codex/skills"
     mkdir -p "$SANDBOX_DIR/.agents/skills"
     mkdir -p "$SANDBOX_DIR/.pi/agent/tools"
     mkdir -p "$SANDBOX_DIR/.pi/agent/hooks"
