@@ -1,0 +1,23 @@
+{
+  "providers": {
+    "fireworks": {
+      "models": [
+        {
+          "id": "accounts/fireworks/routers/kimi-k2.6-turbo",
+          "name": "Kimi K2.6 Turbo",
+          "api": "anthropic-messages",
+          "reasoning": true,
+          "input": ["text", "image"],
+          "contextWindow": 262000,
+          "maxTokens": 262000,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          }
+        }
+      ]
+    }
+  }
+}

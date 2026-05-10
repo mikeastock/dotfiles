@@ -74,6 +74,7 @@ CONFIG_FILE = ROOT / "plugins.toml"
 CONFIGS_DIR = ROOT / "configs"
 CODEX_CONFIG_FILE = CONFIGS_DIR / "codex-config.toml"
 PI_SETTINGS_FILE = CONFIGS_DIR / "pi-settings.json"
+PI_MODELS_FILE = CONFIGS_DIR / "pi-models.json"
 GLOBAL_AGENTS_MD = CONFIGS_DIR / "AGENTS.md"
 
 # Installation paths
@@ -1042,6 +1043,40 @@ def install_pi_settings():
     print(f"  Installed to {dest}")
 
 
+def install_pi_models():
+    """Install Pi custom model definitions."""
+    import json
+
+    print("Installing Pi models...")
+
+    if not PI_MODELS_FILE.exists():
+        print("  No pi-models.json found, skipping")
+        return
+
+    dest = HOME / ".pi" / "agent" / "models.json"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(PI_MODELS_FILE) as f:
+        managed_models = json.load(f)
+
+    if dest.exists():
+        with open(dest) as f:
+            models = json.load(f)
+    else:
+        models = {}
+
+    # Overlay managed providers onto existing (managed wins on conflict)
+    managed_providers = managed_models.get("providers", {})
+    existing_providers = models.setdefault("providers", {})
+    existing_providers.update(managed_providers)
+
+    with open(dest, "w") as f:
+        json.dump(models, f, indent=2)
+        f.write("\n")
+
+    print(f"  Installed to {dest}")
+
+
 def install_global_agents_md():
     """Install global AGENTS.md for codex and pi."""
     print("Installing global AGENTS.md...")
@@ -1067,6 +1102,7 @@ def install_configs():
     install_amp_config()
     install_codex_config()
     install_pi_settings()
+    install_pi_models()
     install_global_agents_md()
 
 
@@ -1137,6 +1173,12 @@ def clean(plugins: dict[str, Plugin]):
         if path.exists():
             path.unlink()
             print(f"  Removed {path}")
+
+    # Clean managed Pi models
+    pi_models_dest = HOME / ".pi" / "agent" / "models.json"
+    if pi_models_dest.exists():
+        pi_models_dest.unlink()
+        print(f"  Removed {pi_models_dest}")
 
     print("  Done")
 
