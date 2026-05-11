@@ -23,7 +23,11 @@ function isOpenAIModel(ctx: ExtensionContext): boolean {
 }
 
 function isCodexConversionInstalled(): boolean {
-	const settingsPath = join(homedir(), ".pi", "agent", "settings.json");
+	const piAgentDir = join(homedir(), ".pi", "agent");
+	const extensionDir = join(piAgentDir, "extensions", "pi-codex-conversion");
+	if (existsSync(extensionDir)) return true;
+
+	const settingsPath = join(piAgentDir, "settings.json");
 	if (!existsSync(settingsPath)) return false;
 
 	const settings = JSON.parse(readFileSync(settingsPath, "utf8")) as { packages?: unknown };

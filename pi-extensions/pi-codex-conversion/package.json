@@ -1,0 +1,78 @@
+{
+  "name": "@howaboua/pi-codex-conversion",
+  "version": "1.5.2",
+  "description": "Codex-oriented tool and prompt adapter for pi coding agent",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/IgorWarzocha/pi-codex-conversion.git"
+  },
+  "homepage": "https://github.com/IgorWarzocha/pi-codex-conversion#readme",
+  "bugs": {
+    "url": "https://github.com/IgorWarzocha/pi-codex-conversion/issues"
+  },
+  "keywords": [
+    "pi-package",
+    "pi",
+    "pi-coding-agent",
+    "extension",
+    "codex",
+    "adapter",
+    "apply-patch"
+  ],
+  "license": "MIT",
+  "pi": {
+    "extensions": [
+      "./src/index.ts"
+    ]
+  },
+  "files": [
+    "src/**/*.ts",
+    "src/**/*.md",
+    "bin/apply_patch",
+    "bin/apply_patch.cmd",
+    "vendor/apply-patch/**",
+    "available-tools.png",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "tsx --test tests/**/*.test.ts",
+    "check": "npm run typecheck && npm run test",
+    "publish:dry-run": "npm publish --dry-run",
+    "publish:dev": "npm publish --tag dev",
+    "release:dev": "npm version prerelease --preid dev && npm publish --tag dev",
+    "prepack": "npm run check",
+    "prepublishOnly": "npm run verify:apply-patch-binaries",
+    "build:apply-patch": "node scripts/build-apply-patch-binary.mjs",
+    "sync:apply-patch-source": "node scripts/sync-apply-patch-source.mjs",
+    "verify:apply-patch-binaries": "node scripts/verify-apply-patch-binaries.mjs"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*",
+    "typebox": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-ai": "^0.74.0",
+    "@earendil-works/pi-coding-agent": "^0.74.0",
+    "@earendil-works/pi-tui": "^0.74.0",
+    "tsx": "^4.20.5",
+    "typebox": "^1.1.24",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "node-pty": "^1.1.0",
+    "partial-json": "^0.1.7",
+    "tree-sitter-bash": "^0.25.1",
+    "web-tree-sitter": "^0.26.7"
+  },
+  "bin": {
+    "apply_patch": "./bin/apply_patch"
+  }
+}
