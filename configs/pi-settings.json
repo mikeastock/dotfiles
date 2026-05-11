@@ -1,5 +1,4 @@
 {
-  "lastChangelogVersion": "0.74.0",
   "defaultProvider": "openai-codex",
   "defaultModel": "gpt-5.5",
   "hideThinkingBlock": false,
@@ -8,7 +7,7 @@
   "doubleEscapeAction": "tree",
   "enabledModels": [
     "openai-codex/gpt-5.5",
-    "fireworks/accounts/fireworks/routers/kimi-k2.6-turbo"
+    "accounts/fireworks/routers/kimi-k2p6-turbo"
   ],
   "packages": [
     "npm:pi-verbosity-control",
