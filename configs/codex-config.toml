@@ -15,6 +15,11 @@ notifications = [ "agent-turn-complete" ]
 status_line = ["model-with-reasoning", "current-dir", "project-name", "git-branch", "context-used"]
 status_line_use_colors = true
 
+[tui.keymap.composer]
+# pi: app.message.followUp = alt+enter
+# Codex default is tab.
+queue = "alt-enter"
+
 [tui.model_availability_nux]
 "gpt-5.5" = 4
 
@@ -34,4 +39,10 @@ trust_level = "trusted"
 trust_level = "trusted"
 
 [projects."/data/workspace/code/buildr/app5"]
+trust_level = "trusted"
+
+[projects."/data/workspace/code/buildr/app3"]
+trust_level = "trusted"
+
+[projects."/data/workspace/code/oss/codex"]
 trust_level = "trusted"
