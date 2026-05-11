@@ -18,10 +18,7 @@
     "tsx": "^4.21.0",
     "turndown": "^7.2.2",
     "typescript": "^6.0.3",
-    "node-pty": "^1.1.0",
     "openai": "^6.26.0",
-    "partial-json": "^0.1.7",
-    "tree-sitter-bash": "^0.25.1",
-    "web-tree-sitter": "^0.26.7"
+    "partial-json": "^0.1.7"
   }
 }

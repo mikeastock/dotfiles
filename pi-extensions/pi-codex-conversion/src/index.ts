@@ -14,9 +14,7 @@ import {
 } from "./adapter/tool-set.ts";
 import { clearApplyPatchRenderState, registerApplyPatchTool } from "./tools/apply-patch-tool.ts";
 import { isCodexLikeContext, isOpenAICodexContext } from "./adapter/codex-model.ts";
-import { createExecCommandTracker } from "./tools/exec-command-state.ts";
 import { registerExecCommandTool } from "./tools/exec-command-tool.ts";
-import { createExecSessionManager } from "./tools/exec-session-manager.ts";
 import {
 	IMAGE_SAVE_DISPLAY_MESSAGE_TYPE,
 	WEB_SEARCH_ACTIVITY_MESSAGE_TYPE,
@@ -31,7 +29,6 @@ import {
 	supportsNativeWebSearch,
 	WEB_SEARCH_SESSION_NOTE_TYPE,
 } from "./tools/web-search-tool.ts";
-import { registerWriteStdinTool } from "./tools/write-stdin-tool.ts";
 import { ensureBundledApplyPatchOnPath } from "./tools/apply-patch-binary.ts";
 
 interface AdapterState {
@@ -43,46 +40,21 @@ interface AdapterState {
 
 const ADAPTER_TOOL_NAMES = [...CORE_ADAPTER_TOOL_NAMES, WEB_SEARCH_TOOL_NAME, IMAGE_GENERATION_TOOL_NAME, VIEW_IMAGE_TOOL_NAME];
 
-function getCommandArg(args: unknown): string | undefined {
-	if (!args || typeof args !== "object" || !("cmd" in args) || typeof args.cmd !== "string") {
-		return undefined;
-	}
-	return args.cmd;
-}
-
-function isToolCallOnlyAssistantMessage(message: unknown): boolean {
-	if (!message || typeof message !== "object" || !("role" in message) || message.role !== "assistant") {
-		return false;
-	}
-	if (!("content" in message) || !Array.isArray(message.content) || message.content.length === 0) {
-		return false;
-	}
-	return message.content.every((item) => typeof item === "object" && item !== null && "type" in item && item.type === "toolCall");
-}
-
 export default function codexConversion(pi: ExtensionAPI) {
 	ensureBundledApplyPatchOnPath();
-	const tracker = createExecCommandTracker();
 	const state: AdapterState = { enabled: false, cwd: process.cwd(), promptSkills: [] };
-	const sessions = createExecSessionManager();
 
 	registerOpenAICodexCustomProvider(pi, {
 		getCurrentCwd: () => state.cwd,
 	});
 	registerApplyPatchTool(pi);
-	registerExecCommandTool(pi, tracker, sessions);
-	registerWriteStdinTool(pi, sessions);
+	registerExecCommandTool(pi);
 	registerImageGenerationTool(pi);
 	registerWebSearchTool(pi);
-
-	sessions.onSessionExit((sessionId) => {
-		tracker.recordSessionFinished(sessionId);
-	});
 
 	pi.on("session_start", async (_event, ctx) => {
 		state.cwd = ctx.cwd;
 		clearApplyPatchRenderState();
-		tracker.clear();
 		syncAdapter(pi, ctx, state);
 	});
 
@@ -96,30 +68,8 @@ export default function codexConversion(pi: ExtensionAPI) {
 		syncAdapter(pi, ctx, state);
 	});
 
-	pi.on("message_start", async (event) => {
-		if (event.message.role === "toolResult") return;
-		if (isToolCallOnlyAssistantMessage(event.message)) return;
-		tracker.resetExplorationGroup();
-	});
-
-	pi.on("tool_execution_start", async (event) => {
-		if (event.toolName !== "exec_command") {
-			tracker.resetExplorationGroup();
-			return;
-		}
-		const command = getCommandArg(event.args);
-		if (!command) return;
-		tracker.recordStart(event.toolCallId, command);
-	});
-
-	pi.on("tool_execution_end", async (event) => {
-		if (event.toolName !== "exec_command") return;
-		tracker.recordEnd(event.toolCallId);
-	});
-
 	pi.on("session_shutdown", async () => {
 		clearApplyPatchRenderState();
-		sessions.shutdown();
 	});
 
 	pi.on("before_agent_start", async (event, ctx) => {

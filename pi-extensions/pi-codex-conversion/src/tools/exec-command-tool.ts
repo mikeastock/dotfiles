@@ -1,10 +1,7 @@
-import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { createBashToolDefinition, type BashToolDetails, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
-import { Container, Text } from "@earendil-works/pi-tui";
-import { renderExecCommandCall, renderGroupedExecCommandCall } from "./codex-rendering.ts";
-import type { ExecCommandTracker } from "./exec-command-state.ts";
-import type { ExecSessionManager, UnifiedExecResult } from "./exec-session-manager.ts";
-import { formatUnifiedExecResult } from "./unified-exec-format.ts";
+import { Container } from "@earendil-works/pi-tui";
+import { resolve } from "node:path";
 
 const EXEC_COMMAND_PARAMETERS = Type.Object({
 	cmd: Type.String({ description: "Shell command to execute." }),
@@ -72,71 +69,17 @@ function parseExecCommandParams(params: unknown): ExecCommandParams {
 	};
 }
 
-function isUnifiedExecResult(details: unknown): details is UnifiedExecResult {
-	return typeof details === "object" && details !== null;
+function resolveWorkdir(cwd: string, workdir: string | undefined): string {
+	return workdir ? resolve(cwd, workdir) : cwd;
 }
 
-function createEmptyResultComponent(): Container {
-	return new Container();
-}
+export function registerExecCommandTool(pi: ExtensionAPI): void {
+	const renderBashTool = createBashToolDefinition(process.cwd());
 
-interface ExecCommandRenderContextLike {
-	toolCallId?: string;
-	invalidate?: () => void;
-}
-
-const renderExecCommandCallWithOptionalContext: any = (
-	args: { cmd?: unknown },
-	theme: { fg(role: string, text: string): string; bold(text: string): string },
-	context: ExecCommandRenderContextLike | undefined,
-	tracker: ExecCommandTracker,
-) => {
-	const command = typeof args.cmd === "string" ? args.cmd : "";
-	tracker.registerRenderContext(context?.toolCallId, context?.invalidate ?? (() => {}));
-	const renderInfo = tracker.getRenderInfo(context?.toolCallId, command);
-	if (renderInfo.hidden) {
-		return new Text("", 0, 0);
-	}
-	const text = renderInfo.actionGroups
-		? renderGroupedExecCommandCall(renderInfo.actionGroups, renderInfo.status, theme)
-		: renderExecCommandCall(command, renderInfo.status, theme);
-	return new Text(text, 0, 0);
-};
-
-const renderExecCommandResultWithOptionalContext: any = (
-	result: { content: Array<{ type: string; text?: string }>; details?: unknown },
-	options: { expanded: boolean; isPartial: boolean },
-	theme: { fg(role: string, text: string): string },
-	context: ExecCommandRenderContextLike | undefined,
-	tracker: ExecCommandTracker,
-) => {
-	if (!options.expanded) {
-		return createEmptyResultComponent();
-	}
-
-	const command = context && "args" in context && context.args && typeof (context as any).args.cmd === "string" ? (context as any).args.cmd : undefined;
-	if (tracker.getRenderInfo(context?.toolCallId, command ?? "").hidden) {
-		return createEmptyResultComponent();
-	}
-
-	const details = isUnifiedExecResult(result.details) ? result.details : undefined;
-	const content = result.content.find((item) => item.type === "text");
-	const output = details?.output ?? (content?.type === "text" ? content.text : "");
-	let text = theme.fg("dim", output || "(no output)");
-	if (details?.session_id !== undefined) {
-		text += `\n${theme.fg("accent", `Session ${details.session_id} still running`)}`;
-	}
-	if (details?.exit_code !== undefined) {
-		text += `\n${theme.fg("muted", `Exit code: ${details.exit_code}`)}`;
-	}
-	return new Text(text, 0, 0);
-};
-
-export function registerExecCommandTool(pi: ExtensionAPI, tracker: ExecCommandTracker, sessions: ExecSessionManager): void {
 	pi.registerTool({
 		name: "exec_command",
 		label: "exec_command",
-		description: "Runs a shell command, returning output or a session ID for ongoing interaction.",
+		description: "Runs a shell command using Pi's native bash tool, while preserving Codex's exec_command input schema.",
 		promptSnippet: "Run a command.",
 		parameters: EXEC_COMMAND_PARAMETERS,
 		prepareArguments: prepareExecCommandArguments,
@@ -144,27 +87,23 @@ export function registerExecCommandTool(pi: ExtensionAPI, tracker: ExecCommandTr
 			if (signal?.aborted) {
 				throw new Error("exec_command aborted");
 			}
+
 			const typedParams = parseExecCommandParams(params);
-			const toToolResult = (partial: UnifiedExecResult) => ({
-				content: [{ type: "text" as const, text: formatUnifiedExecResult(partial, typedParams.cmd) }],
-				details: partial,
-			});
-			const result = await sessions.exec(typedParams, ctx.cwd, signal, onUpdate ? (partial) => onUpdate(toToolResult(partial)) : undefined);
-			if (result.session_id !== undefined) {
-				tracker.recordPersistentSession(toolCallId, result.session_id);
-			}
-			return {
-				content: [{ type: "text", text: formatUnifiedExecResult(result, typedParams.cmd) }],
-				details: result,
-			};
+			const bashTool = createBashToolDefinition(resolveWorkdir(ctx.cwd, typedParams.workdir));
+			return bashTool.execute(
+				toolCallId,
+				{ command: typedParams.cmd },
+				signal,
+				onUpdate,
+				ctx,
+			) as ReturnType<typeof bashTool.execute>;
 		},
-		renderCall: ((args: { cmd?: unknown }, theme: { fg(role: string, text: string): string; bold(text: string): string }, context?: ExecCommandRenderContextLike) =>
-			renderExecCommandCallWithOptionalContext(args, theme, context, tracker)) as any,
-		renderResult: ((
-			result: { content: Array<{ type: string; text?: string }>; details?: unknown },
-			options: { expanded: boolean; isPartial: boolean },
-			theme: { fg(role: string, text: string): string },
-			context?: ExecCommandRenderContextLike,
-		) => renderExecCommandResultWithOptionalContext(result, options, theme, context, tracker)) as any,
+		renderCall(args, theme, context) {
+			const typedArgs = prepareExecCommandArguments(args);
+			return renderBashTool.renderCall?.({ command: typedArgs.cmd }, theme, context as never) ?? new Container();
+		},
+		renderResult(result, options, theme, context) {
+			return renderBashTool.renderResult?.(result as { content: Array<{ type: "text"; text: string }>; details: BashToolDetails | undefined }, options, theme, context as never) ?? new Container();
+		},
 	});
 }
