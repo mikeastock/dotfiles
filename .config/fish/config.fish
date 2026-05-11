@@ -106,6 +106,7 @@ alias a2="cd ~/code/buildr/app2"
 alias a3="cd ~/code/buildr/app3"
 alias a4="cd ~/code/buildr/app4"
 alias a5="cd ~/code/buildr/app5"
+alias a6="cd ~/code/buildr/app6"
 
 function fco -d "Fuzzy-find and checkout a branch"
   git branch --all --sort=-committerdate | grep -v HEAD | string trim | fzf --header='[fuzzy:branch-checkout]' | xargs git checkout
@@ -236,6 +237,8 @@ function __workspace_repo_name --argument-names dir
       echo a4
     case app5
       echo a5
+    case app6
+      echo a6
     case '*'
       echo "$dir"
   end
