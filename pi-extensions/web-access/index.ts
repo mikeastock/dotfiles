@@ -1,5 +1,8 @@
-import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { Text } from "@earendil-works/pi-tui";
+import { existsSync, readFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { join } from "node:path";
 import { Type } from "typebox";
 import { StringEnum } from "@earendil-works/pi-ai";
 import { searchWithExa, parseDomainFilters } from "./exa.js";
@@ -12,6 +15,46 @@ interface SearchResult {
 	text: string;
 }
 
+const WEB_ACCESS_TOOL_NAMES = ["web_search", "fetch_content"];
+const CODEX_ADAPTER_TOOL_NAMES = ["exec_command", "write_stdin", "apply_patch"];
+
+function isOpenAIModel(ctx: ExtensionContext): boolean {
+	return ctx.model?.provider === "openai" || ctx.model?.provider === "openai-codex";
+}
+
+function isCodexConversionInstalled(): boolean {
+	const settingsPath = join(homedir(), ".pi", "agent", "settings.json");
+	if (!existsSync(settingsPath)) return false;
+
+	const settings = JSON.parse(readFileSync(settingsPath, "utf8")) as { packages?: unknown };
+	if (!Array.isArray(settings.packages)) return false;
+
+	return settings.packages.some((packageRef) => typeof packageRef === "string" && packageRef.includes("pi-codex-conversion"));
+}
+
+function isCodexAdapterActiveForOpenAI(pi: ExtensionAPI, ctx: ExtensionContext): boolean {
+	if (!isOpenAIModel(ctx)) return false;
+	const activeTools = pi.getActiveTools();
+	return CODEX_ADAPTER_TOOL_NAMES.every((toolName) => activeTools.includes(toolName));
+}
+
+function syncWebAccessTools(pi: ExtensionAPI, ctx: ExtensionContext): void {
+	const activeTools = pi.getActiveTools();
+	if (isCodexAdapterActiveForOpenAI(pi, ctx)) {
+		pi.setActiveTools(activeTools.filter((toolName) => !WEB_ACCESS_TOOL_NAMES.includes(toolName)));
+		return;
+	}
+
+	const registeredToolNames = new Set(pi.getAllTools().map((tool) => tool.name));
+	const restoredTools = [...activeTools];
+	for (const toolName of WEB_ACCESS_TOOL_NAMES) {
+		if (registeredToolNames.has(toolName) && !restoredTools.includes(toolName)) {
+			restoredTools.push(toolName);
+		}
+	}
+	pi.setActiveTools(restoredTools);
+}
+
 function formatSearchSummary(results: SearchResult[], answer: string): string {
 	let output = answer ? `${answer}\n\n---\n\n**Sources:**\n` : "";
 	output += results.map((r, i) => `${i + 1}. ${r.title}\n   ${r.url}`).join("\n\n");
@@ -21,14 +64,19 @@ function formatSearchSummary(results: SearchResult[], answer: string): string {
 export default function (pi: ExtensionAPI) {
 	// --- Session lifecycle ---
 
-	pi.on("session_start", async () => clearCloneCache());
+	pi.on("session_start", async (_event, ctx) => {
+		clearCloneCache();
+		syncWebAccessTools(pi, ctx);
+	});
+	pi.on("model_select", async (_event, ctx) => syncWebAccessTools(pi, ctx));
 	pi.on("session_tree", async () => clearCloneCache());
 	pi.on("session_shutdown", () => clearCloneCache());
 
 	// --- Tools ---
 
-	pi.registerTool({
-		name: "web_search",
+	if (!isCodexConversionInstalled()) {
+		pi.registerTool({
+			name: "web_search",
 		label: "Web Search",
 		description:
 			"Search the web using Exa AI. Returns semantically relevant results with source citations. " +
@@ -206,7 +254,8 @@ export default function (pi: ExtensionAPI) {
 
 			return new Text(lines.join("\n"), 0, 0);
 		},
-	});
+		});
+	}
 
 	pi.registerTool({
 		name: "fetch_content",
