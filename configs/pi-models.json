@@ -3,7 +3,7 @@
     "fireworks": {
       "models": [
         {
-          "id": "accounts/fireworks/routers/kimi-k2.6-turbo",
+          "id": "fireworks/routers/kimi-k2p6-turbo",
           "name": "Kimi K2.6 Turbo",
           "api": "anthropic-messages",
           "reasoning": true,

@@ -7,7 +7,7 @@
   "doubleEscapeAction": "tree",
   "enabledModels": [
     "openai-codex/gpt-5.5",
-    "accounts/fireworks/routers/kimi-k2p6-turbo"
+    "fireworks/routers/kimi-k2p6-turbo"
   ],
   "packages": [
     "npm:pi-verbosity-control",
