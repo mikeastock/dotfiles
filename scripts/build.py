@@ -870,13 +870,13 @@ def install_themes():
 
 
 def install_extension_dependencies(extension_dir: Path, extension_name: str):
-    """Install npm dependencies for an extension when package.json is present."""
+    """Install pnpm dependencies for an extension when package.json is present."""
     package_json = extension_dir / "package.json"
     if not package_json.exists():
         return
 
-    print(f"    {extension_name}: running npm install")
-    run_cmd(["npm", "install"], cwd=extension_dir)
+    print(f"    {extension_name}: running pnpm install")
+    run_cmd(["pnpm", "install"], cwd=extension_dir)
 
 
 def install_extensions(plugins: dict[str, Plugin]):
