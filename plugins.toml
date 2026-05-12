@@ -39,6 +39,7 @@ skills = [ "open-prose" ]
 
 ["mitsuhiko/agent-stuff"]
 url = "https://github.com/mitsuhiko/agent-stuff"
+skills = [ "tmux" ]
 extensions_path = "extensions/*.ts"
 extensions = [ "context" ]
 
