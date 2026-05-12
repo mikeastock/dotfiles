@@ -52,17 +52,32 @@ function extractText(content: Array<{ type: string; text?: string }>): string {
     .trim();
 }
 
+function isHarnessPrompt(text: string): boolean {
+  return text.includes("<available_skills>") || text.includes("</available_skills>");
+}
+
+function collapseSkillBlocks(text: string): string {
+  return text.replace(/<skill\b([^>]*)>[\s\S]*?<\/skill>/g, "<skill$1></skill>");
+}
+
+function promptEntryFromSessionEntry(entry: any): PromptEntry | undefined {
+  if (entry?.type !== "message") return undefined;
+  const message = entry?.message;
+  if (!message || message.role !== "user" || !Array.isArray(message.content)) return undefined;
+
+  const text = extractText(message.content);
+  if (!text || isHarnessPrompt(text)) return undefined;
+
+  const timestamp = Number(message.timestamp ?? entry.timestamp ?? Date.now());
+  return { text: collapseSkillBlocks(text), timestamp };
+}
+
 function collectUserPromptsFromEntries(entries: Array<any>): PromptEntry[] {
   const prompts: PromptEntry[] = [];
 
   for (const entry of entries) {
-    if (entry?.type !== "message") continue;
-    const message = entry?.message;
-    if (!message || message.role !== "user" || !Array.isArray(message.content)) continue;
-    const text = extractText(message.content);
-    if (!text) continue;
-    const timestamp = Number(message.timestamp ?? entry.timestamp ?? Date.now());
-    prompts.push({ text, timestamp });
+    const prompt = promptEntryFromSessionEntry(entry);
+    if (prompt) prompts.push(prompt);
   }
 
   return prompts;
@@ -144,13 +159,9 @@ async function loadPromptHistoryForCwd(cwd: string, excludeSessionFile?: string)
       } catch {
         continue;
       }
-      if (entry?.type !== "message") continue;
-      const message = entry?.message;
-      if (!message || message.role !== "user" || !Array.isArray(message.content)) continue;
-      const text = extractText(message.content);
-      if (!text) continue;
-      const timestamp = Number(message.timestamp ?? entry.timestamp ?? Date.now());
-      prompts.push({ text, timestamp });
+      const prompt = promptEntryFromSessionEntry(entry);
+      if (!prompt) continue;
+      prompts.push(prompt);
       if (prompts.length >= MAX_RECENT_PROMPTS) break;
     }
     if (prompts.length >= MAX_RECENT_PROMPTS) break;
