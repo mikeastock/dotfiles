@@ -287,6 +287,66 @@ test_make_default() {
     assert_output_contains "$output" "Agents - Skills" "Default make target shows help"
 }
 
+# Test: package manager security config uses global tool config and writes unmanaged config files
+test_package_manager_security_config() {
+    log_test "Testing 'make package-manager-security-config' (sandboxed)"
+    cd "$PROJECT_DIR"
+
+    local fake_bin command_log
+    fake_bin="$SANDBOX_DIR/fake-bin"
+    command_log="$SANDBOX_DIR/package-manager-commands.log"
+    mkdir -p "$fake_bin"
+
+    cat > "$fake_bin/npm" <<EOF
+#!/usr/bin/env bash
+echo "npm \$*" >> "$command_log"
+EOF
+    cat > "$fake_bin/pnpm" <<EOF
+#!/usr/bin/env bash
+echo "pnpm \$*" >> "$command_log"
+EOF
+    cat > "$fake_bin/bun" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+    cat > "$fake_bin/uv" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+    chmod +x "$fake_bin/npm" "$fake_bin/pnpm" "$fake_bin/bun" "$fake_bin/uv"
+
+    mkdir -p "$SANDBOX_DIR/.config/uv"
+    cat > "$SANDBOX_DIR/.bunfig.toml" <<'EOF'
+telemetry = false
+
+[install]
+registry = "https://registry.npmjs.org"
+EOF
+    cat > "$SANDBOX_DIR/.config/uv/uv.toml" <<'EOF'
+native-tls = true
+EOF
+
+    local output
+    output=$(PATH="$fake_bin:$PATH" HOME="$SANDBOX_DIR" make package-manager-security-config 2>&1)
+
+    assert_output_contains "$output" "Configuring package-manager security settings" "Shows package-manager security progress"
+    assert_file_exists "$SANDBOX_DIR/.bunfig.toml" "Bun security config was written"
+    assert_file_exists "$SANDBOX_DIR/.config/uv/uv.toml" "uv security config was written"
+
+    local commands bun_config uv_config
+    commands=$(<"$command_log")
+    bun_config=$(<"$SANDBOX_DIR/.bunfig.toml")
+    uv_config=$(<"$SANDBOX_DIR/.config/uv/uv.toml")
+
+    assert_output_contains "$commands" "npm config set min-release-age 7 --global" "npm minimum release age configured globally"
+    assert_output_contains "$commands" "npm config set ignore-scripts true --global" "npm lifecycle scripts disabled globally"
+    assert_output_contains "$commands" "pnpm config set minimum-release-age 10080 --global" "pnpm minimum release age configured globally"
+    assert_output_contains "$bun_config" "minimumReleaseAge = 604800" "Bun minimum release age configured"
+    assert_output_contains "$bun_config" "registry = \"https://registry.npmjs.org\"" "Bun existing config is preserved"
+    assert_output_contains "$uv_config" "exclude-newer = \"7 days\"" "uv exclude-newer configured"
+    assert_output_contains "$uv_config" "native-tls = true" "uv existing config is preserved"
+}
+
 # Test: plugins.toml exists and is valid
 test_plugins_toml() {
     log_test "Testing plugins.toml configuration"
@@ -322,6 +382,7 @@ main() {
     test_make_default
     test_plugins_toml
     test_make_build
+    test_package_manager_security_config
     test_make_install_skills
     test_make_install_extensions
     test_make_install_prompts

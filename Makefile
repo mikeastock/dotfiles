@@ -14,7 +14,7 @@ HOME_LINKS := .gitconfig .ideavimrc .psqlrc .tmux.conf .tmuxinator .vscode
 # .config directories to symlink entirely
 CONFIG_DIRS := alacritty stylua lvim zellij direnv atuin ghostty
 
-.PHONY: all install install-non-interactive install-skills install-extensions install-prompts install-subagents install-themes install-configs build clean help submodule-init plugin-update check-python uidotsh \
+.PHONY: all install install-non-interactive install-skills install-extensions install-prompts install-subagents install-themes install-configs package-manager-security-config build clean help submodule-init plugin-update check-python uidotsh \
 	dot-all dot-install dot-home-symlinks dot-config-symlinks dot-platform-defaults dot-macos-defaults dot-clean
 
 all: help
@@ -31,6 +31,7 @@ help:
 	@echo "  make install-subagents       Install subagent definitions only (Pi agent)"
 	@echo "  make install-themes          Install themes only (Pi agent)"
 	@echo "  make install-configs         Install all agent configs (Amp, Codex, Pi)"
+	@echo "  make package-manager-security-config Configure global npm/pnpm/bun/uv package security settings"
 	@echo "  make uidotsh                 Configure mcporter uidotsh from UIDOTSH_TOKEN and regenerate ~/.local/bin/uidotsh"
 	@echo "  make build                   Build skills/prompts/themes (without installing)"
 	@echo "  make plugin-update           Update all plugin submodules to latest"
@@ -106,6 +107,9 @@ uidotsh:
 	@chmod +x $(HOME)/.local/bin/uidotsh
 	@rm -f $(HOME)/.local/bin/ui-sh $(HOME)/.mcporter/generated/ui-sh.ts
 	@echo "✓ uidotsh regenerated at $(HOME)/.local/bin/uidotsh"
+
+package-manager-security-config:
+	@$(PYTHON) $(CURDIR)/scripts/package_manager_security_config.py
 
 clean: check-python
 	@$(PYTHON) "$(BUILD_SCRIPT)" clean
