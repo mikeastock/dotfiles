@@ -53,8 +53,4 @@ export class TmuxStatusState {
 		if (this.asyncFailureOccurred) return "failed";
 		return this.terminalState;
 	}
-
-	hasActiveAsyncRuns(): boolean {
-		return this.activeAsyncRunIds.size > 0;
-	}
 }

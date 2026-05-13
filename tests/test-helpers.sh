@@ -67,22 +67,6 @@ assert_success() {
     fi
 }
 
-# Assert a command fails
-# Usage: assert_failure "description" command arg1 arg2...
-assert_failure() {
-    local description="$1"
-    shift
-    if "$@"; then
-        log_error "FAIL: $description (expected failure but succeeded)"
-        TESTS_FAILED=$((TESTS_FAILED + 1))
-        return 1
-    else
-        log_info "PASS: $description"
-        TESTS_PASSED=$((TESTS_PASSED + 1))
-        return 0
-    fi
-}
-
 # Assert a file exists
 # Usage: assert_file_exists "/path/to/file" "optional description"
 assert_file_exists() {
@@ -126,22 +110,6 @@ assert_dir_exists() {
         return 0
     else
         log_error "FAIL: $description (directory not found: $dir)"
-        TESTS_FAILED=$((TESTS_FAILED + 1))
-        return 1
-    fi
-}
-
-# Assert a symlink exists
-# Usage: assert_symlink_exists "/path/to/link" "optional description"
-assert_symlink_exists() {
-    local link="$1"
-    local description="${2:-Symlink exists: $link}"
-    if [ -L "$link" ]; then
-        log_info "PASS: $description"
-        TESTS_PASSED=$((TESTS_PASSED + 1))
-        return 0
-    else
-        log_error "FAIL: $description (symlink not found: $link)"
         TESTS_FAILED=$((TESTS_FAILED + 1))
         return 1
     fi
@@ -285,11 +253,9 @@ export -f log_info
 export -f log_error
 export -f log_test
 export -f assert_success
-export -f assert_failure
 export -f assert_file_exists
 export -f assert_file_not_exists
 export -f assert_dir_exists
-export -f assert_symlink_exists
 export -f assert_output_contains
 export -f assert_output_not_contains
 export -f assert_equals

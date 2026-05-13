@@ -12,7 +12,7 @@ export interface ExtractedContent {
 	error: string | null;
 }
 
-export interface ExtractOptions {
+interface ExtractOptions {
 	forceClone?: boolean;
 }
 

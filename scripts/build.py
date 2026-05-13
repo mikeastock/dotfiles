@@ -13,7 +13,6 @@ import shutil
 import subprocess
 import sys
 from dataclasses import dataclass, field
-from fnmatch import fnmatch
 from pathlib import Path
 
 # Extensions that require user interaction and should be skipped in non-interactive mode
@@ -26,12 +25,6 @@ INTERACTIVE_EXTENSIONS = {
 # Use fully qualified names (owner/repo)
 INTERACTIVE_PLUGINS = {
     "nicobailon/pi-interview-tool",
-}
-
-# Skill override patterns that require user interaction (skill name patterns)
-# Overrides matching these patterns are skipped in non-interactive mode
-INTERACTIVE_OVERRIDE_PATTERNS = {
-    "*-AskUserQuestion-*",  # Any override referencing AskUserQuestion
 }
 
 # Skill overrides that explicitly require interactivity
@@ -301,15 +294,7 @@ def custom_extension_dirs() -> list[Path]:
 
 def is_interactive_override(override_path: Path) -> bool:
     """Check if an override file is interactive-only."""
-    filename = override_path.name
-    # Check explicit list
-    if filename in INTERACTIVE_OVERRIDES:
-        return True
-    # Check patterns
-    for pattern in INTERACTIVE_OVERRIDE_PATTERNS:
-        if fnmatch(filename, pattern):
-            return True
-    return False
+    return override_path.name in INTERACTIVE_OVERRIDES
 
 
 def parse_skill_agents(content: str) -> list[str] | None:

@@ -76,11 +76,6 @@ function getApiKey(): string {
 	return key;
 }
 
-export function isExaAvailable(): boolean {
-	const config = loadConfig();
-	return Boolean(process.env.EXA_API_KEY || config.exaApiKey);
-}
-
 function recencyToDate(recency: string): string {
 	const now = new Date();
 	switch (recency) {
