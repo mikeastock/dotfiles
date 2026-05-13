@@ -7,12 +7,13 @@
   "doubleEscapeAction": "tree",
   "enabledModels": [
     "openai-codex/gpt-5.5",
-    "fireworks/routers/kimi-k2p6-turbo"
+    "accounts/fireworks/routers/kimi-k2p6-turbo"
   ],
   "packages": [
     "npm:pi-verbosity-control",
     "https://github.com/nicobailon/pi-subagents",
-    "npm:pi-autoresearch"
+    "npm:pi-autoresearch",
+    "https://github.com/umputun/revdiff"
   ],
   "theme": "catppuccin-mocha",
   "transport": "websocket",
