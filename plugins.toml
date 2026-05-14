@@ -61,6 +61,7 @@ skills = [
 skills_skip_agents = [ "amp" ] # Skip buildrtech skills for Amp
 extensions_path = "pi-extensions/*"
 extensions = [ "buildr-artifacts", "handoff", "openai-fast", "session-query" ]
+extension_dependency_packages = { "buildr-artifacts" = "package.json" }
 subagents = [ "*" ]
 
 ["rjs/shaping-skills"]

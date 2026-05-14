@@ -112,6 +112,7 @@ class Plugin:
     prompts: list[str] = field(default_factory=list)  # Empty = none, ["*"] = all
     subagents_path: list[str] = field(default_factory=lambda: ["agents/*.md"])
     subagents: list[str] = field(default_factory=list)  # Empty = none, ["*"] = all
+    extension_dependency_packages: dict[str, str] = field(default_factory=dict)
     alias: str | None = None
 
     @property
@@ -152,6 +153,9 @@ class Plugin:
             prompts=normalize_items(data.get("prompts")),
             subagents_path=normalize_path(data.get("subagents_path", "agents/*.md")),
             subagents=normalize_items(data.get("subagents")),
+            extension_dependency_packages=dict(
+                data.get("extension_dependency_packages", {})
+            ),
             alias=data.get("alias"),
         )
 
@@ -854,6 +858,27 @@ def install_themes():
     print(f"  pi: {count} themes -> {dest}")
 
 
+def copy_plugin_extension_dependency_package(
+    plugin: Plugin, extension_name: str, extension_dir: Path
+):
+    """Copy a plugin package.json for extensions with external dependencies."""
+    if (extension_dir / "package.json").exists():
+        return
+
+    package_path = plugin.extension_dependency_packages.get(extension_name)
+    if not package_path:
+        return
+
+    source = PLUGINS_DIR / plugin.dir_name / package_path
+    if not source.exists():
+        sys.exit(
+            f"Error: extension_dependency_packages for {plugin.name}/{extension_name} "
+            f"points to missing file: {source}"
+        )
+
+    shutil.copy(source, extension_dir / "package.json")
+
+
 def install_extension_dependencies(extension_dir: Path, extension_name: str):
     """Install pnpm dependencies for an extension when package.json is present."""
     package_json = extension_dir / "package.json"
@@ -911,6 +936,7 @@ def install_extensions(plugins: dict[str, Plugin]):
             else:
                 shutil.copytree(path, dest_ext, dirs_exist_ok=True)
 
+            copy_plugin_extension_dependency_package(plugin, name, dest_ext)
             install_extension_dependencies(dest_ext, name)
             print(f"  {name} (from {plugin.name})")
             installed.add(name)
