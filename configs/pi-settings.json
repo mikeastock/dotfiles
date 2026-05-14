@@ -12,8 +12,7 @@
   "packages": [
     "npm:pi-verbosity-control",
     "https://github.com/nicobailon/pi-subagents",
-    "npm:pi-autoresearch",
-    "https://github.com/umputun/revdiff"
+    "npm:pi-autoresearch"
   ],
   "theme": "catppuccin-mocha",
   "transport": "websocket",

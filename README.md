@@ -74,6 +74,7 @@ pi
 - `pi-prompt-shelf` — local copy of `tanishqkancharla/pi-prompt-shelf`; shelves editor prompts per session with shortcuts and `/shelf`
 - `pi-codex-conversion` — local copy of `IgorWarzocha/pi-codex-conversion`; adds Codex-style tools and prompt adaptation for OpenAI/Codex models in Pi
 - `full-read-for-paths` — upgrades partial `read` calls to full reads for configured resource-file paths
+- `revdiff` — adds `/revdiff` to launch the revdiff TUI and send captured annotations back to Pi
 
 ## Structure
 
