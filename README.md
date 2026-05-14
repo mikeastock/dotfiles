@@ -70,6 +70,7 @@ pi
 
 ### Notable custom Pi extensions
 
+- `buildr-artifacts` — installed from `buildrtech/dotagents`; provides `share_artifact` and `/share_artifact` for publishing local HTML artifacts to Buildr artifact storage
 - `openai-fast` — installed from `buildrtech/dotagents`; provides a `/fast` toggle that applies OpenAI `service_tier=priority` for configured models
 - `pi-prompt-shelf` — local copy of `tanishqkancharla/pi-prompt-shelf`; shelves editor prompts per session with shortcuts and `/shelf`
 - `pi-codex-conversion` — local copy of `IgorWarzocha/pi-codex-conversion`; adds Codex-style tools and prompt adaptation for OpenAI/Codex models in Pi
