@@ -102,17 +102,48 @@ def empty_install_manifest() -> dict:
     return {"version": INSTALL_MANIFEST_VERSION, "targets": {}}
 
 
+def validate_install_child_name(name: object) -> str:
+    if not isinstance(name, str):
+        sys.exit(f"Error: unsafe child name in install manifest: {name!r}")
+    if (
+        name in ("", ".", "..")
+        or Path(name).is_absolute()
+        or Path(name).name != name
+        or "/" in name
+        or "\\" in name
+    ):
+        sys.exit(f"Error: unsafe child name in install manifest: {name!r}")
+    return name
+
+
+def validate_manifest_targets(manifest: dict) -> None:
+    targets = manifest.setdefault("targets", {})
+    if not isinstance(targets, dict):
+        sys.exit(f"Error: invalid install manifest targets at {INSTALL_MANIFEST}")
+
+    for target_name, names in targets.items():
+        if not isinstance(names, list):
+            sys.exit(
+                f"Error: invalid install manifest target {target_name!r} at {INSTALL_MANIFEST}"
+            )
+        targets[target_name] = [validate_install_child_name(name) for name in names]
+
+
 def load_install_manifest() -> dict:
     if not INSTALL_MANIFEST.exists():
         return empty_install_manifest()
 
-    manifest = json.loads(INSTALL_MANIFEST.read_text())
+    try:
+        manifest = json.loads(INSTALL_MANIFEST.read_text())
+    except json.JSONDecodeError as error:
+        sys.exit(f"Error: invalid install manifest JSON at {INSTALL_MANIFEST}: {error}")
+
     if manifest.get("version") != INSTALL_MANIFEST_VERSION:
         sys.exit(
             f"Error: unsupported install manifest version at {INSTALL_MANIFEST}. "
             "Remove it manually to reinitialize managed install state."
         )
-    manifest.setdefault("targets", {})
+    validate_manifest_targets(manifest)
     return manifest
 
 
@@ -124,7 +155,7 @@ def save_install_manifest(manifest: dict) -> None:
 def source_child_names(source: Path, *, pattern: str = "*") -> list[str]:
     if not source.exists():
         return []
-    return sorted(path.name for path in source.glob(pattern))
+    return sorted(validate_install_child_name(path.name) for path in source.glob(pattern))
 
 
 def copy_child(source_child: Path, dest_child: Path) -> None:
@@ -134,6 +165,35 @@ def copy_child(source_child: Path, dest_child: Path) -> None:
     else:
         dest_child.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(source_child, dest_child)
+
+
+def unmanaged_install_conflicts(
+    dest: Path,
+    desired: set[str],
+    previous: set[str],
+    *,
+    force: bool = False,
+) -> list[Path]:
+    if force:
+        return []
+
+    return [
+        dest / name
+        for name in sorted(desired - previous)
+        if (dest / name).exists() or (dest / name).is_symlink()
+    ]
+
+
+def exit_for_unmanaged_conflicts(conflicts: list[Path]) -> None:
+    if not conflicts:
+        return
+
+    conflict_list = "\n".join(f"  - {path}" for path in conflicts)
+    sys.exit(
+        "Error: refusing to overwrite unmanaged install path(s):\n"
+        f"{conflict_list}\n"
+        "Run the install command with --force to claim these paths."
+    )
 
 
 def sync_managed_children(
@@ -150,6 +210,9 @@ def sync_managed_children(
     desired = set(source_child_names(source, pattern=pattern))
 
     dest.mkdir(parents=True, exist_ok=True)
+    exit_for_unmanaged_conflicts(
+        unmanaged_install_conflicts(dest, desired, previous, force=force)
+    )
 
     for name in sorted(previous - desired):
         installed = dest / name
@@ -974,13 +1037,14 @@ def install_extensions(plugins: dict[str, Plugin], force: bool = False):
 
     dest = INSTALL_PATHS["pi"]["extensions"]
 
-    installed = set()
     manifest = load_install_manifest()
     targets = manifest.setdefault("targets", {})
     previous = set(targets.get("pi.extensions", []))
     dest.mkdir(parents=True, exist_ok=True)
     skipped_extensions = []
     skipped_plugins = []
+    extension_entries = []
+    planned = set()
 
     # Extensions from plugins
     for plugin in plugins.values():
@@ -990,7 +1054,7 @@ def install_extensions(plugins: dict[str, Plugin], force: bool = False):
             continue
 
         for name, path in discover_items(plugin, "extensions"):
-            if name in installed:
+            if name in planned:
                 print(
                     f"    Warning: Extension '{name}' already exists, skipping duplicate from {plugin.name}"
                 )
@@ -1001,25 +1065,8 @@ def install_extensions(plugins: dict[str, Plugin], force: bool = False):
                 skipped_extensions.append(name)
                 continue
 
-            dest_ext = dest / name
-            if (dest_ext.exists() or dest_ext.is_symlink()) and name not in previous and not force:
-                sys.exit(
-                    f"Error: refusing to overwrite unmanaged install path: {dest_ext}\n"
-                    "Run the install command with --force to claim this path."
-                )
-            remove_path(dest_ext)
-            dest_ext.mkdir(parents=True)
-
-            # Extensions are .ts files, need to be wrapped in directory with index.ts
-            if path.is_file():
-                shutil.copy(path, dest_ext / "index.ts")
-            else:
-                shutil.copytree(path, dest_ext, dirs_exist_ok=True)
-
-            copy_plugin_extension_dependency_package(plugin, name, dest_ext)
-            install_extension_dependencies(dest_ext, name)
-            print(f"  {name} (from {plugin.name})")
-            installed.add(name)
+            extension_entries.append((name, path, plugin))
+            planned.add(name)
 
     # Custom extensions
     for ext_dir in custom_extension_dirs():
@@ -1030,22 +1077,37 @@ def install_extensions(plugins: dict[str, Plugin], force: bool = False):
             skipped_extensions.append(name)
             continue
 
-        if name in installed:
+        if name in planned:
             print(
                 f"    Warning: Custom extension '{name}' conflicts with plugin extension"
             )
 
-        dest_ext = dest / name
-        if (dest_ext.exists() or dest_ext.is_symlink()) and name not in previous and name not in installed and not force:
-            sys.exit(
-                f"Error: refusing to overwrite unmanaged install path: {dest_ext}\n"
-                "Run the install command with --force to claim this path."
-            )
-        remove_path(dest_ext)
-        shutil.copytree(ext_dir, dest_ext)
+        extension_entries.append((name, ext_dir, None))
+        planned.add(name)
 
+    exit_for_unmanaged_conflicts(
+        unmanaged_install_conflicts(dest, planned, previous, force=force)
+    )
+
+    installed = set()
+    for name, path, plugin in extension_entries:
+        dest_ext = dest / name
+        remove_path(dest_ext)
+
+        # Extensions are .ts files, need to be wrapped in directory with index.ts
+        if path.is_file():
+            dest_ext.mkdir(parents=True)
+            shutil.copy(path, dest_ext / "index.ts")
+        else:
+            shutil.copytree(path, dest_ext)
+
+        if plugin is not None:
+            copy_plugin_extension_dependency_package(plugin, name, dest_ext)
         install_extension_dependencies(dest_ext, name)
-        print(f"  {name} (custom)")
+        if plugin is None:
+            print(f"  {name} (custom)")
+        else:
+            print(f"  {name} (from {plugin.name})")
         installed.add(name)
 
     for name in sorted(previous - installed):

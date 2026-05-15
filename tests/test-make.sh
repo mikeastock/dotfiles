@@ -240,6 +240,39 @@ EOF
         TESTS_FAILED=$((TESTS_FAILED + 1))
     fi
     assert_output_contains "$output" "refusing to overwrite unmanaged install path" "Conflict error explains unmanaged path"
+    assert_file_not_exists "$SANDBOX_DIR/.claude/skills/agent-browser" "Failed conflict check does not partially install earlier managed skills"
+}
+
+# Test: install refuses unsafe manifest child names
+test_install_refuses_unsafe_manifest_child_names() {
+    log_test "Testing install refuses unsafe manifest child names"
+    cd "$PROJECT_DIR"
+
+    rm -rf "$SANDBOX_DIR/.config/agents/skills" "$SANDBOX_DIR/.claude/skills" "$SANDBOX_DIR/.agents/skills" "$SANDBOX_DIR/.local/state/dotfiles"
+    mkdir -p "$SANDBOX_DIR/.local/state/dotfiles"
+    cat > "$SANDBOX_DIR/.local/state/dotfiles/agent-install-manifest.json" <<'EOF'
+{
+  "version": 1,
+  "targets": {
+    "claude.skills": ["../unsafe"]
+  }
+}
+EOF
+
+    local output status
+    set +e
+    output=$(HOME="$SANDBOX_DIR" XDG_STATE_HOME="$SANDBOX_DIR/.local/state" make clean 2>&1)
+    status=$?
+    set -e
+
+    if [ "$status" -ne 0 ]; then
+        log_info "PASS: clean failed on unsafe manifest child name"
+        TESTS_PASSED=$((TESTS_PASSED + 1))
+    else
+        log_error "FAIL: clean should fail on unsafe manifest child name"
+        TESTS_FAILED=$((TESTS_FAILED + 1))
+    fi
+    assert_output_contains "$output" "unsafe child name" "Unsafe manifest error explains bad child name"
 }
 
 # Test: install-skills --force claims unmanaged same-name conflicts
@@ -411,6 +444,11 @@ test_make_clean() {
         TESTS_FAILED=$((TESTS_FAILED + 1))
     fi
 
+    assert_file_not_exists "$SANDBOX_DIR/.claude/skills/how" "Clean removes managed skill"
+    assert_file_not_exists "$SANDBOX_DIR/.pi/agent/extensions/web-access" "Clean removes managed extension"
+    assert_file_not_exists "$SANDBOX_DIR/.pi/agent/prompts/refactor-pass.md" "Clean removes managed prompt"
+    assert_file_not_exists "$SANDBOX_DIR/.pi/agent/agents/code-reviewer.md" "Clean removes managed subagent"
+    assert_file_not_exists "$SANDBOX_DIR/.pi/agent/themes/catppuccin-latte.json" "Clean removes managed theme"
     assert_dir_exists "$SANDBOX_DIR/.claude/skills/manual-clean-skill" "Clean preserves unmanaged skill"
     assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/manual-clean-extension" "Clean preserves unmanaged extension"
     assert_file_exists "$SANDBOX_DIR/.pi/agent/prompts/manual-clean.md" "Clean preserves unmanaged prompt"
@@ -528,6 +566,7 @@ main() {
     test_install_skills_preserves_unmanaged_siblings
     test_install_skills_removes_previous_managed_siblings
     test_install_skills_refuses_unmanaged_name_conflict
+    test_install_refuses_unsafe_manifest_child_names
     test_install_skills_force_claims_unmanaged_name_conflict
     test_make_install_extensions
     test_make_install_prompts
