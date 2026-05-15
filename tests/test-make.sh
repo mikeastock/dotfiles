@@ -165,6 +165,30 @@ test_make_install_skills() {
     assert_dir_exists "$SANDBOX_DIR/.agents/skills/how" "Pi installs how skill"
 }
 
+# Test: install-skills preserves unmanaged sibling skills
+test_install_skills_preserves_unmanaged_siblings() {
+    log_test "Testing install-skills preserves unmanaged skill siblings"
+    cd "$PROJECT_DIR"
+
+    rm -rf "$SANDBOX_DIR/.config/agents/skills" "$SANDBOX_DIR/.claude/skills" "$SANDBOX_DIR/.agents/skills"
+    mkdir -p "$SANDBOX_DIR/.claude/skills/manual-skill"
+    cat > "$SANDBOX_DIR/.claude/skills/manual-skill/SKILL.md" <<'EOF'
+---
+name: manual-skill
+description: Manual test skill
+---
+
+Manual content.
+EOF
+
+    local output
+    output=$(HOME="$SANDBOX_DIR" XDG_STATE_HOME="$SANDBOX_DIR/.local/state" make install-skills 2>&1)
+
+    assert_output_contains "$output" "Installing skills" "Install shows skill progress"
+    assert_dir_exists "$SANDBOX_DIR/.claude/skills/manual-skill" "Unmanaged Claude skill survives install"
+    assert_file_exists "$SANDBOX_DIR/.claude/skills/manual-skill/SKILL.md" "Unmanaged Claude skill file survives install"
+}
+
 # Test: make install-extensions (with sandbox)
 test_make_install_extensions() {
     log_test "Testing 'make install-extensions' (sandboxed)"
@@ -386,6 +410,7 @@ main() {
     test_make_build
     test_package_manager_security_config
     test_make_install_skills
+    test_install_skills_preserves_unmanaged_siblings
     test_make_install_extensions
     test_make_install_prompts
     test_make_install_themes
