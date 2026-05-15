@@ -384,12 +384,21 @@ test_make_clean() {
     log_test "Testing 'make clean' (sandboxed)"
     cd "$PROJECT_DIR"
 
+    mkdir -p "$SANDBOX_DIR/.claude/skills/manual-clean-skill"
+    echo "manual" > "$SANDBOX_DIR/.claude/skills/manual-clean-skill/SKILL.md"
+    mkdir -p "$SANDBOX_DIR/.pi/agent/extensions/manual-clean-extension"
+    echo "manual" > "$SANDBOX_DIR/.pi/agent/extensions/manual-clean-extension/index.ts"
+    mkdir -p "$SANDBOX_DIR/.pi/agent/prompts"
+    echo "manual" > "$SANDBOX_DIR/.pi/agent/prompts/manual-clean.md"
+    mkdir -p "$SANDBOX_DIR/.pi/agent/agents"
+    echo "manual" > "$SANDBOX_DIR/.pi/agent/agents/manual-clean.md"
+
     # First install
-    HOME="$SANDBOX_DIR" make install >/dev/null 2>&1
+    HOME="$SANDBOX_DIR" XDG_STATE_HOME="$SANDBOX_DIR/.local/state" make install >/dev/null 2>&1
 
     # Then clean
     local output
-    output=$(HOME="$SANDBOX_DIR" make clean 2>&1)
+    output=$(HOME="$SANDBOX_DIR" XDG_STATE_HOME="$SANDBOX_DIR/.local/state" make clean 2>&1)
 
     assert_output_contains "$output" "Cleaning installed artifacts" "Clean shows progress"
 
@@ -401,6 +410,11 @@ test_make_clean() {
         log_error "FAIL: Build directories still exist after clean"
         TESTS_FAILED=$((TESTS_FAILED + 1))
     fi
+
+    assert_dir_exists "$SANDBOX_DIR/.claude/skills/manual-clean-skill" "Clean preserves unmanaged skill"
+    assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/manual-clean-extension" "Clean preserves unmanaged extension"
+    assert_file_exists "$SANDBOX_DIR/.pi/agent/prompts/manual-clean.md" "Clean preserves unmanaged prompt"
+    assert_file_exists "$SANDBOX_DIR/.pi/agent/agents/manual-clean.md" "Clean preserves unmanaged subagent"
 }
 
 # Test: default make target (should run help)
