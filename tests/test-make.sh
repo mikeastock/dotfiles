@@ -189,6 +189,77 @@ EOF
     assert_file_exists "$SANDBOX_DIR/.claude/skills/manual-skill/SKILL.md" "Unmanaged Claude skill file survives install"
 }
 
+# Test: install-skills removes previously managed sibling skills
+test_install_skills_removes_previous_managed_siblings() {
+    log_test "Testing install-skills removes previously managed skill siblings"
+    cd "$PROJECT_DIR"
+
+    rm -rf "$SANDBOX_DIR/.config/agents/skills" "$SANDBOX_DIR/.claude/skills" "$SANDBOX_DIR/.agents/skills" "$SANDBOX_DIR/.local/state/dotfiles"
+
+    HOME="$SANDBOX_DIR" XDG_STATE_HOME="$SANDBOX_DIR/.local/state" make install-skills >/dev/null 2>&1
+    assert_dir_exists "$SANDBOX_DIR/.claude/skills/how" "Managed skill initially installed"
+
+    python3 - <<PY
+import json
+from pathlib import Path
+manifest_path = Path("$SANDBOX_DIR/.local/state/dotfiles/agent-install-manifest.json")
+manifest = json.loads(manifest_path.read_text())
+manifest["targets"]["claude.skills"].append("obsolete-managed-skill")
+manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+PY
+    mkdir -p "$SANDBOX_DIR/.claude/skills/obsolete-managed-skill"
+    touch "$SANDBOX_DIR/.claude/skills/obsolete-managed-skill/SKILL.md"
+
+    HOME="$SANDBOX_DIR" XDG_STATE_HOME="$SANDBOX_DIR/.local/state" make install-skills >/dev/null 2>&1
+
+    assert_file_not_exists "$SANDBOX_DIR/.claude/skills/obsolete-managed-skill" "Obsolete managed skill is removed"
+}
+
+# Test: install-skills refuses unmanaged same-name conflicts
+test_install_skills_refuses_unmanaged_name_conflict() {
+    log_test "Testing install-skills refuses unmanaged same-name conflict"
+    cd "$PROJECT_DIR"
+
+    rm -rf "$SANDBOX_DIR/.config/agents/skills" "$SANDBOX_DIR/.claude/skills" "$SANDBOX_DIR/.agents/skills" "$SANDBOX_DIR/.local/state/dotfiles"
+    mkdir -p "$SANDBOX_DIR/.claude/skills/how"
+    cat > "$SANDBOX_DIR/.claude/skills/how/SKILL.md" <<'EOF'
+manual conflict
+EOF
+
+    local output status
+    set +e
+    output=$(HOME="$SANDBOX_DIR" XDG_STATE_HOME="$SANDBOX_DIR/.local/state" make install-skills 2>&1)
+    status=$?
+    set -e
+
+    if [ "$status" -ne 0 ]; then
+        log_info "PASS: install-skills failed on unmanaged conflict"
+        TESTS_PASSED=$((TESTS_PASSED + 1))
+    else
+        log_error "FAIL: install-skills should fail on unmanaged conflict"
+        TESTS_FAILED=$((TESTS_FAILED + 1))
+    fi
+    assert_output_contains "$output" "refusing to overwrite unmanaged install path" "Conflict error explains unmanaged path"
+}
+
+# Test: install-skills --force claims unmanaged same-name conflicts
+test_install_skills_force_claims_unmanaged_name_conflict() {
+    log_test "Testing install-skills --force claims unmanaged same-name conflict"
+    cd "$PROJECT_DIR"
+
+    rm -rf "$SANDBOX_DIR/.config/agents/skills" "$SANDBOX_DIR/.claude/skills" "$SANDBOX_DIR/.agents/skills" "$SANDBOX_DIR/.local/state/dotfiles"
+    mkdir -p "$SANDBOX_DIR/.claude/skills/how"
+    cat > "$SANDBOX_DIR/.claude/skills/how/SKILL.md" <<'EOF'
+manual conflict
+EOF
+
+    local output
+    output=$(HOME="$SANDBOX_DIR" XDG_STATE_HOME="$SANDBOX_DIR/.local/state" python3 scripts/build.py install-skills --force 2>&1)
+
+    assert_output_contains "$output" "Installing skills" "Forced install shows skill progress"
+    assert_output_not_contains "$(<"$SANDBOX_DIR/.claude/skills/how/SKILL.md")" "manual conflict" "Forced install overwrites conflicting unmanaged skill"
+}
+
 # Test: make install-extensions (with sandbox)
 test_make_install_extensions() {
     log_test "Testing 'make install-extensions' (sandboxed)"
@@ -411,6 +482,9 @@ main() {
     test_package_manager_security_config
     test_make_install_skills
     test_install_skills_preserves_unmanaged_siblings
+    test_install_skills_removes_previous_managed_siblings
+    test_install_skills_refuses_unmanaged_name_conflict
+    test_install_skills_force_claims_unmanaged_name_conflict
     test_make_install_extensions
     test_make_install_prompts
     test_make_install_themes
