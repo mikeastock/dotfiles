@@ -171,6 +171,16 @@ def sync_managed_children(
     return len(desired)
 
 
+def clean_manifest_target(manifest: dict, target_name: str, dest: Path) -> None:
+    targets = manifest.setdefault("targets", {})
+    for name in sorted(targets.get(target_name, [])):
+        installed = dest / name
+        if installed.exists() or installed.is_symlink():
+            remove_path(installed)
+            print(f"  Removed {installed}")
+    targets.pop(target_name, None)
+
+
 def plugin_dir_name(name: str) -> str:
     """Convert plugin name (owner/repo) to directory name (owner-repo)."""
     return name.replace("/", "-")
@@ -1200,58 +1210,25 @@ def install_configs():
     install_global_agents_md()
 
 
-def clean(plugins: dict[str, Plugin]):
+def clean():
     """Remove all installed artifacts."""
     print("Cleaning installed artifacts...")
 
-    # Clean skills from all agents
+    manifest = load_install_manifest()
+
     for agent, paths in INSTALL_PATHS.items():
         if "skills" in paths:
-            source = BUILD_DIR / agent
-            if source.exists():
-                for skill_dir in source.iterdir():
-                    if skill_dir.is_dir():
-                        installed = paths["skills"] / skill_dir.name
-                        if installed.exists() or installed.is_symlink():
-                            remove_path(installed)
-                            print(f"  Removed skill: {skill_dir.name} from {agent}")
+            clean_manifest_target(manifest, f"{agent}.skills", paths["skills"])
 
-    # Clean extensions
-    ext_dest = INSTALL_PATHS["pi"]["extensions"]
-    for plugin in plugins.values():
-        for name, _ in discover_items(plugin, "extensions"):
-            installed = ext_dest / name
-            if installed.exists() or installed.is_symlink():
-                remove_path(installed)
-                print(f"  Removed extension: {name}")
+    clean_manifest_target(manifest, "pi.extensions", INSTALL_PATHS["pi"]["extensions"])
+    clean_manifest_target(manifest, "pi.prompts", INSTALL_PATHS["pi"]["prompts"])
+    clean_manifest_target(manifest, "pi.subagents", INSTALL_PATHS["pi"]["subagents"])
+    clean_manifest_target(manifest, "pi.themes", INSTALL_PATHS["pi"]["themes"])
+    save_install_manifest(manifest)
 
-    # Custom extensions
-    for ext_dir in custom_extension_dirs():
-        installed = ext_dest / ext_dir.name
-        if installed.exists() or installed.is_symlink():
-            remove_path(installed)
-            print(f"  Removed extension: {ext_dir.name}")
-
-    # Clean prompts
-    prompts_dest = INSTALL_PATHS["pi"]["prompts"]
-    if prompts_dest.exists() or prompts_dest.is_symlink():
-        remove_path(prompts_dest)
-        print(f"  Removed prompts from {prompts_dest}")
-
-    # Clean subagents
-    subagents_dest = INSTALL_PATHS["pi"]["subagents"]
-    if subagents_dest.exists() or subagents_dest.is_symlink():
-        remove_path(subagents_dest)
-        print(f"  Removed subagents from {subagents_dest}")
-
-    # Clean managed Pi themes
-    themes_dest = INSTALL_PATHS["pi"]["themes"]
-    if PI_THEMES_DIR.exists() and themes_dest.exists():
-        for theme_file in sorted(PI_THEMES_DIR.glob("*.json")):
-            installed_theme = themes_dest / theme_file.name
-            if installed_theme.exists() or installed_theme.is_symlink():
-                remove_path(installed_theme)
-                print(f"  Removed theme: {theme_file.stem}")
+    if not manifest.get("targets") and INSTALL_MANIFEST.exists():
+        INSTALL_MANIFEST.unlink()
+        print(f"  Removed {INSTALL_MANIFEST}")
 
     # Clean build directory
     if BUILD_DIR.exists():
@@ -1355,7 +1332,7 @@ def main():
     elif args.command == "install-configs":
         install_configs()
     elif args.command == "clean":
-        clean(plugins)
+        clean()
 
 
 if __name__ == "__main__":
