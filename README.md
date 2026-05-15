@@ -44,9 +44,13 @@ make install-themes
 make install-extensions
 make install-configs
 make build                   # build agent artifacts only
-make agents-clean            # clean agent build/install artifacts
+make clean                   # clean agent build/install artifacts
 make plugin-update           # update plugin submodules
 ```
+
+### Managed install behavior
+
+`make install` preserves manually installed skills, Pi extensions, prompts, subagents, and themes that live beside dotfiles-managed artifacts. The installer tracks top-level managed names in `~/.local/state/dotfiles/agent-install-manifest.json`, overwrites those managed artifacts on each install, and removes managed artifacts that are no longer built. If a built artifact conflicts with an existing unmanaged path, the install fails; rerun the underlying build script with `--force` only when you want dotfiles to claim that path.
 
 ### Canonical Pi install
 
