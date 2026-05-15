@@ -861,7 +861,7 @@ def build_themes():
     print(f"  Built {built} themes")
 
 
-def install_prompts():
+def install_prompts(force: bool = False):
     """Install built prompt templates to Pi prompt directory."""
     print("Installing prompt templates...")
 
@@ -871,21 +871,18 @@ def install_prompts():
         return
 
     dest = INSTALL_PATHS["pi"]["prompts"]
-
-    # Clear existing prompts directory for a fresh install
-    if dest.exists():
-        shutil.rmtree(dest)
-    dest.mkdir(parents=True, exist_ok=True)
-
-    count = 0
-    for prompt_file in sorted(source.glob("*.md")):
-        shutil.copy(prompt_file, dest / prompt_file.name)
-        count += 1
+    count = sync_managed_children(
+        "pi.prompts",
+        source,
+        dest,
+        pattern="*.md",
+        force=force,
+    )
 
     print(f"  pi: {count} prompts -> {dest}")
 
 
-def install_subagents():
+def install_subagents(force: bool = False):
     """Install built subagent definitions to Pi agents directory."""
     print("Installing subagents...")
 
@@ -895,21 +892,18 @@ def install_subagents():
         return
 
     dest = INSTALL_PATHS["pi"]["subagents"]
-
-    # Clear existing agents directory for a fresh install
-    if dest.exists():
-        shutil.rmtree(dest)
-    dest.mkdir(parents=True, exist_ok=True)
-
-    count = 0
-    for agent_file in sorted(source.glob("*.md")):
-        shutil.copy(agent_file, dest / agent_file.name)
-        count += 1
+    count = sync_managed_children(
+        "pi.subagents",
+        source,
+        dest,
+        pattern="*.md",
+        force=force,
+    )
 
     print(f"  pi: {count} subagents -> {dest}")
 
 
-def install_themes():
+def install_themes(force: bool = False):
     """Install built Pi themes."""
     print("Installing themes...")
 
@@ -919,12 +913,13 @@ def install_themes():
         return
 
     dest = INSTALL_PATHS["pi"]["themes"]
-    dest.mkdir(parents=True, exist_ok=True)
-
-    count = 0
-    for theme_file in sorted(source.glob("*.json")):
-        shutil.copy(theme_file, dest / theme_file.name)
-        count += 1
+    count = sync_managed_children(
+        "pi.themes",
+        source,
+        dest,
+        pattern="*.json",
+        force=force,
+    )
 
     print(f"  pi: {count} themes -> {dest}")
 
@@ -960,7 +955,7 @@ def install_extension_dependencies(extension_dir: Path, extension_name: str):
     run_cmd(["pnpm", "install"], cwd=extension_dir)
 
 
-def install_extensions(plugins: dict[str, Plugin]):
+def install_extensions(plugins: dict[str, Plugin], force: bool = False):
     """Install extensions from plugins and custom extensions directory."""
     print("Installing extensions...")
 
@@ -969,12 +964,11 @@ def install_extensions(plugins: dict[str, Plugin]):
 
     dest = INSTALL_PATHS["pi"]["extensions"]
 
-    # Clear existing extensions directory for a fresh install
-    if dest.exists():
-        shutil.rmtree(dest)
-    dest.mkdir(parents=True, exist_ok=True)
-
     installed = set()
+    manifest = load_install_manifest()
+    targets = manifest.setdefault("targets", {})
+    previous = set(targets.get("pi.extensions", []))
+    dest.mkdir(parents=True, exist_ok=True)
     skipped_extensions = []
     skipped_plugins = []
 
@@ -998,6 +992,11 @@ def install_extensions(plugins: dict[str, Plugin]):
                 continue
 
             dest_ext = dest / name
+            if (dest_ext.exists() or dest_ext.is_symlink()) and name not in previous and not force:
+                sys.exit(
+                    f"Error: refusing to overwrite unmanaged install path: {dest_ext}\n"
+                    "Run the install command with --force to claim this path."
+                )
             remove_path(dest_ext)
             dest_ext.mkdir(parents=True)
 
@@ -1027,12 +1026,25 @@ def install_extensions(plugins: dict[str, Plugin]):
             )
 
         dest_ext = dest / name
+        if (dest_ext.exists() or dest_ext.is_symlink()) and name not in previous and name not in installed and not force:
+            sys.exit(
+                f"Error: refusing to overwrite unmanaged install path: {dest_ext}\n"
+                "Run the install command with --force to claim this path."
+            )
         remove_path(dest_ext)
         shutil.copytree(ext_dir, dest_ext)
 
         install_extension_dependencies(dest_ext, name)
         print(f"  {name} (custom)")
         installed.add(name)
+
+    for name in sorted(previous - installed):
+        installed_ext = dest / name
+        if installed_ext.exists() or installed_ext.is_symlink():
+            remove_path(installed_ext)
+
+    targets["pi.extensions"] = sorted(installed)
+    save_install_manifest(manifest)
 
     if skipped_plugins:
         print(
@@ -1320,26 +1332,26 @@ def main():
         build_subagents(plugins)
         build_themes()
         install_skills(force=args.force)
-        install_prompts()
-        install_subagents()
-        install_themes()
-        install_extensions(plugins)
+        install_prompts(force=args.force)
+        install_subagents(force=args.force)
+        install_themes(force=args.force)
+        install_extensions(plugins, force=args.force)
         install_configs()
         print("\nAll done!")
     elif args.command == "install-skills":
         build_skills(plugins)
         install_skills(force=args.force)
     elif args.command == "install-extensions":
-        install_extensions(plugins)
+        install_extensions(plugins, force=args.force)
     elif args.command == "install-prompts":
         build_prompts(plugins)
-        install_prompts()
+        install_prompts(force=args.force)
     elif args.command == "install-subagents":
         build_subagents(plugins)
-        install_subagents()
+        install_subagents(force=args.force)
     elif args.command == "install-themes":
         build_themes()
-        install_themes()
+        install_themes(force=args.force)
     elif args.command == "install-configs":
         install_configs()
     elif args.command == "clean":
