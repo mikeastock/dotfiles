@@ -9,6 +9,8 @@ Requires Python 3.11+ (uses tomllib from stdlib).
 """
 
 import argparse
+import json
+import os
 import shutil
 import subprocess
 import sys
@@ -89,7 +91,84 @@ INSTALL_PATHS = {
     },
 }
 
+STATE_DIR = Path(os.environ.get("XDG_STATE_HOME") or HOME / ".local" / "state") / "dotfiles"
+INSTALL_MANIFEST = STATE_DIR / "agent-install-manifest.json"
+INSTALL_MANIFEST_VERSION = 1
+
 AGENTS = ["amp", "claude", "pi"]  # Agents that get skill builds
+
+
+def empty_install_manifest() -> dict:
+    return {"version": INSTALL_MANIFEST_VERSION, "targets": {}}
+
+
+def load_install_manifest() -> dict:
+    if not INSTALL_MANIFEST.exists():
+        return empty_install_manifest()
+
+    manifest = json.loads(INSTALL_MANIFEST.read_text())
+    if manifest.get("version") != INSTALL_MANIFEST_VERSION:
+        sys.exit(
+            f"Error: unsupported install manifest version at {INSTALL_MANIFEST}. "
+            "Remove it manually to reinitialize managed install state."
+        )
+    manifest.setdefault("targets", {})
+    return manifest
+
+
+def save_install_manifest(manifest: dict) -> None:
+    INSTALL_MANIFEST.parent.mkdir(parents=True, exist_ok=True)
+    INSTALL_MANIFEST.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+
+
+def source_child_names(source: Path, *, pattern: str = "*") -> list[str]:
+    if not source.exists():
+        return []
+    return sorted(path.name for path in source.glob(pattern))
+
+
+def copy_child(source_child: Path, dest_child: Path) -> None:
+    remove_path(dest_child)
+    if source_child.is_dir():
+        shutil.copytree(source_child, dest_child)
+    else:
+        dest_child.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(source_child, dest_child)
+
+
+def sync_managed_children(
+    target_name: str,
+    source: Path,
+    dest: Path,
+    *,
+    pattern: str = "*",
+    force: bool = False,
+) -> int:
+    manifest = load_install_manifest()
+    targets = manifest.setdefault("targets", {})
+    previous = set(targets.get(target_name, []))
+    desired = set(source_child_names(source, pattern=pattern))
+
+    dest.mkdir(parents=True, exist_ok=True)
+
+    for name in sorted(previous - desired):
+        installed = dest / name
+        if installed.exists() or installed.is_symlink():
+            remove_path(installed)
+
+    for name in sorted(desired):
+        source_child = source / name
+        dest_child = dest / name
+        if (dest_child.exists() or dest_child.is_symlink()) and name not in previous and not force:
+            sys.exit(
+                f"Error: refusing to overwrite unmanaged install path: {dest_child}\n"
+                "Run the install command with --force to claim this path."
+            )
+        copy_child(source_child, dest_child)
+
+    targets[target_name] = sorted(desired)
+    save_install_manifest(manifest)
+    return len(desired)
 
 
 def plugin_dir_name(name: str) -> str:
@@ -731,7 +810,7 @@ def build_subagents(plugins: dict[str, Plugin]):
     print(f"  Built {len(built)} subagents")
 
 
-def install_skills():
+def install_skills(force: bool = False):
     """Install built skills to agent directories."""
     print("Installing skills...")
 
@@ -739,25 +818,17 @@ def install_skills():
         if "skills" not in paths:
             continue
 
-        # Each agent uses its own build directory
         source = BUILD_DIR / agent
-
         if not source.exists():
             continue
 
         dest = paths["skills"]
-
-        # Clear existing skills directory for a fresh install
-        if dest.exists():
-            shutil.rmtree(dest)
-        dest.mkdir(parents=True, exist_ok=True)
-
-        count = 0
-        for skill_dir in sorted(source.iterdir()):
-            if skill_dir.is_dir():
-                dest_skill = dest / skill_dir.name
-                shutil.copytree(skill_dir, dest_skill)
-                count += 1
+        count = sync_managed_children(
+            f"{agent}.skills",
+            source,
+            dest,
+            force=force,
+        )
 
         print(f"  {agent}: {count} skills -> {dest}")
 
@@ -1219,6 +1290,11 @@ def main():
         action="store_true",
         help="Skip interactive extensions and overrides (for headless/automated environments)",
     )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Claim existing unmanaged install paths that conflict with managed artifact names",
+    )
     args = parser.parse_args()
 
     # Set global flag
@@ -1243,7 +1319,7 @@ def main():
         build_prompts(plugins)
         build_subagents(plugins)
         build_themes()
-        install_skills()
+        install_skills(force=args.force)
         install_prompts()
         install_subagents()
         install_themes()
@@ -1252,7 +1328,7 @@ def main():
         print("\nAll done!")
     elif args.command == "install-skills":
         build_skills(plugins)
-        install_skills()
+        install_skills(force=args.force)
     elif args.command == "install-extensions":
         install_extensions(plugins)
     elif args.command == "install-prompts":
