@@ -6,6 +6,7 @@
 
 PYTHON := python3
 BUILD_SCRIPT := $(CURDIR)/scripts/build.py
+FORCE_FLAG := $(if $(FORCE),--force,)
 UNAME_S := $(shell uname -s)
 
 # Home directory symlinks
@@ -24,6 +25,7 @@ help:
 	@echo ""
 	@echo "Usage:"
 	@echo "  make install                 Initialize submodules and install skills and extensions"
+	@echo "  make install FORCE=1         Claim existing unmanaged paths that match managed artifacts"
 	@echo "  make install-non-interactive Install for headless/automated environments (skips interactive extensions)"
 	@echo "  make install-skills          Install skills only (Amp, Claude Code, Pi agent)"
 	@echo "  make install-extensions      Install extensions only (Pi agent)"
@@ -55,11 +57,11 @@ check-python:
 		(echo "Error: Python 3.11+ required (for tomllib)"; exit 1)
 
 install: check-python
-	@$(PYTHON) "$(BUILD_SCRIPT)" install
+	@$(PYTHON) "$(BUILD_SCRIPT)" install $(FORCE_FLAG)
 	@echo "All skills, prompt templates, themes, and extensions installed"
 
 install-non-interactive: check-python
-	@$(PYTHON) "$(BUILD_SCRIPT)" install --non-interactive
+	@$(PYTHON) "$(BUILD_SCRIPT)" install --non-interactive $(FORCE_FLAG)
 	@echo "All skills, prompt templates, themes, and extensions installed (non-interactive mode)"
 
 submodule-init:
@@ -69,19 +71,19 @@ build: check-python
 	@$(PYTHON) "$(BUILD_SCRIPT)" build
 
 install-skills: check-python
-	@$(PYTHON) "$(BUILD_SCRIPT)" install-skills
+	@$(PYTHON) "$(BUILD_SCRIPT)" install-skills $(FORCE_FLAG)
 
 install-extensions: check-python
-	@$(PYTHON) "$(BUILD_SCRIPT)" install-extensions
+	@$(PYTHON) "$(BUILD_SCRIPT)" install-extensions $(FORCE_FLAG)
 
 install-prompts: check-python
-	@$(PYTHON) "$(BUILD_SCRIPT)" install-prompts
+	@$(PYTHON) "$(BUILD_SCRIPT)" install-prompts $(FORCE_FLAG)
 
 install-subagents: check-python
-	@$(PYTHON) "$(BUILD_SCRIPT)" install-subagents
+	@$(PYTHON) "$(BUILD_SCRIPT)" install-subagents $(FORCE_FLAG)
 
 install-themes: check-python
-	@$(PYTHON) "$(BUILD_SCRIPT)" install-themes
+	@$(PYTHON) "$(BUILD_SCRIPT)" install-themes $(FORCE_FLAG)
 
 install-configs: check-python
 	@$(PYTHON) "$(BUILD_SCRIPT)" install-configs
