@@ -120,7 +120,7 @@ test_make_install_skills() {
 
     # Run install-skills with sandbox HOME
     local output
-    output=$(HOME="$SANDBOX_DIR" make install-skills 2>&1)
+    output=$(HOME="$SANDBOX_DIR" XDG_STATE_HOME="$SANDBOX_DIR/.local/state" make install-skills 2>&1)
 
     assert_output_contains "$output" "Installing skills" "Install shows progress"
 
@@ -265,9 +265,14 @@ test_make_install_extensions() {
     log_test "Testing 'make install-extensions' (sandboxed)"
     cd "$PROJECT_DIR"
 
+    mkdir -p "$SANDBOX_DIR/.pi/agent/extensions/manual-extension"
+    cat > "$SANDBOX_DIR/.pi/agent/extensions/manual-extension/index.ts" <<'EOF'
+export default {};
+EOF
+
     # Run install-extensions with sandbox HOME
     local output
-    output=$(HOME="$SANDBOX_DIR" make install-extensions 2>&1)
+    output=$(HOME="$SANDBOX_DIR" XDG_STATE_HOME="$SANDBOX_DIR/.local/state" make install-extensions 2>&1)
 
     assert_output_contains "$output" "Installing extensions" "Install shows extensions progress"
     assert_output_contains "$output" "Installed" "Install shows completion"
@@ -298,6 +303,8 @@ test_make_install_extensions() {
     assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/web-access" "web-access extension installed"
     assert_file_not_exists "$SANDBOX_DIR/.pi/agent/extensions/subagent" "subagent extension removed"
     assert_file_not_exists "$SANDBOX_DIR/.pi/agent/extensions/pi-web-access" "pi-web-access extension removed"
+    assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/manual-extension" "Unmanaged Pi extension survives install"
+    assert_file_exists "$SANDBOX_DIR/.pi/agent/extensions/manual-extension/index.ts" "Unmanaged Pi extension file survives install"
 }
 
 # Test: make install-prompts (with sandbox)
@@ -305,11 +312,30 @@ test_make_install_prompts() {
     log_test "Testing 'make install-prompts' (sandboxed)"
     cd "$PROJECT_DIR"
 
+    mkdir -p "$SANDBOX_DIR/.pi/agent/prompts"
+    echo "manual prompt" > "$SANDBOX_DIR/.pi/agent/prompts/manual.md"
+
     local output
-    output=$(HOME="$SANDBOX_DIR" make install-prompts 2>&1)
+    output=$(HOME="$SANDBOX_DIR" XDG_STATE_HOME="$SANDBOX_DIR/.local/state" make install-prompts 2>&1)
 
     assert_output_contains "$output" "Installing prompt templates" "Install shows prompt progress"
     assert_file_exists "$SANDBOX_DIR/.pi/agent/prompts/refactor-pass.md" "Pi prompt template installed"
+    assert_file_exists "$SANDBOX_DIR/.pi/agent/prompts/manual.md" "Unmanaged Pi prompt survives install"
+}
+
+# Test: make install-subagents preserves unmanaged siblings
+test_make_install_subagents_preserves_unmanaged_siblings() {
+    log_test "Testing 'make install-subagents' preserves unmanaged siblings"
+    cd "$PROJECT_DIR"
+
+    mkdir -p "$SANDBOX_DIR/.pi/agent/agents"
+    echo "manual subagent" > "$SANDBOX_DIR/.pi/agent/agents/manual.md"
+
+    local output
+    output=$(HOME="$SANDBOX_DIR" XDG_STATE_HOME="$SANDBOX_DIR/.local/state" make install-subagents 2>&1)
+
+    assert_output_contains "$output" "Installing subagents" "Install shows subagent progress"
+    assert_file_exists "$SANDBOX_DIR/.pi/agent/agents/manual.md" "Unmanaged Pi subagent survives install"
 }
 
 # Test: make install-themes (with sandbox)
@@ -317,12 +343,16 @@ test_make_install_themes() {
     log_test "Testing 'make install-themes' (sandboxed)"
     cd "$PROJECT_DIR"
 
+    mkdir -p "$SANDBOX_DIR/.pi/agent/themes"
+    echo '{"name":"manual"}' > "$SANDBOX_DIR/.pi/agent/themes/manual.json"
+
     local output
-    output=$(HOME="$SANDBOX_DIR" make install-themes 2>&1)
+    output=$(HOME="$SANDBOX_DIR" XDG_STATE_HOME="$SANDBOX_DIR/.local/state" make install-themes 2>&1)
 
     assert_output_contains "$output" "Installing themes" "Install shows theme progress"
     assert_file_exists "$SANDBOX_DIR/.pi/agent/themes/catppuccin-latte.json" "Pi latte theme installed"
     assert_file_exists "$SANDBOX_DIR/.pi/agent/themes/catppuccin-mocha.json" "Pi mocha theme installed"
+    assert_file_exists "$SANDBOX_DIR/.pi/agent/themes/manual.json" "Unmanaged Pi theme survives install"
 }
 
 # Test: make install (with sandbox)
@@ -337,7 +367,7 @@ test_make_install() {
 
     # Run full install with sandbox HOME
     local output
-    output=$(HOME="$SANDBOX_DIR" make install 2>&1)
+    output=$(HOME="$SANDBOX_DIR" XDG_STATE_HOME="$SANDBOX_DIR/.local/state" make install 2>&1)
 
     assert_output_contains "$output" "All skills, prompt templates, themes, and extensions installed" "Install shows completion message"
     assert_file_exists "$SANDBOX_DIR/.pi/agent/prompts/refactor-pass.md" "Install includes Pi prompts"
@@ -487,6 +517,7 @@ main() {
     test_install_skills_force_claims_unmanaged_name_conflict
     test_make_install_extensions
     test_make_install_prompts
+    test_make_install_subagents_preserves_unmanaged_siblings
     test_make_install_themes
     test_make_install
     test_make_clean
