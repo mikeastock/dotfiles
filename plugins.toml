@@ -31,7 +31,7 @@ extensions = [ "*" ]                                    # Install all extensions
 
 ["steipete/agent-scripts"]
 url = "https://github.com/steipete/agent-scripts"
-skills = [ "create-cli", "codex-review" ]
+skills = [ "create-cli" ]
 
 ["openprose/prose"]
 url = "https://github.com/openprose/prose"
