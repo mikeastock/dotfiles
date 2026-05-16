@@ -96,7 +96,32 @@ alias s="git status"
 alias ci="git ci-status -v"
 alias glist="git for-each-ref --sort=-committerdate refs/heads/ --format='%(committerdate:short) %(refname:short)' | head -n 10"
 
-alias tf="mise exec terraform -- terraform"
+function __find_mise_terraform_task
+  set -l dir (pwd -P)
+
+  while true
+    if test -f "$dir/.mise/tasks/terraform"
+      echo "$dir/.mise/tasks/terraform"
+      return 0
+    end
+
+    if test "$dir" = "/"
+      return 1
+    end
+
+    set dir (dirname "$dir")
+  end
+end
+
+function tf -d "Run Terraform, preferring a repo-specific mise terraform task"
+  set -l terraform_task (__find_mise_terraform_task)
+
+  if test -n "$terraform_task"
+    command mise run terraform -- $argv
+  else
+    command mise exec terraform -- terraform $argv
+  end
+end
 alias n="corepack pnpm"
 alias piu="npm install -g @mariozechner/pi-coding-agent"
 
