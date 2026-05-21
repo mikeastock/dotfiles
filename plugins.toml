@@ -24,11 +24,6 @@ url = "https://github.com/mattpocock/skills"
 skills_path = "skills/*/*" # Skills are grouped by category directories
 skills = [ "prototype", "zoom-out", "grill-me", "write-a-skill", "grill-with-docs" ]
 
-["nicobailon/pi-interview-tool"]
-url = "https://github.com/nicobailon/pi-interview-tool"
-extensions_path = "."                                   # Extension files are at root level
-extensions = [ "*" ]                                    # Install all extensions from this plugin
-
 ["steipete/agent-scripts"]
 url = "https://github.com/steipete/agent-scripts"
 skills = [ "create-cli" ]

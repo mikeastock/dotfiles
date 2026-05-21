@@ -23,12 +23,6 @@ INTERACTIVE_EXTENSIONS = {
     "confirm-destructive",
 }
 
-# Plugins that require user interaction and should be skipped entirely in non-interactive mode
-# Use fully qualified names (owner/repo)
-INTERACTIVE_PLUGINS = {
-    "nicobailon/pi-interview-tool",
-}
-
 # Skill overrides that explicitly require interactivity
 INTERACTIVE_OVERRIDES = {
     "ask-questions-if-underspecified-claude.md",
