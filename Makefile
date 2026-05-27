@@ -241,8 +241,10 @@ dot-config-symlinks:
 			exit 1; \
 		else ln -s $(CURDIR)/.config/fish/functions $(HOME)/.config/fish/functions; fi; \
 	fi
-	@# starship.toml (single file)
+	@# Single-file configs
 	$(call safe_symlink,$(CURDIR)/.config/starship.toml,$(HOME)/.config/starship.toml)
+	@mkdir -p $(HOME)/.config/herdr
+	$(call safe_symlink,$(CURDIR)/.config/herdr/config.toml,$(HOME)/.config/herdr/config.toml)
 	@echo "✓ Config symlinks created"
 
 # Remove all managed dotfile symlinks (only removes if target is a symlink)
@@ -267,8 +269,9 @@ dot-clean:
 	@# fish
 	@[ -L $(HOME)/.config/fish/config.fish ] && rm $(HOME)/.config/fish/config.fish || true
 	@[ -L $(HOME)/.config/fish/functions ] && rm $(HOME)/.config/fish/functions || true
-	@# starship
+	@# Single-file configs
 	@[ -L $(HOME)/.config/starship.toml ] && rm $(HOME)/.config/starship.toml || true
+	@[ -L $(HOME)/.config/herdr/config.toml ] && rm $(HOME)/.config/herdr/config.toml || true
 	@echo "✓ Dotfile symlinks removed"
 
 # Set macOS defaults

@@ -1,0 +1,82 @@
+# Herdr configuration managed by dotfiles.
+# Goal: make Herdr feel close to this repo's tmux setup.
+
+onboarding = false
+
+[theme]
+# Follow the host terminal palette, like tmux does.
+name = "terminal"
+
+[terminal]
+# New panes/tabs/workspaces inherit the current pane/workspace directory.
+new_cwd = "follow"
+
+[keys]
+# Match .tmux.conf: unbind C-b, use C-a as the prefix.
+prefix = "ctrl+a"
+
+# Session/workspace controls.
+detach = "prefix+q"
+workspace_picker = "prefix+w"
+new_workspace = "prefix+shift+n"
+rename_workspace = "prefix+shift+w"
+close_workspace = "prefix+shift+d"
+previous_workspace = "shift+left"
+next_workspace = "shift+right"
+
+# Tmux-like windows as Herdr tabs.
+new_tab = "prefix+c"
+previous_tab = "prefix+p"
+next_tab = "prefix+n"
+switch_tab = "prefix+1..9"
+rename_tab = "prefix+shift+t"
+close_tab = "prefix+shift+x"
+
+# Vim-style pane navigation.
+focus_pane_left = "prefix+h"
+focus_pane_down = "prefix+j"
+focus_pane_up = "prefix+k"
+focus_pane_right = "prefix+l"
+cycle_pane_next = "prefix+tab"
+cycle_pane_previous = "prefix+shift+tab"
+
+# Splits: v for side-by-side, s for stacked, matching the custom tmux bindings.
+split_vertical = "prefix+v"
+split_horizontal = "prefix+s"
+
+close_pane = "prefix+x"
+zoom = "prefix+z"
+resize_mode = "prefix+r"
+toggle_sidebar = "prefix+b"
+
+help = "prefix+?"
+settings = "prefix+comma"
+reload_config = "prefix+shift+r"
+open_notification_target = "prefix+o"
+edit_scrollback = "prefix+e"
+
+[ui]
+# Keep mouse behavior close to tmux's `mouse off` while preserving pane app mouse support.
+mouse_capture = false
+confirm_close = true
+prompt_new_tab_name = false
+show_agent_labels_on_pane_borders = false
+agent_panel_scope = "all"
+accent = "cyan"
+sidebar_width = 26
+sidebar_min_width = 18
+sidebar_max_width = 36
+
+[ui.toast]
+delivery = "off"
+
+[ui.sound]
+enabled = false
+
+[experimental]
+allow_nested = false
+kitty_graphics = false
+
+[advanced]
+# Approximate the generous tmux history-limit with a large byte-based scrollback.
+scrollback_limit_bytes = 104857600

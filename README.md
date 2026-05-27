@@ -1,6 +1,6 @@
 # dotfiles
 
-Personal dotfiles for macOS, with Ubuntu 24.x/Linuxbrew support for the shell, tmux, and agent-tooling setup.
+Personal dotfiles for macOS, with Ubuntu 24.x/Linuxbrew support for the shell, tmux, Herdr, and agent-tooling setup.
 
 ## Quick Start
 
@@ -106,6 +106,7 @@ sudo apt install -y fish tmux ripgrep fd-find xclip wl-clipboard xsel fonts-fira
 ```
 
 - Linux clipboard integration in tmux uses the first available tool from: `wl-copy`, `xclip`, `xsel`
+- Herdr config is symlinked to `~/.config/herdr/config.toml` and uses tmux-like `Ctrl-a` prefix bindings
 - `tmux-mem-cpu-load` is optional; the tmux status bar falls back to `uptime`
 - Install the configured fonts (`Fira Code` / `FiraCode Nerd Font`) if you want terminal rendering to match macOS
 - If you prefer one package manager across macOS and Linux, install Homebrew/Linuxbrew and use `make dot-install`
