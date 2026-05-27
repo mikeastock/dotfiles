@@ -4,8 +4,8 @@
 onboarding = false
 
 [theme]
-# Follow the host terminal palette, like tmux does.
-name = "terminal"
+# Managed by bin/herdr-theme-sync to match macOS light/dark appearance.
+name = "catppuccin-latte"
 
 [terminal]
 # New panes/tabs/workspaces inherit the current pane/workspace directory.

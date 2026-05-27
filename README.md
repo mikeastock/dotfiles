@@ -52,6 +52,26 @@ make plugin-update           # update plugin submodules
 
 `make install` preserves manually installed skills, Pi extensions, prompts, subagents, and themes that live beside dotfiles-managed artifacts. The installer tracks top-level managed names in `~/.local/state/dotfiles/agent-install-manifest.json`, overwrites those managed artifacts on each install, and removes managed artifacts that are no longer built. If a built artifact conflicts with an existing unmanaged path, the install fails; rerun the underlying build script with `--force` only when you want dotfiles to claim that path.
 
+### Herdr light/dark theme sync
+
+Ghostty can auto-switch themes itself, but Herdr only supports one active theme. Sync Herdr with the current macOS appearance:
+
+```bash
+bin/herdr-theme-sync sync
+```
+
+To keep Herdr synced automatically on macOS:
+
+```bash
+bin/herdr-theme-sync install-launchagent
+```
+
+Uninstall with:
+
+```bash
+bin/herdr-theme-sync uninstall-launchagent
+```
+
 ### Canonical Pi install
 
 ```bash
