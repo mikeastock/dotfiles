@@ -409,7 +409,7 @@ test_make_install() {
 
     local pi_settings
     pi_settings=$(<"$SANDBOX_DIR/.pi/agent/settings.json")
-    assert_output_contains "$pi_settings" "https://github.com/nicobailon/pi-subagents" "Pi settings include official pi-subagents package"
+    assert_output_contains "$pi_settings" "npm:pi-subagents" "Pi settings include npm pi-subagents package"
 }
 
 # Test: make clean (with sandbox)
