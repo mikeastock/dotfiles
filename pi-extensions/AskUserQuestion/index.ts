@@ -118,6 +118,28 @@ function formatContentLine(question: Question, answer: Answer): string {
   return `User selected: ${text}`;
 }
 
+function reportHerdrBlocked(pi: ExtensionAPI, active: boolean, label: string): void {
+  try {
+    pi.events.emit("herdr:blocked", { active, label });
+  } catch {
+    // Herdr integration is optional; asking the user should still work without it.
+  }
+}
+
+async function withHerdrBlocked<T>(pi: ExtensionAPI, label: string, action: () => Promise<T>): Promise<T> {
+  reportHerdrBlocked(pi, true, label);
+  try {
+    return await action();
+  } finally {
+    reportHerdrBlocked(pi, false, label);
+  }
+}
+
+function herdrBlockedLabel(questions: Question[]): string {
+  if (questions.length === 1) return truncateToWidth(questions[0].prompt, 80);
+  return `waiting for ${questions.length} answers`;
+}
+
 export default function (pi: ExtensionAPI) {
   pi.registerTool({
     name: "AskUserQuestion",
@@ -1061,11 +1083,13 @@ export default function (pi: ExtensionAPI) {
         };
       }
 
-      if (questions.length === 1) {
-        return await runSingleQuestion(questions[0]);
-      }
+      return await withHerdrBlocked(pi, herdrBlockedLabel(questions), async () => {
+        if (questions.length === 1) {
+          return await runSingleQuestion(questions[0]);
+        }
 
-      return await runQuestionnaire(questions);
+        return await runQuestionnaire(questions);
+      });
     },
 
     renderCall(args, theme) {

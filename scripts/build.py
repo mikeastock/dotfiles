@@ -1093,7 +1093,7 @@ def install_extensions(plugins: dict[str, Plugin], force: bool = False):
             dest_ext.mkdir(parents=True)
             shutil.copy(path, dest_ext / "index.ts")
         else:
-            shutil.copytree(path, dest_ext)
+            shutil.copytree(path, dest_ext, ignore=shutil.ignore_patterns("node_modules"))
 
         if plugin is not None:
             copy_plugin_extension_dependency_package(plugin, name, dest_ext)
