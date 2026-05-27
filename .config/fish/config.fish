@@ -175,14 +175,6 @@ if test -d "/Applications/Tailscale.app/Contents/MacOS"
   alias tailscale="/Applications/Tailscale.app/Contents/MacOS/Tailscale"
 end
 
-####### Mise
-if type -q mise
-  set -g MISE_FISH_AUTO_ACTIVATE 0
-  mise activate fish | source
-end
-
-# Local bin dirs - Added after Mise so that these take precedence
-fish_add_path --move ~/.local/bin
 alias claude="claude --allow-dangerously-skip-permissions"
 
 ####### Bun
@@ -341,3 +333,12 @@ function fish_prompt --description 'Write out the prompt'
   end
   _original_fish_prompt
 end
+
+####### Mise
+if type -q mise
+  set -g MISE_FISH_AUTO_ACTIVATE 0
+  mise activate fish | source
+end
+
+# Local bin dirs
+fish_add_path --path --append --move ~/.local/bin
