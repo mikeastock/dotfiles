@@ -53,11 +53,13 @@ help = "prefix+?"
 settings = "prefix+comma"
 reload_config = "prefix+shift+r"
 open_notification_target = "prefix+o"
-edit_scrollback = "prefix+e"
+edit_scrollback = ["prefix+e", "prefix+["]
 
 [ui]
-# Keep mouse behavior close to tmux's `mouse off` while preserving pane app mouse support.
-mouse_capture = false
+# Let Herdr capture mouse input so wheel scrolling can use Herdr's rendered pane scrollback.
+# Full-screen TUIs that request mouse reporting may still receive wheel events directly.
+mouse_capture = true
+mouse_scroll_lines = 6
 confirm_close = true
 prompt_new_tab_name = false
 show_agent_labels_on_pane_borders = false
