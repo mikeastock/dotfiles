@@ -58,7 +58,7 @@ edit_scrollback = ["prefix+e", "prefix+["]
 [ui]
 # Let Herdr capture mouse input so wheel scrolling can use Herdr's rendered pane scrollback.
 # Full-screen TUIs that request mouse reporting may still receive wheel events directly.
-mouse_capture = true
+mouse_capture = false
 mouse_scroll_lines = 6
 confirm_close = true
 prompt_new_tab_name = false
@@ -77,7 +77,7 @@ enabled = false
 
 [experimental]
 allow_nested = false
-kitty_graphics = false
+kitty_graphics = true
 
 [advanced]
 # Approximate the generous tmux history-limit with a large byte-based scrollback.
