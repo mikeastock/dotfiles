@@ -439,7 +439,11 @@ def custom_extension_dirs() -> list[Path]:
     if not PI_EXTENSIONS_DIR.exists():
         return []
 
-    return [path for path in sorted(PI_EXTENSIONS_DIR.iterdir()) if path.is_dir()]
+    return [
+        path
+        for path in sorted(PI_EXTENSIONS_DIR.iterdir())
+        if path.is_dir() and (path / "index.ts").exists()
+    ]
 
 
 def is_interactive_override(override_path: Path) -> bool:
