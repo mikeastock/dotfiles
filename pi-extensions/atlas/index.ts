@@ -3,7 +3,7 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 export default function (pi: ExtensionAPI) {
   pi.registerProvider("atlas", {
     baseUrl: "https://api.atlascloud.ai/v1",
-    apiKey: "ATLASCLOUD_API_KEY",
+    apiKey: "$ATLASCLOUD_API_KEY",
     api: "openai-completions",
     models: [
       {

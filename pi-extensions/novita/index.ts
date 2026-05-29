@@ -3,7 +3,7 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 export default function (pi: ExtensionAPI) {
   pi.registerProvider("novita", {
     baseUrl: "https://api.novita.ai/openai/v1",
-    apiKey: "NOVITA_API_KEY",
+    apiKey: "$NOVITA_API_KEY",
     api: "openai-completions",
     models: [
       {
