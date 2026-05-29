@@ -70,7 +70,6 @@ pi
 - `babysit-pr` — GitHub PR monitoring/babysitting workflow imported from `openai/codex` commit `7e569f1`
 - `how` — architectural explanation and critique skill vendored from `poteto/how`
 - `oracle` — @steipete/oracle CLI workflow for second-model reviews with selected repo context
-- `swiss-design` — Swiss International Style design system vendored locally from `zeke/swiss-design-skill`
 
 ### Notable custom Pi extensions
 

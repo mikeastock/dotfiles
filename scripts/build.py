@@ -25,8 +25,6 @@ INTERACTIVE_EXTENSIONS = {
 
 # Skill overrides that explicitly require interactivity
 INTERACTIVE_OVERRIDES = {
-    "ask-questions-if-underspecified-claude.md",
-    "ask-questions-if-underspecified-pi.md",
     "brainstorming-claude.md",
     "brainstorming-pi.md",
 }
