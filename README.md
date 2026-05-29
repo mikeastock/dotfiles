@@ -70,6 +70,16 @@ pi
 - `babysit-pr` — GitHub PR monitoring/babysitting workflow imported from `openai/codex` commit `7e569f1`
 - `how` — architectural explanation and critique skill vendored from `poteto/how`
 - `oracle` — @steipete/oracle CLI workflow for second-model reviews with selected repo context
+- `session-learning-miner` — mine Pi session history for repeated prompts, friction, reusable workflows, and skill/template candidates
+
+### Notable custom Pi prompt templates
+
+- `/bdev-qa` - run Buildr `bdev qa`, diagnose failures, and optionally post results to a PR
+- `/commit` - create a focused Conventional Commit from task-related changes
+- `/merge-main` - merge the latest base branch into the current branch with conflict and verification guardrails
+- `/open-pr` - push the current branch and open a PR with summary and verification
+- `/pr-comments` - fetch PR review comments and evaluate them before changing code
+- `/review-loop` - run a parent-orchestrated adversarial review loop
 
 ### Notable custom Pi extensions
 
