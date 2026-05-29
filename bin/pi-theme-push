@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+    cat <<'USAGE'
+Usage: pi-theme-push <ssh-target> [dark|light]
+
+Push the local macOS appearance to a remote Pi override file. This is useful
+when Pi is running on a remote server inside mosh/tmux and cannot query macOS
+directly.
+
+If dark|light is omitted, the value is detected from macOS system appearance.
+USAGE
+}
+
+detect_macos_appearance() {
+    if [ "$(uname -s)" != "Darwin" ]; then
+        echo "pi-theme-push: dark|light is required outside macOS" >&2
+        return 1
+    fi
+
+    if defaults read -globalDomain AppleInterfaceStyle >/dev/null 2>&1; then
+        echo dark
+    else
+        echo light
+    fi
+}
+
+json_escape() {
+    local value="$1"
+    value=${value//\\/\\\\}
+    value=${value//"/\\"}
+    value=${value//$'\n'/\\n}
+    printf '%s' "$value"
+}
+
+if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
+    usage
+    exit 0
+fi
+
+if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
+    usage >&2
+    exit 64
+fi
+
+target="$1"
+appearance="${2:-$(detect_macos_appearance)}"
+
+case "$appearance" in
+    dark|light) ;;
+    *)
+        echo "pi-theme-push: appearance must be dark or light" >&2
+        exit 64
+        ;;
+esac
+
+source_host="$(hostname)"
+updated_at="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+json=$(printf '{"appearance":"%s","updatedAt":"%s","source":"%s"}\n' \
+    "$(json_escape "$appearance")" \
+    "$(json_escape "$updated_at")" \
+    "$(json_escape "$source_host")")
+
+remote_command='mkdir -p ~/.pi/agent && tmp=~/.pi/agent/theme-sync-override.json.tmp.$$ && cat > "$tmp" && mv "$tmp" ~/.pi/agent/theme-sync-override.json'
+printf '%s' "$json" | ssh "$target" "$remote_command"
+
+echo "pushed $appearance theme override to $target"

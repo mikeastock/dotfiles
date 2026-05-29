@@ -80,6 +80,7 @@ pi
 - `pi-codex-conversion` — local copy of `IgorWarzocha/pi-codex-conversion`; adds Codex-style tools and prompt adaptation for OpenAI/Codex models in Pi
 - `full-read-for-paths` — upgrades partial `read` calls to full reads for configured resource-file paths
 - `revdiff` — adds `/revdiff` to launch the revdiff TUI and send captured annotations back to Pi
+- `mac-system-theme` — syncs Pi to macOS dark/light appearance locally, or to a remote override pushed with `pi-theme-push`/`pi-theme-watch` for SSH/mosh/tmux sessions
 
 ## Structure
 
@@ -110,6 +111,17 @@ sudo apt install -y fish tmux ripgrep fd-find xclip wl-clipboard xsel fonts-fira
 - `tmux-mem-cpu-load` is optional; the tmux status bar falls back to `uptime`
 - Install the configured fonts (`Fira Code` / `FiraCode Nerd Font`) if you want terminal rendering to match macOS
 - If you prefer one package manager across macOS and Linux, install Homebrew/Linuxbrew and use `make dot-install`
+
+### Remote Pi theme sync from macOS
+
+When Pi runs on an Ubuntu server through SSH/mosh/tmux, the server cannot query macOS appearance directly. From the Mac, install `dark-notify` and run:
+
+```bash
+brew install cormacrelf/tap/dark-notify
+pi-theme-watch user@server
+```
+
+`pi-theme-watch` pushes dark/light changes over SSH to `~/.pi/agent/theme-sync-override.json`; the `mac-system-theme` Pi extension reads that file and applies the matching Catppuccin theme.
 
 ## Notes
 

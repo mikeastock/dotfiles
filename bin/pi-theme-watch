@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+    cat <<'USAGE'
+Usage: pi-theme-watch <ssh-target> [<ssh-target> ...]
+
+Watch macOS light/dark appearance with dark-notify and push each change to one
+or more remote Pi hosts using pi-theme-push.
+
+Install dark-notify on macOS with:
+  brew install cormacrelf/tap/dark-notify
+USAGE
+}
+
+if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
+    usage
+    exit 0
+fi
+
+if [ "$#" -lt 1 ]; then
+    usage >&2
+    exit 64
+fi
+
+if ! command -v dark-notify >/dev/null 2>&1; then
+    echo "pi-theme-watch: dark-notify is required" >&2
+    echo "Install it with: brew install cormacrelf/tap/dark-notify" >&2
+    exit 69
+fi
+
+if ! command -v pi-theme-push >/dev/null 2>&1; then
+    echo "pi-theme-watch: pi-theme-push must be on PATH" >&2
+    exit 69
+fi
+
+dark-notify | while IFS= read -r appearance; do
+    case "$appearance" in
+        dark|light) ;;
+        *) continue ;;
+    esac
+
+    for target in "$@"; do
+        pi-theme-push "$target" "$appearance"
+    done
+done
