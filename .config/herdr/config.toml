@@ -4,7 +4,6 @@
 onboarding = false
 
 [theme]
-# Managed by bin/herdr-theme-sync to match macOS light/dark appearance.
 name = "catppuccin"
 
 [terminal]
