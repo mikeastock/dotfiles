@@ -30,11 +30,11 @@ assert_file_exists "$ssh_args" "ssh command was invoked"
 assert_file_exists "$ssh_stdin" "override JSON was sent over stdin"
 
 args=$(<"$ssh_args")
-if [[ "$args" == devbox* && "$args" == *"theme-sync-override.json"* ]]; then
-    log_info "PASS: ssh receives target and override path"
+if [[ "$args" == devbox\ sh\ -c\ * && "$args" == *"theme-sync-override.json"* ]]; then
+    log_info "PASS: ssh forces POSIX sh and receives override path"
     TESTS_PASSED=$((TESTS_PASSED + 1))
 else
-    log_error "FAIL: ssh receives target and override path"
+    log_error "FAIL: ssh forces POSIX sh and receives override path"
     log_error "  Args: $args"
     TESTS_FAILED=$((TESTS_FAILED + 1))
 fi

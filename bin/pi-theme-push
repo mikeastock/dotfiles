@@ -62,7 +62,7 @@ json=$(printf '{"appearance":"%s","updatedAt":"%s","source":"%s"}\n' \
     "$(json_escape "$updated_at")" \
     "$(json_escape "$source_host")")
 
-remote_command='mkdir -p ~/.pi/agent && tmp=~/.pi/agent/theme-sync-override.json.tmp.$$ && cat > "$tmp" && mv "$tmp" ~/.pi/agent/theme-sync-override.json'
+remote_command='sh -c '\''mkdir -p ~/.pi/agent && tmp=~/.pi/agent/theme-sync-override.json.tmp.$$ && cat > "$tmp" && mv "$tmp" ~/.pi/agent/theme-sync-override.json'\'''
 printf '%s' "$json" | ssh "$target" "$remote_command"
 
 echo "pushed $appearance theme override to $target"
