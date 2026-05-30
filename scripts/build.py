@@ -60,6 +60,7 @@ BUILD_DIR = ROOT / "build"
 CONFIG_FILE = ROOT / "plugins.toml"
 CONFIGS_DIR = ROOT / "configs"
 CODEX_CONFIG_FILE = CONFIGS_DIR / "codex-config.toml"
+CODEX_RULES_DIR = CONFIGS_DIR / "codex" / "rules"
 PI_SETTINGS_FILE = CONFIGS_DIR / "pi-settings.json"
 PI_MODELS_FILE = CONFIGS_DIR / "pi-models.json"
 GLOBAL_AGENTS_MD = CONFIGS_DIR / "AGENTS.md"
@@ -1165,6 +1166,23 @@ def install_codex_config():
     print(f"  Installed to {dest}")
 
 
+def install_codex_rules():
+    """Install Codex CLI exec policy rules."""
+    print("Installing Codex rules...")
+
+    if not CODEX_RULES_DIR.exists():
+        print("  No codex rules found, skipping")
+        return
+
+    dest = HOME / ".codex" / "rules"
+    dest.mkdir(parents=True, exist_ok=True)
+
+    for source in sorted(CODEX_RULES_DIR.glob("*.rules")):
+        target = dest / source.name
+        shutil.copy(source, target)
+        print(f"  Installed to {target}")
+
+
 def install_pi_settings():
     """Install Pi agent settings."""
     import json
@@ -1263,6 +1281,7 @@ def install_configs():
     """Install all agent configurations."""
     install_amp_config()
     install_codex_config()
+    install_codex_rules()
     install_pi_settings()
     install_pi_models()
     install_global_agents_md()

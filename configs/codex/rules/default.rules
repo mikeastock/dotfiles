@@ -1,0 +1,23 @@
+prefix_rule(
+    pattern = ["terraform", "apply"],
+    decision = "prompt",
+    justification = "terraform apply can modify infrastructure.",
+    match = [
+        ["terraform", "apply"],
+        ["terraform", "apply", "-auto-approve"],
+        "terraform apply",
+        "terraform apply -auto-approve",
+    ],
+)
+
+prefix_rule(
+    pattern = ["tf", "apply"],
+    decision = "prompt",
+    justification = "tf apply can modify infrastructure.",
+    match = [
+        ["tf", "apply"],
+        ["tf", "apply", "-auto-approve"],
+        "tf apply",
+        "tf apply -auto-approve",
+    ],
+)

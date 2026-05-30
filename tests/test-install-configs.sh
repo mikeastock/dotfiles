@@ -29,15 +29,36 @@ test_config_new_files() {
 
     assert_output_contains "$output" "Installing Amp config" "Shows Amp configuration"
     assert_output_contains "$output" "Installing Codex config" "Shows Codex configuration"
+    assert_output_contains "$output" "Installing Codex rules" "Shows Codex rules installation"
     assert_output_contains "$output" "Installing Pi settings" "Shows Pi configuration"
     assert_output_contains "$output" "Installing global AGENTS.md" "Shows AGENTS.md installation"
 
     # Verify all files were created
     assert_file_exists "$SANDBOX_DIR/.config/amp/settings.json" "Amp settings file was created"
     assert_file_exists "$SANDBOX_DIR/.codex/config.toml" "Codex config file was created"
+    assert_file_exists "$SANDBOX_DIR/.codex/rules/default.rules" "Codex default rules file was created"
     assert_file_exists "$SANDBOX_DIR/.pi/agent/settings.json" "Pi settings file was created"
     assert_file_exists "$SANDBOX_DIR/.codex/AGENTS.md" "Codex AGENTS.md was created"
     assert_file_exists "$SANDBOX_DIR/.pi/agent/AGENTS.md" "Pi AGENTS.md was created"
+}
+
+# Test: Codex config enables prompts and installs Terraform apply rules
+test_codex_terraform_apply_rules() {
+    log_test "Testing Codex Terraform apply rules"
+    cd "$PROJECT_DIR"
+
+    rm -rf "$SANDBOX_DIR/.codex"
+
+    HOME="$SANDBOX_DIR" make install-configs >/dev/null 2>&1
+
+    local codex_config codex_rules
+    codex_config=$(cat "$SANDBOX_DIR/.codex/config.toml")
+    codex_rules=$(cat "$SANDBOX_DIR/.codex/rules/default.rules")
+
+    assert_output_contains "$codex_config" 'approval_policy = "on-request"' "Codex approval policy allows prompts"
+    assert_output_contains "$codex_rules" 'pattern = ["terraform", "apply"]' "Codex rules prompt for terraform apply"
+    assert_output_contains "$codex_rules" 'pattern = ["tf", "apply"]' "Codex rules prompt for tf apply"
+    assert_output_contains "$codex_rules" 'decision = "prompt"' "Codex Terraform rules request prompt approval"
 }
 
 # Test: Amp config preserves existing settings
@@ -111,15 +132,17 @@ test_config_idempotent() {
 
     # Run install-configs twice
     HOME="$SANDBOX_DIR" make install-configs >/dev/null 2>&1
-    local amp_first codex_first pi_first
+    local amp_first codex_first codex_rules_first pi_first
     amp_first=$(cat "$SANDBOX_DIR/.config/amp/settings.json")
     codex_first=$(cat "$SANDBOX_DIR/.codex/config.toml")
+    codex_rules_first=$(cat "$SANDBOX_DIR/.codex/rules/default.rules")
     pi_first=$(cat "$SANDBOX_DIR/.pi/agent/settings.json")
 
     HOME="$SANDBOX_DIR" make install-configs >/dev/null 2>&1
-    local amp_second codex_second pi_second
+    local amp_second codex_second codex_rules_second pi_second
     amp_second=$(cat "$SANDBOX_DIR/.config/amp/settings.json")
     codex_second=$(cat "$SANDBOX_DIR/.codex/config.toml")
+    codex_rules_second=$(cat "$SANDBOX_DIR/.codex/rules/default.rules")
     pi_second=$(cat "$SANDBOX_DIR/.pi/agent/settings.json")
 
     # Content should be identical
@@ -130,6 +153,10 @@ test_config_idempotent() {
     fi
     if [ "$codex_first" != "$codex_second" ]; then
         log_error "FAIL: Codex results differ between runs"
+        all_match=false
+    fi
+    if [ "$codex_rules_first" != "$codex_rules_second" ]; then
+        log_error "FAIL: Codex rules differ between runs"
         all_match=false
     fi
     if [ "$pi_first" != "$pi_second" ]; then
@@ -161,6 +188,7 @@ test_config_creates_directories() {
 
     assert_dir_exists "$SANDBOX_DIR/.config/amp" ".config/amp directory was created"
     assert_dir_exists "$SANDBOX_DIR/.codex" ".codex directory was created"
+    assert_dir_exists "$SANDBOX_DIR/.codex/rules" ".codex/rules directory was created"
     assert_dir_exists "$SANDBOX_DIR/.pi/agent" ".pi/agent directory was created"
 }
 
@@ -232,6 +260,7 @@ main() {
     test_help_shows_config
     test_config_creates_directories
     test_config_new_files
+    test_codex_terraform_apply_rules
     test_amp_preserve_existing
     test_pi_preserve_changelog_version
     test_config_idempotent
