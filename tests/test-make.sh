@@ -96,6 +96,21 @@ test_make_build() {
     assert_output_contains "$breadboard_content" "name: breadboard-reflection" "breadboard-reflection has normalized name"
     assert_output_contains "$breadboard_content" "description:" "breadboard-reflection has synthesized description"
 
+    assert_file_exists "$PROJECT_DIR/build/amp/impeccable/SKILL.md" "Amp builds impeccable skill"
+    assert_file_exists "$PROJECT_DIR/build/claude/impeccable/SKILL.md" "Claude builds impeccable skill"
+    assert_file_exists "$PROJECT_DIR/build/pi/impeccable/SKILL.md" "Pi builds impeccable skill"
+
+    local amp_impeccable_content
+    local claude_impeccable_content
+    local pi_impeccable_content
+    amp_impeccable_content=$(<"$PROJECT_DIR/build/amp/impeccable/SKILL.md")
+    claude_impeccable_content=$(<"$PROJECT_DIR/build/claude/impeccable/SKILL.md")
+    pi_impeccable_content=$(<"$PROJECT_DIR/build/pi/impeccable/SKILL.md")
+    assert_output_contains "$amp_impeccable_content" "node .agents/skills/impeccable/scripts/context.mjs" "Amp builds Codex/agents-flavored impeccable skill"
+    assert_output_contains "$claude_impeccable_content" "node .claude/skills/impeccable/scripts/context.mjs" "Claude builds Claude-flavored impeccable skill"
+    assert_output_contains "$pi_impeccable_content" "node .pi/skills/impeccable/scripts/context.mjs" "Pi builds Pi-flavored impeccable skill"
+    assert_file_exists "$PROJECT_DIR/build/amp/impeccable/agents/impeccable_asset_producer.toml" "Amp/Codex impeccable skill includes nested asset producer agent"
+
     local has_lowercase_skill_md=false
     for file in "$PROJECT_DIR/build/claude/breadboard-reflection"/*; do
         if [ "$(basename "$file")" = "skill.md" ]; then

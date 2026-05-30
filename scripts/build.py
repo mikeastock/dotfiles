@@ -249,6 +249,7 @@ class Plugin:
     name: str  # Fully qualified name: owner/repo
     url: str
     skills_path: list[str] = field(default_factory=lambda: ["skills/*"])
+    skills_path_by_agent: dict[str, list[str]] = field(default_factory=dict)
     skills: list[str] = field(default_factory=list)  # Empty = none, ["*"] = all
     skills_skip_agents: list[str] = field(default_factory=list)
     extensions_path: list[str] = field(default_factory=lambda: ["extensions/*.ts"])
@@ -265,6 +266,12 @@ class Plugin:
         """Directory name for this plugin (owner-repo format)."""
         return plugin_dir_name(self.name)
 
+    def skill_paths_for(self, agent: str | None) -> list[str]:
+        """Return agent-specific skill paths when configured."""
+        if agent is not None and agent in self.skills_path_by_agent:
+            return self.skills_path_by_agent[agent]
+        return self.skills_path
+
     @classmethod
     def from_dict(cls, name: str, data: dict) -> "Plugin":
         """Create Plugin from TOML dictionary."""
@@ -275,6 +282,16 @@ class Plugin:
             if isinstance(p, str):
                 return [p]
             return list(p)
+
+        def normalize_path_map(paths_by_agent) -> dict[str, list[str]]:
+            if paths_by_agent is None:
+                return {}
+            if not isinstance(paths_by_agent, dict):
+                raise TypeError("skills_path_by_agent must be a table")
+            return {
+                str(agent): normalize_path(paths)
+                for agent, paths in paths_by_agent.items()
+            }
 
         def normalize_items(items) -> list[str]:
             """Normalize item list: missing key -> empty list, string -> list."""
@@ -288,6 +305,7 @@ class Plugin:
             name=name,
             url=data["url"],
             skills_path=normalize_path(data.get("skills_path", "skills/*")),
+            skills_path_by_agent=normalize_path_map(data.get("skills_path_by_agent")),
             skills=normalize_items(data.get("skills")),
             skills_skip_agents=normalize_items(data.get("skills_skip_agents")),
             extensions_path=normalize_path(
@@ -346,7 +364,9 @@ def glob_paths(base: Path, patterns: list[str]) -> list[Path]:
     return sorted(set(results))
 
 
-def discover_items(plugin: Plugin, item_type: str) -> list[tuple[str, Path]]:
+def discover_items(
+    plugin: Plugin, item_type: str, agent: str | None = None
+) -> list[tuple[str, Path]]:
     """
     Discover skills/extensions from a plugin.
 
@@ -366,7 +386,7 @@ def discover_items(plugin: Plugin, item_type: str) -> list[tuple[str, Path]]:
         return []
 
     if item_type == "skills":
-        patterns = plugin.skills_path
+        patterns = plugin.skill_paths_for(agent)
         enabled = plugin.skills
     elif item_type == "extensions":
         patterns = plugin.extensions_path
@@ -730,7 +750,14 @@ def build_skills(plugins: dict[str, Plugin]):
             skipped_plugins.append(plugin.name)
             continue
 
-        for name, path in discover_items(plugin, "skills"):
+        skills_by_name: dict[str, dict[str, Path]] = {}
+        for agent in AGENTS:
+            if agent in plugin.skills_skip_agents:
+                continue
+            for name, path in discover_items(plugin, "skills", agent=agent):
+                skills_by_name.setdefault(name, {})[agent] = path
+
+        for name, paths_by_agent in sorted(skills_by_name.items()):
             if name in built:
                 print(
                     f"    Warning: Skill '{name}' already exists, skipping duplicate from {plugin.name}"
@@ -738,7 +765,8 @@ def build_skills(plugins: dict[str, Plugin]):
                 continue
             built_for_agents = []
             for agent in AGENTS:
-                if agent in plugin.skills_skip_agents:
+                path = paths_by_agent.get(agent)
+                if path is None:
                     continue
                 result = build_skill(name, path, agent)
                 if result is True:

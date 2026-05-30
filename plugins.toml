@@ -3,6 +3,7 @@
 # Each plugin is a table with fully qualified name (owner/repo):
 #   url             - Git repository URL (required)
 #   skills_path     - Glob pattern(s) to find skills (default: "skills/*")
+#   skills_path_by_agent - Optional agent-specific skill paths, keyed by amp/claude/pi
 #   skills          - List of skills to install: ["*"] for all, [] or omit for none
 #   skills_skip_agents - Agents that should not receive this plugin's skills (optional)
 #   extensions_path - Glob pattern(s) to find extensions (default: "extensions/*.ts")
@@ -18,6 +19,11 @@
 ["anthropics/skills"]
 url = "https://github.com/anthropics/skills"
 skills = [ "frontend-design" ]
+
+["pbakaus/impeccable"]
+url = "https://github.com/pbakaus/impeccable.git"
+skills_path_by_agent = { amp = ".agents/skills/*", claude = ".claude/skills/*", pi = ".pi/skills/*" }
+skills = [ "impeccable" ]
 
 ["mattpocock/skills"]
 url = "https://github.com/mattpocock/skills"

@@ -22,3 +22,6 @@
 [submodule "plugins/mattpocock-skills"]
 	path = plugins/mattpocock-skills
 	url = https://github.com/mattpocock/skills
+[submodule "plugins/pbakaus-impeccable"]
+	path = plugins/pbakaus-impeccable
+	url = https://github.com/pbakaus/impeccable.git

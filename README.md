@@ -72,6 +72,10 @@ pi
 - `oracle` — @steipete/oracle CLI workflow for second-model reviews with selected repo context
 - `session-learning-miner` — mine Pi session history for repeated prompts, friction, reusable workflows, and skill/template candidates
 
+### Notable plugin skills
+
+- `impeccable` — frontend design, critique, polish, and live iteration skill from `pbakaus/impeccable`
+
 ### Notable custom Pi prompt templates
 
 - `/bdev-qa` - run Buildr `bdev qa`, diagnose failures, and optionally post results to a PR
