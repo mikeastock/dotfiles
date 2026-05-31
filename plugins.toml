@@ -46,20 +46,7 @@ extensions = [ "context" ]
 
 ["buildrtech/dotagents"]
 url = "https://github.com/buildrtech/dotagents"
-skills = [
-  "brainstorming",
-  "dispatching-parallel-agents",
-  "executing-plans",
-  "receiving-code-review",
-  "requesting-code-review",
-  "semantic-commit",
-  "systematic-debugging",
-  "test-driven-development",
-  "verification-before-completion",
-  "writing-plans",
-  "fetch-ci-build",
-]
-skills_skip_agents = [ "amp" ] # Skip buildrtech skills for Amp
+skills = [] # Superpower skills are vendored under skills/ so all coding agents receive them
 extensions_path = "pi-extensions/*"
 extensions = [ "buildr-artifacts", "handoff", "openai-fast", "session-query" ]
 extension_dependency_packages = { "buildr-artifacts" = "package.json" }

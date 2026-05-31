@@ -90,6 +90,23 @@ test_make_build() {
     assert_file_exists "$PROJECT_DIR/skills/how/SKILL.md" "how skill is vendored locally"
     assert_file_exists "$PROJECT_DIR/skills/how/references/explainer-prompt.md" "how references are vendored locally"
     assert_file_exists "$PROJECT_DIR/build/claude/how/SKILL.md" "how skill is built"
+    assert_file_exists "$PROJECT_DIR/skills/brainstorming/SKILL.md" "brainstorming skill is vendored locally"
+    assert_file_exists "$PROJECT_DIR/skills/verification-before-completion/SKILL.md" "verification-before-completion skill is vendored locally"
+    assert_file_exists "$PROJECT_DIR/build/amp/brainstorming/SKILL.md" "Amp builds vendored brainstorming skill"
+    assert_file_exists "$PROJECT_DIR/build/claude/brainstorming/SKILL.md" "Claude builds vendored brainstorming skill"
+    assert_file_exists "$PROJECT_DIR/build/pi/brainstorming/SKILL.md" "Pi builds vendored brainstorming skill"
+    assert_file_exists "$PROJECT_DIR/build/subagents/pi/architecture-reviewer.md" "Build includes architecture-reviewer subagent"
+
+    local brainstorming_content
+    local verification_content
+    local semantic_commit_content
+    brainstorming_content=$(<"$PROJECT_DIR/build/claude/brainstorming/SKILL.md")
+    verification_content=$(<"$PROJECT_DIR/build/claude/verification-before-completion/SKILL.md")
+    semantic_commit_content=$(<"$PROJECT_DIR/build/claude/semantic-commit/SKILL.md")
+    assert_output_contains "$brainstorming_content" "Architecture Checkpoint" "Brainstorming includes architecture checkpoint"
+    assert_output_contains "$brainstorming_content" "architecture-reviewer" "Brainstorming invokes architecture reviewer"
+    assert_output_contains "$verification_content" "Implementation Deviation Report" "Verification includes deviation report"
+    assert_output_contains "$semantic_commit_content" "Implementation Deviation Report" "Commit workflow includes deviation report"
 
     local breadboard_content
     breadboard_content=$(<"$breadboard_skill")
@@ -172,10 +189,12 @@ test_make_install_skills() {
         TESTS_FAILED=$((TESTS_FAILED + 1))
     fi
 
-    # buildrtech/dotagents superpower skills should be skipped for Amp only
-    assert_file_not_exists "$SANDBOX_DIR/.config/agents/skills/writing-plans" "Amp skips buildr superpower skills"
-    assert_dir_exists "$SANDBOX_DIR/.claude/skills/writing-plans" "Claude still installs buildr superpower skills"
-    assert_dir_exists "$SANDBOX_DIR/.agents/skills/writing-plans" "Pi still installs buildr superpower skills"
+    assert_dir_exists "$SANDBOX_DIR/.config/agents/skills/writing-plans" "Amp installs vendored superpower skills"
+    assert_dir_exists "$SANDBOX_DIR/.claude/skills/writing-plans" "Claude installs vendored superpower skills"
+    assert_dir_exists "$SANDBOX_DIR/.agents/skills/writing-plans" "Pi installs vendored superpower skills"
+    assert_dir_exists "$SANDBOX_DIR/.config/agents/skills/brainstorming" "Amp installs vendored brainstorming skill"
+    assert_dir_exists "$SANDBOX_DIR/.claude/skills/brainstorming" "Claude installs vendored brainstorming skill"
+    assert_dir_exists "$SANDBOX_DIR/.agents/skills/brainstorming" "Pi installs vendored brainstorming skill"
     assert_dir_exists "$SANDBOX_DIR/.claude/skills/how" "Claude installs how skill"
     assert_dir_exists "$SANDBOX_DIR/.agents/skills/how" "Pi installs how skill"
 }
@@ -383,6 +402,7 @@ test_make_install_subagents_preserves_unmanaged_siblings() {
     output=$(HOME="$SANDBOX_DIR" XDG_STATE_HOME="$SANDBOX_DIR/.local/state" make install-subagents 2>&1)
 
     assert_output_contains "$output" "Installing subagents" "Install shows subagent progress"
+    assert_file_exists "$SANDBOX_DIR/.pi/agent/agents/architecture-reviewer.md" "Pi architecture-reviewer subagent installed"
     assert_file_exists "$SANDBOX_DIR/.pi/agent/agents/manual.md" "Unmanaged Pi subagent survives install"
 }
 

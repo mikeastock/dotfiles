@@ -65,6 +65,7 @@ pi
 
 ### Notable custom skills
 
+- `brainstorming`, `writing-plans`, `executing-plans`, `test-driven-development`, `systematic-debugging`, `verification-before-completion`, `semantic-commit`, `requesting-code-review`, `receiving-code-review`, `dispatching-parallel-agents`, and `fetch-ci-build` — vendored superpower skills from `buildrtech/dotagents`, installed for all supported coding agents
 - `browser-harness` — Direct browser control via CDP for automation, scraping, testing, and interaction with web pages (connects to user's already-running Chrome)
 - `layered-rails` — Rails layered architecture guidance (copied locally from `palkan/skills`, not managed as a plugin)
 - `babysit-pr` — GitHub PR monitoring/babysitting workflow imported from `openai/codex` commit `7e569f1`
@@ -85,6 +86,10 @@ pi
 - `/pr-comments` - fetch PR review comments and evaluate them before changing code
 - `/review-loop` - run a parent-orchestrated adversarial review loop
 
+### Notable custom Pi subagents
+
+- `architecture-reviewer` — reviews designs and plans for ownership, boundaries, invariants, failure modes, compatibility paths, and architecture-level tests before implementation
+
 ### Notable custom Pi extensions
 
 - `buildr-artifacts` — installed from `buildrtech/dotagents`; provides `share_artifact` and `/share_artifact` for publishing local HTML artifacts to Buildr artifact storage
@@ -101,6 +106,7 @@ pi
 dotfiles/
 ├── .config/                 # shell/editor/terminal configs
 ├── skills/                  # custom agent skills
+├── subagents/               # custom Pi subagents
 ├── pi-extensions/           # Pi extensions
 ├── pi-themes/               # Pi themes
 ├── prompts/                 # Pi prompt templates
