@@ -60,6 +60,8 @@ BUILD_DIR = ROOT / "build"
 CONFIG_FILE = ROOT / "plugins.toml"
 CONFIGS_DIR = ROOT / "configs"
 CODEX_CONFIG_FILE = CONFIGS_DIR / "codex-config.toml"
+CODEX_HOOKS_FILE = CONFIGS_DIR / "codex" / "hooks.json"
+CODEX_HOOKS_DIR = CONFIGS_DIR / "codex" / "hooks"
 CODEX_RULES_DIR = CONFIGS_DIR / "codex" / "rules"
 PI_SETTINGS_FILE = CONFIGS_DIR / "pi-settings.json"
 PI_MODELS_FILE = CONFIGS_DIR / "pi-models.json"
@@ -1211,6 +1213,31 @@ def install_codex_rules():
         print(f"  Installed to {target}")
 
 
+def install_codex_hooks():
+    """Install Codex CLI hooks."""
+    print("Installing Codex hooks...")
+
+    if not CODEX_HOOKS_FILE.exists() and not CODEX_HOOKS_DIR.exists():
+        print("  No codex hooks found, skipping")
+        return
+
+    codex_dir = HOME / ".codex"
+    codex_dir.mkdir(parents=True, exist_ok=True)
+
+    if CODEX_HOOKS_FILE.exists():
+        dest_file = codex_dir / "hooks.json"
+        shutil.copy(CODEX_HOOKS_FILE, dest_file)
+        print(f"  Installed to {dest_file}")
+
+    if CODEX_HOOKS_DIR.exists():
+        dest_dir = codex_dir / "hooks"
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        for source in sorted(path for path in CODEX_HOOKS_DIR.iterdir() if path.is_file()):
+            target = dest_dir / source.name
+            shutil.copy(source, target)
+            print(f"  Installed to {target}")
+
+
 def install_pi_settings():
     """Install Pi agent settings."""
     import json
@@ -1310,6 +1337,7 @@ def install_configs():
     install_amp_config()
     install_codex_config()
     install_codex_rules()
+    install_codex_hooks()
     install_pi_settings()
     install_pi_models()
     install_global_agents_md()

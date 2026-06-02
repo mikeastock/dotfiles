@@ -30,6 +30,7 @@ test_config_new_files() {
     assert_output_contains "$output" "Installing Amp config" "Shows Amp configuration"
     assert_output_contains "$output" "Installing Codex config" "Shows Codex configuration"
     assert_output_contains "$output" "Installing Codex rules" "Shows Codex rules installation"
+    assert_output_contains "$output" "Installing Codex hooks" "Shows Codex hooks installation"
     assert_output_contains "$output" "Installing Pi settings" "Shows Pi configuration"
     assert_output_contains "$output" "Installing global AGENTS.md" "Shows AGENTS.md installation"
 
@@ -37,6 +38,8 @@ test_config_new_files() {
     assert_file_exists "$SANDBOX_DIR/.config/amp/settings.json" "Amp settings file was created"
     assert_file_exists "$SANDBOX_DIR/.codex/config.toml" "Codex config file was created"
     assert_file_exists "$SANDBOX_DIR/.codex/rules/default.rules" "Codex default rules file was created"
+    assert_file_exists "$SANDBOX_DIR/.codex/hooks.json" "Codex hooks file was created"
+    assert_file_exists "$SANDBOX_DIR/.codex/hooks/terraform_apply_gate.py" "Codex Terraform hook was created"
     assert_file_exists "$SANDBOX_DIR/.pi/agent/settings.json" "Pi settings file was created"
     assert_file_exists "$SANDBOX_DIR/.codex/AGENTS.md" "Codex AGENTS.md was created"
     assert_file_exists "$SANDBOX_DIR/.pi/agent/AGENTS.md" "Pi AGENTS.md was created"
@@ -59,6 +62,53 @@ test_codex_terraform_apply_rules() {
     assert_output_contains "$codex_rules" 'pattern = ["terraform", "apply"]' "Codex rules prompt for terraform apply"
     assert_output_contains "$codex_rules" 'pattern = ["tf", "apply"]' "Codex rules prompt for tf apply"
     assert_output_contains "$codex_rules" 'decision = "prompt"' "Codex Terraform rules request prompt approval"
+}
+
+run_terraform_apply_hook() {
+    local command="$1"
+    jq -nc --arg command "$command" '{
+      hook_event_name: "PreToolUse",
+      tool_name: "Bash",
+      tool_input: {command: $command}
+    }' | python3 "$PROJECT_DIR/configs/codex/hooks/terraform_apply_gate.py"
+}
+
+# Test: Codex Terraform apply hook blocks real apply command shapes
+test_codex_terraform_apply_hook() {
+    log_test "Testing Codex Terraform apply hook"
+    cd "$PROJECT_DIR"
+
+    local output
+    output=$(run_terraform_apply_hook "mise run terraform -- apply tmp/taildrive.tfplan" 2>&1 || true)
+    assert_output_contains "$output" '"permissionDecision": "deny"' "Hook blocks mise Terraform apply"
+    assert_output_contains "$output" "Terraform apply blocked" "Hook explains blocked apply"
+
+    output=$(run_terraform_apply_hook "mise run terraform -- -chdir=regions/us-west-2-lax-devbox apply plan.tfplan" 2>&1 || true)
+    assert_output_contains "$output" '"permissionDecision": "deny"' "Hook blocks mise Terraform chdir apply"
+
+    output=$(run_terraform_apply_hook "terraform -chdir=regions/us-west-2-lax-devbox apply plan.tfplan" 2>&1 || true)
+    assert_output_contains "$output" '"permissionDecision": "deny"' "Hook blocks direct Terraform chdir apply"
+
+    output=$(run_terraform_apply_hook "mise run terraform -- plan -out=tmp/taildrive.tfplan" 2>&1 || true)
+    assert_equals "$output" "" "Hook allows Terraform plan"
+}
+
+# Test: Codex hooks are installed with the expected PreToolUse wiring
+test_codex_hooks_install() {
+    log_test "Testing Codex hooks install"
+    cd "$PROJECT_DIR"
+
+    rm -rf "$SANDBOX_DIR/.codex"
+
+    HOME="$SANDBOX_DIR" make install-configs >/dev/null 2>&1
+
+    local hooks_json
+    hooks_json=$(cat "$SANDBOX_DIR/.codex/hooks.json")
+
+    assert_file_exists "$SANDBOX_DIR/.codex/hooks/terraform_apply_gate.py" "Terraform apply hook script installed"
+    assert_output_contains "$hooks_json" '"PreToolUse"' "Codex hooks include PreToolUse"
+    assert_output_contains "$hooks_json" '"matcher": "Bash"' "Codex hooks match Bash"
+    assert_output_contains "$hooks_json" 'terraform_apply_gate.py' "Codex hooks call Terraform apply gate"
 }
 
 # Test: Amp config preserves existing settings
@@ -132,17 +182,19 @@ test_config_idempotent() {
 
     # Run install-configs twice
     HOME="$SANDBOX_DIR" make install-configs >/dev/null 2>&1
-    local amp_first codex_first codex_rules_first pi_first
+    local amp_first codex_first codex_rules_first codex_hooks_first pi_first
     amp_first=$(cat "$SANDBOX_DIR/.config/amp/settings.json")
     codex_first=$(cat "$SANDBOX_DIR/.codex/config.toml")
     codex_rules_first=$(cat "$SANDBOX_DIR/.codex/rules/default.rules")
+    codex_hooks_first=$(cat "$SANDBOX_DIR/.codex/hooks.json")
     pi_first=$(cat "$SANDBOX_DIR/.pi/agent/settings.json")
 
     HOME="$SANDBOX_DIR" make install-configs >/dev/null 2>&1
-    local amp_second codex_second codex_rules_second pi_second
+    local amp_second codex_second codex_rules_second codex_hooks_second pi_second
     amp_second=$(cat "$SANDBOX_DIR/.config/amp/settings.json")
     codex_second=$(cat "$SANDBOX_DIR/.codex/config.toml")
     codex_rules_second=$(cat "$SANDBOX_DIR/.codex/rules/default.rules")
+    codex_hooks_second=$(cat "$SANDBOX_DIR/.codex/hooks.json")
     pi_second=$(cat "$SANDBOX_DIR/.pi/agent/settings.json")
 
     # Content should be identical
@@ -157,6 +209,10 @@ test_config_idempotent() {
     fi
     if [ "$codex_rules_first" != "$codex_rules_second" ]; then
         log_error "FAIL: Codex rules differ between runs"
+        all_match=false
+    fi
+    if [ "$codex_hooks_first" != "$codex_hooks_second" ]; then
+        log_error "FAIL: Codex hooks differ between runs"
         all_match=false
     fi
     if [ "$pi_first" != "$pi_second" ]; then
@@ -189,6 +245,7 @@ test_config_creates_directories() {
     assert_dir_exists "$SANDBOX_DIR/.config/amp" ".config/amp directory was created"
     assert_dir_exists "$SANDBOX_DIR/.codex" ".codex directory was created"
     assert_dir_exists "$SANDBOX_DIR/.codex/rules" ".codex/rules directory was created"
+    assert_dir_exists "$SANDBOX_DIR/.codex/hooks" ".codex/hooks directory was created"
     assert_dir_exists "$SANDBOX_DIR/.pi/agent" ".pi/agent directory was created"
 }
 
@@ -261,6 +318,8 @@ main() {
     test_config_creates_directories
     test_config_new_files
     test_codex_terraform_apply_rules
+    test_codex_terraform_apply_hook
+    test_codex_hooks_install
     test_amp_preserve_existing
     test_pi_preserve_changelog_version
     test_config_idempotent
