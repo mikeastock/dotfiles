@@ -61,7 +61,6 @@ CONFIG_FILE = ROOT / "plugins.toml"
 CONFIGS_DIR = ROOT / "configs"
 CODEX_CONFIG_FILE = CONFIGS_DIR / "codex-config.toml"
 CODEX_HOOKS_FILE = CONFIGS_DIR / "codex" / "hooks.json"
-CODEX_HOOKS_DIR = CONFIGS_DIR / "codex" / "hooks"
 CODEX_RULES_DIR = CONFIGS_DIR / "codex" / "rules"
 PI_SETTINGS_FILE = CONFIGS_DIR / "pi-settings.json"
 PI_MODELS_FILE = CONFIGS_DIR / "pi-models.json"
@@ -1217,25 +1216,21 @@ def install_codex_hooks():
     """Install Codex CLI hooks."""
     print("Installing Codex hooks...")
 
-    if not CODEX_HOOKS_FILE.exists() and not CODEX_HOOKS_DIR.exists():
+    if not CODEX_HOOKS_FILE.exists():
         print("  No codex hooks found, skipping")
         return
 
     codex_dir = HOME / ".codex"
     codex_dir.mkdir(parents=True, exist_ok=True)
 
-    if CODEX_HOOKS_FILE.exists():
-        dest_file = codex_dir / "hooks.json"
-        shutil.copy(CODEX_HOOKS_FILE, dest_file)
-        print(f"  Installed to {dest_file}")
+    dest_file = codex_dir / "hooks.json"
+    shutil.copy(CODEX_HOOKS_FILE, dest_file)
+    print(f"  Installed to {dest_file}")
 
-    if CODEX_HOOKS_DIR.exists():
-        dest_dir = codex_dir / "hooks"
-        dest_dir.mkdir(parents=True, exist_ok=True)
-        for source in sorted(path for path in CODEX_HOOKS_DIR.iterdir() if path.is_file()):
-            target = dest_dir / source.name
-            shutil.copy(source, target)
-            print(f"  Installed to {target}")
+    stale_hook = codex_dir / "hooks" / "terraform_apply_gate.py"
+    if stale_hook.exists():
+        stale_hook.unlink()
+        print(f"  Removed {stale_hook}")
 
 
 def install_pi_settings():

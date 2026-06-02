@@ -21,3 +21,57 @@ prefix_rule(
         "tf apply -auto-approve",
     ],
 )
+
+prefix_rule(
+    pattern = ["terraform", "-chdir=regions/us-west-2-lax-devbox", "apply"],
+    decision = "prompt",
+    justification = "terraform apply can modify infrastructure.",
+    match = [
+        ["terraform", "-chdir=regions/us-west-2-lax-devbox", "apply", "plan.tfplan"],
+    ],
+)
+
+prefix_rule(
+    pattern = ["mise", ["run", "exec"], "terraform", "--", "apply"],
+    decision = "prompt",
+    justification = "terraform apply can modify infrastructure.",
+    match = [
+        ["mise", "run", "terraform", "--", "apply", "plan.tfplan"],
+        ["mise", "run", "terraform", "--", "apply", "tmp/taildrive.tfplan"],
+        ["mise", "exec", "terraform", "--", "apply", "plan.tfplan"],
+    ],
+)
+
+prefix_rule(
+    pattern = [
+        "mise",
+        ["run", "exec"],
+        "terraform",
+        "--",
+        "-chdir=regions/us-west-2-lax-devbox",
+        "apply",
+    ],
+    decision = "prompt",
+    justification = "terraform apply can modify infrastructure.",
+    match = [
+        [
+            "mise",
+            "run",
+            "terraform",
+            "--",
+            "-chdir=regions/us-west-2-lax-devbox",
+            "apply",
+            "plan.tfplan",
+        ],
+    ],
+)
+
+prefix_rule(
+    pattern = ["mise", ["run", "exec"], "terraform", "--", ["terraform", "tf", "tofu"], "apply"],
+    decision = "prompt",
+    justification = "terraform apply can modify infrastructure.",
+    match = [
+        ["mise", "exec", "terraform", "--", "terraform", "apply", "plan.tfplan"],
+        ["mise", "run", "terraform", "--", "tofu", "apply", "plan.tfplan"],
+    ],
+)
