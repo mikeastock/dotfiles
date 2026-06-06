@@ -1,0 +1,6 @@
+interface:
+  display_name: "Editorial Sketches"
+  short_description: "Generate strange, clean Xiaohei-style inline illustrations for articles in any language"
+  default_prompt: "Use $editorial-sketches to design and generate several strange Xiaohei-style inline illustrations for this article."
+policy:
+  allow_implicit_invocation: false
