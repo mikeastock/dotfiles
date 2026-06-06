@@ -305,17 +305,13 @@ require("lazy").setup({
 
     -- Tree sitter parser/query manager
     {
-      "neovim-treesitter/nvim-treesitter",
-      branch = "main",
-      dependencies = { "neovim-treesitter/treesitter-parser-registry" },
+      "romus204/tree-sitter-manager.nvim",
       lazy = false,
-      build = ":TSUpdate",
       config = function()
-        require("nvim-treesitter").setup({
-          install_dir = vim.fn.stdpath("data") .. "/site",
+        require("tree-sitter-manager").setup({
+          ensure_installed = treesitter_languages,
+          highlight = treesitter_languages,
         })
-
-        require("nvim-treesitter").install(treesitter_languages):wait(300000)
       end,
     },
 
@@ -492,18 +488,6 @@ require("lazy").setup({
 --##############################################################################
 
 vim.cmd.filetype({ "plugin", "indent", "on" })
-
--- Treesitter highlighting (built-in to Neovim 0.12+)
-vim.api.nvim_create_autocmd("FileType", {
-  pattern = { "astro", "css", "html", "javascript", "lua", "ruby", "typescriptreact", "typescript" },
-  callback = function(ev)
-    local lang_map = {
-      typescriptreact = "tsx",
-    }
-    local lang = lang_map[ev.match] or ev.match
-    vim.treesitter.start(ev.buf, lang)
-  end,
-})
 
 vim.cmd([[
 augroup indentation
