@@ -126,12 +126,43 @@ alias n="corepack pnpm"
 alias piu="npm install -g @mariozechner/pi-coding-agent"
 
 # app checkouts
-alias a1="cd ~/code/buildr/app"
-alias a2="cd ~/code/buildr/app2"
-alias a3="cd ~/code/buildr/app3"
-alias a4="cd ~/code/buildr/app4"
-alias a5="cd ~/code/buildr/app5"
-alias a6="cd ~/code/buildr/app6"
+function __buildr_app_cd --argument-names app_name
+  set -l data_path /data/workspace/code/buildr/$app_name
+  set -l home_path ~/code/buildr/$app_name
+
+  if test -d "$data_path"
+    cd "$data_path"
+  else if test -d "$home_path"
+    cd "$home_path"
+  else
+    echo "No checkout found for $app_name at $data_path or $home_path"
+    return 1
+  end
+end
+
+function a1
+  __buildr_app_cd app
+end
+
+function a2
+  __buildr_app_cd app2
+end
+
+function a3
+  __buildr_app_cd app3
+end
+
+function a4
+  __buildr_app_cd app4
+end
+
+function a5
+  __buildr_app_cd app5
+end
+
+function a6
+  __buildr_app_cd app6
+end
 
 function fco -d "Fuzzy-find and checkout a branch"
   git branch --all --sort=-committerdate | grep -v HEAD | string trim | fzf --header='[fuzzy:branch-checkout]' | xargs git checkout
