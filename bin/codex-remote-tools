@@ -1,0 +1,565 @@
+#!/usr/bin/env node
+
+const { spawn } = require("node:child_process");
+const { readFileSync } = require("node:fs");
+const readline = require("node:readline");
+
+const VERSION = "0.1.0";
+const DEFAULT_TIMEOUT_MS = 120_000;
+const ALL_SOURCE_KINDS = [
+  "cli",
+  "vscode",
+  "exec",
+  "appServer",
+  "subAgent",
+  "subAgentReview",
+  "subAgentCompact",
+  "subAgentThreadSpawn",
+  "subAgentOther",
+  "unknown",
+];
+
+class UsageError extends Error {}
+
+class CodexAppServer {
+  constructor({ codexBin = process.env.CODEX_REMOTE_TOOLS_CODEX_BIN || "codex" } = {}) {
+    this.proc = spawn(codexBin, ["app-server"], {
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    this.nextId = 1;
+    this.pending = new Map();
+    this.notificationWaiters = [];
+    this.stderr = "";
+
+    this.proc.stderr.on("data", data => {
+      this.stderr += data.toString();
+    });
+
+    const lines = readline.createInterface({ input: this.proc.stdout });
+    lines.on("line", line => this.#handleLine(line));
+    this.proc.on("exit", code => this.#handleExit(code));
+  }
+
+  async initialize() {
+    await this.request("initialize", {
+      clientInfo: {
+        name: "codex-remote-tools",
+        title: "Codex Remote Tools",
+        version: VERSION,
+      },
+    });
+    this.notify("initialized", {});
+  }
+
+  request(method, params = {}) {
+    const id = this.nextId++;
+    const message = { id, method, params };
+
+    return new Promise((resolve, reject) => {
+      this.pending.set(id, { resolve, reject });
+      this.#write(message);
+    });
+  }
+
+  notify(method, params = {}) {
+    this.#write({ method, params });
+  }
+
+  waitForNotification(predicate, { timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
+    return new Promise((resolve, reject) => {
+      const waiter = { predicate, resolve, reject, timer: null };
+      waiter.timer = setTimeout(() => {
+        this.notificationWaiters = this.notificationWaiters.filter(existing => existing !== waiter);
+        reject(new Error(`Timed out after ${timeoutMs}ms waiting for app-server notification`));
+      }, timeoutMs);
+      this.notificationWaiters.push(waiter);
+    });
+  }
+
+  close() {
+    this.proc.kill("SIGTERM");
+  }
+
+  #write(message) {
+    this.proc.stdin.write(`${JSON.stringify(message)}\n`);
+  }
+
+  #handleLine(line) {
+    let message;
+    try {
+      message = JSON.parse(line);
+    } catch (error) {
+      return;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(message, "id")) {
+      const pending = this.pending.get(message.id);
+      if (!pending) return;
+      this.pending.delete(message.id);
+
+      if (message.error) {
+        pending.reject(new Error(JSON.stringify(message.error)));
+      } else {
+        pending.resolve(message.result);
+      }
+      return;
+    }
+
+    for (const waiter of [...this.notificationWaiters]) {
+      if (!waiter.predicate(message)) continue;
+
+      clearTimeout(waiter.timer);
+      this.notificationWaiters = this.notificationWaiters.filter(existing => existing !== waiter);
+      waiter.resolve(message);
+    }
+  }
+
+  #handleExit(code) {
+    if (this.pending.size === 0) return;
+
+    const detail = this.stderr.trim() || `codex app-server exited with status ${code}`;
+    for (const pending of this.pending.values()) {
+      pending.reject(new Error(detail));
+    }
+    this.pending.clear();
+  }
+}
+
+function main(argv) {
+  run(argv).catch(error => {
+    if (error instanceof UsageError) {
+      console.error(error.message);
+      console.error("Run `codex-remote-tools help` for usage.");
+      process.exitCode = 2;
+      return;
+    }
+
+    console.error(error.message);
+    process.exitCode = 1;
+  });
+}
+
+async function run(argv) {
+  if (argv.length === 0 || argv[0] === "help" || argv[0] === "-h" || argv[0] === "--help") {
+    printHelp(argv.slice(1));
+    return;
+  }
+
+  if (argv[0] === "--version" || argv[0] === "version") {
+    console.log(VERSION);
+    return;
+  }
+
+  const [group, command, ...rest] = argv;
+  if (group !== "threads") {
+    throw new UsageError(`Unknown command group: ${group}`);
+  }
+
+  if (!command) {
+    printThreadsHelp();
+    return;
+  }
+
+  if (command === "list") return withServer(server => threadsList(server, rest));
+  if (command === "read") return withServer(server => threadsRead(server, rest));
+  if (command === "rename") return withServer(server => threadsRename(server, rest));
+  if (command === "create") return withServer(server => threadsCreate(server, rest));
+
+  if (command === "help" || command === "-h" || command === "--help") {
+    printThreadsHelp();
+    return;
+  }
+
+  throw new UsageError(`Unknown threads command: ${command}`);
+}
+
+async function withServer(fn) {
+  const server = new CodexAppServer();
+  try {
+    await server.initialize();
+    await fn(server);
+  } finally {
+    server.close();
+  }
+}
+
+async function threadsList(server, argv) {
+  const options = parseListOptions(argv);
+  const params = {
+    limit: options.limit,
+    sortKey: options.sortKey,
+    sortDirection: options.sortDirection,
+  };
+
+  if (options.cursor) params.cursor = options.cursor;
+  if (options.cwd) params.cwd = options.cwd;
+  if (options.searchTerm) params.searchTerm = options.searchTerm;
+  if (options.archived !== null) params.archived = options.archived;
+  if (options.sourceKinds) params.sourceKinds = options.sourceKinds;
+  if (options.useStateDbOnly) params.useStateDbOnly = true;
+
+  const result = await server.request("thread/list", params);
+
+  if (options.json) {
+    console.log(JSON.stringify(result, null, 2));
+    return;
+  }
+
+  printThreadRows(result.data, { plain: options.plain });
+
+  if (result.nextCursor) {
+    console.error(`next cursor: ${result.nextCursor}`);
+  }
+}
+
+async function threadsRead(server, argv) {
+  const options = parseReadOptions(argv);
+  const result = await server.request("thread/read", {
+    threadId: options.threadId,
+    includeTurns: options.turns,
+  });
+
+  if (options.json) {
+    console.log(JSON.stringify(result, null, 2));
+    return;
+  }
+
+  printThreadRows([result.thread], { plain: options.plain, includePreview: true });
+}
+
+async function threadsRename(server, argv) {
+  const options = parseRenameOptions(argv);
+  await server.request("thread/name/set", {
+    threadId: options.threadId,
+    name: options.name,
+  });
+
+  const result = await server.request("thread/read", {
+    threadId: options.threadId,
+    includeTurns: false,
+  });
+
+  if (options.json) {
+    console.log(JSON.stringify(result.thread, null, 2));
+    return;
+  }
+
+  console.log(`renamed: ${result.thread.id} ${JSON.stringify(result.thread.name)}`);
+}
+
+async function threadsCreate(server, argv) {
+  const options = parseCreateOptions(argv);
+  const startResult = await server.request("thread/start", {
+    cwd: options.cwd,
+    ephemeral: false,
+    threadSource: "user",
+  });
+
+  const threadId = startResult.thread.id;
+
+  if (options.name) {
+    await server.request("thread/name/set", {
+      threadId,
+      name: options.name,
+    });
+  }
+
+  if (options.prompt !== null) {
+    const completed = options.wait
+      ? server.waitForNotification(
+          message => {
+            if (message.method !== "turn/completed") return false;
+            return !message.params?.threadId || message.params.threadId === threadId;
+          },
+          { timeoutMs: options.timeoutMs },
+        )
+      : null;
+
+    await server.request("turn/start", {
+      threadId,
+      input: [{ type: "text", text: options.prompt }],
+    });
+
+    if (options.wait) {
+      await completed;
+    }
+  }
+
+  const readResult = await server.request("thread/read", {
+    threadId,
+    includeTurns: false,
+  });
+
+  if (options.json) {
+    console.log(JSON.stringify(readResult.thread, null, 2));
+    return;
+  }
+
+  console.log(`created: ${readResult.thread.id}`);
+  if (readResult.thread.name) console.log(`name: ${readResult.thread.name}`);
+  console.log(`cwd: ${readResult.thread.cwd}`);
+  if (readResult.thread.preview) console.log(`preview: ${readResult.thread.preview}`);
+}
+
+function parseListOptions(argv) {
+  const options = {
+    limit: 20,
+    sortKey: "updated_at",
+    sortDirection: "desc",
+    cursor: null,
+    cwd: null,
+    searchTerm: null,
+    archived: null,
+    sourceKinds: null,
+    useStateDbOnly: false,
+    json: false,
+    plain: false,
+  };
+
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i];
+    if (arg === "-h" || arg === "--help") return printListHelpAndExit();
+    if (arg === "--json") options.json = true;
+    else if (arg === "--plain") options.plain = true;
+    else if (arg === "--limit") options.limit = parsePositiveInteger(takeValue(argv, ++i, arg), arg);
+    else if (arg === "--cursor") options.cursor = takeValue(argv, ++i, arg);
+    else if (arg === "--cwd") options.cwd = takeValue(argv, ++i, arg);
+    else if (arg === "--search") options.searchTerm = takeValue(argv, ++i, arg);
+    else if (arg === "--archived") options.archived = true;
+    else if (arg === "--active") options.archived = false;
+    else if (arg === "--all-sources") options.sourceKinds = ALL_SOURCE_KINDS;
+    else if (arg === "--source") options.sourceKinds = splitCsv(takeValue(argv, ++i, arg));
+    else if (arg === "--state-db-only") options.useStateDbOnly = true;
+    else throw new UsageError(`Unknown list option: ${arg}`);
+  }
+
+  return options;
+}
+
+function parseReadOptions(argv) {
+  const options = {
+    threadId: null,
+    turns: false,
+    json: false,
+    plain: false,
+  };
+
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i];
+    if (arg === "-h" || arg === "--help") return printReadHelpAndExit();
+    if (arg === "--turns") options.turns = true;
+    else if (arg === "--json") options.json = true;
+    else if (arg === "--plain") options.plain = true;
+    else if (!options.threadId) options.threadId = arg;
+    else throw new UsageError(`Unexpected read argument: ${arg}`);
+  }
+
+  if (!options.threadId) throw new UsageError("Missing thread id.");
+  return options;
+}
+
+function parseRenameOptions(argv) {
+  const options = {
+    threadId: null,
+    name: null,
+    json: false,
+  };
+  const positional = [];
+
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i];
+    if (arg === "-h" || arg === "--help") return printRenameHelpAndExit();
+    if (arg === "--json") options.json = true;
+    else positional.push(arg);
+  }
+
+  options.threadId = positional.shift() || null;
+  options.name = positional.join(" ") || null;
+
+  if (!options.threadId) throw new UsageError("Missing thread id.");
+  if (!options.name) throw new UsageError("Missing thread name.");
+  return options;
+}
+
+function parseCreateOptions(argv) {
+  const options = {
+    cwd: process.cwd(),
+    name: null,
+    prompt: null,
+    wait: true,
+    timeoutMs: DEFAULT_TIMEOUT_MS,
+    json: false,
+  };
+
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i];
+    if (arg === "-h" || arg === "--help") return printCreateHelpAndExit();
+    if (arg === "--json") options.json = true;
+    else if (arg === "--cwd") options.cwd = takeValue(argv, ++i, arg);
+    else if (arg === "--name") options.name = takeValue(argv, ++i, arg);
+    else if (arg === "--prompt") options.prompt = takeValue(argv, ++i, arg);
+    else if (arg === "--prompt-file") options.prompt = readFileSync(takeValue(argv, ++i, arg), "utf8");
+    else if (arg === "--no-turn") options.prompt = null;
+    else if (arg === "--no-wait") options.wait = false;
+    else if (arg === "--timeout") options.timeoutMs = parseDurationMs(takeValue(argv, ++i, arg), arg);
+    else throw new UsageError(`Unknown create option: ${arg}`);
+  }
+
+  return options;
+}
+
+function printThreadRows(threads, { plain = false, includePreview = false } = {}) {
+  if (plain) {
+    for (const thread of threads) {
+      console.log([
+        timestamp(thread.updatedAt),
+        thread.id,
+        thread.name || "",
+        thread.source || "",
+        thread.cwd || "",
+        includePreview ? thread.preview || "" : null,
+      ].filter(value => value !== null).join("\t"));
+    }
+    return;
+  }
+
+  for (const thread of threads) {
+    console.log(`${timestamp(thread.updatedAt)}  ${thread.id}  ${thread.name || "(unnamed)"}`);
+    console.log(`  source: ${thread.source || "(unknown)"}`);
+    console.log(`  cwd:    ${thread.cwd || "(unknown)"}`);
+    if (includePreview || thread.preview) {
+      console.log(`  preview: ${oneLine(thread.preview || "")}`);
+    }
+  }
+}
+
+function timestamp(epochSeconds) {
+  if (!epochSeconds) return "";
+  return new Date(epochSeconds * 1000).toISOString();
+}
+
+function oneLine(value) {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function takeValue(argv, index, flag) {
+  const value = argv[index];
+  if (!value || value.startsWith("--")) {
+    throw new UsageError(`Missing value for ${flag}.`);
+  }
+  return value;
+}
+
+function splitCsv(value) {
+  return value.split(",").map(item => item.trim()).filter(Boolean);
+}
+
+function parsePositiveInteger(value, flag) {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    throw new UsageError(`${flag} must be a positive integer.`);
+  }
+  return parsed;
+}
+
+function parseDurationMs(value, flag) {
+  const match = value.match(/^(\d+)(ms|s|m)?$/);
+  if (!match) throw new UsageError(`${flag} must look like 500ms, 30s, or 2m.`);
+  const amount = Number(match[1]);
+  const unit = match[2] || "ms";
+  if (unit === "ms") return amount;
+  if (unit === "s") return amount * 1000;
+  return amount * 60_000;
+}
+
+function printHelp(argv = []) {
+  if (argv[0] === "threads") {
+    printThreadsHelp();
+    return;
+  }
+
+  console.log(`codex-remote-tools ${VERSION}
+
+Usage:
+  codex-remote-tools threads <command> [options]
+  codex-remote-tools help [threads]
+  codex-remote-tools --version
+
+Commands:
+  threads list      List saved Codex threads
+  threads read      Read one Codex thread
+  threads rename    Rename a Codex thread
+  threads create    Create a Codex thread, optionally with an initial prompt
+
+Environment:
+  CODEX_REMOTE_TOOLS_CODEX_BIN  Codex binary to run (default: codex)
+`);
+}
+
+function printThreadsHelp() {
+  console.log(`Usage:
+  codex-remote-tools threads list [--limit 20] [--json|--plain]
+  codex-remote-tools threads read <thread-id> [--turns] [--json|--plain]
+  codex-remote-tools threads rename <thread-id> <name> [--json]
+  codex-remote-tools threads create [--name <name>] [--prompt <text>] [--json]
+
+Examples:
+  codex-remote-tools threads list
+  codex-remote-tools threads list --search buildr --limit 5
+  codex-remote-tools threads rename 019eb46a-ccf3-7e22-a3b9-f2cdf2151fa3 "Useful title"
+  codex-remote-tools threads create --name "Debug session" --prompt "Inspect the repo and wait."
+`);
+}
+
+function printListHelpAndExit() {
+  console.log(`Usage:
+  codex-remote-tools threads list [options]
+
+Options:
+  --limit <n>          Number of threads to return (default: 20)
+  --cursor <cursor>    Continue from a previous next cursor
+  --cwd <path>         Filter by exact working directory
+  --search <term>      Search extracted thread titles
+  --archived           Show archived threads
+  --active             Show non-archived threads
+  --all-sources        Include every source kind
+  --source <kind>      Filter source kinds, comma-separated
+  --state-db-only      Do not repair metadata by scanning rollouts
+  --json               Print JSON
+  --plain              Print tab-separated rows
+`);
+  process.exit(0);
+}
+
+function printReadHelpAndExit() {
+  console.log(`Usage:
+  codex-remote-tools threads read <thread-id> [--turns] [--json|--plain]
+`);
+  process.exit(0);
+}
+
+function printRenameHelpAndExit() {
+  console.log(`Usage:
+  codex-remote-tools threads rename <thread-id> <name> [--json]
+`);
+  process.exit(0);
+}
+
+function printCreateHelpAndExit() {
+  console.log(`Usage:
+  codex-remote-tools threads create [options]
+
+Options:
+  --name <name>          Set the thread name
+  --prompt <text>        Start an initial turn with this prompt
+  --prompt-file <path>   Read the initial prompt from a file
+  --no-turn              Create an empty thread
+  --no-wait              Do not wait for the initial turn to complete
+  --cwd <path>           Thread working directory (default: current directory)
+  --timeout <duration>   Turn completion timeout, e.g. 30s or 2m
+  --json                 Print JSON
+`);
+  process.exit(0);
+}
+
+main(process.argv.slice(2));
