@@ -1,0 +1,503 @@
+#!/usr/bin/env node
+
+const { execFile } = require("node:child_process");
+const { existsSync, mkdirSync, readFileSync, writeFileSync } = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
+
+const VERSION = "0.1.0";
+const DEFAULT_LIMIT = 100;
+const UNMERGED_CACHE_TTL_MS = 60 * 60 * 1000;
+const PROJECT_ABBRS = {
+  bizops: "biz",
+  "bizops-infra": "b-inf",
+  infrastructure: "m-inf",
+  dotfiles: "dot",
+  marketing: "mkt",
+  "release-notes": "rel",
+  app: "a1",
+  app2: "a2",
+  app3: "a3",
+  app4: "a4",
+  app5: "a5",
+  app6: "a6",
+};
+
+class UsageError extends Error {}
+
+function main(argv) {
+  run(argv).catch(error => {
+    if (error instanceof UsageError) {
+      console.error(error.message);
+      console.error("Run `codex-prefix-thread-projects --help` for usage.");
+      process.exitCode = 2;
+      return;
+    }
+
+    console.error(error.message);
+    process.exitCode = 1;
+  });
+}
+
+async function run(argv) {
+  const options = parseArgs(argv);
+
+  if (options.help) {
+    printHelp();
+    return;
+  }
+
+  if (options.version) {
+    console.log(VERSION);
+    return;
+  }
+
+  const threads = await listAllThreads(options);
+  const detector = options.detectMerged ? new MergedDetector() : null;
+  const changes = await plannedChanges(threads, { detector });
+  const renamed = [];
+  const failures = [];
+
+  for (const change of changes) {
+    if (options.dryRun) continue;
+
+    try {
+      await codexRemoteTools([
+        "threads",
+        "rename",
+        change.threadId,
+        change.nextName,
+        "--json",
+      ]);
+      renamed.push(change);
+    } catch (error) {
+      failures.push({
+        ...change,
+        error: error.message,
+      });
+    }
+  }
+
+  printReport({
+    changes: options.dryRun ? changes : renamed,
+    dryRun: options.dryRun,
+    failures,
+    json: options.json,
+  });
+
+  detector?.save();
+}
+
+function parseArgs(argv) {
+  const options = {
+    dryRun: false,
+    json: false,
+    help: false,
+    version: false,
+    limit: DEFAULT_LIMIT,
+    includeArchived: true,
+    detectMerged: false,
+  };
+
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i];
+
+    if (arg === "-h" || arg === "--help") options.help = true;
+    else if (arg === "--version") options.version = true;
+    else if (arg === "--dry-run") options.dryRun = true;
+    else if (arg === "--json") options.json = true;
+    else if (arg === "--detect-merged") options.detectMerged = true;
+    else if (arg === "--active-only") options.includeArchived = false;
+    else if (arg === "--limit") options.limit = parseLimit(takeValue(argv, ++i, arg));
+    else throw new UsageError(`Unknown option: ${arg}`);
+  }
+
+  return options;
+}
+
+async function listAllThreads(options) {
+  const active = await listThreadPages({ ...options, archived: false });
+  if (!options.includeArchived) return active;
+
+  const archived = await listThreadPages({ ...options, archived: true });
+  return [...active, ...archived];
+}
+
+async function listThreadPages({ limit, archived }) {
+  const threads = [];
+  let cursor = null;
+
+  while (true) {
+    const args = [
+      "threads",
+      "list",
+      "--json",
+      "--all-sources",
+      "--limit",
+      String(limit),
+      archived ? "--archived" : "--active",
+    ];
+
+    if (cursor) {
+      args.push("--cursor", cursor);
+    }
+
+    const result = JSON.parse(await codexRemoteTools(args));
+    threads.push(...result.data);
+
+    if (!result.nextCursor) return threads;
+    cursor = result.nextCursor;
+  }
+}
+
+async function plannedChanges(threads, { detector }) {
+  const changes = [];
+
+  for (const thread of dedupeThreads(threads)) {
+    if (thread.path && !existsSync(thread.path)) continue;
+
+    const abbr = projectAbbr(thread);
+    if (!abbr) continue;
+
+    const currentName = displayName(thread);
+    if (!currentName) continue;
+
+    const parsed = parseKnownPrefix(currentName, abbr);
+    const alreadyMerged = parsed?.prefix === abbr && parsed.merged;
+    const detectedMerged = alreadyMerged ? true : Boolean(await detector?.isMerged(thread));
+    const nextName = prefixedName(currentName, abbr, { merged: detectedMerged });
+    if (nextName === currentName) continue;
+
+    changes.push({
+      threadId: thread.id,
+      cwd: thread.cwd,
+      project: path.basename(thread.cwd),
+      abbr,
+      previousName: currentName,
+      nextName,
+    });
+  }
+
+  return changes;
+}
+
+function dedupeThreads(threads) {
+  const seen = new Set();
+  const result = [];
+
+  for (const thread of threads) {
+    if (seen.has(thread.id)) continue;
+
+    seen.add(thread.id);
+    result.push(thread);
+  }
+
+  return result;
+}
+
+function projectAbbr(thread) {
+  if (!thread.cwd) return null;
+
+  const basename = path.basename(thread.cwd);
+  return PROJECT_ABBRS[basename] || basename || null;
+}
+
+function displayName(thread) {
+  if (thread.name) return oneLine(thread.name);
+  if (thread.preview) return oneLine(thread.preview);
+  return null;
+}
+
+function prefixedName(name, abbr, { merged = false } = {}) {
+  const parsed = parseKnownPrefix(name, abbr);
+  const oldMerged = /^MERGED:\s+(.+)$/.exec(parsed?.body || name);
+  const targetMerged = merged || parsed?.merged || Boolean(oldMerged);
+  const body = oldMerged?.[1] || parsed?.body || name;
+
+  if (parsed?.prefix === abbr && parsed.merged && targetMerged && !oldMerged) return name;
+  if (parsed?.prefix === abbr && !targetMerged) return name;
+  if (targetMerged) return `${abbr}(merged): ${body}`;
+
+  return `${abbr}: ${body}`;
+}
+
+function parseKnownPrefix(name, currentPrefix) {
+  const knownPrefixes = new Set([...Object.values(PROJECT_ABBRS), currentPrefix]);
+
+  for (const prefix of knownPrefixes) {
+    const mergedPrefix = `${prefix}(merged): `;
+    if (name.startsWith(mergedPrefix)) {
+      return {
+        body: name.slice(mergedPrefix.length),
+        merged: true,
+        prefix,
+      };
+    }
+
+    const plainPrefix = `${prefix}: `;
+    if (name.startsWith(plainPrefix)) {
+      return {
+        body: name.slice(plainPrefix.length),
+        merged: false,
+        prefix,
+      };
+    }
+  }
+
+  return null;
+}
+
+function oneLine(value) {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+class MergedDetector {
+  constructor({ cachePath = defaultCachePath() } = {}) {
+    this.cachePath = cachePath;
+    this.cache = readJson(cachePath) || {};
+    this.changed = false;
+  }
+
+  async isMerged(thread) {
+    const branch = thread.gitInfo?.branch;
+    const repo = githubRepoSlug(thread.gitInfo?.originUrl);
+    if (!branch || !repo || branch === "main" || branch === "master") return false;
+
+    const key = `${repo}#${branch}`;
+    const cached = this.cache[key];
+    if (cached?.merged) return true;
+    if (cached && Date.now() - cached.checkedAt < UNMERGED_CACHE_TTL_MS) return false;
+
+    const merged = await mergedByGithubPr(repo, branch) || await mergedByGitAncestry(thread.cwd, branch);
+    this.cache[key] = {
+      checkedAt: Date.now(),
+      merged,
+    };
+    this.changed = true;
+    return merged;
+  }
+
+  save() {
+    if (!this.changed) return;
+
+    mkdirSync(path.dirname(this.cachePath), { recursive: true });
+    writeFileSync(this.cachePath, `${JSON.stringify(this.cache, null, 2)}\n`);
+  }
+}
+
+async function mergedByGithubPr(repo, branch) {
+  const candidates = [branch];
+  const owner = repo.split("/")[0];
+  if (!branch.includes(":")) candidates.push(`${owner}:${branch}`);
+
+  for (const head of candidates) {
+    try {
+      const output = await execFileOutput("gh", [
+        "pr",
+        "list",
+        "--repo",
+        repo,
+        "--state",
+        "merged",
+        "--head",
+        head,
+        "--json",
+        "number,mergedAt,headRefName",
+        "--limit",
+        "1",
+      ]);
+      const prs = JSON.parse(output);
+      if (prs.length > 0) return true;
+    } catch {
+      return false;
+    }
+  }
+
+  return false;
+}
+
+async function mergedByGitAncestry(cwd, branch) {
+  if (!cwd) return false;
+
+  const branchTip = await firstGitCommit(cwd, [
+    `refs/remotes/origin/${branch}`,
+    `refs/heads/${branch}`,
+  ]);
+  if (!branchTip) return false;
+
+  const mainTip = await firstGitCommit(cwd, [
+    "refs/remotes/origin/main",
+    "refs/remotes/origin/master",
+    "refs/heads/main",
+    "refs/heads/master",
+  ]);
+  if (!mainTip) return false;
+
+  return await execFileStatus("git", [
+    "-C",
+    cwd,
+    "merge-base",
+    "--is-ancestor",
+    branchTip,
+    mainTip,
+  ]) === 0;
+}
+
+async function firstGitCommit(cwd, refs) {
+  for (const ref of refs) {
+    try {
+      return (await execFileOutput("git", [
+        "-C",
+        cwd,
+        "rev-parse",
+        "--verify",
+        `${ref}^{commit}`,
+      ])).trim();
+    } catch {
+      continue;
+    }
+  }
+
+  return null;
+}
+
+function githubRepoSlug(originUrl) {
+  if (!originUrl) return null;
+
+  const sshMatch = /^git@github\.com:([^/]+\/[^/]+?)(?:\.git)?$/.exec(originUrl);
+  if (sshMatch) return sshMatch[1];
+
+  const httpsMatch = /^https:\/\/github\.com\/([^/]+\/[^/]+?)(?:\.git)?$/.exec(originUrl);
+  if (httpsMatch) return httpsMatch[1];
+
+  const sshUrlMatch = /^ssh:\/\/git@github\.com\/([^/]+\/[^/]+?)(?:\.git)?$/.exec(originUrl);
+  if (sshUrlMatch) return sshUrlMatch[1];
+
+  return null;
+}
+
+function execFileOutput(command, args) {
+  return new Promise((resolve, reject) => {
+    execFile(command, args, { timeout: 30_000, maxBuffer: 10 * 1024 * 1024 }, (error, stdout, stderr) => {
+      if (error) {
+        reject(new Error(stderr.trim() || error.message));
+        return;
+      }
+
+      resolve(stdout);
+    });
+  });
+}
+
+function execFileStatus(command, args) {
+  return new Promise(resolve => {
+    execFile(command, args, { timeout: 30_000 }, error => {
+      if (!error) {
+        resolve(0);
+        return;
+      }
+
+      resolve(typeof error.code === "number" ? error.code : 124);
+    });
+  });
+}
+
+function defaultCachePath() {
+  return path.join(os.homedir(), ".cache", "codex-prefix-thread-projects", "merged-cache.json");
+}
+
+function readJson(filePath) {
+  if (!existsSync(filePath)) return null;
+
+  try {
+    return JSON.parse(readFileSync(filePath, "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+function codexRemoteTools(args) {
+  return new Promise((resolve, reject) => {
+    execFile(codexRemoteToolsPath(), args, { maxBuffer: 50 * 1024 * 1024 }, (error, stdout, stderr) => {
+      if (error) {
+        const message = stderr.trim() || error.message;
+        reject(new Error(message));
+        return;
+      }
+
+      resolve(stdout);
+    });
+  });
+}
+
+function codexRemoteToolsPath() {
+  if (process.env.CODEX_REMOTE_TOOLS_BIN) return process.env.CODEX_REMOTE_TOOLS_BIN;
+  return path.join(__dirname, "codex-remote-tools");
+}
+
+function printReport({ changes, dryRun, failures, json }) {
+  if (json) {
+    console.log(JSON.stringify({ dryRun, changes, failures }, null, 2));
+    return;
+  }
+
+  if (changes.length === 0 && failures.length === 0) {
+    console.log("No thread names need project prefixes.");
+    return;
+  }
+
+  const verb = dryRun ? "would rename" : "renamed";
+  for (const change of changes) {
+    console.log(`${verb}: ${change.threadId}`);
+    console.log(`  ${change.previousName}`);
+    console.log(`  -> ${change.nextName}`);
+  }
+
+  for (const failure of failures) {
+    console.log(`failed: ${failure.threadId}`);
+    console.log(`  ${failure.previousName}`);
+    console.log(`  -> ${failure.nextName}`);
+    console.log(`  error: ${failure.error}`);
+  }
+}
+
+function takeValue(argv, index, flag) {
+  const value = argv[index];
+  if (!value || value.startsWith("--")) {
+    throw new UsageError(`Missing value for ${flag}.`);
+  }
+  return value;
+}
+
+function parseLimit(value) {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    throw new UsageError("--limit must be a positive integer.");
+  }
+  return parsed;
+}
+
+function printHelp() {
+  console.log(`codex-prefix-thread-projects ${VERSION}
+
+Usage:
+  codex-prefix-thread-projects [options]
+
+Renames saved Codex threads so each name starts with the project abbreviation
+derived from the thread cwd basename, e.g. app6 -> a6:.
+
+Options:
+  --dry-run       Preview changes without renaming
+  --json          Print a machine-readable report
+  --detect-merged Mark threads as proj(merged): when PR/git evidence says merged
+  --active-only   Skip archived threads
+  --limit <n>     Page size for Codex thread listing (default: ${DEFAULT_LIMIT})
+  --version       Print version
+  -h, --help      Show help
+
+Environment:
+  CODEX_REMOTE_TOOLS_BIN  Path to codex-remote-tools
+`);
+}
+
+main(process.argv.slice(2));
