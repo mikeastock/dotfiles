@@ -67,6 +67,18 @@
 - Reuse a session when iterative commands should share shell state; create a new session when isolation is safer.
 - For recurring workflows, keep session names consistent across runs.
 
+## Codex Remote Thread Tools
+
+- When Codex app thread/session tools are unavailable or unreliable in a remote environment, use `codex-remote-tools` instead of ad hoc `codex app-server` JSON-RPC snippets.
+- Use:
+  - `codex-remote-tools threads list` to list recent threads
+  - `codex-remote-tools threads read <thread-id>` to inspect a thread
+  - `codex-remote-tools threads rename <thread-id> <name>` to rename a thread
+  - `codex-remote-tools threads create --name <name> --prompt <prompt>` to create a thread that appears in normal lists
+  - `codex-remote-tools threads create --name <name> --no-turn` only when an empty session is explicitly acceptable
+- Remember that creating with `--prompt` starts a real model turn. Do not create prompt-backed threads for smoke tests unless the user asked for that behavior.
+- Use `--json` for machine-readable output and `--plain` for stable tab-separated output.
+
 ## Mindset & Process
 
 - Think a lot before acting.
