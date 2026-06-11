@@ -1,0 +1,6 @@
+interface:
+  display_name: "Codex Session Renamer"
+  short_description: "Manual one-time Codex thread renaming from session contents and local naming rules."
+  default_prompt: "Use $codex-session-renamer to propose one-time Codex thread renames from session contents, then apply approved renames."
+policy:
+  allow_implicit_invocation: false

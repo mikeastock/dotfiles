@@ -75,7 +75,9 @@ INSTALL_PATHS = {
     "claude": {
         "skills": HOME / ".claude" / "skills",
     },
-    "codex": {},
+    "codex": {
+        "skills": HOME / ".agents" / "skills",
+    },
     "pi": {
         "skills": HOME / ".agents" / "skills",
         "extensions": HOME / ".pi" / "agent" / "extensions",
@@ -89,7 +91,7 @@ STATE_DIR = Path(os.environ.get("XDG_STATE_HOME") or HOME / ".local" / "state") 
 INSTALL_MANIFEST = STATE_DIR / "agent-install-manifest.json"
 INSTALL_MANIFEST_VERSION = 1
 
-AGENTS = ["amp", "claude", "pi"]  # Agents that get skill builds
+AGENTS = ["amp", "claude", "pi"]  # Agents that get broad skill builds
 
 
 def empty_install_manifest() -> dict:
@@ -735,7 +737,7 @@ def build_skills(plugins: dict[str, Plugin]):
     print("Building skills...")
 
     # Clean build directory
-    for agent in AGENTS:
+    for agent in [*AGENTS, "codex"]:
         agent_dir = BUILD_DIR / agent
         if agent_dir.exists():
             shutil.rmtree(agent_dir)
@@ -808,6 +810,29 @@ def build_skills(plugins: dict[str, Plugin]):
                     else:
                         print(f"  {name} (custom) [{', '.join(built_for_agents)}]")
                     built.add(name)
+
+    # Process Codex-only custom skills. Codex and Pi both read ~/.agents/skills,
+    # so keep this narrow: only skills that explicitly opt into codex are built
+    # for the codex install target.
+    if SKILLS_DIR.exists():
+        built_for_codex = []
+        for skill_dir in sorted(SKILLS_DIR.iterdir()):
+            if not skill_dir.is_dir():
+                continue
+            skill_md = find_skill_markdown(skill_dir)
+            if skill_md is None:
+                continue
+            allowed_agents = parse_skill_agents(skill_md.read_text())
+            if allowed_agents is None or "codex" not in allowed_agents:
+                continue
+            name = skill_dir.name
+            result = build_skill(name, skill_dir, "codex")
+            if result is True:
+                built_for_codex.append(name)
+
+        for name in built_for_codex:
+            print(f"  {name} (custom) [codex]")
+            built.add(name)
 
     print(f"  Built {len(built)} skills")
 
