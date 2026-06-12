@@ -7,6 +7,7 @@ const path = require("node:path");
 
 const VERSION = "0.1.0";
 const DEFAULT_LIMIT = 100;
+const MERGED_CACHE_VERSION = 3;
 const UNMERGED_CACHE_TTL_MS = 60 * 60 * 1000;
 const PROJECT_ABBRS = {
   bizops: "biz",
@@ -163,9 +164,13 @@ async function plannedChanges(threads, { detector }) {
     if (!currentName) continue;
 
     const parsed = parseKnownPrefix(currentName, abbr);
-    const alreadyMerged = parsed?.prefix === abbr && parsed.merged;
-    const detectedMerged = alreadyMerged ? true : Boolean(await detector?.isMerged(thread));
-    const nextName = prefixedName(currentName, abbr, { merged: detectedMerged });
+    const mergeStatus = await detector?.mergeStatus(thread);
+    const detectedMerged = mergeStatus === "merged";
+    const preserveMerged = mergeStatus !== "unmerged";
+    const nextName = prefixedName(currentName, abbr, {
+      merged: detectedMerged,
+      preserveMerged,
+    });
     if (nextName === currentName) continue;
 
     changes.push({
@@ -208,14 +213,14 @@ function displayName(thread) {
   return null;
 }
 
-function prefixedName(name, abbr, { merged = false } = {}) {
+function prefixedName(name, abbr, { merged = false, preserveMerged = true } = {}) {
   const parsed = parseKnownPrefix(name, abbr);
   const oldMerged = /^MERGED:\s+(.+)$/.exec(parsed?.body || name);
-  const targetMerged = merged || parsed?.merged || Boolean(oldMerged);
+  const targetMerged = merged || (preserveMerged && (parsed?.merged || Boolean(oldMerged)));
   const body = oldMerged?.[1] || parsed?.body || name;
 
   if (parsed?.prefix === abbr && parsed.merged && targetMerged && !oldMerged) return name;
-  if (parsed?.prefix === abbr && !targetMerged) return name;
+  if (parsed?.prefix === abbr && !parsed.merged && !targetMerged) return name;
   if (targetMerged) return `${abbr}(merged): ${body}`;
 
   return `${abbr}: ${body}`;
@@ -258,23 +263,34 @@ class MergedDetector {
     this.changed = false;
   }
 
-  async isMerged(thread) {
+  async mergeStatus(thread) {
     const branch = thread.gitInfo?.branch;
     const repo = githubRepoSlug(thread.gitInfo?.originUrl);
-    if (!branch || !repo || branch === "main" || branch === "master") return false;
+    if (!branch || !repo || branch === "main" || branch === "master") return "unknown";
 
     const key = `${repo}#${branch}`;
-    const cached = this.cache[key];
-    if (cached?.merged) return true;
-    if (cached && Date.now() - cached.checkedAt < UNMERGED_CACHE_TTL_MS) return false;
+    if (await checkedOutBranchHasUncommittedWork(thread.cwd, branch)) {
+      if (this.cache[key]) {
+        delete this.cache[key];
+        this.changed = true;
+      }
+      return "unmerged";
+    }
 
-    const merged = await mergedByGithubPr(repo, branch) || await mergedByGitAncestry(thread.cwd, branch);
+    const cached = this.cache[key];
+    if (cached?.version === MERGED_CACHE_VERSION && cached.status === "merged") return "merged";
+    if (cached?.version === MERGED_CACHE_VERSION && Date.now() - cached.checkedAt < UNMERGED_CACHE_TTL_MS) {
+      return cached.status || "unknown";
+    }
+
+    const status = await mergedByGithubPr(repo, branch) ? "merged" : await mergeStatusByGitAncestry(thread.cwd, branch);
     this.cache[key] = {
+      version: MERGED_CACHE_VERSION,
       checkedAt: Date.now(),
-      merged,
+      status,
     };
     this.changed = true;
-    return merged;
+    return status;
   }
 
   save() {
@@ -316,14 +332,14 @@ async function mergedByGithubPr(repo, branch) {
   return false;
 }
 
-async function mergedByGitAncestry(cwd, branch) {
-  if (!cwd) return false;
+async function mergeStatusByGitAncestry(cwd, branch) {
+  if (!cwd) return "unknown";
 
   const branchTip = await firstGitCommit(cwd, [
     `refs/remotes/origin/${branch}`,
     `refs/heads/${branch}`,
   ]);
-  if (!branchTip) return false;
+  if (!branchTip) return "unknown";
 
   const mainTip = await firstGitCommit(cwd, [
     "refs/remotes/origin/main",
@@ -331,9 +347,10 @@ async function mergedByGitAncestry(cwd, branch) {
     "refs/heads/main",
     "refs/heads/master",
   ]);
-  if (!mainTip) return false;
+  if (!mainTip) return "unknown";
+  if (branchTip === mainTip) return "unmerged";
 
-  return await execFileStatus("git", [
+  const isAncestor = await execFileStatus("git", [
     "-C",
     cwd,
     "merge-base",
@@ -341,6 +358,38 @@ async function mergedByGitAncestry(cwd, branch) {
     branchTip,
     mainTip,
   ]) === 0;
+
+  return isAncestor ? "merged" : "unmerged";
+}
+
+async function checkedOutBranchHasUncommittedWork(cwd, branch) {
+  if (!cwd) return false;
+
+  let currentBranch;
+  try {
+    currentBranch = (await execFileOutput("git", [
+      "-C",
+      cwd,
+      "branch",
+      "--show-current",
+    ])).trim();
+  } catch {
+    return false;
+  }
+
+  if (currentBranch !== branch) return false;
+
+  try {
+    const status = await execFileOutput("git", [
+      "-C",
+      cwd,
+      "status",
+      "--porcelain",
+    ]);
+    return status.trim().length > 0;
+  } catch {
+    return false;
+  }
 }
 
 async function firstGitCommit(cwd, refs) {
