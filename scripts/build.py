@@ -76,7 +76,7 @@ INSTALL_PATHS = {
         "skills": HOME / ".claude" / "skills",
     },
     "codex": {
-        "skills": HOME / ".agents" / "skills",
+        "skills": HOME / ".codex" / "skills",
     },
     "pi": {
         "skills": HOME / ".agents" / "skills",
@@ -811,9 +811,8 @@ def build_skills(plugins: dict[str, Plugin]):
                         print(f"  {name} (custom) [{', '.join(built_for_agents)}]")
                     built.add(name)
 
-    # Process Codex-only custom skills. Codex and Pi both read ~/.agents/skills,
-    # so keep this narrow: only skills that explicitly opt into codex are built
-    # for the codex install target.
+    # Process Codex-only custom skills. Keep this narrow: only skills that
+    # explicitly opt into codex are built for the codex install target.
     if SKILLS_DIR.exists():
         built_for_codex = []
         for skill_dir in sorted(SKILLS_DIR.iterdir()):

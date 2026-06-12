@@ -38,6 +38,10 @@ skills = [ "create-cli" ]
 url = "https://github.com/openprose/prose"
 skills = [ "open-prose" ]
 
+["shadcn/improve"]
+url = "https://github.com/shadcn/improve"
+skills = [ "improve" ]
+
 ["mitsuhiko/agent-stuff"]
 url = "https://github.com/mitsuhiko/agent-stuff"
 skills = [ "tmux" ]

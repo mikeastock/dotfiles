@@ -76,6 +76,7 @@ pi
 
 ### Notable plugin skills
 
+- `improve` — codebase audit and self-contained implementation planning skill from `shadcn/improve`
 - `impeccable` — frontend design, critique, polish, and live iteration skill from `pbakaus/impeccable`
 
 ### Notable custom Pi prompt templates

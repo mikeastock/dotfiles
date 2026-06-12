@@ -25,3 +25,6 @@
 [submodule "plugins/pbakaus-impeccable"]
 	path = plugins/pbakaus-impeccable
 	url = https://github.com/pbakaus/impeccable.git
+[submodule "plugins/shadcn-improve"]
+	path = plugins/shadcn-improve
+	url = https://github.com/shadcn/improve
