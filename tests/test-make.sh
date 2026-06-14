@@ -197,6 +197,9 @@ test_make_install_skills() {
     assert_dir_exists "$SANDBOX_DIR/.agents/skills/brainstorming" "Pi installs vendored brainstorming skill"
     assert_dir_exists "$SANDBOX_DIR/.claude/skills/how" "Claude installs how skill"
     assert_dir_exists "$SANDBOX_DIR/.agents/skills/how" "Pi installs how skill"
+    assert_dir_exists "$SANDBOX_DIR/.agents/skills/zmx" "Pi installs zmx skill"
+    assert_file_not_exists "$SANDBOX_DIR/.config/agents/skills/zmx" "Amp does not install Pi-only zmx skill"
+    assert_file_not_exists "$SANDBOX_DIR/.claude/skills/zmx" "Claude does not install Pi-only zmx skill"
 }
 
 # Test: install-skills preserves unmanaged sibling skills
@@ -204,7 +207,7 @@ test_install_skills_preserves_unmanaged_siblings() {
     log_test "Testing install-skills preserves unmanaged skill siblings"
     cd "$PROJECT_DIR"
 
-    rm -rf "$SANDBOX_DIR/.config/agents/skills" "$SANDBOX_DIR/.claude/skills" "$SANDBOX_DIR/.agents/skills"
+    rm -rf "$SANDBOX_DIR/.config/agents/skills" "$SANDBOX_DIR/.claude/skills" "$SANDBOX_DIR/.agents/skills" "$SANDBOX_DIR/.codex/skills"
     mkdir -p "$SANDBOX_DIR/.claude/skills/manual-skill"
     cat > "$SANDBOX_DIR/.claude/skills/manual-skill/SKILL.md" <<'EOF'
 ---
@@ -228,7 +231,7 @@ test_install_skills_removes_previous_managed_siblings() {
     log_test "Testing install-skills removes previously managed skill siblings"
     cd "$PROJECT_DIR"
 
-    rm -rf "$SANDBOX_DIR/.config/agents/skills" "$SANDBOX_DIR/.claude/skills" "$SANDBOX_DIR/.agents/skills" "$SANDBOX_DIR/.local/state/dotfiles"
+    rm -rf "$SANDBOX_DIR/.config/agents/skills" "$SANDBOX_DIR/.claude/skills" "$SANDBOX_DIR/.agents/skills" "$SANDBOX_DIR/.codex/skills" "$SANDBOX_DIR/.local/state/dotfiles"
 
     HOME="$SANDBOX_DIR" XDG_STATE_HOME="$SANDBOX_DIR/.local/state" make install-skills >/dev/null 2>&1
     assert_dir_exists "$SANDBOX_DIR/.claude/skills/how" "Managed skill initially installed"
@@ -254,7 +257,7 @@ test_install_skills_refuses_unmanaged_name_conflict() {
     log_test "Testing install-skills refuses unmanaged same-name conflict"
     cd "$PROJECT_DIR"
 
-    rm -rf "$SANDBOX_DIR/.config/agents/skills" "$SANDBOX_DIR/.claude/skills" "$SANDBOX_DIR/.agents/skills" "$SANDBOX_DIR/.local/state/dotfiles"
+    rm -rf "$SANDBOX_DIR/.config/agents/skills" "$SANDBOX_DIR/.claude/skills" "$SANDBOX_DIR/.agents/skills" "$SANDBOX_DIR/.codex/skills" "$SANDBOX_DIR/.local/state/dotfiles"
     mkdir -p "$SANDBOX_DIR/.claude/skills/how"
     cat > "$SANDBOX_DIR/.claude/skills/how/SKILL.md" <<'EOF'
 manual conflict
@@ -282,7 +285,7 @@ test_install_refuses_unsafe_manifest_child_names() {
     log_test "Testing install refuses unsafe manifest child names"
     cd "$PROJECT_DIR"
 
-    rm -rf "$SANDBOX_DIR/.config/agents/skills" "$SANDBOX_DIR/.claude/skills" "$SANDBOX_DIR/.agents/skills" "$SANDBOX_DIR/.local/state/dotfiles"
+    rm -rf "$SANDBOX_DIR/.config/agents/skills" "$SANDBOX_DIR/.claude/skills" "$SANDBOX_DIR/.agents/skills" "$SANDBOX_DIR/.codex/skills" "$SANDBOX_DIR/.local/state/dotfiles"
     mkdir -p "$SANDBOX_DIR/.local/state/dotfiles"
     cat > "$SANDBOX_DIR/.local/state/dotfiles/agent-install-manifest.json" <<'EOF'
 {
@@ -314,7 +317,7 @@ test_install_skills_force_claims_unmanaged_name_conflict() {
     log_test "Testing install-skills --force claims unmanaged same-name conflict"
     cd "$PROJECT_DIR"
 
-    rm -rf "$SANDBOX_DIR/.config/agents/skills" "$SANDBOX_DIR/.claude/skills" "$SANDBOX_DIR/.agents/skills" "$SANDBOX_DIR/.local/state/dotfiles"
+    rm -rf "$SANDBOX_DIR/.config/agents/skills" "$SANDBOX_DIR/.claude/skills" "$SANDBOX_DIR/.agents/skills" "$SANDBOX_DIR/.codex/skills" "$SANDBOX_DIR/.local/state/dotfiles"
     mkdir -p "$SANDBOX_DIR/.claude/skills/how"
     cat > "$SANDBOX_DIR/.claude/skills/how/SKILL.md" <<'EOF'
 manual conflict

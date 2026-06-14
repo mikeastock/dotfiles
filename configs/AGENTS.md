@@ -35,31 +35,29 @@
   - exact deletion criteria
 - Default stance across the app: delete old-state compatibility code rather than carrying it forward.
 
-## Background Processes with zmx
+## Background Processes
 
-- We use `zmx` as a lightweight persistent session runner for long-lived/background terminal work (tests, dev servers, build jobs, migrations, one-off scripts).
-- Prefer `zmx run` when work should continue independently of the current terminal/agent invocation.
+- Run long-lived terminal work as background processes when appropriate: tests,
+  dev servers, build jobs, migrations, and one-off scripts.
+- Prefer a background process when work should continue independently of the
+  current terminal/agent invocation.
 - Use stable, descriptive session names (e.g. `tests`, `server-api`, `build-ios`) so sessions are easy to inspect and reuse.
 
 ### Non-interactive safety rule (important)
 
-- `zmx run` can hang agent tool execution in non-interactive environments because the daemon may keep inherited stdio open.
-- When running `zmx run` from an agent/tool, **always redirect stdout/stderr** so the command returns promptly:
-  - `zmx run <session> <command> >/dev/null 2>&1`
-  - or redirect to a file if output must be captured.
+- Background process runners can hang agent tool execution in non-interactive
+  environments when they keep inherited stdio open.
+- When starting background work from an agent/tool, redirect stdout/stderr so
+  the command returns promptly, or redirect to a file if output must be
+  captured.
 
 ### Recommended background process flow
 
-1. Start/dispatch work:
-   - `zmx run <session> <command> >/dev/null 2>&1`
-2. Wait for task completion when needed:
-   - `zmx wait <session>`
-3. Inspect output/history:
-   - `zmx history <session>`
-4. Check active sessions:
-   - `zmx list`
-5. Clean up stale/finished sessions when appropriate:
-   - `zmx kill <session>`
+1. Start work as a named background process.
+2. Wait for task completion when needed.
+3. Inspect output/history.
+4. Check active sessions.
+5. Clean up stale/finished sessions when appropriate.
 
 ### Practical guidance
 
