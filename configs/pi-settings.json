@@ -7,7 +7,7 @@
   "doubleEscapeAction": "tree",
   "enabledModels": [
     "openai-codex/gpt-5.5",
-    "accounts/fireworks/routers/kimi-k2p6-turbo"
+    "fireworks/accounts/fireworks/routers/kimi-k2p7-code-fast"
   ],
   "packages": [
     "npm:pi-autoresearch",
@@ -16,5 +16,6 @@
   ],
   "theme": "catppuccin-mocha",
   "transport": "websocket",
-  "quietStartup": true
+  "quietStartup": true,
+  "enableInstallTelemetry": false
 }
