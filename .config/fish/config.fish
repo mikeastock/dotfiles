@@ -50,6 +50,8 @@ alias ll="ls -lh"
 alias ln="ln -v"
 alias mkdir="mkdir -p"
 alias vim="nvim"
+alias wk="work"
+alias wokr="work"
 
 alias h="heroku"
 alias hc="heroku run env CONSOLE_USER=mike bin/rails console"

@@ -10,6 +10,9 @@ eval "$(mise activate zsh)"
 
 export PATH="$HOME/.local/bin:$PATH"
 
+alias wk="work"
+alias wokr="work"
+
 if [ -f "$HOME/.env" ]; then
   set -a
   . "$HOME/.env"

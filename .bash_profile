@@ -9,3 +9,6 @@ export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
 eval "$(mise activate bash)"
 
 export PATH="$HOME/.local/bin:$PATH"
+
+alias wk="work"
+alias wokr="work"
