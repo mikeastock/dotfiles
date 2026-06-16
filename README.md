@@ -74,6 +74,7 @@ pi
 - `oracle` — @steipete/oracle CLI workflow for second-model reviews with selected repo context
 - `session-learning-miner` — mine Pi session history for repeated prompts, friction, reusable workflows, and skill/template candidates
 - `zmx` — Pi-only guidance for managing persistent background terminal work
+- `buildr-artifacts` — publish browser-viewable Buildr artifacts as static S3-hosted HTML/assets or stateful Vite apps served from Codexbox with `bld.run` URLs
 
 ### Notable plugin skills
 
