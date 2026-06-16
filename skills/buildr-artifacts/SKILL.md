@@ -94,12 +94,15 @@ Both scripts print only the shareable URL on success. Report that URL to the use
 
 Codexbox normally sources these from `/home/codex/.config/codexbox/env`, populated from Secrets Manager:
 
-- `ARTIFACTS_AWS_REGION` — AWS region, defaults to `us-east-1`
-- `ARTIFACTS_S3_BUCKET` — Bucket name, defaults to `buildr-bizops-artifacts`
-- `ARTIFACTS_BASE_URL` — URL base, defaults to `https://artifacts.buildrtools.com`
+- `ARTIFACT_AWS_REGION` — AWS region, falls back to `AWS_REGION`, then `us-east-1`
+- `ARTIFACT_AWS_ACCESS_KEY_ID` — optional artifact-scoped AWS access key for static uploads
+- `ARTIFACT_AWS_SECRET_ACCESS_KEY` — optional artifact-scoped AWS secret key for static uploads
+- `ARTIFACT_AWS_SESSION_TOKEN` — optional artifact-scoped AWS session token for static uploads
+- `ARTIFACT_S3_BUCKET` — Bucket name, defaults to `buildr-bizops-artifacts`
+- `ARTIFACT_BASE_URL` — URL base, defaults to `https://artifacts.buildrtools.com`
 - `BLD_RUN_HOST` — optional Vite app URL host override, for example `mike.bld.run`
 
-Static uploads use the Codexbox instance role. Do not configure artifact access keys.
+Static uploads use the `ARTIFACT_AWS_*` values when provided; otherwise they rely on the Codexbox instance role or normal AWS CLI credential resolution.
 
 ## Safety Rules
 

@@ -305,8 +305,7 @@ def upload_files(files: list[ArtifactFile], slug: str) -> None:
     if shutil.which("aws") is None:
         raise ValueError("aws CLI is required but was not found on PATH")
 
-    env = os.environ.copy()
-    env.setdefault("AWS_REGION", os.environ.get("ARTIFACTS_AWS_REGION", "us-east-1"))
+    env = aws_cli_env(os.environ)
     for file in files:
         body = read_file_safely(file)
         with tempfile.NamedTemporaryFile(delete=False) as tmp:
@@ -348,12 +347,31 @@ def content_type_for(relative_path: str) -> str:
     return CONTENT_TYPES.get(suffix) or mimetypes.guess_type(relative_path)[0] or "application/octet-stream"
 
 
+def aws_cli_env(source_env: dict[str, str]) -> dict[str, str]:
+    env = dict(source_env)
+    env["AWS_REGION"] = (
+        source_env.get("ARTIFACT_AWS_REGION", "").strip()
+        or source_env.get("AWS_REGION", "").strip()
+        or "us-east-1"
+    )
+    copy_artifact_aws_env(env, source_env, "AWS_ACCESS_KEY_ID")
+    copy_artifact_aws_env(env, source_env, "AWS_SECRET_ACCESS_KEY")
+    copy_artifact_aws_env(env, source_env, "AWS_SESSION_TOKEN")
+    return env
+
+
+def copy_artifact_aws_env(env: dict[str, str], source_env: dict[str, str], aws_name: str) -> None:
+    value = source_env.get(f"ARTIFACT_{aws_name}", "").strip()
+    if value:
+        env[aws_name] = value
+
+
 def bucket_name() -> str:
-    return os.environ.get("ARTIFACTS_S3_BUCKET", DEFAULT_BUCKET).strip() or DEFAULT_BUCKET
+    return os.environ.get("ARTIFACT_S3_BUCKET", DEFAULT_BUCKET).strip() or DEFAULT_BUCKET
 
 
 def base_url() -> str:
-    return (os.environ.get("ARTIFACTS_BASE_URL", DEFAULT_BASE_URL).strip() or DEFAULT_BASE_URL).rstrip("/")
+    return (os.environ.get("ARTIFACT_BASE_URL", DEFAULT_BASE_URL).strip() or DEFAULT_BASE_URL).rstrip("/")
 
 
 def generate_slug() -> str:
