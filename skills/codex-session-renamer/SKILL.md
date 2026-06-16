@@ -19,6 +19,7 @@ Rename Codex threads once, based on their contents, cwd project, and merge state
   - `dotfiles` -> `dot`
   - `marketing` -> `mkt`
   - `release-notes` -> `rel`
+  - `internal-release-notes` -> `irn`
   - `app` -> `a1`
   - `app2` -> `a2`
   - `app3` -> `a3`

@@ -16,6 +16,7 @@ const PROJECT_ABBRS = {
   dotfiles: "dot",
   marketing: "mkt",
   "release-notes": "rel",
+  "internal-release-notes": "irn",
   app: "a1",
   app2: "a2",
   app3: "a3",
@@ -163,7 +164,6 @@ async function plannedChanges(threads, { detector }) {
     const currentName = displayName(thread);
     if (!currentName) continue;
 
-    const parsed = parseKnownPrefix(currentName, abbr);
     const mergeStatus = await detector?.mergeStatus(thread);
     const detectedMerged = mergeStatus === "merged";
     const preserveMerged = mergeStatus !== "unmerged";
@@ -214,20 +214,53 @@ function displayName(thread) {
 }
 
 function prefixedName(name, abbr, { merged = false, preserveMerged = true } = {}) {
-  const parsed = parseKnownPrefix(name, abbr);
-  const oldMerged = /^MERGED:\s+(.+)$/.exec(parsed?.body || name);
+  const initialParsed = parseKnownPrefix(name, abbr);
+  const oldMerged = /^MERGED:\s+(.+)$/.exec(initialParsed?.body || name);
+  const parsed = oldMerged ? parseKnownPrefix(oldMerged[1], abbr) || initialParsed : initialParsed;
   const targetMerged = merged || (preserveMerged && (parsed?.merged || Boolean(oldMerged)));
-  const body = oldMerged?.[1] || parsed?.body || name;
+  const body = oldMerged ? parsed?.body || oldMerged[1] : parsed?.body || name;
+  const alreadyCanonical = parsed?.prefix === abbr && parsed.prefixes.length === 1 && !oldMerged;
 
-  if (parsed?.prefix === abbr && parsed.merged && targetMerged && !oldMerged) return name;
-  if (parsed?.prefix === abbr && !parsed.merged && !targetMerged) return name;
+  if (alreadyCanonical && parsed.merged && targetMerged) return name;
+  if (alreadyCanonical && !parsed.merged && !targetMerged) return name;
   if (targetMerged) return `${abbr}(merged): ${body}`;
 
   return `${abbr}: ${body}`;
 }
 
 function parseKnownPrefix(name, currentPrefix) {
-  const knownPrefixes = new Set([...Object.values(PROJECT_ABBRS), currentPrefix]);
+  const prefixes = [];
+  let body = name;
+  let merged = false;
+
+  while (true) {
+    const parsed = parseOneKnownPrefix(body, currentPrefix);
+    if (!parsed) break;
+
+    prefixes.push({
+      merged: parsed.merged,
+      prefix: parsed.prefix,
+    });
+    merged ||= parsed.merged;
+    body = parsed.body;
+  }
+
+  if (prefixes.length === 0) return null;
+
+  return {
+    body,
+    merged,
+    prefix: prefixes[0].prefix,
+    prefixes,
+  };
+}
+
+function parseOneKnownPrefix(name, currentPrefix) {
+  const knownPrefixes = new Set([
+    ...Object.values(PROJECT_ABBRS),
+    ...Object.keys(PROJECT_ABBRS),
+    currentPrefix,
+  ]);
 
   for (const prefix of knownPrefixes) {
     const mergedPrefix = `${prefix}(merged): `;
