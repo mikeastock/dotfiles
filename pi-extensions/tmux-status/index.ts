@@ -99,8 +99,6 @@ export default function (pi: ExtensionAPI) {
 	let state: StatusState = "new";
 	let running = false;
 	const statusTracker = new TmuxStatusState();
-	let awaitingAskUserQuestion = false;
-	let askUserQuestionCancelled = false;
 	let timeoutId: ReturnType<typeof setTimeout> | undefined;
 	let hasEmittedState = false;
 	let currentCwd: string | undefined;
@@ -184,17 +182,17 @@ export default function (pi: ExtensionAPI) {
 	};
 
 	const resetStallTimeout = (): void => {
-		if (!running || awaitingAskUserQuestion) return;
+		if (!running) return;
 		clearStallTimeout();
 		timeoutId = setTimeout(async () => {
-			if (running && state === "running" && !awaitingAskUserQuestion) {
+			if (running && state === "running") {
 				await setState("stalled");
 			}
 		}, stallTimeoutMs);
 	};
 
 	const markActivity = async (): Promise<void> => {
-		if (!running || awaitingAskUserQuestion) return;
+		if (!running) return;
 		if (state === "stalled" || state === "waitingInput") {
 			await setState("running");
 		}
@@ -203,16 +201,12 @@ export default function (pi: ExtensionAPI) {
 
 	const resetState = async (next: Extract<StatusState, "new" | "done" | "failed">): Promise<void> => {
 		running = false;
-		awaitingAskUserQuestion = false;
-		askUserQuestionCancelled = false;
 		clearStallTimeout();
 		await setState(statusTracker.reset(next));
 	};
 
 	const beginRun = async (): Promise<void> => {
 		running = true;
-		awaitingAskUserQuestion = false;
-		askUserQuestionCancelled = false;
 		await setState("running");
 		resetStallTimeout();
 	};
@@ -232,13 +226,6 @@ export default function (pi: ExtensionAPI) {
 			}
 		}
 		return undefined;
-	};
-
-	const isAskUserQuestionCancelled = (event: ToolResultEvent): boolean => {
-		if (event.toolName !== "AskUserQuestion") return false;
-		if (!event.details || typeof event.details !== "object") return false;
-		const details = event.details as Record<string, unknown>;
-		return details.cancelled === true;
 	};
 
 	const isAsyncSubagentRunStartEvent = (data: unknown): data is SubagentRunStartEvent => {
@@ -281,37 +268,20 @@ export default function (pi: ExtensionAPI) {
 		await markActivity();
 	});
 
-	pi.on("tool_call", async (event: ToolCallEvent, _ctx: ExtensionContext) => {
-		if (event.toolName === "AskUserQuestion") {
-			awaitingAskUserQuestion = true;
-			clearStallTimeout();
-			await setState("waitingInput");
-			return;
-		}
+	pi.on("tool_call", async (_event: ToolCallEvent, _ctx: ExtensionContext) => {
 		await markActivity();
 	});
 
-	pi.on("tool_result", async (event: ToolResultEvent, _ctx: ExtensionContext) => {
-		if (event.toolName === "AskUserQuestion") {
-			awaitingAskUserQuestion = false;
-			if (isAskUserQuestionCancelled(event)) {
-				askUserQuestionCancelled = true;
-				clearStallTimeout();
-				await setState("failed");
-				return;
-			}
-		}
-
+	pi.on("tool_result", async (_event: ToolResultEvent, _ctx: ExtensionContext) => {
 		await markActivity();
 	});
 
 	pi.on("agent_end", async (event: AgentEndEvent, _ctx: ExtensionContext) => {
 		running = false;
-		awaitingAskUserQuestion = false;
 		clearStallTimeout();
 
 		const stopReason = getStopReason(event.messages);
-		if (stopReason === "error" || askUserQuestionCancelled) {
+		if (stopReason === "error") {
 			await applyTerminalState("failed");
 			return;
 		}
@@ -322,7 +292,7 @@ export default function (pi: ExtensionAPI) {
 	pi.events.on(HANDOFF_ACTIVITY_START_EVENT, async (data: unknown) => {
 		if (!isHandoffActivityEvent(data)) return;
 		const next = statusTracker.startExternalActivity("handoff");
-		if (!next || running || awaitingAskUserQuestion) return;
+		if (!next || running) return;
 		clearStallTimeout();
 		await setState(next);
 	});
@@ -330,14 +300,14 @@ export default function (pi: ExtensionAPI) {
 	pi.events.on(HANDOFF_ACTIVITY_END_EVENT, async (data: unknown) => {
 		if (!isHandoffActivityEvent(data)) return;
 		const next = statusTracker.endExternalActivity("handoff");
-		if (!next || running || awaitingAskUserQuestion) return;
+		if (!next || running) return;
 		await setState(next);
 	});
 
 	pi.events.on(SUBAGENT_RUN_START_EVENT, async (data: unknown) => {
 		if (!isAsyncSubagentRunStartEvent(data)) return;
 		const next = statusTracker.handleAsyncStart(data.id);
-		if (!next || running || awaitingAskUserQuestion) return;
+		if (!next || running) return;
 		clearStallTimeout();
 		await setState(next);
 	});
@@ -345,7 +315,7 @@ export default function (pi: ExtensionAPI) {
 	pi.events.on(SUBAGENT_RUN_END_EVENT, async (data: unknown) => {
 		if (!isAsyncSubagentRunEndEvent(data)) return;
 		const next = statusTracker.handleAsyncEnd(data.id, data.status);
-		if (!next || running || awaitingAskUserQuestion) return;
+		if (!next || running) return;
 		await setState(next);
 	});
 

@@ -19,14 +19,12 @@ from pathlib import Path
 
 # Extensions that require user interaction and should be skipped in non-interactive mode
 INTERACTIVE_EXTENSIONS = {
-    "AskUserQuestion",
     "confirm-destructive",
 }
 
 # Skill overrides that explicitly require interactivity
 INTERACTIVE_OVERRIDES = {
     "brainstorming-claude.md",
-    "brainstorming-pi.md",
 }
 
 # Global flag for non-interactive mode
