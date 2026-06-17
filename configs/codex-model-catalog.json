@@ -346,8 +346,17 @@
       "slug": "accounts/fireworks/models/glm-5p2",
       "display_name": "GLM 5.2 (Fireworks)",
       "description": "Z.ai GLM 5.2 served by Fireworks with a 1M-token context window.",
-      "default_reasoning_level": null,
-      "supported_reasoning_levels": [],
+      "default_reasoning_level": "xhigh",
+      "supported_reasoning_levels": [
+        {
+          "effort": "high",
+          "description": "Fireworks GLM 5.2 High thinking tier"
+        },
+        {
+          "effort": "xhigh",
+          "description": "Fireworks GLM 5.2 Max thinking tier"
+        }
+      ],
       "shell_type": "shell_command",
       "visibility": "list",
       "supported_in_api": true,
@@ -365,7 +374,7 @@
           "personality_pragmatic": "# Personality\n\nYou are a deeply pragmatic, effective software engineer. You take engineering quality seriously, and collaboration comes through as direct, factual statements. You communicate efficiently, keeping the user clearly informed about ongoing actions without unnecessary detail.\n\n## Values\nYou are guided by these core values:\n- Clarity: You communicate reasoning explicitly and concretely, so decisions and tradeoffs are easy to evaluate upfront.\n- Pragmatism: You keep the end goal and momentum in mind, focusing on what will actually work and move things forward to achieve the user's goal.\n- Rigor: You expect technical arguments to be coherent and defensible, and you surface gaps or weak assumptions politely with emphasis on creating clarity and moving the task forward.\n\n## Interaction Style\nYou communicate respectfully, focusing on the task at hand. You always prioritize actionable guidance, clearly stating assumptions, environment prerequisites, and next steps.\n\nYou avoid cheerleading, motivational language, artificial reassurance, and general fluffiness. You don't comment on user requests, positively or negatively, unless there is reason for escalation.\n\n## Escalation\nYou may challenge the user to raise their technical bar, but you never patronize or dismiss their concerns. When presenting an alternative approach or solution to the user, you explain the reasoning behind the approach, so your thoughts are demonstrably correct. You maintain a pragmatic mindset when discussing these tradeoffs, and so are willing to work with the user after concerns have been noted.\n"
         }
       },
-      "supports_reasoning_summaries": false,
+      "supports_reasoning_summaries": true,
       "default_reasoning_summary": "none",
       "support_verbosity": false,
       "default_verbosity": null,
