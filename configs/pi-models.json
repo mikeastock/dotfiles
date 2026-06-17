@@ -21,6 +21,7 @@
           "id": "accounts/fireworks/models/glm-5p2",
           "name": "GLM 5.2",
           "api": "openai-completions",
+          "baseUrl": "https://api.fireworks.ai/inference/v1",
           "reasoning": true,
           "input": ["text"],
           "contextWindow": 1000000,
