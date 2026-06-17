@@ -1,15 +1,14 @@
 ---
 name: zmx
-description: Manage persistent background terminal work with zmx in Pi Agent sessions. Use when running long-lived or background commands in Pi, including tests, dev servers, build jobs, migrations, one-off scripts, or any task that should continue independently of the current terminal invocation.
+description: Manage persistent background terminal work with zmx in agent sessions. Use when running long-lived or background commands, including tests, dev servers, build jobs, migrations, one-off scripts, or any task that should continue independently of the current terminal invocation.
 metadata:
   category: tooling
-  agents: pi
 ---
 
 # zmx
 
 Use `zmx` as the persistent session runner for long-lived or background
-terminal work in Pi Agent sessions.
+terminal work in agent sessions.
 
 ## Rules
 

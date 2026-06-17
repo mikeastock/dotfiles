@@ -197,9 +197,9 @@ test_make_install_skills() {
     assert_dir_exists "$SANDBOX_DIR/.agents/skills/brainstorming" "Pi installs vendored brainstorming skill"
     assert_dir_exists "$SANDBOX_DIR/.claude/skills/how" "Claude installs how skill"
     assert_dir_exists "$SANDBOX_DIR/.agents/skills/how" "Pi installs how skill"
+    assert_dir_exists "$SANDBOX_DIR/.config/agents/skills/zmx" "Amp installs zmx skill"
+    assert_dir_exists "$SANDBOX_DIR/.claude/skills/zmx" "Claude installs zmx skill"
     assert_dir_exists "$SANDBOX_DIR/.agents/skills/zmx" "Pi installs zmx skill"
-    assert_file_not_exists "$SANDBOX_DIR/.config/agents/skills/zmx" "Amp does not install Pi-only zmx skill"
-    assert_file_not_exists "$SANDBOX_DIR/.claude/skills/zmx" "Claude does not install Pi-only zmx skill"
 }
 
 # Test: install-skills preserves unmanaged sibling skills
