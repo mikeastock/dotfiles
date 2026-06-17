@@ -60,6 +60,7 @@ BUILD_DIR = ROOT / "build"
 CONFIG_FILE = ROOT / "plugins.toml"
 CONFIGS_DIR = ROOT / "configs"
 CODEX_CONFIG_FILE = CONFIGS_DIR / "codex-config.toml"
+CODEX_MODEL_CATALOG_FILE = CONFIGS_DIR / "codex-model-catalog.json"
 CODEX_HOOKS_FILE = CONFIGS_DIR / "codex" / "hooks.json"
 CODEX_RULES_DIR = CONFIGS_DIR / "codex" / "rules"
 PI_SETTINGS_FILE = CONFIGS_DIR / "pi-settings.json"
@@ -1217,6 +1218,11 @@ def install_codex_config():
 
     shutil.copy(CODEX_CONFIG_FILE, dest)
     print(f"  Installed to {dest}")
+
+    if CODEX_MODEL_CATALOG_FILE.exists():
+        catalog_dest = dest.parent / "model-catalog.json"
+        shutil.copy(CODEX_MODEL_CATALOG_FILE, catalog_dest)
+        print(f"  Installed to {catalog_dest}")
 
 
 def install_codex_rules():

@@ -2,10 +2,17 @@ approval_policy = "on-request"
 sandbox_mode = "danger-full-access"
 model = "gpt-5.5"
 model_reasoning_effort = "low"
+model_catalog_json = "/home/mikeastock/.codex/model-catalog.json"
 
 # Keep local CLI quiet about unstable features.
 suppress_unstable_features_warning = true
 service_tier = "fast"
+
+[model_providers.fireworks]
+name = "Fireworks"
+base_url = "https://api.fireworks.ai/inference/v1"
+env_key = "FIREWORKS_API_KEY"
+wire_api = "responses"
 
 [notice]
 hide_rate_limit_model_nudge = true
