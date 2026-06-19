@@ -66,7 +66,6 @@ pi
 ### Notable custom skills
 
 - `brainstorming`, `writing-plans`, `executing-plans`, `test-driven-development`, `systematic-debugging`, `verification-before-completion`, `semantic-commit`, `requesting-code-review`, `receiving-code-review`, `dispatching-parallel-agents`, and `fetch-ci-build` — vendored superpower skills from `buildrtech/dotagents`, installed for all supported coding agents
-- `browser-harness` — Direct browser control via CDP for automation, scraping, testing, and interaction with web pages (connects to user's already-running Chrome)
 - `layered-rails` — Rails layered architecture guidance (copied locally from `palkan/skills`, not managed as a plugin)
 - `babysit-pr` — GitHub PR monitoring/babysitting workflow imported from `openai/codex` commit `7e569f1`
 - `how` — architectural explanation and critique skill vendored from `poteto/how`
