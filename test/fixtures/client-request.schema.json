@@ -1,0 +1,35 @@
+{
+  "definitions": {
+    "ClientRequest": {
+      "oneOf": [
+        {
+          "properties": {
+            "method": {
+              "enum": [
+                "initialize",
+                "thread/list",
+                "thread/search",
+                "thread/read",
+                "thread/turns/list",
+                "thread/start",
+                "thread/resume",
+                "thread/fork",
+                "turn/start",
+                "thread/name/set",
+                "thread/archive",
+                "thread/unarchive",
+                "remoteControl/status/read",
+                "remoteControl/enable",
+                "remoteControl/disable",
+                "remoteControl/client/list",
+                "remoteControl/client/revoke",
+                "remoteControl/pairing/start",
+                "remoteControl/pairing/status"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

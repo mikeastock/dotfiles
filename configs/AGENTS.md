@@ -67,15 +67,26 @@
 
 ## Codex Remote Thread Tools
 
-- When Codex app thread/session tools are unavailable or unreliable in a remote environment, use `codex-remote-tools` instead of ad hoc `codex app-server` JSON-RPC snippets.
-- Use:
-  - `codex-remote-tools threads list` to list recent threads
-  - `codex-remote-tools threads read <thread-id>` to inspect a thread
-  - `codex-remote-tools threads rename <thread-id> <name>` to rename a thread
-  - `codex-remote-tools threads create --name <name> --prompt <prompt>` to create a thread that appears in normal lists
-  - `codex-remote-tools threads create --name <name> --no-turn` only when an empty session is explicitly acceptable
-- Remember that creating with `--prompt` starts a real model turn. Do not create prompt-backed threads for smoke tests unless the user asked for that behavior.
-- Use `--json` for machine-readable output and `--plain` for stable tab-separated output.
+- Prefer native harness thread tools when they are available.
+- When Codex app thread/session tools are unavailable or unreliable in a remote environment, use `codex-appctl` instead of ad hoc `codex app-server` JSON-RPC snippets.
+- Start with `codex-appctl doctor` to verify the local Codex app-server schema and transport.
+- Use read-only commands before mutating commands:
+  - `codex-appctl threads list --limit 20`
+  - `codex-appctl threads search "text" --limit 20`
+  - `codex-appctl threads read <thread-id> --turns`
+  - `codex-appctl remote status`
+- Only run mutating commands when the user explicitly asks:
+  - `codex-appctl threads start --cwd <path> --message <text> --name <name>`
+  - `codex-appctl threads send <thread-id> --message <text>`
+  - `codex-appctl threads rename <thread-id> <name>`
+  - `codex-appctl threads archive <thread-id>`
+  - `codex-appctl threads unarchive <thread-id>`
+  - `codex-appctl threads fork <thread-id> --cwd <path>`
+  - `codex-appctl threads resume <thread-id>`
+  - `codex-appctl remote enable`
+  - `codex-appctl remote disable`
+- Do not depend on `codex-remote-tools`.
+- Use `--json` for machine-readable output and `--plain` for readable summaries.
 
 ## Mindset & Process
 

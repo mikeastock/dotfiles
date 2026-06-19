@@ -1,0 +1,192 @@
+#!/usr/bin/env node
+'use strict';
+
+const fs = require('node:fs');
+const path = require('node:path');
+const { execFileSync } = require('node:child_process');
+
+const DEFAULT_DAYS = 14;
+const DEFAULT_PAGE_SIZE = 100;
+const SOURCE_KINDS = [
+  'cli',
+  'vscode',
+  'exec',
+  'appServer',
+  'subAgent',
+  'subAgentReview',
+  'subAgentCompact',
+  'subAgentThreadSpawn',
+  'subAgentOther',
+  'unknown',
+];
+
+function main(argv) {
+  const options = parseArgs(argv);
+  const cutoff = Math.floor(Date.now() / 1000) - options.days * 24 * 60 * 60;
+  const appctl = process.env.CODEX_APPCTL_BIN || path.join(__dirname, 'codex-appctl');
+  const candidates = listCandidates({ appctl, cutoff, pageSize: options.pageSize });
+  const archived = [];
+  const failures = [];
+
+  for (const thread of candidates) {
+    if (options.dryRun) continue;
+
+    try {
+      execFileSync(appctl, ['threads', 'archive', thread.id], {
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+      archived.push(summary(thread));
+    } catch (error) {
+      failures.push({
+        ...summary(thread),
+        error: String(error.stderr || error.message || error),
+      });
+    }
+  }
+
+  const report = {
+    dryRun: options.dryRun,
+    cutoff,
+    cutoffIso: new Date(cutoff * 1000).toISOString(),
+    candidateCount: candidates.length,
+    archivedCount: archived.length,
+    failureCount: failures.length,
+    candidates: options.dryRun ? candidates.map(summary) : undefined,
+    archived,
+    failures,
+  };
+
+  if (options.output) {
+    fs.writeFileSync(options.output, JSON.stringify(report, null, 2));
+  }
+
+  printReport(report, options.json);
+  if (failures.length > 0) process.exitCode = 1;
+}
+
+function parseArgs(argv) {
+  const options = {
+    days: DEFAULT_DAYS,
+    dryRun: false,
+    json: false,
+    output: null,
+    pageSize: DEFAULT_PAGE_SIZE,
+  };
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+
+    if (arg === '--days') {
+      options.days = positiveInteger(value(argv, ++index, arg), arg);
+    } else if (arg === '--dry-run') {
+      options.dryRun = true;
+    } else if (arg === '--json') {
+      options.json = true;
+    } else if (arg === '--output') {
+      options.output = value(argv, ++index, arg);
+    } else if (arg === '--page-size') {
+      options.pageSize = positiveInteger(value(argv, ++index, arg), arg);
+    } else if (arg === '--help' || arg === '-h') {
+      printHelp();
+      process.exit(0);
+    } else {
+      throw new Error(`Unknown option: ${arg}`);
+    }
+  }
+
+  return options;
+}
+
+function value(argv, index, flag) {
+  if (index >= argv.length) throw new Error(`${flag} requires a value`);
+  return argv[index];
+}
+
+function positiveInteger(raw, flag) {
+  const parsed = Number(raw);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw new Error(`${flag} requires a positive integer`);
+  }
+  return parsed;
+}
+
+function listCandidates({ appctl, cutoff, pageSize }) {
+  const candidates = [];
+  let cursor = null;
+
+  while (true) {
+    const params = {
+      archived: false,
+      limit: pageSize,
+      sortDirection: 'asc',
+      sortKey: 'updated_at',
+      sourceKinds: SOURCE_KINDS,
+    };
+    if (cursor) params.cursor = cursor;
+
+    const page = rpc(appctl, 'thread/list', params);
+    const threads = page.data || [];
+
+    for (const thread of threads) {
+      if ((thread.updatedAt || 0) < cutoff) {
+        candidates.push(thread);
+      }
+    }
+
+    if (!page.nextCursor || threads.some(thread => (thread.updatedAt || 0) >= cutoff)) {
+      break;
+    }
+    cursor = page.nextCursor;
+  }
+
+  return candidates;
+}
+
+function rpc(appctl, method, params) {
+  return JSON.parse(execFileSync(appctl, ['rpc', method, JSON.stringify(params)], {
+    encoding: 'utf8',
+  }));
+}
+
+function summary(thread) {
+  return {
+    cwd: thread.cwd || '',
+    id: thread.id,
+    name: thread.name || thread.preview || '',
+    updatedAt: thread.updatedAt,
+  };
+}
+
+function printReport(report, json) {
+  if (json) {
+    console.log(JSON.stringify(report, null, 2));
+    return;
+  }
+
+  const verb = report.dryRun ? 'Would archive' : 'Archived';
+  console.log(`${verb} ${report.dryRun ? report.candidateCount : report.archivedCount} thread(s) older than ${report.cutoffIso}`);
+  if (report.failureCount > 0) {
+    console.error(`${report.failureCount} archive operation(s) failed`);
+  }
+}
+
+function printHelp() {
+  console.log(`codex-archive-old-threads
+
+Usage:
+  codex-archive-old-threads [--days N] [--dry-run] [--json] [--output PATH]
+
+Defaults:
+  --days ${DEFAULT_DAYS}
+
+Environment:
+  CODEX_APPCTL_BIN  Path to codex-appctl`);
+}
+
+try {
+  main(process.argv.slice(2));
+} catch (error) {
+  console.error(error.message);
+  process.exitCode = 1;
+}

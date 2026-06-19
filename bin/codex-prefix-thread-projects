@@ -9,6 +9,18 @@ const VERSION = "0.1.0";
 const DEFAULT_LIMIT = 100;
 const MERGED_CACHE_VERSION = 3;
 const UNMERGED_CACHE_TTL_MS = 60 * 60 * 1000;
+const SOURCE_KINDS = [
+  "cli",
+  "vscode",
+  "exec",
+  "appServer",
+  "subAgent",
+  "subAgentReview",
+  "subAgentCompact",
+  "subAgentThreadSpawn",
+  "subAgentOther",
+  "unknown",
+];
 const PROJECT_ABBRS = {
   bizops: "biz",
   "bizops-infra": "b-inf",
@@ -64,13 +76,10 @@ async function run(argv) {
     if (options.dryRun) continue;
 
     try {
-      await codexRemoteTools([
-        "threads",
-        "rename",
-        change.threadId,
-        change.nextName,
-        "--json",
-      ]);
+      await codexAppctlRpc("thread/name/set", {
+        name: change.nextName,
+        threadId: change.threadId,
+      });
       renamed.push(change);
     } catch (error) {
       failures.push({
@@ -130,21 +139,14 @@ async function listThreadPages({ limit, archived }) {
   let cursor = null;
 
   while (true) {
-    const args = [
-      "threads",
-      "list",
-      "--json",
-      "--all-sources",
-      "--limit",
-      String(limit),
-      archived ? "--archived" : "--active",
-    ];
+    const params = {
+      archived,
+      limit,
+      sourceKinds: SOURCE_KINDS,
+    };
+    if (cursor) params.cursor = cursor;
 
-    if (cursor) {
-      args.push("--cursor", cursor);
-    }
-
-    const result = JSON.parse(await codexRemoteTools(args));
+    const result = await codexAppctlRpc("thread/list", params);
     threads.push(...result.data);
 
     if (!result.nextCursor) return threads;
@@ -498,23 +500,31 @@ function readJson(filePath) {
   }
 }
 
-function codexRemoteTools(args) {
+function codexAppctlRpc(method, params) {
   return new Promise((resolve, reject) => {
-    execFile(codexRemoteToolsPath(), args, { maxBuffer: 50 * 1024 * 1024 }, (error, stdout, stderr) => {
+    execFile(codexAppctlPath(), [
+      "rpc",
+      method,
+      JSON.stringify(params),
+    ], { maxBuffer: 50 * 1024 * 1024 }, (error, stdout, stderr) => {
       if (error) {
         const message = stderr.trim() || error.message;
         reject(new Error(message));
         return;
       }
 
-      resolve(stdout);
+      try {
+        resolve(JSON.parse(stdout));
+      } catch (parseError) {
+        reject(new Error(`Invalid codex-appctl JSON: ${parseError.message}`));
+      }
     });
   });
 }
 
-function codexRemoteToolsPath() {
-  if (process.env.CODEX_REMOTE_TOOLS_BIN) return process.env.CODEX_REMOTE_TOOLS_BIN;
-  return path.join(__dirname, "codex-remote-tools");
+function codexAppctlPath() {
+  if (process.env.CODEX_APPCTL_BIN) return process.env.CODEX_APPCTL_BIN;
+  return path.join(__dirname, "codex-appctl");
 }
 
 function printReport({ changes, dryRun, failures, json }) {
@@ -578,7 +588,7 @@ Options:
   -h, --help      Show help
 
 Environment:
-  CODEX_REMOTE_TOOLS_BIN  Path to codex-remote-tools
+  CODEX_APPCTL_BIN  Path to codex-appctl
 `);
 }
 

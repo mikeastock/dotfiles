@@ -1,0 +1,489 @@
+#!/usr/bin/env node
+'use strict';
+
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const readline = require('readline');
+const { spawn, spawnSync } = require('child_process');
+
+const VERSION = '0.1.0';
+const EXPECTED = [
+  'thread/list',
+  'thread/search',
+  'thread/read',
+  'thread/turns/list',
+  'thread/start',
+  'thread/resume',
+  'thread/fork',
+  'turn/start',
+  'thread/name/set',
+  'thread/archive',
+  'thread/unarchive',
+  'remoteControl/status/read',
+  'remoteControl/enable',
+  'remoteControl/disable',
+  'remoteControl/client/list',
+  'remoteControl/client/revoke',
+  'remoteControl/pairing/start',
+  'remoteControl/pairing/status',
+];
+
+function usage() {
+  return `codex-appctl ${VERSION}
+
+Usage:
+  codex-appctl [--json|--plain] [--transport auto|stdio|proxy] [--socket PATH] [--start-daemon] [--timeout SECONDS] COMMAND
+
+Commands:
+  doctor
+  schema methods
+  rpc METHOD [JSON_PARAMS]
+  threads list [--limit N] [--archived] [--cwd PATH] [--search TEXT]
+  threads search TEXT [--limit N]
+  threads read THREAD_ID [--turns]
+  threads turns THREAD_ID [--limit N] [--full]
+  threads start --cwd PATH --message TEXT [--name NAME]
+  threads send THREAD_ID --message TEXT
+  threads rename THREAD_ID NAME
+  threads archive THREAD_ID
+  threads unarchive THREAD_ID
+  threads fork THREAD_ID [--cwd PATH]
+  threads resume THREAD_ID
+  remote status
+  remote enable
+  remote disable
+  remote clients [--environment-id ID]
+  self-test
+
+JSON params may be passed as an argument or via stdin with "-".`;
+}
+
+function die(message, code = 1) {
+  process.stderr.write(redact(String(message)) + '\n');
+  process.exit(code);
+}
+
+function redact(value) {
+  return value.replace(/(token|secret|password|key)(["'=:\s]+)([^"'\s,}]+)/gi, '$1$2[REDACTED]');
+}
+
+function parseGlobal(argv) {
+  const opts = { format: 'json', transport: 'auto', socket: null, startDaemon: false, timeout: 15 };
+  const rest = [];
+  for (let i = 0; i < argv.length; i += 1) {
+    const a = argv[i];
+    if (a === '--help' || a === '-h') {
+      console.log(usage());
+      process.exit(0);
+    } else if (a === '--version') {
+      console.log(VERSION);
+      process.exit(0);
+    } else if (a === '--json') {
+      opts.format = 'json';
+    } else if (a === '--plain') {
+      opts.format = 'plain';
+    } else if (a === '--transport') {
+      opts.transport = needValue(argv, ++i, a);
+      if (!['auto', 'stdio', 'proxy'].includes(opts.transport)) die('invalid --transport');
+    } else if (a === '--socket') {
+      opts.socket = needValue(argv, ++i, a);
+    } else if (a === '--start-daemon') {
+      opts.startDaemon = true;
+    } else if (a === '--timeout') {
+      opts.timeout = Number(needValue(argv, ++i, a));
+      if (!Number.isFinite(opts.timeout) || opts.timeout <= 0) die('invalid --timeout');
+    } else {
+      rest.push(a);
+    }
+  }
+  return { opts, rest };
+}
+
+function needValue(argv, index, flag) {
+  if (index >= argv.length) die(`${flag} requires a value`);
+  return argv[index];
+}
+
+function commandExists(cmd) {
+  const result = spawnSync('sh', ['-c', `command -v ${shellQuote(cmd)}`], { encoding: 'utf8' });
+  return result.status === 0 ? result.stdout.trim() : null;
+}
+
+function shellQuote(value) {
+  return `'${String(value).replace(/'/g, "'\\''")}'`;
+}
+
+function runSync(cmd, args, options = {}) {
+  const result = spawnSync(cmd, args, { encoding: 'utf8', ...options });
+  return {
+    ok: result.status === 0,
+    status: result.status,
+    stdout: result.stdout || '',
+    stderr: result.stderr || '',
+    error: result.error,
+  };
+}
+
+function codexVersion() {
+  const result = runSync('codex', ['--version']);
+  if (!result.ok) die(`codex --version failed: ${result.stderr || result.error || result.status}`);
+  return result.stdout.trim();
+}
+
+function cacheDirFor(version) {
+  const base = process.env.XDG_CACHE_HOME || path.join(os.homedir(), '.cache');
+  const safe = version.replace(/[^a-zA-Z0-9._-]+/g, '_');
+  return path.join(base, 'codex-appctl', safe);
+}
+
+function schemaBundlePath(dir) {
+  const candidates = [
+    path.join(dir, 'codex_app_server_protocol.v2.schemas.json'),
+    path.join(dir, 'codex_app_server_protocol.schemas.json'),
+  ];
+  return candidates.find((p) => fs.existsSync(p));
+}
+
+function ensureSchema() {
+  if (!commandExists('codex')) die('codex not found on PATH');
+  const version = codexVersion();
+  const dir = cacheDirFor(version);
+  let bundle = schemaBundlePath(dir);
+  if (!bundle) {
+    fs.mkdirSync(dir, { recursive: true });
+    const result = runSync('codex', ['app-server', 'generate-json-schema', '--experimental', '--out', dir]);
+    if (!result.ok) die(`schema generation failed: ${result.stderr || result.stdout || result.status}`);
+    bundle = schemaBundlePath(dir);
+  }
+  if (!bundle) die(`schema bundle not found in ${dir}`);
+  return { version, dir, bundle, methods: readMethods(bundle) };
+}
+
+function readMethods(file) {
+  const schema = JSON.parse(fs.readFileSync(file, 'utf8'));
+  const variants = (((schema.definitions || {}).ClientRequest || {}).oneOf) || [];
+  const methods = [];
+  for (const variant of variants) {
+    const enumValues = variant?.properties?.method?.enum || [];
+    for (const method of enumValues) methods.push(method);
+  }
+  return [...new Set(methods)].sort();
+}
+
+function requireMethod(methods, method) {
+  if (!methods.includes(method)) die(`RPC method is not available in local schema: ${method}`);
+}
+
+function daemonVersion() {
+  const result = runSync('codex', ['app-server', 'daemon', 'version']);
+  if (!result.ok) return { ok: false, error: (result.stderr || result.stdout || '').trim() };
+  try {
+    return { ok: true, data: JSON.parse(result.stdout) };
+  } catch (err) {
+    return { ok: false, error: `invalid daemon version JSON: ${err.message}` };
+  }
+}
+
+function daemonCompatible(cliVersion) {
+  const d = daemonVersion();
+  if (!d.ok || d.data.status !== 'running') return { compatible: false, daemon: d };
+  const active = cliVersion.replace(/^codex-cli\s+/, '');
+  const same = d.data.appServerVersion === active && Boolean(d.data.managedCodexPath);
+  return { compatible: same, daemon: d };
+}
+
+function transportCommand(opts, schema) {
+  if (opts.transport === 'stdio') return ['codex', ['app-server', '--stdio']];
+  if (opts.transport === 'proxy') {
+    const args = ['app-server', 'proxy'];
+    if (opts.socket) args.push('--sock', opts.socket);
+    return ['codex', args];
+  }
+  // Stdio starts a foreground app-server using the same Codex binary/schema as
+  // this tool. It is the safest default; proxy is available explicitly.
+  return ['codex', ['app-server', '--stdio']];
+}
+
+async function rpcCall(opts, schema, method, params) {
+  const results = await rpcCallSequence(opts, schema, [{ method, params }]);
+  return results[0];
+}
+
+async function rpcCallSequence(opts, schema, calls) {
+  for (const call of calls) requireMethod(schema.methods, call.method);
+  if (opts.startDaemon) {
+    const started = runSync('codex', ['app-server', 'daemon', 'start']);
+    if (!started.ok) die(`daemon start failed: ${started.stderr || started.stdout || started.status}`);
+  }
+  const [cmd, args] = transportCommand(opts, schema);
+  const child = spawn(cmd, args, { stdio: ['pipe', 'pipe', 'pipe'] });
+  let stderr = '';
+  child.stderr.on('data', (chunk) => { stderr += chunk.toString(); });
+  const rl = readline.createInterface({ input: child.stdout });
+  let id = 1;
+  const pending = new Map();
+  const turnWaiters = new Map();
+  const timer = setTimeout(() => {
+    child.kill('SIGTERM');
+    die(`timed out waiting for ${calls.map((call) => call.method).join(', ')}`);
+  }, opts.timeout * 1000);
+  rl.on('line', (line) => {
+    if (!line.trim()) return;
+    let msg;
+    try {
+      msg = JSON.parse(line);
+    } catch {
+      return;
+    }
+    if (Object.prototype.hasOwnProperty.call(msg, 'id') && pending.has(msg.id)) {
+      const { resolve, reject } = pending.get(msg.id);
+      pending.delete(msg.id);
+      if (msg.error) reject(new Error(JSON.stringify(msg.error)));
+      else resolve(msg.result);
+    } else if (msg.method === 'turn/completed') {
+      const turnId = msg.params?.turn?.id;
+      if (turnId && turnWaiters.has(turnId)) {
+        const { resolve } = turnWaiters.get(turnId);
+        turnWaiters.delete(turnId);
+        resolve(msg.params.turn);
+      }
+    }
+  });
+  function send(m, p) {
+    const requestId = id++;
+    const req = p === undefined ? { id: requestId, method: m } : { id: requestId, method: m, params: p };
+    child.stdin.write(JSON.stringify(req) + '\n');
+    return new Promise((resolve, reject) => pending.set(requestId, { resolve, reject }));
+  }
+  function waitForTurn(turnId) {
+    return new Promise((resolve) => turnWaiters.set(turnId, { resolve }));
+  }
+  try {
+    await send('initialize', {
+      clientInfo: { name: 'codex-appctl', version: VERSION },
+      capabilities: { experimentalApi: true, optOutNotificationMethods: [] },
+    });
+    const results = [];
+    for (const call of calls) {
+      const params = typeof call.params === 'function' ? call.params(results[results.length - 1], results) : call.params;
+      const result = await send(call.method, params);
+      if (call.waitForTurn && result.turn?.id && result.turn.status !== 'completed') {
+        result.turn = await waitForTurn(result.turn.id);
+      }
+      results.push(result);
+    }
+    clearTimeout(timer);
+    child.kill('SIGTERM');
+    return results;
+  } catch (err) {
+    clearTimeout(timer);
+    child.kill('SIGTERM');
+    die(`${calls.map((call) => call.method).join(', ')} failed: ${err.message}${stderr ? `\n${stderr}` : ''}`);
+  }
+}
+
+function parseOptions(args, spec = {}) {
+  const out = { _: [] };
+  for (let i = 0; i < args.length; i += 1) {
+    const a = args[i];
+    if (!a.startsWith('--')) {
+      out._.push(a);
+      continue;
+    }
+    const key = a.slice(2);
+    if (spec.boolean?.includes(key)) {
+      out[key] = true;
+    } else {
+      out[key] = needValue(args, ++i, a);
+    }
+  }
+  return out;
+}
+
+function userInput(message) {
+  return [{ type: 'text', text: message }];
+}
+
+function paramsFor(rest) {
+  const [group, sub, ...tail] = rest;
+  if (group === 'rpc') {
+    const method = sub || die('rpc requires METHOD');
+    const raw = tail[0];
+    return { method, params: raw === undefined ? null : parseJsonArg(raw) };
+  }
+  if (group === 'threads') {
+    if (sub === 'list') {
+      const o = parseOptions(tail, { boolean: ['archived'] });
+      return { method: 'thread/list', params: compact({ limit: intOrNull(o.limit), archived: o.archived ? true : null, cwd: o.cwd || null, searchTerm: o.search || null }) };
+    }
+    if (sub === 'search') {
+      const o = parseOptions(tail);
+      const text = o._[0] || die('threads search requires TEXT');
+      return { method: 'thread/search', params: compact({ searchTerm: text, limit: intOrNull(o.limit) }) };
+    }
+    if (sub === 'read') {
+      const o = parseOptions(tail, { boolean: ['turns'] });
+      const threadId = o._[0] || die('threads read requires THREAD_ID');
+      return { method: 'thread/read', params: { threadId, includeTurns: Boolean(o.turns) } };
+    }
+    if (sub === 'turns') {
+      const o = parseOptions(tail, { boolean: ['full'] });
+      const threadId = o._[0] || die('threads turns requires THREAD_ID');
+      return { method: 'thread/turns/list', params: compact({ threadId, limit: intOrNull(o.limit), itemsView: o.full ? 'full' : null }) };
+    }
+    if (sub === 'start') {
+      const o = parseOptions(tail);
+      if (!o.cwd || !o.message) die('threads start requires --cwd and --message');
+      return { method: 'thread/start', params: compact({ cwd: o.cwd, name: o.name || null, sessionStartSource: 'startup' }), after: { method: 'turn/start', waitForTurn: true, params: (r) => ({ threadId: r.thread?.id || r.id || r.threadId, input: userInput(o.message) }) } };
+    }
+    if (sub === 'send') {
+      const o = parseOptions(tail);
+      const threadId = o._[0] || die('threads send requires THREAD_ID');
+      if (!o.message) die('threads send requires --message');
+      return { method: 'thread/resume', params: { threadId, excludeTurns: true }, after: { method: 'turn/start', waitForTurn: true, params: (r) => ({ threadId: r.thread?.id || r.id || r.threadId || threadId, input: userInput(o.message) }) } };
+    }
+    if (sub === 'rename') {
+      if (tail.length < 2) die('threads rename requires THREAD_ID NAME');
+      return { method: 'thread/name/set', params: { threadId: tail[0], name: tail.slice(1).join(' ') } };
+    }
+    if (sub === 'archive') return { method: 'thread/archive', params: { threadId: tail[0] || die('threads archive requires THREAD_ID') } };
+    if (sub === 'unarchive') return { method: 'thread/unarchive', params: { threadId: tail[0] || die('threads unarchive requires THREAD_ID') } };
+    if (sub === 'fork') {
+      const o = parseOptions(tail);
+      const threadId = o._[0] || die('threads fork requires THREAD_ID');
+      return { method: 'thread/fork', params: compact({ threadId, cwd: o.cwd || null, excludeTurns: true }) };
+    }
+    if (sub === 'resume') return { method: 'thread/resume', params: { threadId: tail[0] || die('threads resume requires THREAD_ID'), excludeTurns: true } };
+  }
+  if (group === 'remote') {
+    if (sub === 'status') return { method: 'remoteControl/status/read', params: undefined };
+    if (sub === 'enable') return { method: 'remoteControl/enable', params: undefined };
+    if (sub === 'disable') return { method: 'remoteControl/disable', params: undefined };
+    if (sub === 'clients') {
+      const o = parseOptions(tail);
+      return {
+        method: 'remoteControl/client/list',
+        params: (prior) => {
+          const environmentId = o['environment-id'] || prior?.environmentId;
+          if (!environmentId) throw new Error('remote clients requires --environment-id when remote status has no environmentId');
+          return compact({ environmentId, cursor: o.cursor || null, limit: intOrNull(o.limit), order: o.order || null });
+        },
+        before: o['environment-id'] ? null : { method: 'remoteControl/status/read', params: undefined },
+      };
+    }
+  }
+  die(`unknown command: ${rest.join(' ') || '(none)'}`);
+}
+
+function parseJsonArg(raw) {
+  if (raw === '-') return JSON.parse(fs.readFileSync(0, 'utf8'));
+  return JSON.parse(raw);
+}
+
+function intOrNull(value) {
+  if (value === undefined) return null;
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < 0) die(`invalid integer: ${value}`);
+  return n;
+}
+
+function compact(obj) {
+  return Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== null && v !== undefined));
+}
+
+function print(result, opts, context = {}) {
+  if (opts.format === 'json') {
+    console.log(JSON.stringify(result, null, 2));
+    return;
+  }
+  if (context.command === 'methods') {
+    console.log(result.join('\n'));
+    return;
+  }
+  if (Array.isArray(result?.data)) {
+    for (const t of result.data) console.log([t.id, t.name || t.preview || '', t.cwd || '', t.status?.type || ''].join('\t'));
+    return;
+  }
+  console.log(JSON.stringify(result, null, 2));
+}
+
+async function doctor(opts) {
+  const codexPath = commandExists('codex');
+  const out = { codexPath, ok: Boolean(codexPath), warnings: [] };
+  if (!codexPath) {
+    out.ok = false;
+    print(out, opts);
+    process.exit(1);
+  }
+  out.codexVersion = codexVersion();
+  const schema = ensureSchema();
+  out.schemaCache = schema.dir;
+  out.methodCount = schema.methods.length;
+  out.expectedMethods = Object.fromEntries(EXPECTED.map((m) => [m, schema.methods.includes(m)]));
+  out.daemon = daemonVersion();
+  const compat = daemonCompatible(schema.version);
+  out.proxyCompatible = compat.compatible;
+  out.autoTransport = 'stdio';
+  if (out.daemon.ok && out.daemon.data.status === 'running' && !compat.compatible) {
+    out.warnings.push('running daemon is not compatible with active codex version; auto will use stdio');
+  }
+  print(out, opts);
+}
+
+async function main() {
+  const { opts, rest } = parseGlobal(process.argv.slice(2));
+  if (rest.length === 0) die(usage(), 2);
+  if (rest[0] === 'doctor') return doctor(opts);
+  if (rest[0] === 'self-test') return selfTest(opts);
+  const schema = ensureSchema();
+  if (rest[0] === 'schema' && rest[1] === 'methods') return print(schema.methods, opts, { command: 'methods' });
+  const request = paramsFor(rest);
+  if (request.after) {
+    requireMethod(schema.methods, request.after.method);
+    const [result, second] = await rpcCallSequence(opts, schema, [
+      { method: request.method, params: request.params },
+      { method: request.after.method, params: request.after.params, waitForTurn: request.after.waitForTurn },
+    ]);
+    return print({ first: result, second }, opts);
+  }
+  if (request.before) {
+    requireMethod(schema.methods, request.before.method);
+    const [, result] = await rpcCallSequence(opts, schema, [
+      { method: request.before.method, params: request.before.params },
+      { method: request.method, params: request.params },
+    ]);
+    return print(result, opts);
+  }
+  const result = await rpcCall(opts, schema, request.method, request.params);
+  print(result, opts);
+}
+
+function selfTest(opts) {
+  const fixture = path.join(__dirname, '..', 'test', 'fixtures', 'client-request.schema.json');
+  const methods = readMethods(fixture);
+  const list = paramsFor(['threads', 'list', '--limit', '2', '--search', 'abc']);
+  const read = paramsFor(['threads', 'read', 'thread-1', '--turns']);
+  const start = paramsFor(['threads', 'start', '--cwd', '/tmp/project', '--message', 'hi', '--name', 'smoke']);
+  const send = paramsFor(['threads', 'send', 'thread-1', '--message', 'hi']);
+  const clients = paramsFor(['remote', 'clients', '--environment-id', 'env-1', '--limit', '2']);
+  const ok = methods.includes('thread/list')
+    && list.params.limit === 2
+    && read.params.includeTurns === true
+    && start.params.sessionStartSource === 'startup'
+    && start.after?.method === 'turn/start'
+    && start.after?.waitForTurn === true
+    && start.after.params({ thread: { id: 'thread-1' } }).threadId === 'thread-1'
+    && send.method === 'thread/resume'
+    && send.params.threadId === 'thread-1'
+    && send.after?.method === 'turn/start'
+    && send.after?.waitForTurn === true
+    && send.after.params({ thread: { id: 'thread-1' } }).threadId === 'thread-1'
+    && clients.params().environmentId === 'env-1'
+    && clients.params().limit === 2;
+  const result = { ok, fixture, methods, examples: { list, read, start, send, clients } };
+  print(result, opts);
+  if (!ok) process.exit(1);
+}
+
+main().catch((err) => die(err.stack || err.message));
