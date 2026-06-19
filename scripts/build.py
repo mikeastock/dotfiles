@@ -61,8 +61,9 @@ CODEX_CONFIG_FILE = CONFIGS_DIR / "codex-config.toml"
 CODEX_MODEL_CATALOG_FILE = CONFIGS_DIR / "codex-model-catalog.json"
 CODEX_HOOKS_FILE = CONFIGS_DIR / "codex" / "hooks.json"
 CODEX_RULES_DIR = CONFIGS_DIR / "codex" / "rules"
-PI_SETTINGS_FILE = CONFIGS_DIR / "pi-settings.json"
-PI_MODELS_FILE = CONFIGS_DIR / "pi-models.json"
+PI_CONFIGS_DIR = ROOT / "pi-configs"
+PI_SETTINGS_FILE = PI_CONFIGS_DIR / "pi-settings.json"
+PI_MODELS_FILE = PI_CONFIGS_DIR / "pi-models.json"
 GLOBAL_AGENTS_MD = CONFIGS_DIR / "AGENTS.md"
 
 # Installation paths

@@ -19,7 +19,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/pi-paths.sh"
 
-PATCH_SCRIPT="${PI_PATCH_SCRIPT:-$REPO_ROOT/configs/pi-patch/apply-pi-ghostty-tmux-image-patch.sh}"
+PATCH_SCRIPT="${PI_PATCH_SCRIPT:-$REPO_ROOT/pi-configs/pi-patch/apply-pi-ghostty-tmux-image-patch.sh}"
 
 current_version() {
   local pi_root="$1"

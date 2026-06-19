@@ -17,19 +17,19 @@ This patch adjusts Pi's terminal image handling so kitty-style images work more 
 Apply to the latest Pi install:
 
 ```bash
-configs/pi-patch/apply-pi-ghostty-tmux-image-patch.sh
+pi-configs/pi-patch/apply-pi-ghostty-tmux-image-patch.sh
 ```
 
 Apply to a specific Pi install by Node version:
 
 ```bash
-configs/pi-patch/apply-pi-ghostty-tmux-image-patch.sh 24.14.0
+pi-configs/pi-patch/apply-pi-ghostty-tmux-image-patch.sh 24.14.0
 ```
 
 Apply to an explicit Pi package path:
 
 ```bash
-configs/pi-patch/apply-pi-ghostty-tmux-image-patch.sh \
+pi-configs/pi-patch/apply-pi-ghostty-tmux-image-patch.sh \
   ~/.local/share/mise/installs/node/24.14.0/lib/node_modules/@earendil-works/pi-coding-agent
 ```
 
