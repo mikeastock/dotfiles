@@ -28,7 +28,7 @@ skills = [ "impeccable" ]
 ["mattpocock/skills"]
 url = "https://github.com/mattpocock/skills"
 skills_path = "skills/*/*" # Skills are grouped by category directories
-skills = [ "prototype", "zoom-out", "grill-me", "write-a-skill", "grill-with-docs" ]
+skills = [ "prototype", "grill-with-docs", "teach", "writing-great-skills" ]
 
 ["steipete/agent-scripts"]
 url = "https://github.com/steipete/agent-scripts"

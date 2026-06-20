@@ -96,6 +96,8 @@ test_make_build() {
     assert_file_exists "$PROJECT_DIR/build/claude/brainstorming/SKILL.md" "Claude builds vendored brainstorming skill"
     assert_file_exists "$PROJECT_DIR/build/pi/brainstorming/SKILL.md" "Pi builds vendored brainstorming skill"
     assert_file_exists "$PROJECT_DIR/build/subagents/pi/architecture-reviewer.md" "Build includes architecture-reviewer subagent"
+    assert_file_exists "$PROJECT_DIR/build/claude/teach/SKILL.md" "Claude builds Matt Pocock teach skill"
+    assert_file_exists "$PROJECT_DIR/build/claude/writing-great-skills/SKILL.md" "Claude builds Matt Pocock writing-great-skills skill"
 
     local brainstorming_content
     local verification_content

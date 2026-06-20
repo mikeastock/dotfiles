@@ -77,6 +77,7 @@ pi
 
 ### Notable plugin skills
 
+- `prototype`, `grill-with-docs`, `teach`, and `writing-great-skills` — workflow and teaching skills from `mattpocock/skills`
 - `improve` — codebase audit and self-contained implementation planning skill from `shadcn/improve`
 - `impeccable` — frontend design, critique, polish, and live iteration skill from `pbakaus/impeccable`
 
