@@ -226,11 +226,13 @@ function projectKey(thread) {
 
 function isBuildrAppWorktree(cwd) {
   const buildrRoot = path.resolve("/data/workspace/code/buildr");
+  const codexHome = path.resolve(os.homedir(), ".codex");
   const basename = path.basename(cwd);
   const parent = path.dirname(cwd);
 
   if (parent === buildrRoot && /^app-.+/.test(basename)) return true;
   if (basename === "app" && cwd.startsWith(`${buildrRoot}/worktrees/`)) return true;
+  if (basename === "app" && cwd.startsWith(`${codexHome}/worktrees/`)) return true;
 
   return false;
 }
