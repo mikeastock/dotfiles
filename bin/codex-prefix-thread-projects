@@ -26,6 +26,7 @@ const PROJECT_ABBRS = {
   "bizops-infra": "b-inf",
   infrastructure: "m-inf",
   dotfiles: "dot",
+  scratchpad: "sp",
   marketing: "mkt",
   "release-notes": "rel",
   "internal-release-notes": "irn",
