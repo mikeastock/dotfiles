@@ -37,6 +37,7 @@ test_config_new_files() {
     # Verify all files were created
     assert_file_exists "$SANDBOX_DIR/.config/amp/settings.json" "Amp settings file was created"
     assert_file_exists "$SANDBOX_DIR/.codex/config.toml" "Codex config file was created"
+    assert_file_exists "$SANDBOX_DIR/.codex/baseten-glm52.config.toml" "Codex Baseten profile file was created"
     assert_file_exists "$SANDBOX_DIR/.codex/rules/default.rules" "Codex default rules file was created"
     assert_file_exists "$SANDBOX_DIR/.codex/hooks.json" "Codex hooks file was created"
     assert_file_not_exists "$SANDBOX_DIR/.codex/hooks/terraform_apply_gate.py" "Codex Terraform hard-gate hook is not installed"

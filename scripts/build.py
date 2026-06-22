@@ -59,6 +59,7 @@ CONFIG_FILE = ROOT / "plugins.toml"
 CONFIGS_DIR = ROOT / "configs"
 CODEX_CONFIG_FILE = CONFIGS_DIR / "codex-config.toml"
 CODEX_MODEL_CATALOG_FILE = CONFIGS_DIR / "codex-model-catalog.json"
+CODEX_PROFILE_CONFIGS_DIR = CONFIGS_DIR / "codex-profiles"
 CODEX_HOOKS_FILE = CONFIGS_DIR / "codex" / "hooks.json"
 CODEX_RULES_DIR = CONFIGS_DIR / "codex" / "rules"
 PI_CONFIGS_DIR = ROOT / "pi-configs"
@@ -1222,6 +1223,12 @@ def install_codex_config():
         catalog_dest = dest.parent / "model-catalog.json"
         shutil.copy(CODEX_MODEL_CATALOG_FILE, catalog_dest)
         print(f"  Installed to {catalog_dest}")
+
+    if CODEX_PROFILE_CONFIGS_DIR.exists():
+        for profile_config in sorted(CODEX_PROFILE_CONFIGS_DIR.glob("*.config.toml")):
+            profile_dest = dest.parent / profile_config.name
+            shutil.copy(profile_config, profile_dest)
+            print(f"  Installed to {profile_dest}")
 
 
 def install_codex_rules():
