@@ -343,18 +343,26 @@
       "use_responses_lite": false
     },
     {
-      "slug": "accounts/fireworks/models/glm-5p2",
-      "display_name": "GLM 5.2 (Fireworks)",
-      "description": "Z.ai GLM 5.2 served by Fireworks with a 1M-token context window.",
-      "default_reasoning_level": "xhigh",
+      "slug": "zai-org/GLM-5.2",
+      "display_name": "GLM 5.2 (Baseten)",
+      "description": "Z.ai GLM 5.2 served by Baseten with a 1M-token context window.",
+      "default_reasoning_level": "medium",
       "supported_reasoning_levels": [
         {
+          "effort": "low",
+          "description": "Enable Baseten GLM 5.2 thinking with lower latency"
+        },
+        {
+          "effort": "medium",
+          "description": "Enable Baseten GLM 5.2 thinking"
+        },
+        {
           "effort": "high",
-          "description": "Fireworks GLM 5.2 High thinking tier"
+          "description": "Enable Baseten GLM 5.2 thinking with a larger reasoning budget"
         },
         {
           "effort": "xhigh",
-          "description": "Fireworks GLM 5.2 Max thinking tier"
+          "description": "Enable Baseten GLM 5.2 thinking with the maximum reasoning budget"
         }
       ],
       "shell_type": "shell_command",

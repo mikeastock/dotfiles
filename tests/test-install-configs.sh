@@ -83,9 +83,9 @@ test_codex_hooks_disabled() {
     assert_file_not_exists "$SANDBOX_DIR/.codex/hooks/terraform_apply_gate.py" "Terraform hard-gate hook script is absent"
 }
 
-# Test: Codex model catalog advertises Fireworks GLM 5.2 reasoning support
-test_codex_glm52_reasoning_support() {
-    log_test "Testing Codex GLM 5.2 reasoning support"
+# Test: Codex model catalog advertises Baseten GLM 5.2 reasoning support
+test_codex_glm52_baseten_provider() {
+    log_test "Testing Codex GLM 5.2 Baseten reasoning support"
     cd "$PROJECT_DIR"
 
     rm -rf "$SANDBOX_DIR/.codex"
@@ -101,19 +101,20 @@ catalog = json.load(open(catalog_path))
 model = next(
     model
     for model in catalog["models"]
-    if model["slug"] == "accounts/fireworks/models/glm-5p2"
+    if model["slug"] == "zai-org/GLM-5.2"
 )
 
 efforts = [level["effort"] for level in model["supported_reasoning_levels"]]
-assert model["default_reasoning_level"] == "xhigh"
-assert efforts == ["high", "xhigh"]
+assert model["display_name"] == "GLM 5.2 (Baseten)"
+assert model["default_reasoning_level"] == "medium"
+assert efforts == ["low", "medium", "high", "xhigh"]
 assert model["supports_reasoning_summaries"] is True
 PY
     then
-        log_info "PASS: Codex GLM 5.2 supports Fireworks High/Max reasoning"
+        log_info "PASS: Codex GLM 5.2 exposes Baseten reasoning presets"
         TESTS_PASSED=$((TESTS_PASSED + 1))
     else
-        log_error "FAIL: Codex GLM 5.2 supports Fireworks High/Max reasoning"
+        log_error "FAIL: Codex GLM 5.2 exposes Baseten reasoning presets"
         TESTS_FAILED=$((TESTS_FAILED + 1))
     fi
 }
@@ -325,7 +326,7 @@ main() {
     test_config_new_files
     test_codex_terraform_apply_rules
     test_codex_hooks_disabled
-    test_codex_glm52_reasoning_support
+    test_codex_glm52_baseten_provider
     test_amp_preserve_existing
     test_pi_preserve_changelog_version
     test_config_idempotent

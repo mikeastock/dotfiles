@@ -14,6 +14,17 @@ base_url = "https://api.fireworks.ai/inference/v1"
 env_key = "FIREWORKS_API_KEY"
 wire_api = "responses"
 
+[model_providers.baseten]
+name = "Baseten"
+base_url = "https://inference.baseten.co/v1"
+env_key = "BASETEN_API_KEY"
+wire_api = "responses"
+
+[profiles.baseten-glm52]
+model = "zai-org/GLM-5.2"
+model_provider = "baseten"
+model_reasoning_effort = "medium"
+
 [notice]
 hide_rate_limit_model_nudge = true
 
