@@ -163,20 +163,16 @@ async function plannedChanges(threads, { detector }) {
 
     const project = projectKey(thread);
     const abbr = projectAbbr(thread);
-    if (!abbr) continue;
+    const omitPrefix = shouldOmitPrefix(thread, project);
+    if (!abbr && !omitPrefix) continue;
 
     const currentName = displayName(thread);
     if (!currentName) continue;
 
     const aliases = projectPrefixAliases(thread, project);
-    const mergeStatus = await detector?.mergeStatus(thread);
-    const detectedMerged = mergeStatus === "merged";
-    const preserveMerged = mergeStatus !== "unmerged";
-    const nextName = prefixedName(currentName, abbr, {
-      aliases,
-      merged: detectedMerged,
-      preserveMerged,
-    });
+    const nextName = omitPrefix
+      ? unprefixedName(currentName, aliases)
+      : await detectedPrefixedName(thread, currentName, abbr, aliases, detector);
     if (nextName === currentName) continue;
 
     changes.push({
@@ -190,6 +186,18 @@ async function plannedChanges(threads, { detector }) {
   }
 
   return changes;
+}
+
+async function detectedPrefixedName(thread, currentName, abbr, aliases, detector) {
+  const mergeStatus = await detector?.mergeStatus(thread);
+  const detectedMerged = mergeStatus === "merged";
+  const preserveMerged = mergeStatus !== "unmerged";
+
+  return prefixedName(currentName, abbr, {
+    aliases,
+    merged: detectedMerged,
+    preserveMerged,
+  });
 }
 
 function dedupeThreads(threads) {
@@ -224,6 +232,13 @@ function projectKey(thread) {
   return basename || null;
 }
 
+function shouldOmitPrefix(thread, project) {
+  if (!thread.cwd) return false;
+
+  const cwd = path.resolve(thread.cwd);
+  return project === "worktree" || cwd === codeRoot();
+}
+
 function isBuildrAppWorktree(cwd) {
   const buildrRoot = path.resolve("/data/workspace/code/buildr");
   const codexHome = path.resolve(os.homedir(), ".codex");
@@ -237,13 +252,26 @@ function isBuildrAppWorktree(cwd) {
   return false;
 }
 
+function codeRoot() {
+  return path.resolve("/data/workspace/code");
+}
+
 function projectPrefixAliases(thread, project) {
   if (!thread.cwd) return [];
 
-  return [
-    path.basename(path.resolve(thread.cwd)),
+  const cwd = path.resolve(thread.cwd);
+  const aliases = [
+    path.basename(cwd),
     project,
-  ].filter(Boolean);
+  ];
+
+  if (project === "worktree") {
+    aliases.push("app", "a1", "worktree", "wkt", path.basename(path.dirname(cwd)));
+  }
+
+  if (cwd === codeRoot()) aliases.push("code");
+
+  return [...new Set(aliases.filter(Boolean))];
 }
 
 function displayName(thread) {
@@ -265,6 +293,17 @@ function prefixedName(name, abbr, { aliases = [], merged = false, preserveMerged
   if (targetMerged) return `${abbr}(merged): ${body}`;
 
   return `${abbr}: ${body}`;
+}
+
+function unprefixedName(name, aliases = []) {
+  const initialParsed = parseKnownPrefix(name, null, aliases);
+  const oldMerged = /^MERGED:\s+(.+)$/.exec(initialParsed?.body || name);
+  const parsed = oldMerged ? parseKnownPrefix(oldMerged[1], null, aliases) || initialParsed : initialParsed;
+
+  if (oldMerged) return parsed?.body || oldMerged[1];
+  if (parsed) return parsed.body;
+
+  return name;
 }
 
 function parseKnownPrefix(name, currentPrefix, aliases = []) {
@@ -300,7 +339,7 @@ function parseOneKnownPrefix(name, currentPrefix, aliases = []) {
     ...Object.keys(PROJECT_ABBRS),
     ...aliases,
     currentPrefix,
-  ]);
+  ].filter(Boolean));
 
   for (const prefix of knownPrefixes) {
     const mergedPrefix = `${prefix}(merged): `;
