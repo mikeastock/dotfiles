@@ -59,6 +59,7 @@ test_codex_terraform_apply_rules() {
     codex_rules=$(cat "$SANDBOX_DIR/.codex/rules/default.rules")
 
     assert_output_contains "$codex_config" 'approval_policy = "on-request"' "Codex approval policy allows prompts"
+    assert_output_contains "$codex_config" 'personality = "pragmatic"' "Codex config uses pragmatic personality"
     assert_output_contains "$codex_rules" 'pattern = ["terraform", "apply"]' "Codex rules prompt for terraform apply"
     assert_output_contains "$codex_rules" 'pattern = ["tf", "apply"]' "Codex rules prompt for tf apply"
     assert_output_contains "$codex_rules" 'pattern = ["mise", ["run", "exec"], "terraform", "--", "apply"]' "Codex rules prompt for mise Terraform apply"

@@ -2,6 +2,7 @@ approval_policy = "on-request"
 sandbox_mode = "danger-full-access"
 model = "gpt-5.5"
 model_reasoning_effort = "low"
+personality = "pragmatic"
 model_catalog_json = "/home/mikeastock/.codex/model-catalog.json"
 
 # Keep local CLI quiet about unstable features.
@@ -31,8 +32,6 @@ queue = "alt-enter"
 "gpt-5.5" = 4
 
 [features]
-remote_connections = true
-terminal_resize_reflow = true
 memories = true
 goals = true
 
