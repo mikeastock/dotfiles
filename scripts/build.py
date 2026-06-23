@@ -51,6 +51,8 @@ SKILLS_DIR = ROOT / "skills"
 SUBAGENTS_DIR = ROOT / "subagents"
 PROMPTS_DIR = ROOT / "prompts"
 AMP_PLUGINS_DIR = ROOT / "amp-plugins"
+AMP_CONFIGS_DIR = ROOT / "amp-configs"
+AMP_SETTINGS_FILE = AMP_CONFIGS_DIR / "settings.json"
 
 PI_EXTENSIONS_DIR = ROOT / "pi-extensions"
 PI_THEMES_DIR = ROOT / "pi-themes"
@@ -1213,8 +1215,13 @@ def install_amp_config():
     else:
         settings = {}
 
-    # Set skills path
-    settings["amp.skills.path"] = "~/.config/agents/skills"
+    if AMP_SETTINGS_FILE.exists():
+        with open(AMP_SETTINGS_FILE) as f:
+            managed_settings = json.load(f)
+    else:
+        managed_settings = {"amp.skills.path": "~/.config/agents/skills"}
+
+    settings.update(managed_settings)
 
     with open(dest, "w") as f:
         json.dump(settings, f, indent=2)

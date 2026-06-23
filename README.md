@@ -61,6 +61,10 @@ make install-amp-plugins     # copy amp-plugins/*.ts into ~/.config/amp/plugins/
 
 After changing a plugin, rerun `make install-amp-plugins`, then run `plugins: reload` from Amp's command palette or restart Amp. See `amp-plugins/README.md` for the plugin development loop and example.
 
+### Amp config
+
+Amp settings live in `amp-configs/settings.json`. `make install-configs` merges those managed settings into `~/.config/amp/settings.json` while preserving any other local Amp settings already present.
+
 ### Managed install behavior
 
 `make install` preserves manually installed skills, Amp plugins, Pi extensions, prompts, subagents, and themes that live beside dotfiles-managed artifacts. The installer tracks top-level managed names in `~/.local/state/dotfiles/agent-install-manifest.json`, overwrites those managed artifacts on each install, and removes managed artifacts that are no longer built. If a built artifact conflicts with an existing unmanaged path, the install fails; rerun the underlying build script with `--force` only when you want dotfiles to claim that path.
@@ -123,6 +127,7 @@ pi
 dotfiles/
 ├── .config/                 # shell/editor/terminal configs
 ├── skills/                  # custom agent skills
+├── amp-configs/             # managed Amp settings
 ├── amp-plugins/             # custom Amp plugins
 ├── subagents/               # custom Pi subagents
 ├── pi-extensions/           # Pi extensions

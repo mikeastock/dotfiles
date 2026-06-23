@@ -44,6 +44,11 @@ test_config_new_files() {
     assert_file_exists "$SANDBOX_DIR/.pi/agent/settings.json" "Pi settings file was created"
     assert_file_exists "$SANDBOX_DIR/.codex/AGENTS.md" "Codex AGENTS.md was created"
     assert_file_exists "$SANDBOX_DIR/.pi/agent/AGENTS.md" "Pi AGENTS.md was created"
+
+    local amp_json
+    amp_json=$(cat "$SANDBOX_DIR/.config/amp/settings.json")
+    assert_json_field "$amp_json" '."amp.skills.path"' "~/.config/agents/skills" "Amp: skills.path comes from amp-configs"
+    assert_json_field "$amp_json" '."amp.terminal.copyOnSelect"' "false" "Amp: terminal copy-on-select comes from amp-configs"
 }
 
 # Test: Codex config enables prompts and installs Terraform apply rules
@@ -146,6 +151,7 @@ EOF
 
     # Check new settings were added
     assert_json_field "$amp_json" '."amp.skills.path"' "~/.config/agents/skills" "Amp: skills.path is set"
+    assert_json_field "$amp_json" '."amp.terminal.copyOnSelect"' "false" "Amp: managed terminal setting is set"
 
     # Check existing settings were preserved
     assert_json_field "$amp_json" '."amp.dangerouslyAllowAll"' "true" "Amp: dangerouslyAllowAll preserved"
