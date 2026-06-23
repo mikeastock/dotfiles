@@ -28,6 +28,8 @@ SANDBOX_DIR=""
 
 # Cleanup function - call in trap or at end of tests
 cleanup() {
+    rm -f "$PROJECT_DIR/amp-plugins/test-plugin.ts" 2>/dev/null || true
+
     if [ -n "$SANDBOX_DIR" ] && [ -d "$SANDBOX_DIR" ]; then
         echo -e "\n${YELLOW}Cleaning up sandbox directory...${NC}"
         # Make all files writable before deletion (handles Go module cache read-only files)

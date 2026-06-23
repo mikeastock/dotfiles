@@ -50,6 +50,7 @@ PLUGINS_DIR = ROOT / "plugins"
 SKILLS_DIR = ROOT / "skills"
 SUBAGENTS_DIR = ROOT / "subagents"
 PROMPTS_DIR = ROOT / "prompts"
+AMP_PLUGINS_DIR = ROOT / "amp-plugins"
 
 PI_EXTENSIONS_DIR = ROOT / "pi-extensions"
 PI_THEMES_DIR = ROOT / "pi-themes"
@@ -72,6 +73,7 @@ HOME = Path.home()
 INSTALL_PATHS = {
     "amp": {
         "skills": HOME / ".config" / "agents" / "skills",
+        "plugins": HOME / ".config" / "amp" / "plugins",
     },
     "claude": {
         "skills": HOME / ".claude" / "skills",
@@ -1180,6 +1182,21 @@ def install_extensions(plugins: dict[str, Plugin], force: bool = False):
     print(f"  Installed {len(installed)} extensions to {dest}")
 
 
+def install_amp_plugins(force: bool = False):
+    """Install custom Amp plugins from amp-plugins/."""
+    print("Installing Amp plugins...")
+
+    dest = INSTALL_PATHS["amp"]["plugins"]
+    count = sync_managed_children(
+        "amp.plugins",
+        AMP_PLUGINS_DIR,
+        dest,
+        pattern="*.ts",
+        force=force,
+    )
+    print(f"  amp: {count} plugins -> {dest}")
+
+
 def install_amp_config():
     """Install Amp agent configuration."""
     import json
@@ -1385,6 +1402,7 @@ def clean():
             clean_manifest_target(manifest, f"{agent}.skills", paths["skills"])
 
     clean_manifest_target(manifest, "pi.extensions", INSTALL_PATHS["pi"]["extensions"])
+    clean_manifest_target(manifest, "amp.plugins", INSTALL_PATHS["amp"]["plugins"])
     clean_manifest_target(manifest, "pi.prompts", INSTALL_PATHS["pi"]["prompts"])
     clean_manifest_target(manifest, "pi.subagents", INSTALL_PATHS["pi"]["subagents"])
     clean_manifest_target(manifest, "pi.themes", INSTALL_PATHS["pi"]["themes"])
@@ -1428,6 +1446,7 @@ def main():
             "build",
             "install",
             "install-skills",
+            "install-amp-plugins",
             "install-extensions",
             "install-prompts",
             "install-subagents",
@@ -1477,11 +1496,14 @@ def main():
         install_subagents(force=args.force)
         install_themes(force=args.force)
         install_extensions(plugins, force=args.force)
+        install_amp_plugins(force=args.force)
         install_configs()
         print("\nAll done!")
     elif args.command == "install-skills":
         build_skills(plugins)
         install_skills(force=args.force)
+    elif args.command == "install-amp-plugins":
+        install_amp_plugins(force=args.force)
     elif args.command == "install-extensions":
         install_extensions(plugins, force=args.force)
     elif args.command == "install-prompts":

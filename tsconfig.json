@@ -10,6 +10,8 @@
     "allowImportingTsExtensions": true
   },
   "include": [
-    "pi-extensions/**/*.ts"
+    "pi-extensions/**/*.ts",
+    "amp-plugins/**/*.ts",
+    "types/**/*.d.ts"
   ]
 }

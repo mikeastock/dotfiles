@@ -23,6 +23,7 @@ test_make_help() {
 
     assert_output_contains "$output" "Usage:" "Help shows usage"
     assert_output_contains "$output" "make install" "Help shows install command"
+    assert_output_contains "$output" "make install-amp-plugins" "Help shows Amp plugin install command"
     assert_output_contains "$output" "make install-prompts" "Help shows install-prompts command"
     assert_output_contains "$output" "make install-themes" "Help shows install-themes command"
     assert_output_contains "$output" "make build" "Help shows build command"
@@ -379,6 +380,39 @@ EOF
     assert_file_exists "$SANDBOX_DIR/.pi/agent/extensions/manual-extension/index.ts" "Unmanaged Pi extension file survives install"
 }
 
+# Test: make install-amp-plugins (with sandbox)
+test_make_install_amp_plugins() {
+    log_test "Testing 'make install-amp-plugins' (sandboxed)"
+    cd "$PROJECT_DIR"
+
+    mkdir -p "$PROJECT_DIR/amp-plugins" "$SANDBOX_DIR/.config/amp/plugins"
+    local fixture="$PROJECT_DIR/amp-plugins/test-plugin.ts"
+    rm -f "$fixture"
+    cat > "$fixture" <<'EOF'
+import type { PluginAPI } from '@ampcode/plugin'
+
+export default function (amp: PluginAPI) {
+  amp.logger.log('test plugin loaded')
+}
+EOF
+    echo "manual" > "$SANDBOX_DIR/.config/amp/plugins/manual.ts"
+
+    local output
+    output=$(HOME="$SANDBOX_DIR" XDG_STATE_HOME="$SANDBOX_DIR/.local/state" make install-amp-plugins 2>&1)
+
+    assert_output_contains "$output" "Installing Amp plugins" "Install shows Amp plugin progress"
+    assert_file_exists "$SANDBOX_DIR/.config/amp/plugins/test-plugin.ts" "Amp plugin was installed"
+    if [ ! -L "$SANDBOX_DIR/.config/amp/plugins/test-plugin.ts" ]; then
+        log_info "PASS: Amp plugin install creates a copied file"
+        TESTS_PASSED=$((TESTS_PASSED + 1))
+    else
+        log_error "FAIL: Amp plugin install should copy, not symlink"
+        TESTS_FAILED=$((TESTS_FAILED + 1))
+    fi
+    assert_file_exists "$SANDBOX_DIR/.config/amp/plugins/manual.ts" "Unmanaged Amp plugin survives install"
+    rm -f "$fixture"
+}
+
 # Test: make install-prompts (with sandbox)
 test_make_install_prompts() {
     log_test "Testing 'make install-prompts' (sandboxed)"
@@ -442,7 +476,7 @@ test_make_install() {
     local output
     output=$(HOME="$SANDBOX_DIR" XDG_STATE_HOME="$SANDBOX_DIR/.local/state" make install 2>&1)
 
-    assert_output_contains "$output" "All skills, prompt templates, themes, and extensions installed" "Install shows completion message"
+    assert_output_contains "$output" "All skills, prompt templates, themes, extensions, and Amp plugins installed" "Install shows completion message"
     assert_file_exists "$SANDBOX_DIR/.pi/agent/prompts/refactor-pass.md" "Install includes Pi prompts"
     assert_file_exists "$SANDBOX_DIR/.pi/agent/themes/catppuccin-latte.json" "Install includes Pi themes"
     assert_file_exists "$SANDBOX_DIR/.pi/agent/settings.json" "Install includes Pi settings"
@@ -608,6 +642,7 @@ main() {
     test_install_skills_refuses_unmanaged_name_conflict
     test_install_refuses_unsafe_manifest_child_names
     test_install_skills_force_claims_unmanaged_name_conflict
+    test_make_install_amp_plugins
     test_make_install_extensions
     test_make_install_prompts
     test_make_install_subagents_preserves_unmanaged_siblings

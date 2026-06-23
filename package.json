@@ -4,7 +4,9 @@
   "description": "Reusable skills and extensions for AI coding agents",
   "packageManager": "pnpm@10.0.0",
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "amp:plugin-types": "python3 scripts/update_amp_plugin_types.py",
+    "amp:plugin-check": "pnpm amp:plugin-types && tsc --noEmit --pretty false"
   },
   "devDependencies": {
     "@earendil-works/pi-ai": "^0.74.0",

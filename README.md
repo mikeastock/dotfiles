@@ -37,8 +37,9 @@ This repo also contains reusable skills, prompt templates, and extensions for Am
 ### Agent commands
 
 ```bash
-make install                 # install agent skills/prompts/themes/extensions
+make install                 # install agent skills/prompts/themes/extensions and Amp plugins
 make install-skills
+make install-amp-plugins
 make install-prompts
 make install-themes
 make install-extensions
@@ -48,9 +49,21 @@ make clean                   # clean agent build/install artifacts
 make plugin-update           # update plugin submodules
 ```
 
+### Amp plugin development
+
+Personal Amp plugins live in `amp-plugins/*.ts`. `make install-amp-plugins` copies them into `~/.config/amp/plugins/`. This repo also includes a local TypeScript declaration refresh so plugin files can import `PluginAPI` from `@ampcode/plugin` without publishing or installing a separate package.
+
+```bash
+make amp-plugin-types        # generate types/ampcode-plugin.d.ts from this Amp CLI
+make amp-plugin-check        # refresh plugin types and run TypeScript
+make install-amp-plugins     # copy amp-plugins/*.ts into ~/.config/amp/plugins/
+```
+
+After changing a plugin, rerun `make install-amp-plugins`, then run `plugins: reload` from Amp's command palette or restart Amp. See `amp-plugins/README.md` for the plugin development loop and example.
+
 ### Managed install behavior
 
-`make install` preserves manually installed skills, Pi extensions, prompts, subagents, and themes that live beside dotfiles-managed artifacts. The installer tracks top-level managed names in `~/.local/state/dotfiles/agent-install-manifest.json`, overwrites those managed artifacts on each install, and removes managed artifacts that are no longer built. If a built artifact conflicts with an existing unmanaged path, the install fails; rerun the underlying build script with `--force` only when you want dotfiles to claim that path.
+`make install` preserves manually installed skills, Amp plugins, Pi extensions, prompts, subagents, and themes that live beside dotfiles-managed artifacts. The installer tracks top-level managed names in `~/.local/state/dotfiles/agent-install-manifest.json`, overwrites those managed artifacts on each install, and removes managed artifacts that are no longer built. If a built artifact conflicts with an existing unmanaged path, the install fails; rerun the underlying build script with `--force` only when you want dotfiles to claim that path.
 
 ### Canonical Pi install
 
@@ -110,6 +123,7 @@ pi
 dotfiles/
 ├── .config/                 # shell/editor/terminal configs
 ├── skills/                  # custom agent skills
+├── amp-plugins/             # custom Amp plugins
 ├── subagents/               # custom Pi subagents
 ├── pi-extensions/           # Pi extensions
 ├── pi-themes/               # Pi themes
