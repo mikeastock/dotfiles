@@ -1,21 +1,49 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+content=$(cat)
+
+copy_with() {
+  printf '%s' "$content" | "$@"
+}
+
+copy_osc52() {
+  local encoded target
+  encoded=$(printf '%s' "$content" | base64 | tr -d '\n')
+
+  if [ -n "${TMUX:-}" ] && command -v tmux >/dev/null 2>&1; then
+    printf '%s' "$content" | tmux load-buffer - 2>/dev/null || true
+  fi
+
+  target="${CLIPBOARD_COPY_TTY:-}"
+  if [ -z "$target" ] && [ -n "${TMUX:-}" ] && command -v tmux >/dev/null 2>&1; then
+    target=$(tmux display-message -p '#{client_tty}' 2>/dev/null || true)
+  fi
+  target="${target:-${SSH_TTY:-/dev/tty}}"
+
+  [ -w "$target" ] || return 1
+  printf '\033]52;c;%s\a' "$encoded" >"$target"
+}
+
 if command -v pbcopy >/dev/null 2>&1; then
-  exec pbcopy
+  copy_with pbcopy && exit 0
 fi
 
-if command -v wl-copy >/dev/null 2>&1; then
-  exec wl-copy
+if [ -n "${WAYLAND_DISPLAY:-}" ] && command -v wl-copy >/dev/null 2>&1; then
+  copy_with wl-copy && exit 0
 fi
 
-if command -v xclip >/dev/null 2>&1; then
-  exec xclip -selection clipboard
+if [ -n "${DISPLAY:-}" ] && command -v xclip >/dev/null 2>&1; then
+  copy_with xclip -selection clipboard && exit 0
 fi
 
-if command -v xsel >/dev/null 2>&1; then
-  exec xsel --clipboard --input
+if [ -n "${DISPLAY:-}" ] && command -v xsel >/dev/null 2>&1; then
+  copy_with xsel --clipboard --input && exit 0
 fi
 
-echo "No supported clipboard command found (tried pbcopy, wl-copy, xclip, xsel)." >&2
+if copy_osc52; then
+  exit 0
+fi
+
+echo "No supported clipboard path found (tried pbcopy, wl-copy, xclip, xsel, OSC 52)." >&2
 exit 1
