@@ -1,6 +1,6 @@
 model = "zai-org/GLM-5.2"
 model_provider = "baseten"
-model_reasoning_effort = "medium"
+model_reasoning_effort = "xhigh"
 
 [features]
 apps = false

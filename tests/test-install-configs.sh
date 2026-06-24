@@ -117,7 +117,7 @@ model = next(
 
 efforts = [level["effort"] for level in model["supported_reasoning_levels"]]
 assert model["display_name"] == "GLM 5.2 (Baseten)"
-assert model["default_reasoning_level"] == "medium"
+assert model["default_reasoning_level"] == "xhigh"
 assert efforts == ["low", "medium", "high", "xhigh"]
 assert model["supports_reasoning_summaries"] is True
 PY
@@ -128,6 +128,10 @@ PY
         log_error "FAIL: Codex GLM 5.2 exposes Baseten reasoning presets"
         TESTS_FAILED=$((TESTS_FAILED + 1))
     fi
+
+    local baseten_profile
+    baseten_profile=$(cat "$SANDBOX_DIR/.codex/baseten-glm52.config.toml")
+    assert_output_contains "$baseten_profile" 'model_reasoning_effort = "xhigh"' "Codex Baseten profile defaults to xhigh reasoning"
 }
 
 # Test: Amp config preserves existing settings
