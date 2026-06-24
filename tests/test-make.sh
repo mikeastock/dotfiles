@@ -99,6 +99,9 @@ test_make_build() {
     assert_file_exists "$PROJECT_DIR/build/subagents/pi/architecture-reviewer.md" "Build includes architecture-reviewer subagent"
     assert_file_exists "$PROJECT_DIR/build/claude/teach/SKILL.md" "Claude builds Matt Pocock teach skill"
     assert_file_exists "$PROJECT_DIR/build/claude/writing-great-skills/SKILL.md" "Claude builds Matt Pocock writing-great-skills skill"
+    assert_file_exists "$PROJECT_DIR/build/amp/x-search/SKILL.md" "Amp builds x-search skill"
+    assert_file_exists "$PROJECT_DIR/build/claude/x-search/SKILL.md" "Claude builds x-search skill"
+    assert_file_exists "$PROJECT_DIR/build/pi/x-search/SKILL.md" "Pi builds x-search skill"
     assert_file_exists "$PROJECT_DIR/build/codex/codex-worktree-fork/SKILL.md" "Codex builds buildrtech codex-worktree-fork skill"
     assert_file_not_exists "$PROJECT_DIR/build/amp/codex-worktree-fork/SKILL.md" "Amp does not build Codex-only worktree skill"
     assert_file_not_exists "$PROJECT_DIR/build/claude/codex-worktree-fork/SKILL.md" "Claude does not build Codex-only worktree skill"
@@ -210,6 +213,9 @@ test_make_install_skills() {
     assert_dir_exists "$SANDBOX_DIR/.config/agents/skills/zmx" "Amp installs zmx skill"
     assert_dir_exists "$SANDBOX_DIR/.claude/skills/zmx" "Claude installs zmx skill"
     assert_dir_exists "$SANDBOX_DIR/.agents/skills/zmx" "Pi installs zmx skill"
+    assert_dir_exists "$SANDBOX_DIR/.config/agents/skills/x-search" "Amp installs x-search skill"
+    assert_dir_exists "$SANDBOX_DIR/.claude/skills/x-search" "Claude installs x-search skill"
+    assert_dir_exists "$SANDBOX_DIR/.agents/skills/x-search" "Pi installs x-search skill"
 }
 
 # Test: install-skills preserves unmanaged sibling skills

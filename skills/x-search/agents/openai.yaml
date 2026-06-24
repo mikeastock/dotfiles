@@ -1,0 +1,4 @@
+interface:
+  display_name: "X Search"
+  short_description: "Search X/Twitter with a local OAuth app."
+  default_prompt: "Search X for recent posts about a topic."
