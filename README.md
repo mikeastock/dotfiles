@@ -26,7 +26,7 @@ make dot-all
 
 ## Agent Skills / Extensions Tooling
 
-This repo also contains reusable skills, prompt templates, and extensions for Amp, Claude Code, and Pi Coding Agent.
+This repo also contains reusable skills, prompt templates, and extensions for Amp, Claude Code, Codex CLI, and Pi Coding Agent.
 
 ### Requirements
 
@@ -97,6 +97,7 @@ pi
 - `prototype`, `grill-with-docs`, `teach`, and `writing-great-skills` — workflow and teaching skills from `mattpocock/skills`
 - `improve` — codebase audit and self-contained implementation planning skill from `shadcn/improve`
 - `impeccable` — frontend design, critique, polish, and live iteration skill from `pbakaus/impeccable`
+- `codex-worktree-fork` — Codex-only Buildr worktree setup and thread-fork workflow from `buildrtech/dotagents`
 
 ### Notable custom Pi prompt templates
 

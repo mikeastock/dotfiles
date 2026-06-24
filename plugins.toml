@@ -50,7 +50,7 @@ extensions = [ "context" ]
 
 ["buildrtech/dotagents"]
 url = "https://github.com/buildrtech/dotagents"
-skills = [] # Superpower skills are vendored under skills/ so all coding agents receive them
+skills = [ "codex-worktree-fork" ] # Superpower skills are vendored under skills/ so all coding agents receive them
 extensions_path = "pi-extensions/*"
 extensions = [ "buildr-artifacts", "handoff", "openai-fast", "session-query" ]
 extension_dependency_packages = { "buildr-artifacts" = "package.json" }

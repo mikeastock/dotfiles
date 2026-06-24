@@ -123,7 +123,7 @@ assert_output_contains() {
     local output="$1"
     local expected="$2"
     local description="${3:-Output contains expected text}"
-    if printf '%s\n' "$output" | rg --fixed-strings --quiet -- "$expected"; then
+    if rg --fixed-strings --quiet -- "$expected" <<<"$output"; then
         log_info "PASS: $description"
         TESTS_PASSED=$((TESTS_PASSED + 1))
         return 0
@@ -140,7 +140,7 @@ assert_output_not_contains() {
     local output="$1"
     local unexpected="$2"
     local description="${3:-Output does not contain text}"
-    if ! printf '%s\n' "$output" | rg --fixed-strings --quiet -- "$unexpected"; then
+    if ! rg --fixed-strings --quiet -- "$unexpected" <<<"$output"; then
         log_info "PASS: $description"
         TESTS_PASSED=$((TESTS_PASSED + 1))
         return 0
