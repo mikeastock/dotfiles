@@ -210,6 +210,23 @@ async function rpcCall(opts, schema, method, params) {
   return results[0];
 }
 
+function serverResponseForRequest(msg, nowMs = Date.now()) {
+  if (msg.method === 'currentTime/read') {
+    return { id: msg.id, result: { currentTimeAt: Math.floor(nowMs / 1000) } };
+  }
+  return {
+    id: msg.id,
+    error: { code: -32601, message: `codex-appctl cannot handle server request: ${msg.method}` },
+  };
+}
+
+function messageKind(msg, pending) {
+  if (Object.prototype.hasOwnProperty.call(msg, 'id') && msg.method) return 'serverRequest';
+  if (Object.prototype.hasOwnProperty.call(msg, 'id') && pending.has(msg.id)) return 'clientResponse';
+  if (msg.method === 'turn/completed') return 'turnCompleted';
+  return 'ignored';
+}
+
 async function rpcCallSequence(opts, schema, calls) {
   for (const call of calls) requireMethod(schema.methods, call.method);
   if (opts.startDaemon) {
@@ -236,12 +253,15 @@ async function rpcCallSequence(opts, schema, calls) {
     } catch {
       return;
     }
-    if (Object.prototype.hasOwnProperty.call(msg, 'id') && pending.has(msg.id)) {
+    const kind = messageKind(msg, pending);
+    if (kind === 'serverRequest') {
+      child.stdin.write(JSON.stringify(serverResponseForRequest(msg)) + '\n');
+    } else if (kind === 'clientResponse') {
       const { resolve, reject } = pending.get(msg.id);
       pending.delete(msg.id);
       if (msg.error) reject(new Error(JSON.stringify(msg.error)));
       else resolve(msg.result);
-    } else if (msg.method === 'turn/completed') {
+    } else if (kind === 'turnCompleted') {
       const turnId = msg.params?.turn?.id;
       if (turnId && turnWaiters.has(turnId)) {
         const { resolve } = turnWaiters.get(turnId);
@@ -302,7 +322,13 @@ function parseOptions(args, spec = {}) {
 }
 
 function userInput(message) {
-  return [{ type: 'text', text: message }];
+  return [{ type: 'text', text: message, text_elements: [] }];
+}
+
+function threadIdFrom(result, fallback = null) {
+  const id = result?.thread?.id || result?.id || result?.threadId || fallback;
+  if (!id) throw new Error('thread id missing from RPC result');
+  return id;
 }
 
 function paramsFor(rest) {
@@ -335,13 +361,36 @@ function paramsFor(rest) {
     if (sub === 'start') {
       const o = parseOptions(tail);
       if (!o.cwd || !o.message) die('threads start requires --cwd and --message');
-      return { method: 'thread/start', params: compact({ cwd: o.cwd, name: o.name || null, sessionStartSource: 'startup' }), after: { method: 'turn/start', waitForTurn: true, params: (r) => ({ threadId: r.thread?.id || r.id || r.threadId, input: userInput(o.message) }) } };
+      const sequence = [
+        { method: 'thread/start', params: compact({ cwd: o.cwd, sessionStartSource: 'startup' }) },
+      ];
+      if (o.name) {
+        sequence.push({
+          method: 'thread/name/set',
+          params: (_last, results) => ({ threadId: threadIdFrom(results[0]), name: o.name }),
+        });
+      }
+      sequence.push({
+        method: 'turn/start',
+        waitForTurn: true,
+        params: (_last, results) => ({ threadId: threadIdFrom(results[0]), input: userInput(o.message) }),
+      });
+      return { sequence };
     }
     if (sub === 'send') {
       const o = parseOptions(tail);
       const threadId = o._[0] || die('threads send requires THREAD_ID');
       if (!o.message) die('threads send requires --message');
-      return { method: 'thread/resume', params: { threadId, excludeTurns: true }, after: { method: 'turn/start', waitForTurn: true, params: (r) => ({ threadId: r.thread?.id || r.id || r.threadId || threadId, input: userInput(o.message) }) } };
+      return {
+        sequence: [
+          { method: 'thread/resume', params: { threadId, excludeTurns: true } },
+          {
+            method: 'turn/start',
+            waitForTurn: true,
+            params: (r) => ({ threadId: threadIdFrom(r, threadId), input: userInput(o.message) }),
+          },
+        ],
+      };
     }
     if (sub === 'rename') {
       if (tail.length < 2) die('threads rename requires THREAD_ID NAME');
@@ -439,6 +488,12 @@ async function main() {
   const schema = ensureSchema();
   if (rest[0] === 'schema' && rest[1] === 'methods') return print(schema.methods, opts, { command: 'methods' });
   const request = paramsFor(rest);
+  if (request.sequence) {
+    const results = await rpcCallSequence(opts, schema, request.sequence);
+    if (results.length === 2) return print({ first: results[0], second: results[1] }, opts);
+    if (results.length === 3) return print({ first: results[0], name: results[1], second: results[2] }, opts);
+    return print({ results }, opts);
+  }
   if (request.after) {
     requireMethod(schema.methods, request.after.method);
     const [result, second] = await rpcCallSequence(opts, schema, [
@@ -467,18 +522,29 @@ function selfTest(opts) {
   const start = paramsFor(['threads', 'start', '--cwd', '/tmp/project', '--message', 'hi', '--name', 'smoke']);
   const send = paramsFor(['threads', 'send', 'thread-1', '--message', 'hi']);
   const clients = paramsFor(['remote', 'clients', '--environment-id', 'env-1', '--limit', '2']);
+  const currentTimeResponse = serverResponseForRequest({ id: 9, method: 'currentTime/read' }, 1_700_000_000_000);
+  const requestMessage = { id: 1, method: 'currentTime/read' };
+  const responseMessage = { id: 1, result: { ok: true } };
+  const messageKinds = [requestMessage, responseMessage].map((msg) => messageKind(msg, new Set([1])));
   const ok = methods.includes('thread/list')
     && list.params.limit === 2
     && read.params.includeTurns === true
-    && start.params.sessionStartSource === 'startup'
-    && start.after?.method === 'turn/start'
-    && start.after?.waitForTurn === true
-    && start.after.params({ thread: { id: 'thread-1' } }).threadId === 'thread-1'
-    && send.method === 'thread/resume'
-    && send.params.threadId === 'thread-1'
-    && send.after?.method === 'turn/start'
-    && send.after?.waitForTurn === true
-    && send.after.params({ thread: { id: 'thread-1' } }).threadId === 'thread-1'
+    && start.sequence?.[0].method === 'thread/start'
+    && start.sequence?.[0].params.sessionStartSource === 'startup'
+    && start.sequence?.[0].params.name === undefined
+    && start.sequence?.[1].method === 'thread/name/set'
+    && start.sequence?.[1].params(null, [{ thread: { id: 'thread-1' } }]).name === 'smoke'
+    && start.sequence?.[2].method === 'turn/start'
+    && start.sequence?.[2].waitForTurn === true
+    && start.sequence?.[2].params(null, [{ thread: { id: 'thread-1' } }]).threadId === 'thread-1'
+    && send.sequence?.[0].method === 'thread/resume'
+    && send.sequence?.[0].params.threadId === 'thread-1'
+    && send.sequence?.[1].method === 'turn/start'
+    && send.sequence?.[1].waitForTurn === true
+    && send.sequence?.[1].params({ thread: { id: 'thread-1' } }).threadId === 'thread-1'
+    && currentTimeResponse.result.currentTimeAt === 1_700_000_000
+    && messageKinds[0] === 'serverRequest'
+    && messageKinds[1] === 'clientResponse'
     && clients.params().environmentId === 'env-1'
     && clients.params().limit === 2;
   const result = { ok, fixture, methods, examples: { list, read, start, send, clients } };
