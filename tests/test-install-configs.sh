@@ -38,6 +38,11 @@ test_config_new_files() {
     assert_file_exists "$SANDBOX_DIR/.config/amp/settings.json" "Amp settings file was created"
     assert_file_exists "$SANDBOX_DIR/.codex/config.toml" "Codex config file was created"
     assert_file_exists "$SANDBOX_DIR/.codex/baseten-glm52.config.toml" "Codex Baseten profile file was created"
+    local baseten_profile
+    baseten_profile=$(cat "$SANDBOX_DIR/.codex/baseten-glm52.config.toml")
+    assert_output_contains "$baseten_profile" 'model_provider = "baseten"' "Codex Baseten profile selects Baseten provider"
+    assert_output_contains "$baseten_profile" 'apps = false' "Codex Baseten profile disables apps"
+    assert_output_contains "$baseten_profile" 'multi_agent = false' "Codex Baseten profile disables multi-agent"
     assert_file_exists "$SANDBOX_DIR/.codex/rules/default.rules" "Codex default rules file was created"
     assert_file_exists "$SANDBOX_DIR/.codex/hooks.json" "Codex hooks file was created"
     assert_file_not_exists "$SANDBOX_DIR/.codex/hooks/terraform_apply_gate.py" "Codex Terraform hard-gate hook is not installed"
