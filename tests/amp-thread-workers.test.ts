@@ -42,6 +42,11 @@ describe("thread-workers Amp plugin", () => {
 			tools.map((tool) => tool.name),
 			["spawn_worker", "send_to_thread"],
 		);
+
+		const spawnWorker = tools.find((tool) => tool.name === "spawn_worker") as unknown as {
+			inputSchema: { properties: Record<string, unknown> };
+		};
+		assert.equal(spawnWorker.inputSchema.properties.show, undefined);
 	});
 
 	it("spawn_worker creates a builtin agent thread and seeds it with worker instructions", async () => {
@@ -80,7 +85,7 @@ describe("thread-workers Amp plugin", () => {
 		);
 
 		assert.equal(requestedMode, "deep");
-		assert.deepEqual(createOptions, { parentThreadID: "T-parent", show: true });
+		assert.deepEqual(createOptions, { parentThreadID: "T-parent", show: false });
 		assert.match(workerMessage, /Build task one/);
 		assert.match(workerMessage, /T-parent/);
 		assert.match(workerMessage, /send_to_thread/);

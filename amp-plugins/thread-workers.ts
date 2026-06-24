@@ -95,10 +95,6 @@ export default function registerThreadWorkers(amp: PluginAPI) {
 					type: "string",
 					description: "Optional short context label for the worker task.",
 				},
-				show: {
-					type: "boolean",
-					description: "Whether to show the created worker thread in supported clients. Defaults to false.",
-				},
 			},
 			required: ["prompt"],
 		},
@@ -106,12 +102,11 @@ export default function registerThreadWorkers(amp: PluginAPI) {
 			const mode = builtinMode(input);
 			const prompt = requiredString(input, "prompt");
 			const label = optionalString(input, "label");
-			const show = optionalBoolean(input, "show", false);
 
 			const agent = amp.getBuiltinAgent(mode);
 			const workerThread = await agent.createThread({
 				parentThreadID: ctx.thread.id,
-				show,
+				show: false,
 			});
 
 			await workerThread.appendUserMessage({
