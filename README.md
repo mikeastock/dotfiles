@@ -86,6 +86,7 @@ pi
 - `layered-rails` — Rails layered architecture guidance (copied locally from `palkan/skills`, not managed as a plugin)
 - `babysit-pr` — GitHub PR monitoring/babysitting workflow imported from `openai/codex` commit `7e569f1`
 - `how` — architectural explanation and critique skill vendored from `poteto/how`
+- `writing-mike-ruby-style` — Michael Stock's personal Ruby/Rails taste: parens, conditionals, blocks, keyword syntax, nil handling, and object shape
 - `editorial-sketches` — editorial article illustration skill vendored from `helloianneo/ian-xiaohei-illustrations` commit `91b5608`
 - `oracle` — @steipete/oracle CLI workflow for second-model reviews with selected repo context
 - `session-learning-miner` — mine Pi session history for repeated prompts, friction, reusable workflows, and skill/template candidates
