@@ -37,12 +37,12 @@ test_config_new_files() {
     # Verify all files were created
     assert_file_exists "$SANDBOX_DIR/.config/amp/settings.json" "Amp settings file was created"
     assert_file_exists "$SANDBOX_DIR/.codex/config.toml" "Codex config file was created"
-    assert_file_exists "$SANDBOX_DIR/.codex/baseten-glm52.config.toml" "Codex Baseten profile file was created"
-    local baseten_profile
-    baseten_profile=$(cat "$SANDBOX_DIR/.codex/baseten-glm52.config.toml")
-    assert_output_contains "$baseten_profile" 'model_provider = "baseten"' "Codex Baseten profile selects Baseten provider"
-    assert_output_contains "$baseten_profile" 'apps = false' "Codex Baseten profile disables apps"
-    assert_output_contains "$baseten_profile" 'multi_agent = false' "Codex Baseten profile disables multi-agent"
+    assert_file_exists "$SANDBOX_DIR/.codex/fireworks-glm52.config.toml" "Codex Fireworks profile file was created"
+    local fireworks_profile
+    fireworks_profile=$(cat "$SANDBOX_DIR/.codex/fireworks-glm52.config.toml")
+    assert_output_contains "$fireworks_profile" 'model_provider = "fireworks"' "Codex Fireworks profile selects Fireworks provider"
+    assert_output_contains "$fireworks_profile" 'apps = false' "Codex Fireworks profile disables apps"
+    assert_output_contains "$fireworks_profile" 'multi_agent = false' "Codex Fireworks profile disables multi-agent"
     assert_file_exists "$SANDBOX_DIR/.codex/rules/default.rules" "Codex default rules file was created"
     assert_file_exists "$SANDBOX_DIR/.codex/hooks.json" "Codex hooks file was created"
     assert_file_not_exists "$SANDBOX_DIR/.codex/hooks/terraform_apply_gate.py" "Codex Terraform hard-gate hook is not installed"
@@ -94,9 +94,9 @@ test_codex_hooks_disabled() {
     assert_file_not_exists "$SANDBOX_DIR/.codex/hooks/terraform_apply_gate.py" "Terraform hard-gate hook script is absent"
 }
 
-# Test: Codex model catalog advertises Baseten GLM 5.2 reasoning support
-test_codex_glm52_baseten_provider() {
-    log_test "Testing Codex GLM 5.2 Baseten reasoning support"
+# Test: Codex model catalog advertises Fireworks GLM 5.2 reasoning support
+test_codex_glm52_fireworks_provider() {
+    log_test "Testing Codex GLM 5.2 Fireworks reasoning support"
     cd "$PROJECT_DIR"
 
     rm -rf "$SANDBOX_DIR/.codex"
@@ -112,26 +112,26 @@ catalog = json.load(open(catalog_path))
 model = next(
     model
     for model in catalog["models"]
-    if model["slug"] == "zai-org/GLM-5.2"
+    if model["slug"] == "accounts/fireworks/models/glm-5p2"
 )
 
 efforts = [level["effort"] for level in model["supported_reasoning_levels"]]
-assert model["display_name"] == "GLM 5.2 (Baseten)"
+assert model["display_name"] == "GLM 5.2 (Fireworks)"
 assert model["default_reasoning_level"] == "xhigh"
 assert efforts == ["low", "medium", "high", "xhigh"]
 assert model["supports_reasoning_summaries"] is True
 PY
     then
-        log_info "PASS: Codex GLM 5.2 exposes Baseten reasoning presets"
+        log_info "PASS: Codex GLM 5.2 exposes Fireworks reasoning presets"
         TESTS_PASSED=$((TESTS_PASSED + 1))
     else
-        log_error "FAIL: Codex GLM 5.2 exposes Baseten reasoning presets"
+        log_error "FAIL: Codex GLM 5.2 exposes Fireworks reasoning presets"
         TESTS_FAILED=$((TESTS_FAILED + 1))
     fi
 
-    local baseten_profile
-    baseten_profile=$(cat "$SANDBOX_DIR/.codex/baseten-glm52.config.toml")
-    assert_output_contains "$baseten_profile" 'model_reasoning_effort = "xhigh"' "Codex Baseten profile defaults to xhigh reasoning"
+    local fireworks_profile
+    fireworks_profile=$(cat "$SANDBOX_DIR/.codex/fireworks-glm52.config.toml")
+    assert_output_contains "$fireworks_profile" 'model_reasoning_effort = "xhigh"' "Codex Fireworks profile defaults to xhigh reasoning"
 }
 
 # Test: Amp config preserves existing settings
@@ -342,7 +342,7 @@ main() {
     test_config_new_files
     test_codex_terraform_apply_rules
     test_codex_hooks_disabled
-    test_codex_glm52_baseten_provider
+    test_codex_glm52_fireworks_provider
     test_amp_preserve_existing
     test_pi_preserve_changelog_version
     test_config_idempotent

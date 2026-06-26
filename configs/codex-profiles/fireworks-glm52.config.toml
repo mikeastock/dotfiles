@@ -1,5 +1,5 @@
-model = "zai-org/GLM-5.2"
-model_provider = "baseten"
+model = "accounts/fireworks/models/glm-5p2"
+model_provider = "fireworks"
 model_reasoning_effort = "xhigh"
 
 [features]
