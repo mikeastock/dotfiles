@@ -102,24 +102,17 @@ test_make_build() {
     assert_file_exists "$PROJECT_DIR/build/amp/x-search/SKILL.md" "Amp builds x-search skill"
     assert_file_exists "$PROJECT_DIR/build/claude/x-search/SKILL.md" "Claude builds x-search skill"
     assert_file_exists "$PROJECT_DIR/build/pi/x-search/SKILL.md" "Pi builds x-search skill"
-    assert_file_exists "$PROJECT_DIR/build/codex/codex-worktree-fork/SKILL.md" "Codex builds buildrtech codex-worktree-fork skill"
-    assert_file_not_exists "$PROJECT_DIR/build/amp/codex-worktree-fork/SKILL.md" "Amp does not build Codex-only worktree skill"
-    assert_file_not_exists "$PROJECT_DIR/build/claude/codex-worktree-fork/SKILL.md" "Claude does not build Codex-only worktree skill"
-    assert_file_not_exists "$PROJECT_DIR/build/pi/codex-worktree-fork/SKILL.md" "Pi does not build Codex-only worktree skill"
 
     local brainstorming_content
     local verification_content
     local semantic_commit_content
-    local codex_worktree_content
     brainstorming_content=$(<"$PROJECT_DIR/build/claude/brainstorming/SKILL.md")
     verification_content=$(<"$PROJECT_DIR/build/claude/verification-before-completion/SKILL.md")
     semantic_commit_content=$(<"$PROJECT_DIR/build/claude/semantic-commit/SKILL.md")
-    codex_worktree_content=$(<"$PROJECT_DIR/build/codex/codex-worktree-fork/SKILL.md")
     assert_output_contains "$brainstorming_content" "Architecture Checkpoint" "Brainstorming includes architecture checkpoint"
     assert_output_contains "$brainstorming_content" "architecture-reviewer" "Brainstorming invokes architecture reviewer"
     assert_output_contains "$verification_content" "Implementation Deviation Report" "Verification includes deviation report"
     assert_output_contains "$semantic_commit_content" "Implementation Deviation Report" "Commit workflow includes deviation report"
-    assert_output_not_contains "$codex_worktree_content" "agents:" "Codex worktree skill strips build-time agents metadata"
 
     local breadboard_content
     breadboard_content=$(<"$breadboard_skill")

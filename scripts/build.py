@@ -482,12 +482,9 @@ def parse_skill_agents(content: str) -> list[str] | None:
     """
     Parse the 'agents' field from SKILL.md frontmatter.
 
-    Supports three formats:
-    1. Top-level inline: agents: [claude, codex, pi]
-    2. Top-level block:
-       agents:
-         - codex
-    3. In metadata: metadata.agents: "codex, pi" (comma-separated string)
+    Supports two formats per Agent Skills spec:
+    1. Top-level: agents: [claude, codex, pi]
+    2. In metadata: metadata.agents: "codex, pi" (comma-separated string)
 
     Returns:
         List of agent names if specified, None if not specified (means all agents).
@@ -501,61 +498,49 @@ def parse_skill_agents(content: str) -> list[str] | None:
         return None
 
     frontmatter = match.group(1)
-    lines = frontmatter.split("\n")
 
-    def indentation(line: str) -> int:
-        return len(line) - len(line.lstrip(" \t"))
-
-    def parse_agents_value(value: str) -> list[str]:
-        value = value.strip().strip("\"'")
-        if not value:
+    # First try top-level agents field (YAML list format):
+    # agents: [claude, codex] or agents: ["claude", "codex"]
+    agents_pattern = r"^agents:\s*\[([^\]]*)\]"
+    agents_match = re.search(agents_pattern, frontmatter, re.MULTILINE)
+    if agents_match:
+        agents_str = agents_match.group(1)
+        if not agents_str.strip():
             return []
-        if value.startswith("[") and value.endswith("]"):
-            value = value[1:-1]
-        return [
-            item.strip().strip("\"'")
-            for item in value.split(",")
-            if item.strip().strip("\"'")
-        ]
-
-    def parse_agents_block(start: int, parent_indent: int) -> list[str]:
         agents = []
-        for line in lines[start:]:
-            if not line.strip():
-                continue
-            if indentation(line) <= parent_indent:
-                break
-            item = line.strip()
-            if not item.startswith("-"):
-                break
-            value = item[1:].strip().strip("\"'")
-            if value:
-                agents.append(value)
+        for item in agents_str.split(","):
+            item = item.strip().strip("\"'")
+            if item:
+                agents.append(item)
         return agents
 
-    for index, line in enumerate(lines):
-        if not line.startswith("agents:"):
+    # Try metadata.agents field (comma-separated string per Agent Skills spec):
+    # metadata:
+    #   agents: codex, pi
+    metadata_agents_pattern = r"^\s+agents:\s*(.+)$"
+    # Only match if we're in a metadata block
+    in_metadata = False
+    for line in frontmatter.split("\n"):
+        if line.startswith("metadata:"):
+            in_metadata = True
             continue
-        value = line[len("agents:") :].strip()
-        if value:
-            return parse_agents_value(value)
-        return parse_agents_block(index + 1, indentation(line))
-
-    for index, line in enumerate(lines):
-        if line != "metadata:":
-            continue
-        metadata_indent = indentation(line)
-        for metadata_index in range(index + 1, len(lines)):
-            metadata_line = lines[metadata_index]
-            if metadata_line.strip() and indentation(metadata_line) <= metadata_indent:
-                break
-            stripped = metadata_line.strip()
-            if not stripped.startswith("agents:"):
+        if in_metadata:
+            # Check if we've left the metadata block (non-indented line)
+            if line and not line.startswith(" ") and not line.startswith("\t"):
+                in_metadata = False
                 continue
-            value = stripped[len("agents:") :].strip()
-            if value:
-                return parse_agents_value(value)
-            return parse_agents_block(metadata_index + 1, indentation(metadata_line))
+            # Look for agents field
+            metadata_match = re.match(metadata_agents_pattern, line)
+            if metadata_match:
+                agents_str = metadata_match.group(1).strip().strip("\"'")
+                if not agents_str:
+                    return []
+                agents = []
+                for item in agents_str.split(","):
+                    item = item.strip().strip("\"'")
+                    if item:
+                        agents.append(item)
+                return agents
 
     return None
 
@@ -579,22 +564,12 @@ def strip_agents_from_frontmatter(content: str) -> str:
     frontmatter = match.group(1)
     new_frontmatter = frontmatter
 
-    # Remove top-level agents fields, including YAML block-list form.
-    agents_block_pattern = r"^agents:\s*\n(?:[ \t]+-\s*.*\n?)+"
-    new_frontmatter = re.sub(
-        agents_block_pattern, "", new_frontmatter, flags=re.MULTILINE
-    )
-    agents_pattern = r"^agents:\s*(?:\[[^\]]*\]|[^\n]*)\n?"
+    # Remove top-level agents line (including the newline)
+    agents_pattern = r"^agents:\s*\[[^\]]*\]\n?"
     new_frontmatter = re.sub(agents_pattern, "", new_frontmatter, flags=re.MULTILINE)
 
-    # Remove metadata.agents fields, including YAML block-list form.
-    metadata_agents_block_pattern = r"^([ \t]+)agents:\s*\n(?:\1[ \t]+-\s*.*\n?)+"
-    new_frontmatter = re.sub(
-        metadata_agents_block_pattern,
-        "",
-        new_frontmatter,
-        flags=re.MULTILINE,
-    )
+    # Remove metadata.agents line (indented agents: inside metadata block)
+    # This pattern matches "  agents: value\n" where value can be anything
     metadata_agents_pattern = r"^[ \t]+agents:\s*.*\n?"
     new_frontmatter = re.sub(
         metadata_agents_pattern, "", new_frontmatter, flags=re.MULTILINE
@@ -784,8 +759,7 @@ def build_skills(plugins: dict[str, Plugin]):
             continue
 
         skills_by_name: dict[str, dict[str, Path]] = {}
-        plugin_agents = [*AGENTS, "codex"]
-        for agent in plugin_agents:
+        for agent in AGENTS:
             if agent in plugin.skills_skip_agents:
                 continue
             for name, path in discover_items(plugin, "skills", agent=agent):
@@ -798,18 +772,10 @@ def build_skills(plugins: dict[str, Plugin]):
                 )
                 continue
             built_for_agents = []
-            for agent in plugin_agents:
+            for agent in AGENTS:
                 path = paths_by_agent.get(agent)
                 if path is None:
                     continue
-                if agent == "codex":
-                    skill_md = find_skill_markdown(path)
-                    if skill_md is None:
-                        print(f"    Warning: {path} has no SKILL.md/skill.md, skipping")
-                        continue
-                    allowed_agents = parse_skill_agents(skill_md.read_text())
-                    if allowed_agents is None or "codex" not in allowed_agents:
-                        continue
                 result = build_skill(name, path, agent)
                 if result is True:
                     built_for_agents.append(agent)
