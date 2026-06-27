@@ -35,6 +35,12 @@
   - exact deletion criteria
 - Default stance across the app: delete old-state compatibility code rather than carrying it forward.
 
+## Worktrees
+
+- Always create worktrees in a directory that is not nested inside the repository being worked on.
+- Bad: `/path/to/project/.worktrees/feature-branch` (nested inside the repo checkout).
+- Good: `/path/to/worktrees/feature-branch/project` (separate worktrees area outside the repo checkout).
+
 ## Background Processes
 
 - Run long-lived terminal work as background processes when appropriate: tests,
