@@ -205,6 +205,20 @@ Next failing test for next feature.
 | **Clear** | Name describes behavior | `test('test1')` |
 | **Shows intent** | Demonstrates desired API | Obscures what code should do |
 
+## Test Behavior, Not Edits
+
+Do not add tests whose only value is proving that an edit happened.
+
+A test is pointless if it only proves:
+- Dead code was deleted
+- An old feature path was removed
+- A string, import, helper, or method was renamed
+- The code shape matches the diff
+
+Only write a test when it protects live behavior, a public contract, a regression, or an expected failure mode.
+
+For cleanup of dead code or old features, delete stale tests and verify with build, typecheck, lint, or focused existing tests. If removing a feature creates new observable behavior, test that behavior directly: the old route returns 404/410, the UI no longer offers the option, or the command rejects the old input.
+
 ## Why Order Matters
 
 **"I'll write tests after to verify it works"**
@@ -285,6 +299,7 @@ Tests-first force edge case discovery before implementing. Tests-after verify yo
 - "Keep as reference" or "adapt existing code"
 - "Already spent X hours, deleting is wasteful"
 - "TDD is dogmatic, I'm being pragmatic"
+- "Need a test to prove the edit happened"
 - "This is different because..."
 
 **All of these mean: Delete code. Start over with TDD.**
@@ -338,6 +353,7 @@ Before marking work complete:
 - [ ] Output pristine (no errors, warnings)
 - [ ] Tests use real code (mocks only if unavoidable)
 - [ ] Edge cases and errors covered
+- [ ] No tests merely prove the diff happened, dead code was deleted, or old features are gone
 
 Can't check all boxes? You skipped TDD. Start over.
 
