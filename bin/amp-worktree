@@ -1,0 +1,132 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+amp-worktree
+
+Usage:
+  amp-worktree [--base REF] [--name NAME] [--no-bdev-setup] [--] PROMPT...
+
+Creates a sibling git worktree, prepares it with bdev when available, and opens
+Amp in a new tmux window from that worktree.
+EOF
+}
+
+die() {
+  printf 'error: %s\n' "$1" >&2
+  exit 1
+}
+
+require_command() {
+  command -v "$1" >/dev/null 2>&1 || die "$1 not found on PATH"
+}
+
+shell_quote() {
+  printf '%q' "$1"
+}
+
+slugify() {
+  printf '%s' "$1" |
+    tr '[:upper:]' '[:lower:]' |
+    tr -cs '[:alnum:]' '-' |
+    sed 's/^-//; s/-$//; s/--*/-/g' |
+    cut -c 1-36
+}
+
+base_ref="HEAD"
+name=""
+run_bdev_setup=1
+prompt_parts=()
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --base)
+      [ "$#" -ge 2 ] || die "--base requires a value"
+      base_ref="$2"
+      shift 2
+      ;;
+    --name)
+      [ "$#" -ge 2 ] || die "--name requires a value"
+      name="$2"
+      shift 2
+      ;;
+    --no-bdev-setup)
+      run_bdev_setup=0
+      shift
+      ;;
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    --)
+      shift
+      prompt_parts=("$@")
+      break
+      ;;
+    -*)
+      die "unknown option: $1"
+      ;;
+    *)
+      prompt_parts+=("$1")
+      shift
+      ;;
+  esac
+done
+
+[ "${#prompt_parts[@]}" -gt 0 ] || die "prompt is required"
+
+require_command git
+require_command tmux
+require_command amp
+
+repo_root=$(git rev-parse --show-toplevel 2>/dev/null) || die "not inside a git repository"
+repo_name=$(basename "$repo_root")
+repo_parent=$(dirname "$repo_root")
+prompt="${prompt_parts[*]}"
+timestamp=$(date -u +%Y%m%dT%H%M%SZ)
+prompt_slug=$(slugify "$prompt")
+state_home="${XDG_STATE_HOME:-$HOME/.local/state}"
+
+if [ -z "$prompt_slug" ]; then
+  prompt_slug="task"
+fi
+
+if [ -z "$name" ]; then
+  worktree_name="${repo_name}-amp-${timestamp}-${prompt_slug}"
+else
+  worktree_name=$(slugify "$name")
+  [ -n "$worktree_name" ] || die "--name must contain at least one letter or number"
+fi
+
+worktree_path="$repo_parent/$worktree_name"
+branch_name="amp/$worktree_name"
+tmux_window="amp:${worktree_name:0:48}"
+log_dir="$state_home/amp-worktree"
+log_path="$log_dir/$worktree_name.log"
+
+[ ! -e "$worktree_path" ] || die "worktree path already exists: $worktree_path"
+if git -C "$repo_root" show-ref --verify --quiet "refs/heads/$branch_name"; then
+  die "branch already exists: $branch_name"
+fi
+
+git -C "$repo_root" worktree add -b "$branch_name" "$worktree_path" "$base_ref" >/dev/null
+
+if [ "$run_bdev_setup" -eq 1 ] && [ -x "$worktree_path/bin/bdev" ]; then
+  (
+    cd "$worktree_path"
+    BDEV_AGENT_MODE=true bin/bdev worktree setup --output json --from "$repo_root" --name "$worktree_name" >/dev/null
+  )
+fi
+
+mkdir -p "$log_dir"
+cd_command="cd $(shell_quote "$worktree_path")"
+amp_command="{ amp --execute $(shell_quote "$prompt"); } 2>&1 | tee $(shell_quote "$log_path")"
+hold_command='status=$?; printf '"'"'\namp exited with status %s\n'"'"' "$status"; exec "${SHELL:-/bin/bash}" -i'
+tmux_command="bash -lc $(shell_quote "$cd_command && set -o pipefail && $amp_command; $hold_command")"
+tmux new-window -d -n "$tmux_window" "$tmux_command"
+
+printf 'Worktree: %s\n' "$worktree_path"
+printf 'Branch: %s\n' "$branch_name"
+printf 'tmux window: %s\n' "$tmux_window"
+printf 'Log: %s\n' "$log_path"
