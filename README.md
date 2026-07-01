@@ -88,6 +88,7 @@ pi
 - `how` — architectural explanation and critique skill vendored from `poteto/how`
 - `editorial-sketches` — editorial article illustration skill vendored from `helloianneo/ian-xiaohei-illustrations` commit `91b5608`
 - `oracle` — @steipete/oracle CLI workflow for second-model reviews with selected repo context
+- `fable-review` — trusted Claude Fable code review workflow using `claude -p --model claude-fable-5`
 - `prepare-branch-context` — read-only branch diff, commit, and PR context gathering skill vendored from `jnsahaj/skills`
 - `session-learning-miner` — mine Pi session history for repeated prompts, friction, reusable workflows, and skill/template candidates
 - `zmx` — guidance for managing persistent background terminal work
