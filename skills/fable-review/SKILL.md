@@ -46,7 +46,6 @@ claude -p \
   --model claude-fable-5 \
   --tools "Read,Bash" \
   --allowedTools "Read,Bash(git *),Bash(rg *),Bash(fd *),Bash(sed *)" \
-  --no-session-persistence \
   "$(cat /tmp/fable-review-prompt.md)"
 ```
 
@@ -56,7 +55,7 @@ only when the review requires files outside the current working directory.
 If the installed Claude CLI behaves unexpectedly, first probe with:
 
 ```bash
-claude -p --model claude-fable-5 --tools "" --no-session-persistence "Reply ok."
+claude -p --model claude-fable-5 --tools "" "Reply ok."
 ```
 
 ## Prompt Template
