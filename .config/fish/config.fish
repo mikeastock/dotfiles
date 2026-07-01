@@ -305,7 +305,7 @@ function __workspace_title
   end
 end
 
-####### tmux window auto-rename
+####### tmux window rename
 function _update_sibling_tmux_windows --argument-names repo_root branch
   set -l my_window (command tmux display-message -p '#{window_id}')
 
@@ -328,7 +328,7 @@ function _update_sibling_tmux_windows --argument-names repo_root branch
   end
 end
 
-function _tmux_window_name --on-variable PWD --on-event fish_postexec
+function trw -d "Rename the current tmux window to the current workspace"
   if not set -q TMUX; or not set -q TMUX_PANE
     return
   end
@@ -351,8 +351,6 @@ function _tmux_window_name --on-variable PWD --on-event fish_postexec
     set -e __tmux_last_branch
   end
 end
-
-_tmux_window_name
 
 ####### PROMPT CONFIG (starship)
 if type -q starship
