@@ -39,6 +39,10 @@ true, but do not dismiss them just because they are inconvenient or surprising.
 
 ## Command Pattern
 
+Expect Fable reviews to take a long time; 10+ minutes is not uncommon. Be
+patient: let the command run until it returns, and do not cancel or retry just
+because it appears quiet.
+
 Write the prompt to a temporary file, then pass it through stdin. In print mode,
 this Claude CLI expects prompt input on stdin; do not pass the prompt as a
 positional shell argument.
