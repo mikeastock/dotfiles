@@ -39,6 +39,10 @@ true, but do not dismiss them just because they are inconvenient or surprising.
 
 ## Command Pattern
 
+Write the prompt to a temporary file, then pass it through stdin. In print mode,
+this Claude CLI expects prompt input on stdin; do not pass the prompt as a
+positional shell argument.
+
 Prefer this shape from the repo root:
 
 ```bash
@@ -46,7 +50,7 @@ claude -p \
   --model claude-fable-5 \
   --tools "Read,Bash" \
   --allowedTools "Read,Bash(git *),Bash(rg *),Bash(fd *),Bash(sed *)" \
-  "$(cat /tmp/fable-review-prompt.md)"
+  < /tmp/fable-review-prompt.md
 ```
 
 Use `--tools "Read"` when shell access is unnecessary. Add `--add-dir <path>`
@@ -55,7 +59,7 @@ only when the review requires files outside the current working directory.
 If the installed Claude CLI behaves unexpectedly, first probe with:
 
 ```bash
-claude -p --model claude-fable-5 --tools "" "Reply ok."
+printf '%s\n' "Reply ok." | claude -p --model claude-fable-5 --tools ""
 ```
 
 ## Prompt Template
