@@ -2,6 +2,8 @@
 'use strict';
 
 const fs = require('fs');
+const crypto = require('crypto');
+const net = require('net');
 const os = require('os');
 const path = require('path');
 const readline = require('readline');
@@ -33,7 +35,7 @@ function usage() {
   return `codex-appctl ${VERSION}
 
 Usage:
-  codex-appctl [--json|--plain] [--transport auto|stdio|proxy] [--socket PATH] [--start-daemon] [--timeout SECONDS] COMMAND
+  codex-appctl [--json|--plain] [--transport auto|direct|stdio|proxy] [--socket PATH] [--start-daemon] [--timeout SECONDS] COMMAND
 
 Commands:
   doctor
@@ -43,8 +45,8 @@ Commands:
   threads search TEXT [--limit N]
   threads read THREAD_ID [--turns]
   threads turns THREAD_ID [--limit N] [--full]
-  threads start --cwd PATH --message TEXT [--name NAME]
-  threads send THREAD_ID --message TEXT
+  threads start --cwd PATH --message TEXT [--name NAME] [--wait]
+  threads send THREAD_ID --message TEXT [--wait]
   threads rename THREAD_ID NAME
   threads archive THREAD_ID
   threads unarchive THREAD_ID
@@ -85,7 +87,7 @@ function parseGlobal(argv) {
       opts.format = 'plain';
     } else if (a === '--transport') {
       opts.transport = needValue(argv, ++i, a);
-      if (!['auto', 'stdio', 'proxy'].includes(opts.transport)) die('invalid --transport');
+      if (!['auto', 'direct', 'stdio', 'proxy'].includes(opts.transport)) die('invalid --transport');
     } else if (a === '--socket') {
       opts.socket = needValue(argv, ++i, a);
     } else if (a === '--start-daemon') {
@@ -193,6 +195,24 @@ function daemonCompatible(cliVersion) {
   return { compatible: same, daemon: d };
 }
 
+function defaultControlSocket() {
+  const codexHome = process.env.CODEX_HOME || path.join(os.homedir(), '.codex');
+  return path.join(codexHome, 'app-server-control', 'app-server-control.sock');
+}
+
+function directSocketPath(opts) {
+  return opts.socket || defaultControlSocket();
+}
+
+function canUseDirectTransport(opts) {
+  try {
+    const stat = fs.statSync(directSocketPath(opts));
+    return stat.isSocket();
+  } catch {
+    return false;
+  }
+}
+
 function transportCommand(opts, schema) {
   if (opts.transport === 'stdio') return ['codex', ['app-server', '--stdio']];
   if (opts.transport === 'proxy') {
@@ -220,6 +240,200 @@ function serverResponseForRequest(msg, nowMs = Date.now()) {
   };
 }
 
+class UnixWebSocketRpc {
+  constructor(socketPath) {
+    this.socketPath = socketPath;
+    this.socket = null;
+    this.buffer = Buffer.alloc(0);
+    this.pending = new Map();
+    this.onMessage = null;
+    this.nextId = 1;
+  }
+
+  async connect() {
+    this.socket = net.createConnection(this.socketPath);
+    await once(this.socket, 'connect');
+
+    const key = crypto.randomBytes(16).toString('base64');
+    this.socket.write([
+      'GET /rpc HTTP/1.1',
+      'Host: localhost',
+      'Upgrade: websocket',
+      'Connection: Upgrade',
+      `Sec-WebSocket-Key: ${key}`,
+      'Sec-WebSocket-Version: 13',
+      '',
+      '',
+    ].join('\r\n'));
+
+    const response = await this.readHttpResponse();
+    if (!response.startsWith('HTTP/1.1 101 ') && !response.startsWith('HTTP/1.0 101 ')) {
+      throw new Error(`websocket handshake failed: ${response.split('\r\n')[0] || response}`);
+    }
+    this.socket.on('data', (chunk) => this.receive(chunk));
+    this.socket.on('error', (err) => this.rejectAll(err));
+    this.parseFrames();
+  }
+
+  request(method, params) {
+    const id = this.nextId++;
+    const msg = params === undefined
+      ? { jsonrpc: '2.0', id, method }
+      : { jsonrpc: '2.0', id, method, params };
+    this.writeJson(msg);
+    return new Promise((resolve, reject) => this.pending.set(id, { resolve, reject }));
+  }
+
+  notify(method, params) {
+    const msg = params === undefined ? { jsonrpc: '2.0', method } : { jsonrpc: '2.0', method, params };
+    this.writeJson(msg);
+  }
+
+  writeJson(msg) {
+    this.writeFrame(0x1, Buffer.from(JSON.stringify(msg)));
+  }
+
+  writeFrame(opcode, payload) {
+    const mask = crypto.randomBytes(4);
+    const length = payload.length;
+    let header;
+    if (length < 126) {
+      header = Buffer.from([0x80 | opcode, 0x80 | length]);
+    } else if (length < 65536) {
+      header = Buffer.alloc(4);
+      header[0] = 0x80 | opcode;
+      header[1] = 0x80 | 126;
+      header.writeUInt16BE(length, 2);
+    } else {
+      header = Buffer.alloc(10);
+      header[0] = 0x80 | opcode;
+      header[1] = 0x80 | 127;
+      header.writeBigUInt64BE(BigInt(length), 2);
+    }
+    const masked = Buffer.alloc(length);
+    for (let i = 0; i < length; i += 1) masked[i] = payload[i] ^ mask[i % 4];
+    this.socket.write(Buffer.concat([header, mask, masked]));
+  }
+
+  readHttpResponse() {
+    return new Promise((resolve, reject) => {
+      const onData = (chunk) => {
+        if (chunk) this.buffer = Buffer.concat([this.buffer, chunk]);
+        const marker = this.buffer.indexOf('\r\n\r\n');
+        if (marker === -1) return;
+        const head = this.buffer.slice(0, marker).toString('utf8');
+        this.buffer = this.buffer.slice(marker + 4);
+        cleanup();
+        resolve(head);
+        this.parseFrames();
+      };
+      const onError = (err) => {
+        cleanup();
+        reject(err);
+      };
+      const cleanup = () => {
+        this.socket.off('data', onData);
+        this.socket.off('error', onError);
+      };
+      this.socket.on('data', onData);
+      this.socket.on('error', onError);
+      onData();
+    });
+  }
+
+  receive(chunk) {
+    this.buffer = Buffer.concat([this.buffer, chunk]);
+    this.parseFrames();
+  }
+
+  parseFrames() {
+    while (this.buffer.length >= 2) {
+      const first = this.buffer[0];
+      const second = this.buffer[1];
+      const opcode = first & 0x0f;
+      const masked = Boolean(second & 0x80);
+      let length = second & 0x7f;
+      let offset = 2;
+      if (length === 126) {
+        if (this.buffer.length < offset + 2) return;
+        length = this.buffer.readUInt16BE(offset);
+        offset += 2;
+      } else if (length === 127) {
+        if (this.buffer.length < offset + 8) return;
+        const big = this.buffer.readBigUInt64BE(offset);
+        if (big > BigInt(Number.MAX_SAFE_INTEGER)) throw new Error('websocket frame too large');
+        length = Number(big);
+        offset += 8;
+      }
+      const maskLength = masked ? 4 : 0;
+      if (this.buffer.length < offset + maskLength + length) return;
+      const mask = masked ? this.buffer.slice(offset, offset + 4) : null;
+      offset += maskLength;
+      let payload = this.buffer.slice(offset, offset + length);
+      this.buffer = this.buffer.slice(offset + length);
+      if (mask) {
+        payload = Buffer.from(payload);
+        for (let i = 0; i < payload.length; i += 1) payload[i] ^= mask[i % 4];
+      }
+      if (opcode === 0x8) {
+        this.rejectAll(new Error('websocket closed'));
+        return;
+      }
+      if (opcode === 0x9) {
+        this.writeFrame(0xA, payload);
+        continue;
+      }
+      if (opcode !== 0x1) continue;
+      this.handleJson(payload.toString('utf8'));
+    }
+  }
+
+  handleJson(text) {
+    let msg;
+    try {
+      msg = JSON.parse(text);
+    } catch {
+      return;
+    }
+    if (Object.prototype.hasOwnProperty.call(msg, 'id') && this.pending.has(msg.id)) {
+      const { resolve, reject } = this.pending.get(msg.id);
+      this.pending.delete(msg.id);
+      if (msg.error) reject(new Error(JSON.stringify(msg.error)));
+      else resolve(msg.result);
+      return;
+    }
+    if (this.onMessage) this.onMessage(msg);
+  }
+
+  rejectAll(err) {
+    for (const { reject } of this.pending.values()) reject(err);
+    this.pending.clear();
+  }
+
+  close() {
+    if (this.socket) this.socket.end();
+  }
+}
+
+function once(emitter, event) {
+  return new Promise((resolve, reject) => {
+    const onEvent = (...args) => {
+      cleanup();
+      resolve(args);
+    };
+    const onError = (err) => {
+      cleanup();
+      reject(err);
+    };
+    const cleanup = () => {
+      emitter.off(event, onEvent);
+      emitter.off('error', onError);
+    };
+    emitter.once(event, onEvent);
+    emitter.once('error', onError);
+  });
+}
+
 function messageKind(msg, pending) {
   if (Object.prototype.hasOwnProperty.call(msg, 'id') && msg.method) return 'serverRequest';
   if (Object.prototype.hasOwnProperty.call(msg, 'id') && pending.has(msg.id)) return 'clientResponse';
@@ -232,6 +446,9 @@ async function rpcCallSequence(opts, schema, calls) {
   if (opts.startDaemon) {
     const started = runSync('codex', ['app-server', 'daemon', 'start']);
     if (!started.ok) die(`daemon start failed: ${started.stderr || started.stdout || started.status}`);
+  }
+  if (opts.transport === 'direct' || (opts.transport === 'auto' && canUseDirectTransport(opts))) {
+    return rpcCallSequenceDirect(opts, calls);
   }
   const [cmd, args] = transportCommand(opts, schema);
   const child = spawn(cmd, args, { stdio: ['pipe', 'pipe', 'pipe'] });
@@ -284,6 +501,7 @@ async function rpcCallSequence(opts, schema, calls) {
       clientInfo: { name: 'codex-appctl', version: VERSION },
       capabilities: { experimentalApi: true, optOutNotificationMethods: [] },
     });
+    child.stdin.write(JSON.stringify({ method: 'initialized' }) + '\n');
     const results = [];
     for (const call of calls) {
       const params = typeof call.params === 'function' ? call.params(results[results.length - 1], results) : call.params;
@@ -300,6 +518,63 @@ async function rpcCallSequence(opts, schema, calls) {
     clearTimeout(timer);
     child.kill('SIGTERM');
     die(`${calls.map((call) => call.method).join(', ')} failed: ${err.message}${stderr ? `\n${stderr}` : ''}`);
+  }
+}
+
+async function rpcCallSequenceDirect(opts, calls) {
+  const client = new UnixWebSocketRpc(directSocketPath(opts));
+  const turnWaiters = new Map();
+  let connected = false;
+  const timer = setTimeout(() => {
+    client.close();
+    die(`timed out waiting for ${calls.map((call) => call.method).join(', ')}`);
+  }, opts.timeout * 1000);
+  client.onMessage = (msg) => {
+    const pending = new Map();
+    const kind = messageKind(msg, pending);
+    if (kind === 'serverRequest') {
+      client.writeJson(serverResponseForRequest(msg));
+      return;
+    }
+    if (kind === 'turnCompleted') {
+      const turnId = msg.params?.turn?.id;
+      if (turnId && turnWaiters.has(turnId)) {
+        const { resolve } = turnWaiters.get(turnId);
+        turnWaiters.delete(turnId);
+        resolve(msg.params.turn);
+      }
+    }
+  };
+  function waitForTurn(turnId) {
+    return new Promise((resolve) => turnWaiters.set(turnId, { resolve }));
+  }
+  try {
+    await client.connect();
+    connected = true;
+    await client.request('initialize', {
+      clientInfo: { name: 'codex-appctl', version: VERSION },
+      capabilities: { experimentalApi: true, optOutNotificationMethods: [] },
+    });
+    client.notify('initialized');
+    const results = [];
+    for (const call of calls) {
+      const params = typeof call.params === 'function' ? call.params(results[results.length - 1], results) : call.params;
+      const result = await client.request(call.method, params);
+      if (call.waitForTurn && result.turn?.id && result.turn.status !== 'completed') {
+        result.turn = await waitForTurn(result.turn.id);
+      }
+      results.push(result);
+    }
+    clearTimeout(timer);
+    client.close();
+    return results;
+  } catch (err) {
+    clearTimeout(timer);
+    client.close();
+    if (opts.transport === 'direct' || connected) {
+      die(`${calls.map((call) => call.method).join(', ')} failed: ${err.message}`);
+    }
+    return rpcCallSequence({ ...opts, transport: 'stdio' }, { methods: calls.map((call) => call.method) }, calls);
   }
 }
 
@@ -359,7 +634,7 @@ function paramsFor(rest) {
       return { method: 'thread/turns/list', params: compact({ threadId, limit: intOrNull(o.limit), itemsView: o.full ? 'full' : null }) };
     }
     if (sub === 'start') {
-      const o = parseOptions(tail);
+      const o = parseOptions(tail, { boolean: ['wait'] });
       if (!o.cwd || !o.message) die('threads start requires --cwd and --message');
       const sequence = [
         { method: 'thread/start', params: compact({ cwd: o.cwd, sessionStartSource: 'startup' }) },
@@ -372,13 +647,13 @@ function paramsFor(rest) {
       }
       sequence.push({
         method: 'turn/start',
-        waitForTurn: true,
+        waitForTurn: Boolean(o.wait),
         params: (_last, results) => ({ threadId: threadIdFrom(results[0]), input: userInput(o.message) }),
       });
       return { sequence };
     }
     if (sub === 'send') {
-      const o = parseOptions(tail);
+      const o = parseOptions(tail, { boolean: ['wait'] });
       const threadId = o._[0] || die('threads send requires THREAD_ID');
       if (!o.message) die('threads send requires --message');
       return {
@@ -386,7 +661,7 @@ function paramsFor(rest) {
           { method: 'thread/resume', params: { threadId, excludeTurns: true } },
           {
             method: 'turn/start',
-            waitForTurn: true,
+            waitForTurn: Boolean(o.wait),
             params: (r) => ({ threadId: threadIdFrom(r, threadId), input: userInput(o.message) }),
           },
         ],
@@ -473,8 +748,10 @@ async function doctor(opts) {
   out.daemon = daemonVersion();
   const compat = daemonCompatible(schema.version);
   out.proxyCompatible = compat.compatible;
-  out.autoTransport = 'stdio';
-  if (out.daemon.ok && out.daemon.data.status === 'running' && !compat.compatible) {
+  out.directSocket = directSocketPath(opts);
+  out.directSocketAvailable = canUseDirectTransport(opts);
+  out.autoTransport = out.directSocketAvailable ? 'direct' : 'stdio';
+  if (!out.directSocketAvailable && out.daemon.ok && out.daemon.data.status === 'running' && !compat.compatible) {
     out.warnings.push('running daemon is not compatible with active codex version; auto will use stdio');
   }
   print(out, opts);
@@ -520,7 +797,9 @@ function selfTest(opts) {
   const list = paramsFor(['threads', 'list', '--limit', '2', '--search', 'abc']);
   const read = paramsFor(['threads', 'read', 'thread-1', '--turns']);
   const start = paramsFor(['threads', 'start', '--cwd', '/tmp/project', '--message', 'hi', '--name', 'smoke']);
+  const startWait = paramsFor(['threads', 'start', '--cwd', '/tmp/project', '--message', 'hi', '--wait']);
   const send = paramsFor(['threads', 'send', 'thread-1', '--message', 'hi']);
+  const sendWait = paramsFor(['threads', 'send', 'thread-1', '--message', 'hi', '--wait']);
   const clients = paramsFor(['remote', 'clients', '--environment-id', 'env-1', '--limit', '2']);
   const currentTimeResponse = serverResponseForRequest({ id: 9, method: 'currentTime/read' }, 1_700_000_000_000);
   const requestMessage = { id: 1, method: 'currentTime/read' };
@@ -535,12 +814,14 @@ function selfTest(opts) {
     && start.sequence?.[1].method === 'thread/name/set'
     && start.sequence?.[1].params(null, [{ thread: { id: 'thread-1' } }]).name === 'smoke'
     && start.sequence?.[2].method === 'turn/start'
-    && start.sequence?.[2].waitForTurn === true
+    && start.sequence?.[2].waitForTurn === false
+    && startWait.sequence?.[1].waitForTurn === true
     && start.sequence?.[2].params(null, [{ thread: { id: 'thread-1' } }]).threadId === 'thread-1'
     && send.sequence?.[0].method === 'thread/resume'
     && send.sequence?.[0].params.threadId === 'thread-1'
     && send.sequence?.[1].method === 'turn/start'
-    && send.sequence?.[1].waitForTurn === true
+    && send.sequence?.[1].waitForTurn === false
+    && sendWait.sequence?.[1].waitForTurn === true
     && send.sequence?.[1].params({ thread: { id: 'thread-1' } }).threadId === 'thread-1'
     && currentTimeResponse.result.currentTimeAt === 1_700_000_000
     && messageKinds[0] === 'serverRequest'
