@@ -44,7 +44,7 @@ skills = [ "improve" ]
 
 ["mitsuhiko/agent-stuff"]
 url = "https://github.com/mitsuhiko/agent-stuff"
-skills = [ "tmux" ]
+skills = [] # tmux is vendored under skills/ so it can diverge from the plugin version
 extensions_path = "extensions/*.ts"
 extensions = [ "context" ]
 
