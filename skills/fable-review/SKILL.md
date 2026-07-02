@@ -29,7 +29,8 @@ true, but do not dismiss them just because they are inconvenient or surprising.
    - the intended behavior and constraints from the user
    - relevant verification already run and any failures
    - the output format: findings first, severity, file/line references, and no praise-only summary
-4. Run Claude in print mode with Fable and a small tool surface.
+4. Run Claude in print mode with Fable, stream JSON output, Read, and full
+   Bash access.
 5. Triage the response:
    - take each finding seriously and inspect the relevant code path
    - prefer Fable's judgment when the issue is plausible and your local reading is inconclusive
@@ -47,23 +48,58 @@ Write the prompt to a temporary file, then pass it through stdin. In print mode,
 this Claude CLI expects prompt input on stdin; do not pass the prompt as a
 positional shell argument.
 
+Write stream JSON to a file instead of letting it fill the calling agent's
+context. Start the review with `zmx` as a detached background job, then tail or
+sample the JSONL file when you want progress.
+
 Prefer this shape from the repo root:
 
 ```bash
-claude -p \
+SESSION="fable-review-$(date -u +%Y%m%dT%H%M%SZ)"
+RUN_DIR="${TMPDIR:-/tmp}/$SESSION"
+mkdir -p "$RUN_DIR"
+PROMPT="$RUN_DIR/prompt.md"
+STREAM="$RUN_DIR/stream.jsonl"
+ERR="$RUN_DIR/stderr.log"
+
+# Write the review prompt to "$PROMPT" before starting Claude.
+CLAUDE_CMD="claude -p \
   --model claude-fable-5 \
-  --tools "Read,Bash" \
-  --allowedTools "Read,Bash(git *),Bash(rg *),Bash(fd *),Bash(sed *)" \
-  < /tmp/fable-review-prompt.md
+  --output-format stream-json \
+  --include-partial-messages \
+  --include-hook-events \
+  --tools 'Read,Bash' \
+  --allowedTools 'Read,Bash' \
+  < '$PROMPT' > '$STREAM' 2> '$ERR'"
+zmx run "$SESSION" -d bash -lc "$CLAUDE_CMD" >/dev/null 2>&1
+printf '%s\n' "$SESSION" > "$RUN_DIR/zmx-session"
+printf 'Fable review started in %s\n' "$RUN_DIR"
 ```
 
 Use `--tools "Read"` when shell access is unnecessary. Add `--add-dir <path>`
 only when the review requires files outside the current working directory.
 
+Check progress without loading the full stream:
+
+```bash
+tail -n 20 "$STREAM"
+zmx list --short
+tail -n 20 "$ERR"
+```
+
+When the run finishes, read only the final result event first:
+
+```bash
+zmx wait "$(cat "$RUN_DIR/zmx-session")"
+rg -n '"type":"result"' "$STREAM" | tail -n 1
+```
+
 If the installed Claude CLI behaves unexpectedly, first probe with:
 
 ```bash
-printf '%s\n' "Reply ok." | claude -p --model claude-fable-5 --tools ""
+printf '%s\n' "Reply ok." \
+  | claude -p --model claude-fable-5 --output-format stream-json --tools "" \
+  > /tmp/fable-review-probe.jsonl
 ```
 
 ## Prompt Template
@@ -107,7 +143,7 @@ Do not provide a general summary unless there are no findings.
   range and files instead.
 - Do not grant edit tools for review-only work.
 - Do not use `--dangerously-skip-permissions` for normal reviews.
-- If Fable needs broader shell access, rerun with a more specific
-  `--allowedTools` list rather than opening all tools.
+- Grant full Bash intentionally so Fable can inspect the repo without command
+  allowlist friction.
 - Preserve secrets: do not paste `.env`, credentials, tokens, or private keys
   into the prompt.
