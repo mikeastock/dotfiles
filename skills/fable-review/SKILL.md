@@ -65,6 +65,7 @@ ERR="$RUN_DIR/stderr.log"
 # Write the review prompt to "$PROMPT" before starting Claude.
 CLAUDE_CMD="claude -p \
   --model claude-fable-5 \
+  --effort high \
   --output-format stream-json \
   --include-partial-messages \
   --include-hook-events \
