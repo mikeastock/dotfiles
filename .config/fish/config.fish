@@ -216,6 +216,11 @@ fish_add_path ~/.bun/bin
 ####### Amp
 fish_add_path $HOME/.amp/bin
 
+####### BAML
+if test -d $HOME/.baml/bin
+  fish_add_path $HOME/.baml/bin
+end
+
 ####### Postgres 17 (macOS only)
 if test -d /opt/homebrew/opt/postgresql@17/bin
   fish_add_path /opt/homebrew/opt/postgresql@17/bin/
