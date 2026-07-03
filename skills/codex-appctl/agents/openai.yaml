@@ -1,6 +1,0 @@
-interface:
-  display_name: "Codex App Control"
-  short_description: "Manage Codex app threads and remote control from CLI-only environments."
-  default_prompt: "Use $codex-appctl to inspect Codex app thread state with read-only commands first, then perform explicit requested thread or remote-control actions."
-policy:
-  allow_implicit_invocation: false

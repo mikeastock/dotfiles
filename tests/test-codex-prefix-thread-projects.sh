@@ -8,36 +8,34 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/test-helpers.sh"
 
-trap cleanup EXIT
+server_pid=""
+
+cleanup_test() {
+    if [ -n "$server_pid" ]; then
+        kill "$server_pid" 2>/dev/null || true
+        wait "$server_pid" 2>/dev/null || true
+    fi
+    cleanup
+}
+
+trap cleanup_test EXIT
 
 log_test "codex-prefix-thread-projects removes merged labels from thread names"
 
 setup_sandbox
 
-FAKE_CODEX_APPCTL="$SANDBOX_DIR/codex-appctl"
 export PROJECT_DIR
-cat >"$FAKE_CODEX_APPCTL" <<'EOF'
-#!/usr/bin/env bash
-set -euo pipefail
+socket_path="$SANDBOX_DIR/codex-app-server.sock"
+ready_path="$SANDBOX_DIR/codex-rpc-ready"
+node "$PROJECT_DIR/tests/mock-codex-rpc-server.js" "$socket_path" "$ready_path" >"$SANDBOX_DIR/mock-codex-rpc.log" 2>&1 &
+server_pid=$!
+for _ in {1..50}; do
+    [ -e "$ready_path" ] && break
+    sleep 0.1
+done
+assert_file_exists "$ready_path" "mock Codex RPC server started"
 
-method="$2"
-params="$3"
-
-if [ "$method" != "thread/list" ]; then
-    echo "unexpected method: $method" >&2
-    exit 1
-fi
-
-archived=$(node -e 'const params = JSON.parse(process.argv[1]); console.log(params.archived ? "true" : "false");' "$params")
-if [ "$archived" = "true" ]; then
-    printf '{"data":[],"nextCursor":null}\n'
-else
-    printf '{"data":[{"id":"thread-1","cwd":"%s","path":"%s","name":"a6(merged): Fix checkout flow"}],"nextCursor":null}\n' "$PROJECT_DIR/../app6" "$PROJECT_DIR"
-fi
-EOF
-chmod +x "$FAKE_CODEX_APPCTL"
-
-output=$(HOME="$SANDBOX_DIR" CODEX_APPCTL_BIN="$FAKE_CODEX_APPCTL" node "$PROJECT_DIR/bin/codex-prefix-thread-projects" --dry-run --json)
+output=$(HOME="$SANDBOX_DIR" CODEX_APP_SERVER_SOCKET="$socket_path" node "$PROJECT_DIR/bin/codex-prefix-thread-projects" --dry-run --json)
 next_name=$(node -e 'const report = JSON.parse(process.argv[1]); console.log(report.changes[0]?.nextName || "");' "$output")
 assert_equals "$next_name" "a6: Fix checkout flow" "merged prefix is normalized to the plain project prefix"
 
@@ -46,5 +44,9 @@ assert_output_not_contains "$help_output" "--detect-merged" "help does not adver
 
 cron_config=$(<"$PROJECT_DIR/configs/cron/codex-prefix-thread-projects.cron")
 assert_output_not_contains "$cron_config" "--detect-merged" "cron job does not request merged detection"
+
+kill "$server_pid"
+wait "$server_pid" 2>/dev/null || true
+server_pid=""
 
 print_summary

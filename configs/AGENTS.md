@@ -92,25 +92,10 @@
 ## Codex Remote Thread Tools
 
 - Prefer native harness thread tools when they are available.
-- When Codex app thread/session tools are unavailable or unreliable in a remote environment, use `codex-appctl` instead of ad hoc `codex app-server` JSON-RPC snippets.
-- Start with `codex-appctl doctor` to verify the local Codex app-server schema and transport.
-- Use read-only commands before mutating commands:
-  - `codex-appctl threads list --limit 20`
-  - `codex-appctl threads search "text" --limit 20`
-  - `codex-appctl threads read <thread-id> --turns`
-  - `codex-appctl remote status`
-- Only run mutating commands when the user explicitly asks:
-  - `codex-appctl threads start --cwd <path> --message <text> --name <name>`
-  - `codex-appctl threads send <thread-id> --message <text>`
-  - `codex-appctl threads rename <thread-id> <name>`
-  - `codex-appctl threads archive <thread-id>`
-  - `codex-appctl threads unarchive <thread-id>`
-  - `codex-appctl threads fork <thread-id> --cwd <path>`
-  - `codex-appctl threads resume <thread-id>`
-  - `codex-appctl remote enable`
-  - `codex-appctl remote disable`
+- When native Codex app thread/session tools are unavailable, talk to the Codex app-server RPC surface directly through the managed control socket.
+- Start with read-only RPCs before mutating RPCs, such as `thread/list`, `thread/search`, `thread/read`, and `remoteControl/status/read`.
+- Only call mutating RPCs when the user explicitly asks, such as `thread/start`, `turn/start`, `thread/name/set`, `thread/archive`, `thread/unarchive`, `thread/fork`, `thread/resume`, `remoteControl/enable`, or `remoteControl/disable`.
 - Do not depend on `codex-remote-tools`.
-- Use `--json` for machine-readable output and `--plain` for readable summaries.
 
 ## Mindset & Process
 

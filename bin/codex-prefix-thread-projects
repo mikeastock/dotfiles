@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
-const { execFile } = require("node:child_process");
 const { existsSync } = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
+const { rpc } = require("./codex-rpc-client");
 
 const VERSION = "0.1.0";
 const DEFAULT_LIMIT = 100;
@@ -75,7 +75,7 @@ async function run(argv) {
     if (options.dryRun) continue;
 
     try {
-      await codexAppctlRpc("thread/name/set", {
+      await rpc("thread/name/set", {
         name: change.nextName,
         threadId: change.threadId,
       });
@@ -141,7 +141,7 @@ async function listThreadPages({ limit, archived }) {
     };
     if (cursor) params.cursor = cursor;
 
-    const result = await codexAppctlRpc("thread/list", params);
+    const result = await rpc("thread/list", params);
     threads.push(...result.data);
 
     if (!result.nextCursor) return threads;
@@ -347,33 +347,6 @@ function oneLine(value) {
   return value.replace(/\s+/g, " ").trim();
 }
 
-function codexAppctlRpc(method, params) {
-  return new Promise((resolve, reject) => {
-    execFile(codexAppctlPath(), [
-      "rpc",
-      method,
-      JSON.stringify(params),
-    ], { maxBuffer: 50 * 1024 * 1024 }, (error, stdout, stderr) => {
-      if (error) {
-        const message = stderr.trim() || error.message;
-        reject(new Error(message));
-        return;
-      }
-
-      try {
-        resolve(JSON.parse(stdout));
-      } catch (parseError) {
-        reject(new Error(`Invalid codex-appctl JSON: ${parseError.message}`));
-      }
-    });
-  });
-}
-
-function codexAppctlPath() {
-  if (process.env.CODEX_APPCTL_BIN) return process.env.CODEX_APPCTL_BIN;
-  return path.join(__dirname, "codex-appctl");
-}
-
 function printReport({ changes, dryRun, failures, json }) {
   if (json) {
     console.log(JSON.stringify({ dryRun, changes, failures }, null, 2));
@@ -434,7 +407,7 @@ Options:
   -h, --help      Show help
 
 Environment:
-  CODEX_APPCTL_BIN  Path to codex-appctl
+  CODEX_APP_SERVER_SOCKET  Path to the Codex app-server control socket
 `);
 }
 
