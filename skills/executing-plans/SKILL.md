@@ -55,3 +55,4 @@ Ask rather than guess on those — and never force through a blocker.
 - Conservative + logged + moving beats stopped + asking, except on architecture
 - Never skip or reinterpret a verification
 - The Deviations log is the first thing your reviewer reads — write it as you go, not from memory
+- implementation-notes.md outlives the task: it is deviation-retro input — never delete it as cleanup; the retro consumes it
