@@ -9,54 +9,49 @@ metadata:
 
 ## Overview
 
-Load plan, review critically, execute all tasks, report when complete.
+The plan is a map; you are in the territory. Execute with judgment: honor the plan's decisions and their why, hit its acceptance criteria and gates exactly, and improvise the keystrokes in between. When the territory contradicts the map, that's not a crisis — it's data. Handle it with the deviation protocol.
 
 **Announce at start:** "I'm using the executing-plans skill to implement this plan."
 
-## The Process
+## Step 1: Territory Check
 
-### Step 1: Load and Review Plan
-1. Read plan file
-2. Review critically - identify any questions or concerns about the plan
-3. If concerns: Raise them with your human partner before starting
-4. If no concerns: Proceed to execution
+Before writing anything:
 
-### Step 2: Execute Tasks
+1. Read the plan fully — especially Decisions & why, the scope fence, and Residual Unknowns & Deviation Policy.
+2. Verify the map against the territory: do the cited files/lines still look like the plan assumes? Has the base branch moved? Do the plan's assumptions hold?
+3. Genuine contradictions with the plan's *decisions* (not its mechanics) → raise them with your partner before starting.
+4. Map checks out → start. Keep an `implementation-notes.md` beside the work from the first task.
+
+## Step 2: Execute Tasks
 
 For each task:
-1. Mark as in_progress
-2. Follow each step exactly (plan has bite-sized steps)
-3. Run verifications as specified
-4. Mark as completed
-5. Continue to next task
+1. Mark as in_progress.
+2. Drive toward its acceptance criteria. Steps in the plan are guidance; the criteria and gates are the contract. Tests first where the plan calls for locks.
+3. Run the task's verifications; don't skip gates, don't reinterpret expected output.
+4. Mark as completed and commit per the plan's git rules.
 
-### Step 3: Complete
+**Deviation protocol** (from the plan's Residual Unknowns & Deviation Policy): when implementation reveals the map is wrong — an edge case, a stale assumption, a better local shape —
+- take the **conservative** option that preserves the plan's intent,
+- log it under **"Deviations"** in `implementation-notes.md` (what you found, what you did, why),
+- keep going.
 
-After all tasks complete and verified:
-- Run final verifications as specified in the plan
-- Summarize completed work and verification output
+Deviations are reviewed afterward, not litigated mid-flight. The exceptions that DO stop the work:
+- the conflict is **architecture-shaping** (invalidates a Decision, not a mechanic),
+- staying inside the **scope fence** has become impossible,
+- a gate fails repeatedly and the fix isn't inside your fence,
+- you genuinely cannot tell what the plan intends.
 
-## When to Stop and Ask for Help
+Ask rather than guess on those — and never force through a blocker.
 
-**STOP executing immediately when:**
-- Hit a blocker (missing dependency, test fails, instruction unclear)
-- Plan has critical gaps preventing starting
-- You don't understand an instruction
-- Verification fails repeatedly
+## Step 3: Complete
 
-**Ask for clarification rather than guessing.**
-
-## When to Revisit Earlier Steps
-
-**Return to Review (Step 1) when:**
-- Partner updates the plan based on your feedback
-- Fundamental approach needs rethinking
-
-**Don't force through blockers** - stop and ask.
+- Run the plan's final gates exactly; capture real output.
+- Report brief, **leading with deviations and judgment calls** — they are the review surface. Then: verdict, gates output, what was built. A reviewer should be able to read the Deviations log and know exactly where to look hardest.
 
 ## Remember
-- Review plan critically first
-- Follow plan steps exactly
-- Don't skip verifications
-- Reference skills when plan says to
-- Stop when blocked, don't guess
+
+- Territory check before the first edit
+- Acceptance criteria and gates are the contract; keystrokes are yours
+- Conservative + logged + moving beats stopped + asking, except on architecture
+- Never skip or reinterpret a verification
+- The Deviations log is the first thing your reviewer reads — write it as you go, not from memory
