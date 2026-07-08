@@ -9,6 +9,8 @@ metadata:
 
 Write Ruby that can be read once: plain, domain-named, linear, explicit, and allergic to generic-agent cleverness.
 
+Scope note (Mike, 2026-07-08): the no-early-return rule is for app/domain code. In framework-shaped code — middleware, Rack/Sidekiq plumbing, cable connection hooks, library glue — early returns are acceptable at your discretion when they read better than a block `if`.
+
 | Agent default | Mike's style |
 | --- | --- |
 | Guard return / early exit | Invert into a block `if` |
@@ -320,7 +322,7 @@ end
 
 ## Hard No
 
-- No early returns.
+- No early returns in app/domain code (framework-shaped code: discretion — see scope note).
 - No `raise ... if ...`.
 - No single-use locals.
 - No `set_*` record-loading `before_action`s or controller ivars for records.
