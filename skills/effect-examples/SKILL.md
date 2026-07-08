@@ -7,7 +7,7 @@ metadata:
 
 # Effect Examples
 
-Write Effect code that reads plainly top to bottom: one domain per module, a public API you can scan in fifteen lines, tagged errors callers match by name, and exactly one place where Promises leak in or out. These idioms are distilled from production Effect v4 codebases — [opencode](https://github.com/sst/opencode), [executor](https://github.com/RhysSullivan/executor), and [effect-smol](https://github.com/Effect-TS/effect-smol) (the library authors' own code). Every example links to the real source it was pulled from (pinned permalinks; code shown is lightly trimmed for teaching).
+Write Effect code that reads plainly top to bottom: one domain per module, a public API you can scan in fifteen lines, tagged errors callers match by name, and exactly one place where Promises leak in or out. These idioms are distilled from production Effect v4 codebases — [opencode](https://github.com/anomalyco/opencode), [executor](https://github.com/UsefulSoftwareCo/executor), and [effect-smol](https://github.com/Effect-TS/effect-smol) (the library authors' own code). Every example links to the real source it was pulled from (pinned permalinks; code shown is lightly trimmed for teaching).
 
 | Agent default | House style |
 | --- | --- |
@@ -24,7 +24,7 @@ Write Effect code that reads plainly top to bottom: one domain per module, a pub
 
 ## Module anatomy
 
-One domain per file, in a fixed order: self-export, types, errors, `Interface`, tag, private layer, exported layers. A reader gets the whole public API from the `Interface` block without scrolling into the implementation. Skeleton condensed from opencode's [`catalog.ts`](https://github.com/sst/opencode/blob/3a95d56144dbac6286cb7d2e890235cc89c7a35d/packages/core/src/catalog.ts#L1-L76) (301 lines, the model single-domain module):
+One domain per file, in a fixed order: self-export, types, errors, `Interface`, tag, private layer, exported layers. A reader gets the whole public API from the `Interface` block without scrolling into the implementation. Skeleton condensed from opencode's [`catalog.ts`](https://github.com/anomalyco/opencode/blob/3a95d56144dbac6286cb7d2e890235cc89c7a35d/packages/core/src/catalog.ts#L1-L76) (301 lines, the model single-domain module):
 
 ```ts
 export * as Catalog from "./catalog"   // consumers write Catalog.Service, Catalog.OperationError
@@ -73,7 +73,7 @@ Notes on the shape:
 - The `export * as Catalog from "./catalog"` self-export on line 1 gives every consumer the namespaced form for free — `Catalog.Service`, `Catalog.OperationError` — without a barrel file.
 - Group the API in nested objects (`provider.*`, `model.*`), not flat names. The Interface then reads like a table of contents.
 - Return types on methods are declared once, in the `Interface`. Implementations never re-annotate them.
-- Start files that carry invariants with a banner comment stating purpose and the invariants — not what the code does line by line. Real example (executor's [`blob-store.ts:1-16`](https://github.com/RhysSullivan/executor/blob/24bccd671205d7acbe78e46c507973b5d15a7808/packages/hosts/cloudflare/src/blob-store.ts#L1-L16)):
+- Start files that carry invariants with a banner comment stating purpose and the invariants — not what the code does line by line. Real example (executor's [`blob-store.ts:1-16`](https://github.com/UsefulSoftwareCo/executor/blob/24bccd671205d7acbe78e46c507973b5d15a7808/packages/hosts/cloudflare/src/blob-store.ts#L1-L16)):
 
 ```ts
 // ---------------------------------------------------------------------------
@@ -92,7 +92,7 @@ Notes on the shape:
 
 ## Public methods: `Effect.fn` with dotted span names
 
-Every public service method is an `Effect.fn("Domain.group.method")` generator. The span name is the dotted API path — traces then read like the Interface. Parameter types are inferred from the Interface; return types are never annotated. From opencode's [`catalog.ts:176-189`](https://github.com/sst/opencode/blob/3a95d56144dbac6286cb7d2e890235cc89c7a35d/packages/core/src/catalog.ts#L176-L189):
+Every public service method is an `Effect.fn("Domain.group.method")` generator. The span name is the dotted API path — traces then read like the Interface. Parameter types are inferred from the Interface; return types are never annotated. From opencode's [`catalog.ts:176-189`](https://github.com/anomalyco/opencode/blob/3a95d56144dbac6286cb7d2e890235cc89c7a35d/packages/core/src/catalog.ts#L176-L189):
 
 ```ts
 provider: {
@@ -111,7 +111,7 @@ Named spans are for public entry points. Internal helpers are plain functions or
 
 ## Control flow inside generators
 
-Guard clauses and early returns carry the branching; `pipe(...)` appears only when the work is a pure data transform. The two halves stay visibly separate. Condensed from opencode's [`catalog.ts:234-286`](https://github.com/sst/opencode/blob/3a95d56144dbac6286cb7d2e890235cc89c7a35d/packages/core/src/catalog.ts#L234-L286) (`model.small`, the exemplar of the split):
+Guard clauses and early returns carry the branching; `pipe(...)` appears only when the work is a pure data transform. The two halves stay visibly separate. Condensed from opencode's [`catalog.ts:234-286`](https://github.com/anomalyco/opencode/blob/3a95d56144dbac6286cb7d2e890235cc89c7a35d/packages/core/src/catalog.ts#L234-L286) (`model.small`, the exemplar of the split):
 
 ```ts
 small: Effect.fn("Catalog.model.small")(function* (providerID) {
@@ -135,7 +135,7 @@ Keep gen bodies 4–10 lines. When one grows past that, split the pure parts int
 
 ## Errors
 
-Default to `Schema.TaggedErrorClass` with a domain-prefixed tag and an optional defect-typed cause. The prefix makes `catchTag` unambiguous across the app; the `cause` keeps the original throwable attached. From opencode's [`git.ts:26-42`](https://github.com/sst/opencode/blob/3a95d56144dbac6286cb7d2e890235cc89c7a35d/packages/core/src/git.ts#L26-L42):
+Default to `Schema.TaggedErrorClass` with a domain-prefixed tag and an optional defect-typed cause. The prefix makes `catchTag` unambiguous across the app; the `cause` keeps the original throwable attached. From opencode's [`git.ts:26-42`](https://github.com/anomalyco/opencode/blob/3a95d56144dbac6286cb7d2e890235cc89c7a35d/packages/core/src/git.ts#L26-L42):
 
 ```ts
 export class OperationError extends Schema.TaggedErrorClass<OperationError>()("Git.OperationError", {
@@ -146,9 +146,9 @@ export class OperationError extends Schema.TaggedErrorClass<OperationError>()("G
 }) {}
 ```
 
-(`Data.TaggedError` is fine for purely internal errors that never cross a schema boundary; anything that crosses HTTP or serialization gets the Schema form — extra annotations like an HTTP status live on the class declaration, see executor's [`errors.ts:5-18`](https://github.com/RhysSullivan/executor/blob/24bccd671205d7acbe78e46c507973b5d15a7808/packages/plugins/openapi/src/sdk/errors.ts#L5-L18) and the header comment explaining why.)
+(`Data.TaggedError` is fine for purely internal errors that never cross a schema boundary; anything that crosses HTTP or serialization gets the Schema form — extra annotations like an HTTP status live on the class declaration, see executor's [`errors.ts:5-18`](https://github.com/UsefulSoftwareCo/executor/blob/24bccd671205d7acbe78e46c507973b5d15a7808/packages/plugins/openapi/src/sdk/errors.ts#L5-L18) and the header comment explaining why.)
 
-Raise failures by yielding the error — tagged errors are Effects, so `Effect.fail` is ceremony. From executor's [`invoke.ts:87-93`](https://github.com/RhysSullivan/executor/blob/24bccd671205d7acbe78e46c507973b5d15a7808/packages/plugins/openapi/src/sdk/invoke.ts#L87-L93):
+Raise failures by yielding the error — tagged errors are Effects, so `Effect.fail` is ceremony. From executor's [`invoke.ts:87-93`](https://github.com/UsefulSoftwareCo/executor/blob/24bccd671205d7acbe78e46c507973b5d15a7808/packages/plugins/openapi/src/sdk/invoke.ts#L87-L93):
 
 ```ts
 if (value === undefined && param.required) {
@@ -156,7 +156,7 @@ if (value === undefined && param.required) {
 }
 ```
 
-Handle by tag, never by `instanceof` (real-world remap: opencode's [`ripgrep.ts:185`](https://github.com/sst/opencode/blob/3a95d56144dbac6286cb7d2e890235cc89c7a35d/packages/core/src/ripgrep.ts#L185)):
+Handle by tag, never by `instanceof` (real-world remap: opencode's [`ripgrep.ts:185`](https://github.com/anomalyco/opencode/blob/3a95d56144dbac6286cb7d2e890235cc89c7a35d/packages/core/src/ripgrep.ts#L185)):
 
 ```ts
 const result = yield* gitClone(url).pipe(
@@ -192,7 +192,7 @@ set: (key: string, value: string) =>
 
 The single biggest ceremony killer. Never write `Effect.tryPromise({ try: ..., catch: (cause) => new SomeError({...}) })` at every call site — define the adapter once per edge, and every call site collapses to a one-liner.
 
-A curried error mapper makes each `catch:` one call. From executor's [`blob-store.ts:25-70`](https://github.com/RhysSullivan/executor/blob/24bccd671205d7acbe78e46c507973b5d15a7808/packages/hosts/cloudflare/src/blob-store.ts#L25-L70):
+A curried error mapper makes each `catch:` one call. From executor's [`blob-store.ts:25-70`](https://github.com/UsefulSoftwareCo/executor/blob/24bccd671205d7acbe78e46c507973b5d15a7808/packages/hosts/cloudflare/src/blob-store.ts#L25-L70):
 
 ```ts
 const storeError = (op: string) => (cause: unknown) =>
@@ -215,7 +215,7 @@ export const makeR2BlobStore = (bucket: R2Bucket): BlobStore => ({
 });
 ```
 
-One step further: a labeled tryPromise factory, so call sites don't even spell `tryPromise`. From executor's [`fuma-runtime.ts:81-88`](https://github.com/RhysSullivan/executor/blob/24bccd671205d7acbe78e46c507973b5d15a7808/packages/core/sdk/src/fuma-runtime.ts#L81-L88):
+One step further: a labeled tryPromise factory, so call sites don't even spell `tryPromise`. From executor's [`fuma-runtime.ts:81-88`](https://github.com/UsefulSoftwareCo/executor/blob/24bccd671205d7acbe78e46c507973b5d15a7808/packages/core/sdk/src/fuma-runtime.ts#L81-L88):
 
 ```ts
 export const fumaEffect = <A>(label: string, run: () => Promise<A>): Effect.Effect<A, StorageFailure> =>
@@ -242,7 +242,7 @@ const idbRequest = <A>(
 set: (key, value) => idbRequest({ method: "set", message: "Failed to set value", key }, () => store.put({ key, value })),
 ```
 
-Name a failure union once and give it a predicate, so signatures stay short and boundary code can narrow ([`fuma-runtime.ts:14`](https://github.com/RhysSullivan/executor/blob/24bccd671205d7acbe78e46c507973b5d15a7808/packages/core/sdk/src/fuma-runtime.ts#L14), [`:69-70`](https://github.com/RhysSullivan/executor/blob/24bccd671205d7acbe78e46c507973b5d15a7808/packages/core/sdk/src/fuma-runtime.ts#L69-L70)):
+Name a failure union once and give it a predicate, so signatures stay short and boundary code can narrow ([`fuma-runtime.ts:14`](https://github.com/UsefulSoftwareCo/executor/blob/24bccd671205d7acbe78e46c507973b5d15a7808/packages/core/sdk/src/fuma-runtime.ts#L14), [`:69-70`](https://github.com/UsefulSoftwareCo/executor/blob/24bccd671205d7acbe78e46c507973b5d15a7808/packages/core/sdk/src/fuma-runtime.ts#L69-L70)):
 
 ```ts
 export type StorageFailure = StorageError | UniqueViolationError;
@@ -253,7 +253,7 @@ export const isStorageFailure = (error: unknown): error is StorageFailure =>
 
 ## The Promise boundary
 
-Domain logic never calls `Effect.runPromise`. There is one blessed edge — a `ManagedRuntime` built once — and everything Promise-shaped goes through it. From opencode's [`effect/runtime.ts:5-21`](https://github.com/sst/opencode/blob/3a95d56144dbac6286cb7d2e890235cc89c7a35d/packages/core/src/effect/runtime.ts#L5-L21):
+Domain logic never calls `Effect.runPromise`. There is one blessed edge — a `ManagedRuntime` built once — and everything Promise-shaped goes through it. From opencode's [`effect/runtime.ts:5-21`](https://github.com/anomalyco/opencode/blob/3a95d56144dbac6286cb7d2e890235cc89c7a35d/packages/core/src/effect/runtime.ts#L5-L21):
 
 ```ts
 export function makeRuntime<I, S, E>(service: Context.Service<I, S>, layer: Layer.Layer<I, E>) {
@@ -267,7 +267,7 @@ export function makeRuntime<I, S, E>(service: Context.Service<I, S>, layer: Laye
 }
 ```
 
-When a Promise-based plugin/caller needs to invoke Effect code, write one adapter seam that captures the context and exposes Promise functions — the conversion happens there, nowhere else (opencode's [`plugin/promise.ts:20-44`](https://github.com/sst/opencode/blob/3a95d56144dbac6286cb7d2e890235cc89c7a35d/packages/core/src/plugin/promise.ts#L20-L44)).
+When a Promise-based plugin/caller needs to invoke Effect code, write one adapter seam that captures the context and exposes Promise functions — the conversion happens there, nowhere else (opencode's [`plugin/promise.ts:20-44`](https://github.com/anomalyco/opencode/blob/3a95d56144dbac6286cb7d2e890235cc89c7a35d/packages/core/src/plugin/promise.ts#L20-L44)).
 
 **v4 trap:** v3 folklore says `runPromise` rejects with a `FiberFailure` wrapper. In v4 the rejection is `Cause.squash` — the raw error itself ([`internal/effect.ts:5311-5316`](https://github.com/Effect-TS/effect-smol/blob/f11ce73af60823754dc24194f4ffc561b9ea1c2d/packages/effect/src/internal/effect.ts#L5311-L5316): `throw causeSquash(exit.cause)`). Code written from v3 instincts that unwraps rejections will double-unwrap. Verify v3 habits against the source before encoding them.
 
@@ -290,7 +290,7 @@ Inside a generator the same rule makes lookups read like plain code: `if (!recor
 
 - Options objects: `readonly` fields, explicit `| undefined` over clever optionality — `{ readonly timeout: Duration | undefined }`.
 - Below the service layer, data-access seams are plain factory functions returning a typed interface — `makeR2BlobStore(bucket): BlobStore` — no `Context.Tag` ceremony for something a constructor argument already injects.
-- Pure helpers (key builders, name mappers) are hoisted above the factory/API object that uses them, not defined inline ([`blob-store.ts:23-28`](https://github.com/RhysSullivan/executor/blob/24bccd671205d7acbe78e46c507973b5d15a7808/packages/hosts/cloudflare/src/blob-store.ts#L23-L28)):
+- Pure helpers (key builders, name mappers) are hoisted above the factory/API object that uses them, not defined inline ([`blob-store.ts:23-28`](https://github.com/UsefulSoftwareCo/executor/blob/24bccd671205d7acbe78e46c507973b5d15a7808/packages/hosts/cloudflare/src/blob-store.ts#L23-L28)):
 
 ```ts
 const objectName = (namespace: string, key: string): string => `${namespace}/${key}`;
