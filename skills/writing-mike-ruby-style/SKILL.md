@@ -9,7 +9,7 @@ metadata:
 
 Write Ruby that can be read once: plain, domain-named, linear, explicit, and allergic to generic-agent cleverness.
 
-Rule shape (Mike, 2026-07-09; supersedes the 07-08 absolute): **early returns are a judgment call, not a ban.** Default to the shape that reads most explicitly — usually a block `if`/`else`, because it puts both paths on the page — but when an early return genuinely reads better (a trivial boundary bail, framework-shaped code, a method where inversion would nest the real work), use it. Err on the side of more explicit, easier-to-read code; what stays banned is reflexive guard-stacking as a habit.
+**Early returns are a judgment call, not a ban.** Default to the shape that reads most explicitly — usually a block `if`/`else`, because it puts both paths on the page — but when an early return genuinely reads better (a trivial boundary bail, framework-shaped code, a method where inversion would nest the real work), use it. Err on the side of more explicit, easier-to-read code; what stays banned is reflexive guard-stacking as a habit.
 
 | Agent default | Mike's style |
 | --- | --- |
