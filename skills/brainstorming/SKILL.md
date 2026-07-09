@@ -116,7 +116,7 @@ If this review changes the design materially, present the revised section and ge
 **Documentation:**
 
 - Write the validated design to `docs/design/YYYY-MM-DD-<topic>.md`
-- Include a **Residual Unknowns & Deviation Policy** section: the unknowns that survived discovery (things only implementation will reveal), and the standing instruction for the implementer — *when an edge case forces deviation from the plan, take the conservative option, log it under "Deviations" in an `implementation-notes.md` beside the work, and keep going.* Deviations get reviewed, not litigated mid-flight.
+- Include a **Residual Unknowns & Deviation Policy** section: the unknowns that survived discovery (things only implementation will reveal), and the standing instruction for the implementer — *when an edge case forces deviation from the plan, take the conservative option, log it under a `## Deviations` section at the bottom of the design doc, and keep going.* Deviations get reviewed, not litigated mid-flight.
 - Use elements-of-style:writing-clearly-and-concisely skill if available
 - Commit the design document to git
 
@@ -147,7 +147,7 @@ Wait for the user's response. If they request changes, make them and re-run the 
 
 **Implementation:**
 
-- Invoke the writing-plans skill to create a detailed implementation plan. The plan MUST carry the Residual Unknowns & Deviation Policy forward so the implementing session keeps the `implementation-notes.md` deviations log.
+- Invoke the writing-plans skill to create a detailed implementation plan. The plan MUST carry the Residual Unknowns & Deviation Policy forward so the implementing session logs deviations at the bottom of the design doc.
 
 ## Key Principles
 

@@ -1,13 +1,13 @@
 ---
 name: deviation-retro
-description: Use when asked for a deviation retro, when a project/milestone accumulated several implementation runs, or before deleting plan docs — mines implementation-notes Deviations logs for recurring patterns and promotes them into docs, plan templates, and skills.
+description: Use when asked for a deviation retro, when a project/milestone accumulated several implementation runs, or before deleting plan docs — mines the Deviations/As-built sections of design docs for recurring patterns and promotes them into docs, plan templates, and skills.
 metadata:
   category: superpowers
 ---
 
 # Deviation Retro
 
-Deviations are data. Every implementation run keeps an `implementation-notes.md` whose "Deviations" section records where the territory contradicted the plan (see executing-plans). This skill is the learning half: collect those logs, find what recurs, and fix the map — so the next plan doesn't contain the same defect.
+Deviations are data. Every implementation run logs a `## Deviations` section at the bottom of its design doc, recording where the territory contradicted the plan (see executing-plans); at ship it is distilled into the doc's `## As built` tail. This skill is the learning half: collect those logs, find what recurs, and fix the map — so the next plan doesn't contain the same defect.
 
 **The rule: a deviation that recurs across runs is a map defect, not executor noise. Fix the map.**
 
@@ -21,8 +21,8 @@ Deviations are data. Every implementation run keeps an `implementation-notes.md`
 
 Gather every Deviations log in reach for the period/project:
 
-- `implementation-notes.md` in live worktrees and beside plans (`docs/plans/`).
-- Archived notes from the runner, where one exists (e.g. `~/.local/state/wiki-workers/*.notes.md`).
+- `## Deviations` / `## As built` sections at the bottom of design docs (`docs/design/`), in-repo and in live worktrees.
+- Legacy: archived `~/.local/state/wiki-workers/*.notes.md` and stray `implementation-notes.md` files (the pre-2026-07-09 convention).
 - Deviations sections quoted in PR descriptions and final reports.
 
 If a run demonstrably deviated but logged nothing, note that too — a silent deviation is a reporting defect worth fixing at the source.
