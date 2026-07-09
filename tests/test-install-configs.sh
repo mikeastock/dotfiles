@@ -37,12 +37,8 @@ test_config_new_files() {
     # Verify all files were created
     assert_file_exists "$SANDBOX_DIR/.config/amp/settings.json" "Amp settings file was created"
     assert_file_exists "$SANDBOX_DIR/.codex/config.toml" "Codex config file was created"
-    assert_file_exists "$SANDBOX_DIR/.codex/fireworks-glm52.config.toml" "Codex Fireworks profile file was created"
-    local fireworks_profile
-    fireworks_profile=$(cat "$SANDBOX_DIR/.codex/fireworks-glm52.config.toml")
-    assert_output_contains "$fireworks_profile" 'model_provider = "fireworks"' "Codex Fireworks profile selects Fireworks provider"
-    assert_output_contains "$fireworks_profile" 'apps = false' "Codex Fireworks profile disables apps"
-    assert_output_contains "$fireworks_profile" 'multi_agent = false' "Codex Fireworks profile disables multi-agent"
+    assert_file_not_exists "$SANDBOX_DIR/.codex/model-catalog.json" "Codex custom model catalog is absent"
+    assert_file_not_exists "$SANDBOX_DIR/.codex/fireworks-glm52.config.toml" "Codex Fireworks profile is absent"
     assert_file_exists "$SANDBOX_DIR/.codex/rules/default.rules" "Codex default rules file was created"
     assert_file_exists "$SANDBOX_DIR/.codex/hooks.json" "Codex hooks file was created"
     assert_file_not_exists "$SANDBOX_DIR/.codex/hooks/terraform_apply_gate.py" "Codex Terraform hard-gate hook is not installed"
@@ -57,6 +53,30 @@ test_config_new_files() {
     amp_json=$(cat "$SANDBOX_DIR/.config/amp/settings.json")
     assert_json_field "$amp_json" '."amp.skills.path"' "~/.config/agents/skills" "Amp: skills.path comes from amp-configs"
     assert_json_field "$amp_json" '."amp.terminal.copyOnSelect"' "false" "Amp: terminal copy-on-select comes from amp-configs"
+}
+
+# Test: Codex config does not install custom model providers or stale profiles
+test_codex_custom_models_removed() {
+    log_test "Testing Codex custom models are removed"
+    cd "$PROJECT_DIR"
+
+    mkdir -p "$SANDBOX_DIR/.codex"
+    cat > "$SANDBOX_DIR/.codex/model-catalog.json" <<'EOF'
+{"models":[]}
+EOF
+    cat > "$SANDBOX_DIR/.codex/fireworks-glm52.config.toml" <<'EOF'
+model_provider = "fireworks"
+EOF
+
+    HOME="$SANDBOX_DIR" make install-configs >/dev/null 2>&1
+
+    local codex_config
+    codex_config=$(cat "$SANDBOX_DIR/.codex/config.toml")
+
+    assert_output_not_contains "$codex_config" "model_catalog_json" "Codex config does not point at a custom model catalog"
+    assert_output_not_contains "$codex_config" "model_providers.fireworks" "Codex config does not register Fireworks"
+    assert_file_not_exists "$SANDBOX_DIR/.codex/model-catalog.json" "Codex stale custom model catalog was removed"
+    assert_file_not_exists "$SANDBOX_DIR/.codex/fireworks-glm52.config.toml" "Codex stale Fireworks profile was removed"
 }
 
 # Test: Codex config enables prompts and installs Terraform apply rules
@@ -95,46 +115,6 @@ test_codex_hooks_disabled() {
     assert_output_contains "$hooks_json" '"hooks": {}' "Codex hooks config is empty"
     assert_output_not_contains "$hooks_json" '"PreToolUse"' "Codex hooks do not hard-gate PreToolUse"
     assert_file_not_exists "$SANDBOX_DIR/.codex/hooks/terraform_apply_gate.py" "Terraform hard-gate hook script is absent"
-}
-
-# Test: Codex model catalog advertises Fireworks GLM 5.2 reasoning support
-test_codex_glm52_fireworks_provider() {
-    log_test "Testing Codex GLM 5.2 Fireworks reasoning support"
-    cd "$PROJECT_DIR"
-
-    rm -rf "$SANDBOX_DIR/.codex"
-
-    HOME="$SANDBOX_DIR" make install-configs >/dev/null 2>&1
-
-    if python3 - "$SANDBOX_DIR/.codex/model-catalog.json" <<'PY'
-import json
-import sys
-
-catalog_path = sys.argv[1]
-catalog = json.load(open(catalog_path))
-model = next(
-    model
-    for model in catalog["models"]
-    if model["slug"] == "accounts/fireworks/models/glm-5p2"
-)
-
-efforts = [level["effort"] for level in model["supported_reasoning_levels"]]
-assert model["display_name"] == "GLM 5.2 (Fireworks)"
-assert model["default_reasoning_level"] == "xhigh"
-assert efforts == ["low", "medium", "high", "xhigh"]
-assert model["supports_reasoning_summaries"] is True
-PY
-    then
-        log_info "PASS: Codex GLM 5.2 exposes Fireworks reasoning presets"
-        TESTS_PASSED=$((TESTS_PASSED + 1))
-    else
-        log_error "FAIL: Codex GLM 5.2 exposes Fireworks reasoning presets"
-        TESTS_FAILED=$((TESTS_FAILED + 1))
-    fi
-
-    local fireworks_profile
-    fireworks_profile=$(cat "$SANDBOX_DIR/.codex/fireworks-glm52.config.toml")
-    assert_output_contains "$fireworks_profile" 'model_reasoning_effort = "xhigh"' "Codex Fireworks profile defaults to xhigh reasoning"
 }
 
 # Test: Amp config preserves existing settings
@@ -343,9 +323,9 @@ main() {
     test_help_shows_config
     test_config_creates_directories
     test_config_new_files
+    test_codex_custom_models_removed
     test_codex_terraform_apply_rules
     test_codex_hooks_disabled
-    test_codex_glm52_fireworks_provider
     test_amp_preserve_existing
     test_pi_preserve_changelog_version
     test_config_idempotent
