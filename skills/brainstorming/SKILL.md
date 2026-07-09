@@ -144,7 +144,6 @@ For topics that involve visual questions (UI mockups, layouts, diagrams), offer 
 **Documentation:**
 
 - Write the validated design to `docs/design/YYYY-MM-DD-<topic>.md`
-- Use elements-of-style:writing-clearly-and-concisely skill if available
 - Commit the design document to git
 
 **Spec Review Loop:**
