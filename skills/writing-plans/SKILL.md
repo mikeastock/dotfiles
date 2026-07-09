@@ -33,7 +33,7 @@ Every plan has these sections, in this order. Volatile decisions lead; mechanics
 4. **Evidence & references** — repro output, error text, links to prior decisions with their why. Where a reference implementation exists (a library, a module, another language), point at it: source code is the highest-bandwidth spec. Never paraphrase what a file already says — cite `path:line`.
 5. **Ordered tasks** — each with **acceptance criteria** (observable behavior, not effort). Include code only where the code IS the decision: an interface signature, a tricky invariant, a locked error string. Everything else is the executor's to write.
 6. **Gates** — the exact commands that must pass, with expected output, plus environment quirks the executor will hit (toolchain activation, sandbox limits, flaky suites).
-7. **Residual Unknowns & Deviation Policy** — carried from the design doc: the unknowns only implementation will resolve, and the standing protocol — *when the territory contradicts the map, take the conservative option, log it under "Deviations" in `implementation-notes.md` beside the work, and keep going. Stop only for architecture-shaping conflicts or scope-fence pressure.*
+7. **Residual Unknowns & Deviation Policy** — carried from the design doc: the unknowns only implementation will resolve, and the standing protocol — *when the territory contradicts the map, take the conservative option, log it under a `## Deviations` section at the bottom of the design doc, and keep going. Stop only for architecture-shaping conflicts or scope-fence pressure.*
 8. **Git & report rules** — commit convention; whether pushing/PR is in scope; report shape (verdict + gates output + deviations, brief).
 
 ## Task Granularity
