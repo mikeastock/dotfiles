@@ -27,6 +27,13 @@ INTERACTIVE_OVERRIDES = {
     "brainstorming-claude.md",
 }
 
+# Temporarily omit these planning skills; remove the three names to restore installation.
+TEMPORARILY_EXCLUDED_SKILLS = {
+    "brainstorming",
+    "executing-plans",
+    "writing-plans",
+}
+
 # Global flag for non-interactive mode
 NON_INTERACTIVE = False
 
@@ -677,8 +684,11 @@ def build_skill(name: str, source: Path, agent: str) -> bool | None:
     Returns:
         True if built successfully
         False if skipped due to missing skill markdown
-        None if skipped due to agent filtering
+        None if skipped due to agent filtering or temporary exclusion
     """
+    if name in TEMPORARILY_EXCLUDED_SKILLS:
+        return None
+
     skill_md = find_skill_markdown(source)
     if skill_md is None:
         print(f"    Warning: {source} has no SKILL.md/skill.md, skipping")

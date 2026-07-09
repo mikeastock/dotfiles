@@ -92,10 +92,14 @@ test_make_build() {
     assert_file_exists "$PROJECT_DIR/skills/how/references/explainer-prompt.md" "how references are vendored locally"
     assert_file_exists "$PROJECT_DIR/build/claude/how/SKILL.md" "how skill is built"
     assert_file_exists "$PROJECT_DIR/skills/brainstorming/SKILL.md" "brainstorming skill is vendored locally"
+    assert_file_exists "$PROJECT_DIR/skills/writing-plans/SKILL.md" "writing-plans skill is vendored locally"
+    assert_file_exists "$PROJECT_DIR/skills/executing-plans/SKILL.md" "executing-plans skill is vendored locally"
     assert_file_exists "$PROJECT_DIR/skills/verification-before-completion/SKILL.md" "verification-before-completion skill is vendored locally"
-    assert_file_exists "$PROJECT_DIR/build/amp/brainstorming/SKILL.md" "Amp builds vendored brainstorming skill"
-    assert_file_exists "$PROJECT_DIR/build/claude/brainstorming/SKILL.md" "Claude builds vendored brainstorming skill"
-    assert_file_exists "$PROJECT_DIR/build/pi/brainstorming/SKILL.md" "Pi builds vendored brainstorming skill"
+    for agent in amp claude pi; do
+        for skill in brainstorming writing-plans executing-plans; do
+            assert_file_not_exists "$PROJECT_DIR/build/$agent/$skill" "$agent excludes $skill from the build"
+        done
+    done
     assert_file_exists "$PROJECT_DIR/build/subagents/pi/architecture-reviewer.md" "Build includes architecture-reviewer subagent"
     assert_file_exists "$PROJECT_DIR/build/claude/teach/SKILL.md" "Claude builds Matt Pocock teach skill"
     assert_file_exists "$PROJECT_DIR/build/claude/writing-great-skills/SKILL.md" "Claude builds Matt Pocock writing-great-skills skill"
@@ -103,14 +107,10 @@ test_make_build() {
     assert_file_exists "$PROJECT_DIR/build/claude/x-search/SKILL.md" "Claude builds x-search skill"
     assert_file_exists "$PROJECT_DIR/build/pi/x-search/SKILL.md" "Pi builds x-search skill"
 
-    local brainstorming_content
     local verification_content
     local semantic_commit_content
-    brainstorming_content=$(<"$PROJECT_DIR/build/claude/brainstorming/SKILL.md")
     verification_content=$(<"$PROJECT_DIR/build/claude/verification-before-completion/SKILL.md")
     semantic_commit_content=$(<"$PROJECT_DIR/build/claude/semantic-commit/SKILL.md")
-    assert_output_contains "$brainstorming_content" "Architecture Checkpoint" "Brainstorming includes architecture checkpoint"
-    assert_output_contains "$brainstorming_content" "architecture-reviewer" "Brainstorming invokes architecture reviewer"
     assert_output_contains "$verification_content" "Implementation Deviation Report" "Verification includes deviation report"
     assert_output_contains "$semantic_commit_content" "Implementation Deviation Report" "Commit workflow includes deviation report"
 
@@ -195,12 +195,14 @@ test_make_install_skills() {
         TESTS_FAILED=$((TESTS_FAILED + 1))
     fi
 
-    assert_dir_exists "$SANDBOX_DIR/.config/agents/skills/writing-plans" "Amp installs vendored superpower skills"
-    assert_dir_exists "$SANDBOX_DIR/.claude/skills/writing-plans" "Claude installs vendored superpower skills"
-    assert_dir_exists "$SANDBOX_DIR/.agents/skills/writing-plans" "Pi installs vendored superpower skills"
-    assert_dir_exists "$SANDBOX_DIR/.config/agents/skills/brainstorming" "Amp installs vendored brainstorming skill"
-    assert_dir_exists "$SANDBOX_DIR/.claude/skills/brainstorming" "Claude installs vendored brainstorming skill"
-    assert_dir_exists "$SANDBOX_DIR/.agents/skills/brainstorming" "Pi installs vendored brainstorming skill"
+    for skills_dir in \
+        "$SANDBOX_DIR/.config/agents/skills" \
+        "$SANDBOX_DIR/.claude/skills" \
+        "$SANDBOX_DIR/.agents/skills"; do
+        for skill in brainstorming writing-plans executing-plans; do
+            assert_file_not_exists "$skills_dir/$skill" "Install excludes $skill from $skills_dir"
+        done
+    done
     assert_dir_exists "$SANDBOX_DIR/.claude/skills/how" "Claude installs how skill"
     assert_dir_exists "$SANDBOX_DIR/.agents/skills/how" "Pi installs how skill"
     assert_dir_exists "$SANDBOX_DIR/.config/agents/skills/zmx" "Amp installs zmx skill"
