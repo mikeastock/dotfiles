@@ -1,3 +1,0 @@
-PATH=/home/mikeastock/.local/bin:/home/mikeastock/.local/share/mise/installs/npm-openai-codex/latest/bin:/home/mikeastock/.local/share/mise/installs/node/latest/bin:/home/linuxbrew/.linuxbrew/bin:/usr/local/bin:/usr/bin:/bin
-
-17 * * * * codex-archive-old-threads --days 14 --json --output /tmp/codex-archive-old-threads.json >>/tmp/codex-archive-old-threads.log 2>&1
