@@ -9,8 +9,6 @@ metadata:
 
 Write Ruby that can be read once: plain, domain-named, linear, explicit, and allergic to generic-agent cleverness.
 
-**Early returns are a judgment call, not a ban.** Default to the shape that reads most explicitly — usually a block `if`/`else`, because it puts both paths on the page — but when an early return genuinely reads better (a trivial boundary bail, framework-shaped code, a method where inversion would nest the real work), use it. Err on the side of more explicit, easier-to-read code; what stays banned is reflexive guard-stacking as a habit.
-
 | Agent default | Mike's style |
 | --- | --- |
 | Reflexive guard return | Judgment — usually invert into a block `if`; keep the return when it reads better |
@@ -57,7 +55,7 @@ Operations::UpdateProject.new(project:, attributes:, user:)
 
 ## Conditionals
 
-Prefer making both paths explicit: the default shape is a block `if` (never a trailing modifier for real logic). An early return is acceptable when it's genuinely the clearer read — use judgment, and when in doubt choose the more explicit shape.
+Early returns are a judgment call, not a ban. Default to the shape that reads most explicitly — usually a block `if`/`else`, because it puts both paths on the page (never a trailing modifier for real logic). Keep an early return when it genuinely reads better: a trivial boundary bail, framework-shaped code, a method where inversion would nest the real work. When in doubt, choose the more explicit shape; what stays out is reflexive guard-stacking as a habit.
 
 Instead of:
 
