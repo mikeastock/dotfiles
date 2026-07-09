@@ -9,11 +9,9 @@ metadata:
 
 Write Ruby that can be read once: plain, domain-named, linear, explicit, and allergic to generic-agent cleverness.
 
-Scope note (Mike, 2026-07-08): the no-early-return rule is for app/domain code. In framework-shaped code — middleware, Rack/Sidekiq plumbing, cable connection hooks, library glue — early returns are acceptable at your discretion when they read better than a block `if`.
-
 | Agent default | Mike's style |
 | --- | --- |
-| Guard return / early exit | Invert into a block `if` |
+| Reflexive guard return | Judgment — usually invert into a block `if`; keep the return when it reads better |
 | Stacked guard exits | One `if`/`elsif`/`else` |
 | Bare `render :new, status: ...` | `render(:new, status: ...)` |
 | `find_by` plus a nil check | `find`, then delete the dead guard |
@@ -57,7 +55,7 @@ Operations::UpdateProject.new(project:, attributes:, user:)
 
 ## Conditionals
 
-Do not exit early from a method body. Invert the check into a block `if`, never a trailing modifier.
+Early returns are a judgment call, not a ban. Default to the shape that reads most explicitly — usually a block `if`/`else`, because it puts both paths on the page (never a trailing modifier for real logic). Keep an early return when it genuinely reads better: a trivial boundary bail, framework-shaped code, a method where inversion would nest the real work. When in doubt, choose the more explicit shape; what stays out is reflexive guard-stacking as a habit.
 
 Instead of:
 
@@ -322,7 +320,6 @@ end
 
 ## Hard No
 
-- No early returns in app/domain code (framework-shaped code: discretion — see scope note).
 - No `raise ... if ...`.
 - No single-use locals.
 - No `set_*` record-loading `before_action`s or controller ivars for records.
