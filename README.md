@@ -90,7 +90,7 @@ pi
 - `oracle` — @steipete/oracle CLI workflow for second-model reviews with selected repo context
 - `fable-review` — trusted Claude Fable code review workflow using `claude -p --model claude-fable-5`
 - `writing-mike-ruby-style` — Mike's personal Ruby/Rails style (mirrors his canonical style rules)
-- `effect-ts` — canonical Effect v4 writing, review, and source-research guidance backed by the shared `/data/workspace/code/oss/effect-smol` checkout
+- `effect-ts` — concise Effect v4 workflow backed by Effect's `LLMS.md` plus shared effect-smol, opencode, and executor reference checkouts
 - `prepare-branch-context` — read-only branch diff, commit, and PR context gathering skill vendored from `jnsahaj/skills`
 - `session-learning-miner` — mine Pi session history for repeated prompts, friction, reusable workflows, and skill/template candidates
 - `zmx` — guidance for managing persistent background terminal work

@@ -2,6 +2,17 @@
 
 Use these house-style examples when the task reaches their branch. They are distilled from production Effect v4 codebases — [opencode](https://github.com/anomalyco/opencode), [executor](https://github.com/UsefulSoftwareCo/executor), and [effect-smol](https://github.com/Effect-TS/effect-smol). Every source link is a pinned permalink. Where an example combines or simplifies sources, its framing says so explicitly.
 
+## Contents
+
+- [Module anatomy](#module-anatomy)
+- [Public methods](#public-methods-effectfn-with-dotted-span-names)
+- [Control flow](#control-flow-inside-generators)
+- [Errors](#errors)
+- [SDK adapters](#adapt-the-sdk-once)
+- [Promise boundaries](#the-promise-boundary)
+- [Absence](#absence-a--undefined-two-states)
+- [Small hygiene](#small-hygiene)
+
 | Agent default | House style |
 | --- | --- |
 | Inline `Effect.tryPromise` at every call site | Adapt the SDK once — a helper per edge, call sites are one-liners |
