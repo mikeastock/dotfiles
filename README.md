@@ -26,7 +26,7 @@ make dot-all
 
 ## Agent Skills / Extensions Tooling
 
-This repo also contains reusable skills, prompt templates, and extensions for Amp, Claude Code, and Pi Coding Agent.
+This repo also contains reusable skills, prompt templates, and extensions for Amp, Claude Code, Codex, and Pi Coding Agent.
 
 ### Requirements
 
@@ -90,6 +90,7 @@ pi
 - `oracle` — @steipete/oracle CLI workflow for second-model reviews with selected repo context
 - `fable-review` — trusted Claude Fable code review workflow using `claude -p --model claude-fable-5`
 - `writing-mike-ruby-style` — Mike's personal Ruby/Rails style (mirrors his canonical style rules)
+- `effect-ts` — canonical Effect v4 writing, review, and source-research guidance backed by the shared `/data/workspace/code/oss/effect-smol` checkout
 - `prepare-branch-context` — read-only branch diff, commit, and PR context gathering skill vendored from `jnsahaj/skills`
 - `session-learning-miner` — mine Pi session history for repeated prompts, friction, reusable workflows, and skill/template candidates
 - `zmx` — guidance for managing persistent background terminal work

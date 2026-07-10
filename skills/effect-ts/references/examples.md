@@ -1,13 +1,6 @@
----
-name: effect-examples
-description: Concrete Effect v4 idioms by example — module anatomy, named spans, tagged errors, adapt-once Promise edges, control flow shape. Use when writing, reviewing, or refactoring Effect TypeScript code. Complements broader Effect setup/research skills.
-metadata:
-  agents: amp, claude, codex, pi
----
+# Worked examples
 
-# Effect Examples
-
-Write Effect code that reads plainly top to bottom: one domain per module, a public API you can scan in fifteen lines, tagged errors callers match by name, and exactly one place where Promises leak in or out. These idioms are distilled from production Effect v4 codebases — [opencode](https://github.com/anomalyco/opencode), [executor](https://github.com/UsefulSoftwareCo/executor), and [effect-smol](https://github.com/Effect-TS/effect-smol) (the library authors' own code). Every example links to the real source it was pulled from (pinned permalinks; code shown is lightly trimmed for teaching).
+Use these house-style examples when the task reaches their branch. They are distilled from production Effect v4 codebases — [opencode](https://github.com/anomalyco/opencode), [executor](https://github.com/UsefulSoftwareCo/executor), and [effect-smol](https://github.com/Effect-TS/effect-smol). Every source link is a pinned permalink. Where an example combines or simplifies sources, its framing says so explicitly.
 
 | Agent default | House style |
 | --- | --- |
