@@ -88,9 +88,6 @@ test_make_build() {
     # breadboard-reflection upstream skill has no frontmatter; build should add description
     local breadboard_skill="$PROJECT_DIR/build/claude/breadboard-reflection/SKILL.md"
     assert_file_exists "$breadboard_skill" "breadboard-reflection skill is built"
-    assert_file_exists "$PROJECT_DIR/skills/how/SKILL.md" "how skill is vendored locally"
-    assert_file_exists "$PROJECT_DIR/skills/how/references/explainer-prompt.md" "how references are vendored locally"
-    assert_file_exists "$PROJECT_DIR/build/claude/how/SKILL.md" "how skill is built"
     assert_file_exists "$PROJECT_DIR/skills/brainstorming/SKILL.md" "brainstorming skill is vendored locally"
     assert_file_exists "$PROJECT_DIR/skills/writing-plans/SKILL.md" "writing-plans skill is vendored locally"
     assert_file_exists "$PROJECT_DIR/skills/executing-plans/SKILL.md" "executing-plans skill is vendored locally"
@@ -199,8 +196,6 @@ test_make_install_skills() {
             assert_file_not_exists "$skills_dir/$skill" "Install excludes $skill from $skills_dir"
         done
     done
-    assert_dir_exists "$SANDBOX_DIR/.claude/skills/how" "Claude installs how skill"
-    assert_dir_exists "$SANDBOX_DIR/.agents/skills/how" "Pi installs how skill"
     assert_dir_exists "$SANDBOX_DIR/.config/agents/skills/zmx" "Amp installs zmx skill"
     assert_dir_exists "$SANDBOX_DIR/.claude/skills/zmx" "Claude installs zmx skill"
     assert_dir_exists "$SANDBOX_DIR/.agents/skills/zmx" "Pi installs zmx skill"
@@ -241,7 +236,7 @@ test_install_skills_removes_previous_managed_siblings() {
     rm -rf "$SANDBOX_DIR/.config/agents/skills" "$SANDBOX_DIR/.claude/skills" "$SANDBOX_DIR/.agents/skills" "$SANDBOX_DIR/.codex/skills" "$SANDBOX_DIR/.local/state/dotfiles"
 
     HOME="$SANDBOX_DIR" XDG_STATE_HOME="$SANDBOX_DIR/.local/state" make install-skills >/dev/null 2>&1
-    assert_dir_exists "$SANDBOX_DIR/.claude/skills/how" "Managed skill initially installed"
+    assert_dir_exists "$SANDBOX_DIR/.claude/skills/zmx" "Managed skill initially installed"
 
     python3 - <<PY
 import json
@@ -265,8 +260,8 @@ test_install_skills_refuses_unmanaged_name_conflict() {
     cd "$PROJECT_DIR"
 
     rm -rf "$SANDBOX_DIR/.config/agents/skills" "$SANDBOX_DIR/.claude/skills" "$SANDBOX_DIR/.agents/skills" "$SANDBOX_DIR/.codex/skills" "$SANDBOX_DIR/.local/state/dotfiles"
-    mkdir -p "$SANDBOX_DIR/.claude/skills/how"
-    cat > "$SANDBOX_DIR/.claude/skills/how/SKILL.md" <<'EOF'
+    mkdir -p "$SANDBOX_DIR/.claude/skills/zmx"
+    cat > "$SANDBOX_DIR/.claude/skills/zmx/SKILL.md" <<'EOF'
 manual conflict
 EOF
 
@@ -325,8 +320,8 @@ test_install_skills_force_claims_unmanaged_name_conflict() {
     cd "$PROJECT_DIR"
 
     rm -rf "$SANDBOX_DIR/.config/agents/skills" "$SANDBOX_DIR/.claude/skills" "$SANDBOX_DIR/.agents/skills" "$SANDBOX_DIR/.codex/skills" "$SANDBOX_DIR/.local/state/dotfiles"
-    mkdir -p "$SANDBOX_DIR/.claude/skills/how"
-    cat > "$SANDBOX_DIR/.claude/skills/how/SKILL.md" <<'EOF'
+    mkdir -p "$SANDBOX_DIR/.claude/skills/zmx"
+    cat > "$SANDBOX_DIR/.claude/skills/zmx/SKILL.md" <<'EOF'
 manual conflict
 EOF
 
@@ -334,7 +329,7 @@ EOF
     output=$(HOME="$SANDBOX_DIR" XDG_STATE_HOME="$SANDBOX_DIR/.local/state" python3 scripts/build.py install-skills --force 2>&1)
 
     assert_output_contains "$output" "Installing skills" "Forced install shows skill progress"
-    assert_output_not_contains "$(<"$SANDBOX_DIR/.claude/skills/how/SKILL.md")" "manual conflict" "Forced install overwrites conflicting unmanaged skill"
+    assert_output_not_contains "$(<"$SANDBOX_DIR/.claude/skills/zmx/SKILL.md")" "manual conflict" "Forced install overwrites conflicting unmanaged skill"
 }
 
 # Test: make install-extensions (with sandbox)
@@ -522,7 +517,7 @@ test_make_clean() {
         TESTS_FAILED=$((TESTS_FAILED + 1))
     fi
 
-    assert_file_not_exists "$SANDBOX_DIR/.claude/skills/how" "Clean removes managed skill"
+    assert_file_not_exists "$SANDBOX_DIR/.claude/skills/zmx" "Clean removes managed skill"
     assert_file_not_exists "$SANDBOX_DIR/.pi/agent/extensions/web-access" "Clean removes managed extension"
     assert_file_not_exists "$SANDBOX_DIR/.pi/agent/prompts/refactor-pass.md" "Clean removes managed prompt"
     assert_file_not_exists "$SANDBOX_DIR/.pi/agent/agents/code-reviewer.md" "Clean removes managed subagent"
