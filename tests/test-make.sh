@@ -94,7 +94,6 @@ test_make_build() {
     assert_file_exists "$PROJECT_DIR/skills/brainstorming/SKILL.md" "brainstorming skill is vendored locally"
     assert_file_exists "$PROJECT_DIR/skills/writing-plans/SKILL.md" "writing-plans skill is vendored locally"
     assert_file_exists "$PROJECT_DIR/skills/executing-plans/SKILL.md" "executing-plans skill is vendored locally"
-    assert_file_exists "$PROJECT_DIR/skills/verification-before-completion/SKILL.md" "verification-before-completion skill is vendored locally"
     for agent in amp claude pi; do
         for skill in brainstorming writing-plans executing-plans; do
             assert_file_not_exists "$PROJECT_DIR/build/$agent/$skill" "$agent excludes $skill from the build"
@@ -107,11 +106,8 @@ test_make_build() {
     assert_file_exists "$PROJECT_DIR/build/claude/x-search/SKILL.md" "Claude builds x-search skill"
     assert_file_exists "$PROJECT_DIR/build/pi/x-search/SKILL.md" "Pi builds x-search skill"
 
-    local verification_content
     local semantic_commit_content
-    verification_content=$(<"$PROJECT_DIR/build/claude/verification-before-completion/SKILL.md")
     semantic_commit_content=$(<"$PROJECT_DIR/build/claude/semantic-commit/SKILL.md")
-    assert_output_contains "$verification_content" "Implementation Deviation Report" "Verification includes deviation report"
     assert_output_contains "$semantic_commit_content" "Implementation Deviation Report" "Commit workflow includes deviation report"
 
     local breadboard_content

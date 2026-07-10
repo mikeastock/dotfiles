@@ -147,4 +147,3 @@ If the failure requires deeper investigation (e.g., unclear root cause, flaky te
 
 - **systematic-debugging**: Use for complex failures requiring root cause analysis
 - **test-driven-development**: After fixing, ensure tests follow TDD principles
-- **verification-before-completion**: Run tests locally before pushing fix

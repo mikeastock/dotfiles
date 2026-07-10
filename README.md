@@ -82,7 +82,7 @@ pi
 
 ### Notable custom skills
 
-- `brainstorming`, `writing-plans`, `executing-plans`, `test-driven-development`, `systematic-debugging`, `verification-before-completion`, `semantic-commit`, `requesting-code-review`, `receiving-code-review`, `dispatching-parallel-agents`, and `fetch-ci-build` — vendored superpower skills from `buildrtech/dotagents`; the three planning skills are temporarily excluded from installation
+- `brainstorming`, `writing-plans`, `executing-plans`, `test-driven-development`, `systematic-debugging`, `semantic-commit`, `requesting-code-review`, `receiving-code-review`, `dispatching-parallel-agents`, and `fetch-ci-build` — vendored superpower skills from `buildrtech/dotagents`; the three planning skills are temporarily excluded from installation
 - `layered-rails` — Rails layered architecture guidance (copied locally from `palkan/skills`, not managed as a plugin)
 - `babysit-pr` — GitHub PR monitoring/babysitting workflow imported from `openai/codex` commit `7e569f1`
 - `how` — architectural explanation and critique skill vendored from `poteto/how`
