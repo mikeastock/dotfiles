@@ -9,19 +9,11 @@ metadata:
 
 Use the current repository for local architecture, its installed Effect package for compatible API truth, Effect's generated documentation for guidance, and the reference repositories for source-backed patterns.
 
-## Prepare shared references
-
-Run [scripts/ensure-reference-repos.sh](scripts/ensure-reference-repos.sh) from this skill directory before Effect-specific work. It creates missing checkouts under `/data/workspace/code/oss` and validates existing paths without changing them.
-
-Treat existing paths as user state. Never fetch, pull, reset, replace, clean, or silently update them. If a checkout is incomplete, stop with the exact missing path instead of repairing it implicitly.
-
-Reference repositories:
+## Reference sources
 
 - [Effect v4 source](https://github.com/Effect-TS/effect-smol) at `/data/workspace/code/oss/effect-smol`
 - [opencode v2](https://github.com/anomalyco/opencode/tree/v2) at `/data/workspace/code/oss/opencode`
 - [executor](https://github.com/UsefulSoftwareCo/executor) at `/data/workspace/code/oss/executor`
-
-The opencode link targets its v2 Effect rewrite. The setup script preserves an existing checkout and does not switch its branch.
 
 ## Research in this order
 
