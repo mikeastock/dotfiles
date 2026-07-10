@@ -25,7 +25,7 @@ Do not make an unqualified version-sensitive claim or code change until the appl
 3. If exports, types, source, documentation, or observed behavior disagree, report the discrepancy instead of hiding it behind a precedence rule.
 4. Use [Effect v4's generated guidance](https://github.com/Effect-TS/effect-smol/blob/main/LLMS.md) as navigation into the [Effect source](https://github.com/Effect-TS/effect-smol). Confirm the ref of `/data/workspace/code/oss/effect-smol` before using it; when it does not match the target, use a matching tag or commit and verify every relevant claim there.
 5. When static inspection is ambiguous, run a minimal typecheck or runtime probe against the target dependency version.
-6. Consult [opencode v2](https://github.com/anomalyco/opencode/tree/v2) and [executor](https://github.com/UsefulSoftwareCo/executor) regularly for implementation patterns and concrete design comparisons. Verify their Effect version, re-check borrowed patterns against the target, and never treat them as API authority.
+6. Use the shared `oss` checkouts: [opencode v2](https://github.com/anomalyco/opencode/tree/v2) at `/data/workspace/code/oss/opencode` and [executor](https://github.com/UsefulSoftwareCo/executor) at `/data/workspace/code/oss/executor`. Consult them regularly for implementation patterns and concrete design comparisons. Verify each checkout's ref and Effect version, re-check borrowed patterns against the target, and never treat them as API authority.
 
 Do not import remembered Effect v3 APIs into v4 work without verifying them against the target version.
 
