@@ -55,11 +55,15 @@ test_effect_skill_install() {
         assert_output_contains "$skill_content" "/data/workspace/code/oss/effect-smol/LLMS.md" "effect-ts routes Effect documentation through LLMS.md"
         assert_output_contains "$skill_content" "https://github.com/Effect-TS/effect-smol" "effect-ts links the Effect source repository"
         assert_output_contains "$skill_content" "/data/workspace/code/oss/opencode" "effect-ts uses the shared opencode reference checkout"
-        assert_output_contains "$skill_content" "https://github.com/anomalyco/opencode" "effect-ts links the opencode reference repository"
+        assert_output_contains "$skill_content" "https://github.com/anomalyco/opencode/tree/v2" "effect-ts links the opencode v2 reference branch"
         assert_output_contains "$skill_content" "/data/workspace/code/oss/executor" "effect-ts uses the shared executor reference checkout"
         assert_output_contains "$skill_content" "https://github.com/UsefulSoftwareCo/executor" "effect-ts links the executor reference repository"
         assert_output_not_contains "$skill_content" ".repos/effect" "effect-ts does not require repository-local Effect source"
         assert_output_not_contains "$skill_content" "agents:" "build metadata is stripped from installed effect-ts"
+
+        local examples_content
+        examples_content=$(<"$skills_dir/effect-ts/references/examples.md")
+        assert_output_contains "$examples_content" "https://github.com/anomalyco/opencode/tree/v2" "Effect examples link the opencode v2 reference branch"
     done
 }
 

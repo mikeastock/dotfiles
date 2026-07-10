@@ -18,8 +18,10 @@ Treat existing paths as user state. Never fetch, pull, reset, replace, clean, or
 Reference repositories:
 
 - [Effect v4 source](https://github.com/Effect-TS/effect-smol) at `/data/workspace/code/oss/effect-smol`
-- [opencode](https://github.com/anomalyco/opencode) at `/data/workspace/code/oss/opencode`
+- [opencode v2](https://github.com/anomalyco/opencode/tree/v2) at `/data/workspace/code/oss/opencode`
 - [executor](https://github.com/UsefulSoftwareCo/executor) at `/data/workspace/code/oss/executor`
+
+The opencode link targets its v2 Effect rewrite. The setup script preserves an existing checkout and does not switch its branch.
 
 ## Research in this order
 

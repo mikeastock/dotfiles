@@ -1,6 +1,6 @@
 # Worked examples
 
-Use these house-style examples when the task reaches their branch. They are distilled from production Effect v4 codebases — [opencode](https://github.com/anomalyco/opencode), [executor](https://github.com/UsefulSoftwareCo/executor), and [effect-smol](https://github.com/Effect-TS/effect-smol). Every source link is a pinned permalink. Where an example combines or simplifies sources, its framing says so explicitly.
+Use these house-style examples when the task reaches their branch. Current reference codebases are [opencode v2](https://github.com/anomalyco/opencode/tree/v2), [executor](https://github.com/UsefulSoftwareCo/executor), and [effect-smol](https://github.com/Effect-TS/effect-smol). The opencode examples below preserve their cited Effect v4 commit; use v2 for current opencode patterns. Every source link is a pinned permalink. Where an example combines or simplifies sources, its framing says so explicitly.
 
 ## Contents
 
