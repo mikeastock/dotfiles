@@ -5,6 +5,20 @@
 **ALWAYS** set a non-interactive editor env for git continuation commands (e.g. `GIT_EDITOR=true`) when running commands like `git rebase --continue`, `git merge --continue`, or similar.
 **NEVER** use perl for scripting.
 
+## Semantic Commits
+
+**ALWAYS** write git commit messages as [Conventional Commits](https://www.conventionalcommits.org/):
+
+```
+<type>[optional scope]: <description>
+```
+
+- Use types like `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `perf`, `build`, `ci`, `style`, `revert`
+- Imperative mood in the subject ("add X", not "added X"); no trailing period
+- Scope only when it meaningfully improves clarity (e.g. `fix(parser):`)
+- Stage and commit only the changes for this task; split unrelated work into separate commits
+- Prefer a clear, useful message over pedantic format perfection
+
 ## Language Guidance
 
 ### Ruby

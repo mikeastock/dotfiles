@@ -102,10 +102,7 @@ test_make_build() {
     assert_file_exists "$PROJECT_DIR/build/amp/x-search/SKILL.md" "Amp builds x-search skill"
     assert_file_exists "$PROJECT_DIR/build/claude/x-search/SKILL.md" "Claude builds x-search skill"
     assert_file_exists "$PROJECT_DIR/build/pi/x-search/SKILL.md" "Pi builds x-search skill"
-
-    local semantic_commit_content
-    semantic_commit_content=$(<"$PROJECT_DIR/build/claude/semantic-commit/SKILL.md")
-    assert_output_contains "$semantic_commit_content" "Implementation Deviation Report" "Commit workflow includes deviation report"
+    assert_file_not_exists "$PROJECT_DIR/build/claude/semantic-commit" "semantic-commit skill is no longer built"
 
     local breadboard_content
     breadboard_content=$(<"$breadboard_skill")
