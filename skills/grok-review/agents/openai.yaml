@@ -1,0 +1,4 @@
+interface:
+  display_name: "Grok Review"
+  short_description: "Run safe, branch-scoped Grok code reviews"
+  default_prompt: "Use $grok-review to review the current branch safely against its intended base."

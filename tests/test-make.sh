@@ -145,6 +145,20 @@ test_make_build() {
     assert_output_contains "$breadboard_content" "name: breadboard-reflection" "breadboard-reflection has normalized name"
     assert_output_contains "$breadboard_content" "description:" "breadboard-reflection has synthesized description"
 
+    assert_file_exists "$PROJECT_DIR/skills/grok-review/SKILL.md" "grok-review source skill exists"
+    for agent in amp claude pi; do
+        assert_file_exists "$PROJECT_DIR/build/$agent/grok-review/SKILL.md" "$agent builds grok-review skill"
+    done
+
+    local grok_review_content
+    grok_review_content=$(<"$PROJECT_DIR/build/claude/grok-review/SKILL.md")
+    assert_output_contains "$grok_review_content" "/code-review" "grok-review delegates review standards to Grok's native skill"
+    assert_output_contains "$grok_review_content" "--output-format json" "grok-review requests JSON output"
+    assert_output_contains "$grok_review_content" "origin/main" "grok-review defines the default base"
+    assert_output_contains "$grok_review_content" "zmx" "grok-review uses zmx for long-running reviews"
+    assert_output_contains "$grok_review_content" "Do not edit" "grok-review enforces review-only boundaries"
+    assert_output_contains "$grok_review_content" "Do not implement reviewer feedback" "grok-review requires finding validation before implementation"
+
     assert_file_exists "$PROJECT_DIR/build/amp/impeccable/SKILL.md" "Amp builds impeccable skill"
     assert_file_exists "$PROJECT_DIR/build/claude/impeccable/SKILL.md" "Claude builds impeccable skill"
     assert_file_exists "$PROJECT_DIR/build/pi/impeccable/SKILL.md" "Pi builds impeccable skill"
