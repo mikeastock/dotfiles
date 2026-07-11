@@ -100,9 +100,9 @@ test_codex_terraform_apply_rules() {
     assert_output_contains "$codex_rules" 'decision = "prompt"' "Codex Terraform rules request prompt approval"
 }
 
-# Test: Codex hooks are disabled so rules can handle approval prompts
-test_codex_hooks_disabled() {
-    log_test "Testing Codex hooks are disabled"
+# Test: Codex destructive command guard hook is installed
+test_codex_hooks_installed() {
+    log_test "Testing Codex destructive command guard hook"
     cd "$PROJECT_DIR"
 
     rm -rf "$SANDBOX_DIR/.codex"
@@ -112,8 +112,9 @@ test_codex_hooks_disabled() {
     local hooks_json
     hooks_json=$(cat "$SANDBOX_DIR/.codex/hooks.json")
 
-    assert_output_contains "$hooks_json" '"hooks": {}' "Codex hooks config is empty"
-    assert_output_not_contains "$hooks_json" '"PreToolUse"' "Codex hooks do not hard-gate PreToolUse"
+    assert_output_contains "$hooks_json" '"PreToolUse"' "Codex hooks include a PreToolUse guard"
+    assert_output_contains "$hooks_json" '"matcher": "Bash"' "Codex guard applies to Bash commands"
+    assert_output_contains "$hooks_json" '"command": "/home/mikeastock/.local/bin/dcg"' "Codex guard runs dcg"
     assert_file_not_exists "$SANDBOX_DIR/.codex/hooks/terraform_apply_gate.py" "Terraform hard-gate hook script is absent"
 }
 
@@ -325,7 +326,7 @@ main() {
     test_config_new_files
     test_codex_custom_models_removed
     test_codex_terraform_apply_rules
-    test_codex_hooks_disabled
+    test_codex_hooks_installed
     test_amp_preserve_existing
     test_pi_preserve_changelog_version
     test_config_idempotent

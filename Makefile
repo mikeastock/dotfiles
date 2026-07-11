@@ -15,7 +15,7 @@ HOME_LINKS := .gitconfig .ideavimrc .psqlrc .tmux.conf .tmuxinator .vscode
 # .config directories to symlink entirely
 CONFIG_DIRS := alacritty stylua lvim zellij direnv atuin ghostty
 
-.PHONY: all install install-non-interactive install-skills install-amp-plugins install-extensions install-prompts install-subagents install-themes install-configs amp-plugin-types amp-plugin-check package-manager-security-config build clean help submodule-init plugin-update check-python uidotsh \
+.PHONY: all install install-non-interactive install-tools install-skills install-amp-plugins install-extensions install-prompts install-subagents install-themes install-configs amp-plugin-types amp-plugin-check package-manager-security-config build clean help submodule-init plugin-update check-python uidotsh \
 	dot-all dot-install dot-home-symlinks dot-config-symlinks dot-platform-defaults dot-macos-defaults dot-clean
 
 all: help
@@ -27,6 +27,7 @@ help:
 	@echo "  make install                 Initialize submodules and install all agent artifacts"
 	@echo "  make install FORCE=1         Claim existing unmanaged paths that match managed artifacts"
 	@echo "  make install-non-interactive Install for headless/automated environments (skips interactive extensions)"
+	@echo "  make install-tools           Install pinned external agent tools"
 	@echo "  make install-skills          Install skills only (Amp, Claude Code, Pi agent)"
 	@echo "  make install-amp-plugins     Install Amp plugins from amp-plugins/"
 	@echo "  make install-extensions      Install extensions only (Pi agent)"
@@ -66,6 +67,9 @@ install: check-python
 install-non-interactive: check-python
 	@$(PYTHON) "$(BUILD_SCRIPT)" install --non-interactive $(FORCE_FLAG)
 	@echo "All skills, prompt templates, themes, extensions, and Amp plugins installed (non-interactive mode)"
+
+install-tools: check-python
+	@$(PYTHON) "$(BUILD_SCRIPT)" install-tools
 
 submodule-init:
 	@$(PYTHON) "$(BUILD_SCRIPT)" submodule-init

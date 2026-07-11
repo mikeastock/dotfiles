@@ -38,6 +38,7 @@ This repo also contains reusable skills, prompt templates, and extensions for Am
 
 ```bash
 make install                 # install agent skills/prompts/themes/extensions and Amp plugins
+make install-tools           # install pinned external agent tools such as dcg
 make install-skills
 make install-amp-plugins
 make install-prompts
@@ -48,6 +49,8 @@ make build                   # build agent artifacts only
 make clean                   # clean agent build/install artifacts
 make plugin-update           # update plugin submodules
 ```
+
+External native tools are pinned under `[external_tools]` in `plugins.toml`. They are installed into `~/.local/bin` without allowing upstream installers to modify agent settings; this repository owns those settings through `make install-configs`. The full `make install` workflow installs tools before configs.
 
 ### Amp plugin development
 

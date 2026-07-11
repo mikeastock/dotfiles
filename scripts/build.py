@@ -14,6 +14,8 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
+import urllib.request
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -336,6 +338,25 @@ class Plugin:
         )
 
 
+@dataclass
+class ExternalTool:
+    """Pinned external binary installed through an upstream installer."""
+
+    name: str
+    repo: str
+    version: str
+    installer_url: str
+
+    @classmethod
+    def from_dict(cls, name: str, data: dict) -> "ExternalTool":
+        return cls(
+            name=name,
+            repo=data["repo"],
+            version=data["version"],
+            installer_url=data["installer_url"],
+        )
+
+
 def load_config() -> dict[str, Plugin]:
     """Load and parse plugins.toml."""
     if not CONFIG_FILE.exists():
@@ -344,7 +365,21 @@ def load_config() -> dict[str, Plugin]:
     with open(CONFIG_FILE, "rb") as f:
         data = tomllib.load(f)
 
-    return {name: Plugin.from_dict(name, cfg) for name, cfg in data.items()}
+    return {
+        name: Plugin.from_dict(name, cfg)
+        for name, cfg in data.items()
+        if name != "external_tools"
+    }
+
+
+def load_external_tools() -> dict[str, ExternalTool]:
+    """Load pinned external tools from plugins.toml."""
+    with open(CONFIG_FILE, "rb") as f:
+        data = tomllib.load(f)
+    return {
+        name: ExternalTool.from_dict(name, cfg)
+        for name, cfg in data.get("external_tools", {}).items()
+    }
 
 
 def run_cmd(
@@ -359,6 +394,48 @@ def init_submodules():
     print("Initializing git submodules...")
     run_cmd(["git", "submodule", "update", "--init", "--recursive"])
     print("  Done")
+
+
+def install_external_tools(tools: dict[str, ExternalTool]) -> None:
+    """Install pinned external tools without allowing them to mutate agent configs."""
+    print("Installing external tools...")
+    destination = HOME / ".local" / "bin"
+    destination.mkdir(parents=True, exist_ok=True)
+
+    for tool in tools.values():
+        override = os.environ.get(f"{tool.name.upper()}_INSTALLER_PATH")
+        if override:
+            installer = Path(override)
+            run_cmd(
+                [
+                    "bash",
+                    str(installer),
+                    "--version",
+                    tool.version,
+                    "--dest",
+                    str(destination),
+                    "--verify",
+                    "--no-configure",
+                ]
+            )
+        else:
+            url = tool.installer_url.format(version=tool.version)
+            with tempfile.TemporaryDirectory() as temp_dir:
+                installer = Path(temp_dir) / f"{tool.name}-install.sh"
+                urllib.request.urlretrieve(url, installer)
+                run_cmd(
+                    [
+                        "bash",
+                        str(installer),
+                        "--version",
+                        tool.version,
+                        "--dest",
+                        str(destination),
+                        "--verify",
+                        "--no-configure",
+                    ]
+                )
+        print(f"  {tool.name} {tool.version} -> {destination / tool.name}")
 
 
 def glob_paths(base: Path, patterns: list[str]) -> list[Path]:
@@ -1455,6 +1532,7 @@ def main():
         choices=[
             "build",
             "install",
+            "install-tools",
             "install-skills",
             "install-amp-plugins",
             "install-extensions",
@@ -1483,6 +1561,7 @@ def main():
     NON_INTERACTIVE = args.non_interactive
 
     plugins = load_config()
+    external_tools = load_external_tools()
 
     if args.command == "submodule-init":
         init_submodules()
@@ -1507,11 +1586,14 @@ def main():
         install_themes(force=args.force)
         install_extensions(plugins, force=args.force)
         install_amp_plugins(force=args.force)
+        install_external_tools(external_tools)
         install_configs()
         print("\nAll done!")
     elif args.command == "install-skills":
         build_skills(plugins)
         install_skills(force=args.force)
+    elif args.command == "install-tools":
+        install_external_tools(external_tools)
     elif args.command == "install-amp-plugins":
         install_amp_plugins(force=args.force)
     elif args.command == "install-extensions":

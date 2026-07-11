@@ -24,12 +24,45 @@ test_make_help() {
     assert_output_contains "$output" "Usage:" "Help shows usage"
     assert_output_contains "$output" "make install" "Help shows install command"
     assert_output_contains "$output" "make install-amp-plugins" "Help shows Amp plugin install command"
+    assert_output_contains "$output" "make install-tools" "Help shows external tool install command"
     assert_output_contains "$output" "make install-prompts" "Help shows install-prompts command"
     assert_output_contains "$output" "make install-themes" "Help shows install-themes command"
     assert_output_contains "$output" "make build" "Help shows build command"
     assert_output_contains "$output" "make clean" "Help shows clean command"
     assert_output_contains "$output" "Dotfiles:" "Help shows dotfiles section"
     assert_output_contains "$output" "make dot-clean" "Help shows dot-clean command"
+}
+
+# Test: make install-tools installs pinned tools without configuring agents
+test_make_install_tools() {
+    log_test "Testing 'make install-tools' (sandboxed)"
+    cd "$PROJECT_DIR"
+
+    local fake_installer args_log output
+    fake_installer="$SANDBOX_DIR/dcg-install.sh"
+    args_log="$SANDBOX_DIR/dcg-install-args.log"
+    cat > "$fake_installer" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$@" > "$DCG_TEST_ARGS_LOG"
+mkdir -p "$HOME/.local/bin"
+printf '#!/usr/bin/env bash\necho 0.6.5\n' > "$HOME/.local/bin/dcg"
+chmod +x "$HOME/.local/bin/dcg"
+EOF
+    chmod +x "$fake_installer"
+
+    output=$(HOME="$SANDBOX_DIR" DCG_INSTALLER_PATH="$fake_installer" DCG_TEST_ARGS_LOG="$args_log" make install-tools 2>&1)
+
+    assert_output_contains "$output" "Installing external tools" "Install shows external tool progress"
+    assert_file_exists "$SANDBOX_DIR/.local/bin/dcg" "dcg binary was installed"
+
+    local args
+    args=$(<"$args_log")
+    assert_output_contains "$args" "--version" "dcg installer receives a pinned version flag"
+    assert_output_contains "$args" "v0.6.5" "dcg installer receives the configured version"
+    assert_output_contains "$args" "--dest" "dcg installer receives an explicit destination"
+    assert_output_contains "$args" "$SANDBOX_DIR/.local/bin" "dcg installs under the active HOME"
+    assert_output_contains "$args" "--verify" "dcg installer runs its self-test"
+    assert_output_contains "$args" "--no-configure" "dcg installer cannot mutate agent configs"
 }
 
 # Test: make build
@@ -470,7 +503,7 @@ test_make_install() {
 
     # Run full install with sandbox HOME
     local output
-    output=$(HOME="$SANDBOX_DIR" XDG_STATE_HOME="$SANDBOX_DIR/.local/state" make install 2>&1)
+    output=$(HOME="$SANDBOX_DIR" XDG_STATE_HOME="$SANDBOX_DIR/.local/state" DCG_INSTALLER_PATH="$SANDBOX_DIR/dcg-install.sh" DCG_TEST_ARGS_LOG="$SANDBOX_DIR/dcg-install-args.log" make install 2>&1)
 
     assert_output_contains "$output" "All skills, prompt templates, themes, extensions, and Amp plugins installed" "Install shows completion message"
     assert_file_exists "$SANDBOX_DIR/.pi/agent/prompts/refactor-pass.md" "Install includes Pi prompts"
@@ -497,7 +530,7 @@ test_make_clean() {
     echo "manual" > "$SANDBOX_DIR/.pi/agent/agents/manual-clean.md"
 
     # First install
-    HOME="$SANDBOX_DIR" XDG_STATE_HOME="$SANDBOX_DIR/.local/state" make install >/dev/null 2>&1
+    HOME="$SANDBOX_DIR" XDG_STATE_HOME="$SANDBOX_DIR/.local/state" DCG_INSTALLER_PATH="$SANDBOX_DIR/dcg-install.sh" DCG_TEST_ARGS_LOG="$SANDBOX_DIR/dcg-install-args.log" make install >/dev/null 2>&1
 
     # Then clean
     local output
@@ -632,6 +665,7 @@ main() {
     test_plugins_toml
     test_make_build
     test_package_manager_security_config
+    test_make_install_tools
     test_make_install_skills
     test_install_skills_preserves_unmanaged_siblings
     test_install_skills_removes_previous_managed_siblings

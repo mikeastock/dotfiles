@@ -14,7 +14,16 @@
 #   subagents       - List of subagents to install: ["*"] for all, [] or omit for none
 #   alias           - Optional prefix to prevent name collisions
 #
+# Pinned native dependencies live under [external_tools.<name>]. Their upstream
+# installers run with an explicit version, destination, verification, and
+# --no-configure so this repository remains the source of truth for agent config.
+#
 # Plugin directories use hyphen separator: owner/repo -> plugins/owner-repo/
+
+[external_tools.dcg]
+repo = "Dicklesworthstone/destructive_command_guard"
+version = "v0.6.5"
+installer_url = "https://raw.githubusercontent.com/Dicklesworthstone/destructive_command_guard/{version}/install.sh"
 
 ["anthropics/skills"]
 url = "https://github.com/anthropics/skills"
