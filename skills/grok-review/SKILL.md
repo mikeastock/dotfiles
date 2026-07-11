@@ -79,66 +79,43 @@ artifacts.
 
 ## Run one review
 
-Check the installed executable and native contract before starting:
+The bundled `scripts/run_review.sh` owns the security-critical launcher. Use it
+instead of retyping the command so version checks, native-skill checks, zmx
+startup failures, and sandbox verification stay in one executable contract.
+The launcher pins Grok to `0.2.93`, passes the prompt with `--prompt-file`,
+allows Grok's full default toolset, disables plan mode, and requests
+`--sandbox read-only` with `--always-approve`.
+
+Create a unique run directory and write the task-specific prompt before
+starting the launcher:
 
 ```bash
-GROK_BIN="${GROK_BIN:-$HOME/.grok/bin/grok}"
-GROK_VERSION="$("$GROK_BIN" --version 2>/dev/null)" || {
-  printf 'Grok is unavailable at %s\n' "$GROK_BIN" >&2
-  exit 1
-}
-case "$GROK_VERSION" in
-  "grok 0.2.93 "*) ;;
-  *) printf 'Unsupported Grok version: %s\n' "$GROK_VERSION" >&2; exit 1 ;;
-esac
-test -f "$HOME/.grok/skills/code-review/SKILL.md" || {
-  printf 'Grok native /code-review skill is missing\n' >&2
-  exit 1
-}
-```
-
-The validated version is exactly `0.2.93` (build metadata may differ). Fail
-closed for an unavailable executable, missing native skill, or any other
-version. Do not substitute a different reviewer or copy the native skill into
-this skill.
-
-Grok's plan permission mode can cancel before repository inspection. Use the
-explicit review-only prompt, Grok's full default toolset, and auto-approval for
-this non-mutating task. Apply the OS-level `read-only` sandbox so filesystem
-writes are denied even when a tool is auto-approved, and disable plan mode so
-inspection starts immediately.
-
-```bash
+REPO="$(git rev-parse --show-toplevel)"
 SESSION="grok-review-$(date -u +%Y%m%dT%H%M%SZ)"
 RUN_DIR="${TMPDIR:-/tmp}/$SESSION"
-mkdir -p "$RUN_DIR"
-REPO="$(git rev-parse --show-toplevel)"
-GROK_BIN="${GROK_BIN:-$HOME/.grok/bin/grok}"
 PROMPT="$RUN_DIR/prompt.md"
-RESULT="$RUN_DIR/result.json"
-ERR="$RUN_DIR/stderr.log"
+mkdir -p "$RUN_DIR"
 
 # Write the task-specific prompt to "$PROMPT" first.
-export REPO GROK_BIN PROMPT RESULT ERR
-zmx run "$SESSION" -d bash -lc \
-  'exec "$GROK_BIN" --cwd "$REPO" --prompt-file "$PROMPT" \
-    --sandbox read-only --always-approve --no-plan --no-memory \
-    --output-format json --max-turns 60 \
-    > "$RESULT" 2> "$ERR"' >/dev/null 2>&1
-printf '%s\n' "$SESSION" > "$RUN_DIR/zmx-session"
+"<path-to-this-skill>/scripts/run_review.sh" "$REPO" "$PROMPT" "$RUN_DIR"
 ```
 
-Do not start a second review while the first session is active. Do not use
-`--worktree`, because the reviewer must inspect the already-scoped checkout.
-Do not replace `read-only` with a writable sandbox profile.
+The launcher fails closed unless Grok reports a matching `ProfileApplied` event
+with `profile=read-only`, `workspace=$REPO`, and `enforced=true` in
+`~/.grok/sandbox-events.jsonl`. It stops the zmx session on `ApplyFailed`, a
+missing event, or a zmx startup error. Do not start a second review while the
+first session is active. Do not use `--worktree`, because the reviewer must
+inspect the already-scoped checkout. Do not replace `read-only` with a writable
+sandbox profile.
 
 ## Observe and recover
 
 Keep the result out of the main context while the review is running:
 
 ```bash
-tail -n 20 "$RESULT"
-tail -n 20 "$ERR"
+tail -n 20 "$RUN_DIR/result.json"
+tail -n 20 "$RUN_DIR/stderr.log"
+tail -n 20 "$RUN_DIR/zmx-start.log"
 zmx list --short
 ```
 
@@ -191,12 +168,20 @@ For every actionable finding:
 Never blindly implement reviewer feedback. Only change code if the user gives a
 separate implementation request after the finding has been verified.
 
-## Hard boundaries
+## Boundaries
 
-- Review runs cannot edit, write, delete, reset, stash, commit, push, or merge
-  repository files; comment on GitHub; deploy; install; alter configuration; or
-  mutate external state. Temporary prompt, result, and log artifacts are the
-  only expected writes.
+- The launcher hardens repository filesystem access with an enforced
+  `read-only` sandbox. It fails closed if Grok reports `ApplyFailed`, no
+  matching `ProfileApplied`, or `enforced=false`.
+- The sandbox intentionally permits Grok session/config writes under
+  `~/.grok/` and temporary run artifacts. It blocks repository writes only when
+  enforcement succeeds; it does not guarantee that in-process web/MCP calls or
+  macOS child-network activity cannot mutate external systems.
+- The review prompt remains a soft policy against editing, deleting, resetting,
+  stashing, committing, pushing, merging, commenting on GitHub, deploying,
+  installing, changing configuration, or mutating external state. Validate any
+  such claim from the result and environment rather than overstating the OS
+  guarantee.
 - Use one canonical path: this wrapper invokes Grok's native `/code-review`.
   Do not add a fallback reviewer or a second review mode.
 - Keep historical designs and prior review artifacts immutable.

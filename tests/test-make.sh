@@ -146,22 +146,27 @@ test_make_build() {
     assert_output_contains "$breadboard_content" "description:" "breadboard-reflection has synthesized description"
 
     assert_file_exists "$PROJECT_DIR/skills/grok-review/SKILL.md" "grok-review source skill exists"
+    assert_file_exists "$PROJECT_DIR/skills/grok-review/scripts/run_review.sh" "grok-review launcher exists"
     for agent in amp claude pi; do
         assert_file_exists "$PROJECT_DIR/build/$agent/grok-review/SKILL.md" "$agent builds grok-review skill"
+        assert_file_exists "$PROJECT_DIR/build/$agent/grok-review/scripts/run_review.sh" "$agent builds the grok-review launcher"
     done
 
     local grok_review_content
     grok_review_content=$(<"$PROJECT_DIR/build/claude/grok-review/SKILL.md")
+    local grok_review_launcher_content
+    grok_review_launcher_content=$(<"$PROJECT_DIR/build/claude/grok-review/scripts/run_review.sh")
     assert_output_contains "$grok_review_content" "/code-review" "grok-review delegates review standards to Grok's native skill"
-    assert_output_contains "$grok_review_content" "--output-format json" "grok-review requests JSON output"
-    assert_output_contains "$grok_review_content" "--sandbox read-only" "grok-review enforces the read-only sandbox"
-    assert_output_contains "$grok_review_content" "--prompt-file" "grok-review passes prompts through the CLI prompt file"
-    assert_output_contains "$grok_review_content" "0.2.93" "grok-review pins the validated Grok version"
-    assert_output_contains "$grok_review_content" "--no-plan" "grok-review disables plan mode"
     assert_output_contains "$grok_review_content" "origin/main" "grok-review defines the default base"
     assert_output_contains "$grok_review_content" "zmx" "grok-review uses zmx for long-running reviews"
     assert_output_contains "$grok_review_content" "Do not edit" "grok-review enforces review-only boundaries"
     assert_output_contains "$grok_review_content" "Do not implement reviewer feedback" "grok-review requires finding validation before implementation"
+    assert_output_contains "$grok_review_content" "Do not add a fallback reviewer" "grok-review forbids a fallback reviewer"
+    assert_output_contains "$grok_review_launcher_content" "--output-format json" "launcher requests JSON output"
+    assert_output_contains "$grok_review_launcher_content" "--sandbox read-only" "launcher enforces the read-only sandbox"
+    assert_output_contains "$grok_review_launcher_content" "--prompt-file" "launcher passes the prompt file"
+    assert_output_contains "$grok_review_launcher_content" "0.2.93" "launcher pins the validated Grok version"
+    assert_output_contains "$grok_review_launcher_content" "--no-plan" "launcher disables plan mode"
     assert_output_not_contains "$grok_review_content" 'Do not add a speculative `--tools` override' "grok-review does not forbid the validated launcher controls"
     assert_output_not_contains "$grok_review_content" "Pull requests must be ready for review, never draft" "grok-review does not own PR publishing policy"
 
