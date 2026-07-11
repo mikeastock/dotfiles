@@ -82,34 +82,47 @@ artifacts.
 Check the installed executable and native contract before starting:
 
 ```bash
-~/.grok/bin/grok --version
-test -f ~/.grok/skills/code-review/SKILL.md
+GROK_BIN="${GROK_BIN:-$HOME/.grok/bin/grok}"
+GROK_VERSION="$("$GROK_BIN" --version 2>/dev/null)" || {
+  printf 'Grok is unavailable at %s\n' "$GROK_BIN" >&2
+  exit 1
+}
+case "$GROK_VERSION" in
+  "grok 0.2.93 "*) ;;
+  *) printf 'Unsupported Grok version: %s\n' "$GROK_VERSION" >&2; exit 1 ;;
+esac
+test -f "$HOME/.grok/skills/code-review/SKILL.md" || {
+  printf 'Grok native /code-review skill is missing\n' >&2
+  exit 1
+}
 ```
 
-The validated version is `0.2.93`. Fail closed for an unavailable executable,
-missing native skill, or an unexpected major/minor version. Do not substitute a
-different reviewer or copy the native skill into this skill.
+The validated version is exactly `0.2.93` (build metadata may differ). Fail
+closed for an unavailable executable, missing native skill, or any other
+version. Do not substitute a different reviewer or copy the native skill into
+this skill.
 
 Grok's plan permission mode can cancel before repository inspection. Use the
-explicit review-only prompt, Grok's default inspection tools, and auto-approval
-for this non-mutating task. Keep the command on this validated path; do not add
-a speculative `--tools` override.
+explicit review-only prompt, Grok's full default toolset, and auto-approval for
+this non-mutating task. Apply the OS-level `read-only` sandbox so filesystem
+writes are denied even when a tool is auto-approved, and disable plan mode so
+inspection starts immediately.
 
 ```bash
 SESSION="grok-review-$(date -u +%Y%m%dT%H%M%SZ)"
 RUN_DIR="${TMPDIR:-/tmp}/$SESSION"
 mkdir -p "$RUN_DIR"
 REPO="$(git rev-parse --show-toplevel)"
+GROK_BIN="${GROK_BIN:-$HOME/.grok/bin/grok}"
 PROMPT="$RUN_DIR/prompt.md"
 RESULT="$RUN_DIR/result.json"
 ERR="$RUN_DIR/stderr.log"
 
 # Write the task-specific prompt to "$PROMPT" first.
-GROK_PROMPT="$(<"$PROMPT")"
-export REPO GROK_PROMPT RESULT ERR
+export REPO GROK_BIN PROMPT RESULT ERR
 zmx run "$SESSION" -d bash -lc \
-  'exec ~/.grok/bin/grok --cwd "$REPO" --single "$GROK_PROMPT" \
-    --always-approve --no-memory --no-subagents --disable-web-search \
+  'exec "$GROK_BIN" --cwd "$REPO" --prompt-file "$PROMPT" \
+    --sandbox read-only --always-approve --no-plan --no-memory \
     --output-format json --max-turns 60 \
     > "$RESULT" 2> "$ERR"' >/dev/null 2>&1
 printf '%s\n' "$SESSION" > "$RUN_DIR/zmx-session"
@@ -117,7 +130,7 @@ printf '%s\n' "$SESSION" > "$RUN_DIR/zmx-session"
 
 Do not start a second review while the first session is active. Do not use
 `--worktree`, because the reviewer must inspect the already-scoped checkout.
-Do not enable plan mode, web search, memory, or subagents for this workflow.
+Do not replace `read-only` with a writable sandbox profile.
 
 ## Observe and recover
 
@@ -189,5 +202,3 @@ separate implementation request after the finding has been verified.
 - Keep historical designs and prior review artifacts immutable.
 - If implementation is later requested, create a clean external worktree and
   focused branch before editing.
-- Pull requests must be ready for review, never draft; the user merges
-  manually.
