@@ -45,7 +45,10 @@ test_config_new_files() {
     assert_file_exists "$SANDBOX_DIR/.pi/agent/settings.json" "Pi settings file was created"
     assert_file_exists "$SANDBOX_DIR/.codex/AGENTS.md" "Codex AGENTS.md was created"
     assert_file_exists "$SANDBOX_DIR/.pi/agent/AGENTS.md" "Pi AGENTS.md was created"
+    assert_output_contains "$(cat "$SANDBOX_DIR/.codex/config.toml")" 'personality = "none"' "Codex config uses the neutral personality"
     assert_output_contains "$(cat "$SANDBOX_DIR/.codex/AGENTS.md")" "Visual Previews" "Codex AGENTS.md includes visual preview guidance"
+    assert_output_contains "$(cat "$SANDBOX_DIR/.codex/AGENTS.md")" "clear, concise language without reducing technical precision" "Codex AGENTS.md includes clear communication guidance"
+    assert_output_not_contains "$(cat "$SANDBOX_DIR/.codex/AGENTS.md")" "Hard-Cut Product Policy" "Codex AGENTS.md omits hard-cutover guidance"
     assert_output_contains "$(cat "$SANDBOX_DIR/.pi/agent/AGENTS.md")" "SIDESHOW_URL=http://localhost:8228 sideshow agent-howto" "Pi AGENTS.md includes sideshow setup command"
     assert_output_contains "$(cat "$SANDBOX_DIR/.codex/AGENTS.md")" "SIDESHOW_URL=https://devbox-mike.tail5a0ea0.ts.net:8228 sideshow agent-howto" "Codex AGENTS.md includes Tailscale sideshow setup command"
 

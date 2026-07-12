@@ -5,6 +5,13 @@
 **ALWAYS** set a non-interactive editor env for git continuation commands (e.g. `GIT_EDITOR=true`) when running commands like `git rebase --continue`, `git merge --continue`, or similar.
 **NEVER** use perl for scripting.
 
+## Communication
+
+- Write user-facing explanations in clear, concise language without reducing technical precision.
+- Prefer concrete wording over unexplained jargon. Use established domain terminology when it is the most precise choice, and briefly define it when the intended audience may not know it.
+- Preserve material evidence, constraints, tradeoffs, caveats, and uncertainty.
+- Do not rewrite code, identifiers, commands, quoted text, or prescribed formats merely to satisfy this style rule.
+
 ## Semantic Commits
 
 **ALWAYS** write git commit messages as [Conventional Commits](https://www.conventionalcommits.org/):
@@ -29,25 +36,6 @@
 - Prefer intent-revealing private method names over clever abstractions.
 - Prefer memoization for DB-backed lookups inside a service/object lifecycle to prevent accidental repeat queries and N+1-style footguns.
 - Only use trailing conditionals (`return if ...`, `raise if ...`) for early returns/guards. Never use them for real logic checks; use standard `if`/`unless` blocks instead.
-
-## Hard-Cut Product Policy
-
-- This application currently has no external installed user base; optimize for one canonical current-state implementation, not compatibility with historical local states.
-- Do not preserve or introduce compatibility bridges, migration shims, fallback paths, compact adapters, or dual behavior for old local states unless the user explicitly asks for that support.
-- Prefer:
-  - one canonical current-state codepath
-  - fail-fast diagnostics
-  - explicit recovery steps
-- Over:
-  - automatic migration
-  - compatibility glue
-  - silent fallbacks
-  - “temporary” second paths
-- If temporary migration or compatibility code is introduced for debugging or a narrowly scoped transition, call it out in the same diff with:
-  - why it exists
-  - why the canonical path is insufficient
-  - exact deletion criteria
-- Default stance across the app: delete old-state compatibility code rather than carrying it forward.
 
 ## Worktrees
 
