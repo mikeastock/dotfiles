@@ -3,7 +3,7 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import type { ExtensionAPI, SessionEntry } from "@earendil-works/pi-coding-agent";
 
-type ThinkingLevel = "off" | "minimal" | "low" | "medium" | "high" | "xhigh";
+type ThinkingLevel = "off" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max";
 
 type ModelChangeEntry = SessionEntry & {
   type: "model_change";
@@ -29,7 +29,8 @@ function isThinkingLevel(value: unknown): value is ThinkingLevel {
     value === "low" ||
     value === "medium" ||
     value === "high" ||
-    value === "xhigh"
+    value === "xhigh" ||
+    value === "max"
   );
 }
 
