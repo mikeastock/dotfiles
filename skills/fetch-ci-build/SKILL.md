@@ -146,4 +146,3 @@ If the failure requires deeper investigation (e.g., unclear root cause, flaky te
 ## Integration with Other Skills
 
 - **systematic-debugging**: Use for complex failures requiring root cause analysis
-- **test-driven-development**: After fixing, ensure tests follow TDD principles
