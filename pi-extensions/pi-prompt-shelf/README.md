@@ -16,7 +16,7 @@ pi -e https://github.com/tanishqkancharla/pi-prompt-shelf
 
 ## Features
 
-- **Session-scoped persistence** — each session gets its own shelf at `<cwd>/.pi/prompt-shelf/<sessionId>.json`; `/new` starts clean, `/resume` restores the shelf
+- **Session-scoped persistence** — each session gets its own shelf under the project's Pi config directory; `/new` starts clean, `/resume` restores the shelf
 - **Widget display** — a bordered widget above the editor shows all shelved prompts with timestamps
 - **Quick restore** — restore any prompt by number with `Alt+1..9`
 - **Interactive picker** — browse, restore, or delete shelved prompts with the `/shelf` command

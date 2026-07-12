@@ -1,7 +1,10 @@
-import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { CustomEditor } from "@earendil-works/pi-coding-agent";
+import {
+  CustomEditor,
+  getAgentDir,
+  type ExtensionAPI,
+  type ExtensionContext,
+} from "@earendil-works/pi-coding-agent";
 import path from "node:path";
-import os from "node:os";
 import fs from "node:fs/promises";
 import type { Dirent } from "node:fs";
 
@@ -85,7 +88,7 @@ function collectUserPromptsFromEntries(entries: Array<any>): PromptEntry[] {
 
 function getSessionDirForCwd(cwd: string): string {
   const safePath = `--${cwd.replace(/^[/\\]/, "").replace(/[/\\:]/g, "-")}--`;
-  return path.join(os.homedir(), ".pi", "agent", "sessions", safePath);
+  return path.join(getAgentDir(), "sessions", safePath);
 }
 
 async function readTail(filePath: string, maxBytes = 256 * 1024): Promise<string> {
@@ -217,7 +220,7 @@ function setEditorHistory(pi: ExtensionAPI, ctx: ExtensionContext, history: Prom
 }
 
 function applyEditorWithHistory(pi: ExtensionAPI, ctx: ExtensionContext) {
-  if (!ctx.hasUI) return;
+  if (ctx.mode !== "tui") return;
 
   const sessionFile = ctx.sessionManager.getSessionFile();
   const currentEntries = ctx.sessionManager.getBranch();

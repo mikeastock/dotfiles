@@ -1,3 +1,4 @@
+import { CONFIG_DIR_NAME } from "@earendil-works/pi-coding-agent";
 import { existsSync, readFileSync, rmSync, statSync, readdirSync, openSync, readSync, closeSync } from "node:fs";
 import { execFile } from "node:child_process";
 import { homedir } from "node:os";
@@ -5,7 +6,7 @@ import { join, extname } from "node:path";
 import type { ExtractedContent } from "./extract.js";
 import { checkGhAvailable, checkRepoSize, fetchViaApi, showGhHint } from "./github-api.js";
 
-const CONFIG_PATH = join(homedir(), ".pi", "web-search.json");
+const CONFIG_PATH = join(homedir(), CONFIG_DIR_NAME, "web-search.json");
 
 const BINARY_EXTENSIONS = new Set([
 	".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico", ".webp", ".svg", ".tiff", ".tif",

@@ -14,9 +14,10 @@
  *   /shelf — Open shelf picker (restore/delete)
  */
 
-import type {
-  ExtensionAPI,
-  ExtensionContext,
+import {
+  CONFIG_DIR_NAME,
+  type ExtensionAPI,
+  type ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
 import {
   Key,
@@ -34,7 +35,7 @@ interface ShelfItem {
 }
 
 function shelfFile(cwd: string, sessionId: string): string {
-  return join(cwd, ".pi", "prompt-shelf", `${sessionId}.json`);
+  return join(cwd, CONFIG_DIR_NAME, "prompt-shelf", `${sessionId}.json`);
 }
 
 function loadShelf(
@@ -207,6 +208,11 @@ export default function (pi: ExtensionAPI) {
   }
 
   async function openShelfPicker(ctx: ExtensionContext) {
+    if (ctx.mode !== "tui") {
+      ctx.ui.notify("/shelf requires the interactive Pi TUI", "warning");
+      return;
+    }
+
     if (shelf.length === 0) {
       ctx.ui.notify("Shelf is empty — use alt+s to shelve", "info");
       return;

@@ -1,7 +1,6 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { homedir } from "node:os";
 import { dirname, join } from "node:path";
-import type { ExtensionAPI, SessionEntry } from "@earendil-works/pi-coding-agent";
+import { getAgentDir, type ExtensionAPI, type SessionEntry } from "@earendil-works/pi-coding-agent";
 
 type ThinkingLevel = "off" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max";
 
@@ -16,7 +15,7 @@ type ThinkingLevelChangeEntry = SessionEntry & {
   thinkingLevel: ThinkingLevel;
 };
 
-const STATE_PATH = join(homedir(), ".pi", "agent", "per-model-thinking.json");
+const STATE_PATH = join(getAgentDir(), "per-model-thinking.json");
 
 function modelKey(model: { provider: string; id: string }): string {
   return `${model.provider}/${model.id}`;

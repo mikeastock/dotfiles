@@ -9,7 +9,7 @@ export default function revdiffExtension(pi: ExtensionAPI): void {
   pi.registerCommand("revdiff", {
     description: "Launch revdiff, capture annotations, and send them to the agent",
     handler: async (args, ctx) => {
-      if (!ctx.hasUI) {
+      if (ctx.mode !== "tui") {
         ctx.ui.notify("/revdiff requires the interactive Pi TUI", "warning");
         return;
       }

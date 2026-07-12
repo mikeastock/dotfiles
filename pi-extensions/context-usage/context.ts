@@ -514,7 +514,7 @@ async function showDetails(pi: ExtensionAPI, ctx: ExtensionCommandContext): Prom
   const systemTools = computeSystemToolsSection(ctx, pi);
   const turns = computeTurnBreakdown(ctx.sessionManager.getBranch());
 
-  if (!ctx.hasUI) {
+  if (ctx.mode !== "tui") {
     notifyPlainDetails(ctx, buckets, systemTools, turns);
     return;
   }

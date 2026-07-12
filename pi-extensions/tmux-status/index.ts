@@ -17,6 +17,7 @@ import type {
 	BeforeAgentStartEvent,
 	AgentStartEvent,
 	AgentEndEvent,
+	AgentSettledEvent,
 	TurnStartEvent,
 	ToolCallEvent,
 	ToolResultEvent,
@@ -104,6 +105,7 @@ export default function (pi: ExtensionAPI) {
 	let currentCwd: string | undefined;
 	let baseWindowName: string | undefined;
 	let windowId: string | undefined;
+	let lastStopReason: StopReason | undefined;
 
 	// ── tmux window name ──
 	//
@@ -206,6 +208,7 @@ export default function (pi: ExtensionAPI) {
 	};
 
 	const beginRun = async (): Promise<void> => {
+		lastStopReason = undefined;
 		running = true;
 		await setState("running");
 		resetStallTimeout();
@@ -277,16 +280,13 @@ export default function (pi: ExtensionAPI) {
 	});
 
 	pi.on("agent_end", async (event: AgentEndEvent, _ctx: ExtensionContext) => {
+		lastStopReason = getStopReason(event.messages);
+	});
+
+	pi.on("agent_settled", async (_event: AgentSettledEvent, _ctx: ExtensionContext) => {
 		running = false;
 		clearStallTimeout();
-
-		const stopReason = getStopReason(event.messages);
-		if (stopReason === "error") {
-			await applyTerminalState("failed");
-			return;
-		}
-
-		await applyTerminalState("done");
+		await applyTerminalState(lastStopReason === "error" ? "failed" : "done");
 	});
 
 	pi.events.on(HANDOFF_ACTIVITY_START_EVENT, async (data: unknown) => {

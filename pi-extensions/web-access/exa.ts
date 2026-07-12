@@ -1,3 +1,4 @@
+import { CONFIG_DIR_NAME } from "@earendil-works/pi-coding-agent";
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -5,7 +6,7 @@ import { join } from "node:path";
 const EXA_SEARCH_URL = "https://api.exa.ai/search";
 const EXA_CONTENTS_URL = "https://api.exa.ai/contents";
 const DEFAULT_TIMEOUT_MS = 30000;
-const CONFIG_PATH = join(homedir(), ".pi", "web-search.json");
+const CONFIG_PATH = join(homedir(), CONFIG_DIR_NAME, "web-search.json");
 
 export interface ExaSearchResult {
 	title: string;

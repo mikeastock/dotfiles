@@ -9,10 +9,9 @@
 
 import { execFile } from "node:child_process";
 import { readFile } from "node:fs/promises";
-import { homedir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
-import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { getAgentDir, type ExtensionAPI, type ExtensionContext } from "@earendil-works/pi-coding-agent";
 
 const execFileAsync = promisify(execFile);
 const DARK_THEME = "catppuccin-mocha";
@@ -21,7 +20,7 @@ const CHECK_INTERVAL_MS = 2000;
 const OVERRIDE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 function overridePath(): string {
-	return process.env.PI_MAC_SYSTEM_THEME_OVERRIDE_PATH ?? path.join(homedir(), ".pi", "agent", "theme-sync-override.json");
+	return process.env.PI_MAC_SYSTEM_THEME_OVERRIDE_PATH ?? path.join(getAgentDir(), "theme-sync-override.json");
 }
 
 function overrideMaxAgeMs(): number {
