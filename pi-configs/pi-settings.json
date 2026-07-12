@@ -1,14 +1,15 @@
 {
   "defaultProvider": "openai-codex",
-  "defaultModel": "gpt-5.5",
+  "defaultModel": "gpt-5.6-luna",
   "hideThinkingBlock": false,
   "defaultThinkingLevel": "low",
   "steeringMode": "all",
   "doubleEscapeAction": "tree",
   "enabledModels": [
-    "openai-codex/gpt-5.5",
     "fireworks/accounts/fireworks/routers/kimi-k2p7-code-fast",
-    "baseten/zai-org/GLM-5.2"
+    "baseten/zai-org/GLM-5.2",
+    "openai-codex/gpt-5.6-sol",
+    "openai-codex/gpt-5.6-luna"
   ],
   "packages": [
     "npm:pi-autoresearch",
