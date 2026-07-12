@@ -25,6 +25,7 @@ queue = "alt-enter"
 "gpt-5.5" = 4
 
 [features]
+default_mode_request_user_input = true
 remote_connections = true
 terminal_resize_reflow = true
 memories = true
