@@ -46,21 +46,17 @@ Handle a dirty tree explicitly:
 
 ## Prepare the prompt
 
-Write only the context that `/code-review` cannot infer from the checkout to a
+Write only the scope that `/code-review` cannot infer from the checkout to a
 temporary run directory:
 
 ```text
 /code-review
 
-Scope: <merge-base>...HEAD
-Dirty changes: <explicit files, or none>
-Goal: <what the change must accomplish>
-Constraints: <material invariants>
-Verification: <commands and results, or not run>
-
-Review only. Do not edit, publish, mutate external state, spawn subagents, or
-start background commands.
+Review <merge-base>...HEAD. Include these dirty files: <explicit files, or none>.
 ```
+
+Add the user goal or a material constraint only when it is not evident from the
+code.
 
 Keep secrets, credentials, tokens, and private keys out of the prompt and
 artifacts.
@@ -209,9 +205,7 @@ separate implementation request after the finding has been verified.
 - Detached Linux runs can report `ApplyFailed` when Landlock cannot open
   `/dev/tty`. Preserve the artifacts and report the failure. Never retry by
   dropping the sandbox.
-- The review prompt remains a soft policy against editing, deleting, resetting,
-  stashing, committing, pushing, merging, commenting on GitHub, deploying,
-  installing, changing configuration, or mutating external state. On macOS in
+- Native `/code-review` supplies the soft review-only policy. On macOS in
   particular, do not overstate the sandbox as an external-state guarantee.
 - Use one canonical path: this wrapper invokes Grok's native `/code-review`.
   Do not add a fallback reviewer or a second review mode.
