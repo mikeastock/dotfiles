@@ -160,7 +160,7 @@ test_make_build() {
     assert_output_contains "$grok_review_content" "origin/main" "grok-review defines the default base"
     assert_output_contains "$grok_review_content" "zmx" "grok-review uses zmx for long-running reviews"
     assert_output_contains "$grok_review_content" "Do not edit" "grok-review enforces review-only boundaries"
-    assert_output_contains "$grok_review_content" "Do not implement reviewer feedback" "grok-review requires finding validation before implementation"
+    assert_output_contains "$grok_review_content" "Never blindly implement reviewer feedback" "grok-review requires finding validation before implementation"
     assert_output_contains "$grok_review_content" "Do not add a fallback reviewer" "grok-review forbids a fallback reviewer"
     assert_output_contains "$grok_review_launcher_content" "--output-format json" "launcher requests JSON output"
     assert_output_contains "$grok_review_launcher_content" "--sandbox read-only" "launcher enforces the read-only sandbox"

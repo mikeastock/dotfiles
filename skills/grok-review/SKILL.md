@@ -46,33 +46,20 @@ Handle a dirty tree explicitly:
 
 ## Prepare the prompt
 
-Write a task-specific prompt to a temporary run directory. Include the
-resolved scope and requirements instead of pasting a large diff:
+Write only the context that `/code-review` cannot infer from the checkout to a
+temporary run directory:
 
 ```text
 /code-review
 
-Review the complete change described below.
+Scope: <merge-base>...HEAD
+Dirty changes: <explicit files, or none>
+Goal: <what the change must accomplish>
+Constraints: <material invariants>
+Verification: <commands and results, or not run>
 
-Repository: <repository root>
-Base: <base ref and SHA>
-Merge base: <merge-base SHA>
-Head: <head SHA>
-Committed range: <merge-base>...HEAD
-Additional dirty changes: <explicit files, or none>
-User goal: <what the change must accomplish>
-Important invariants: <constraints and architecture boundaries>
-Verification already run: <commands and results, or not run>
-
-Inspect the actual changed code, its callers, tests, and nearby contracts.
-Review only. Do not edit files, commit, push, comment on GitHub, deploy,
-install, change configuration, or mutate any external state.
-Do not spawn subagents or background commands.
-
-Return findings first, ordered by severity. For each finding include severity,
-title, file and line where possible, code evidence, impact, and a suggested
-direction. List verification gaps separately. If there are no findings, say
-so explicitly. Do not implement reviewer feedback.
+Review only. Do not edit, publish, mutate external state, spawn subagents, or
+start background commands.
 ```
 
 Keep secrets, credentials, tokens, and private keys out of the prompt and
