@@ -67,6 +67,7 @@ Verification already run: <commands and results, or not run>
 Inspect the actual changed code, its callers, tests, and nearby contracts.
 Review only. Do not edit files, commit, push, comment on GitHub, deploy,
 install, change configuration, or mutate any external state.
+Do not spawn subagents or background commands.
 
 Return findings first, ordered by severity. For each finding include severity,
 title, file and line where possible, code evidence, impact, and a suggested
@@ -79,12 +80,16 @@ artifacts.
 
 ## Run one review
 
-The bundled `scripts/run_review.sh` owns the security-critical launcher. Use it
-instead of retyping the command so version checks, native-skill checks, zmx
-startup failures, and sandbox verification stay in one executable contract.
-The launcher pins Grok to `0.2.93`, passes the prompt with `--prompt-file`,
-allows Grok's full default toolset, disables plan mode, and requests
-`--sandbox read-only` with `--always-approve`.
+The bundled `scripts/run_review.sh` owns the security-critical launcher and
+result parser. Use it instead of retyping Grok commands so version checks,
+native-skill checks, session identity, zmx failures, sandbox verification, and
+JSON validation stay in one executable contract. The launcher supports exactly
+Grok `0.2.99`, passes the prompt with `--prompt-file`, disables plan mode,
+memory, web search, edit/write tools, and MCP calls, and requests `--sandbox
+read-only` without auto-approving shell commands. It leaves Grok's default
+read/search/list/shell/background machinery intact because `0.2.99` cannot
+construct `run_terminal_cmd` when `--tools`, `--no-subagents`, or a disallowed
+`Agent` disables its shared background support.
 
 Create a unique run directory and write the task-specific prompt before
 starting the launcher:
@@ -97,16 +102,23 @@ PROMPT="$RUN_DIR/prompt.md"
 mkdir -p "$RUN_DIR"
 
 # Write the task-specific prompt to "$PROMPT" first.
-"<path-to-this-skill>/scripts/run_review.sh" "$REPO" "$PROMPT" "$RUN_DIR"
+"<path-to-this-skill>/scripts/run_review.sh" start "$REPO" "$PROMPT" "$RUN_DIR"
 ```
 
-The launcher fails closed unless Grok reports a matching `ProfileApplied` event
-with `profile=read-only`, `workspace=$REPO`, and `enforced=true` in
+The launcher records both the zmx session and a preassigned Grok session UUID,
+and holds one atomic lock per repository while the process is alive. It rejects
+the run unless Grok reports a matching `ProfileApplied` event with
+`profile=read-only`, `workspace=$REPO`, and `enforced=true` in
 `~/.grok/sandbox-events.jsonl`. It stops the zmx session on `ApplyFailed`, a
 missing event, or a zmx startup error. Do not start a second review while the
 first session is active. Do not use `--worktree`, because the reviewer must
 inspect the already-scoped checkout. Do not replace `read-only` with a writable
 sandbox profile.
+
+The lock records its owning zmx session. A later run replaces it only when zmx
+proves that session is no longer active. If a lock has no owner, or termination
+cannot be verified after a sandbox failure, the launcher retains the lock and
+reports its path for manual investigation.
 
 ## Observe and recover
 
@@ -119,38 +131,54 @@ tail -n 20 "$RUN_DIR/zmx-start.log"
 zmx list --short
 ```
 
-Wait for the recorded session and inspect the result file when it finishes:
+Wait for the recorded session and validate the result when it finishes:
 
 ```bash
-zmx wait "$(<"$RUN_DIR/zmx-session")"
+"<path-to-this-skill>/scripts/run_review.sh" wait "$RUN_DIR"
 ```
 
-The calling agent reads `result.json` directly. Do not add a Python, shell, or
-`jq` parser: the result is deliberately interpreted by the agent that owns the
-review context.
+The wrapper requires one valid JSON object with non-empty `text`, `sessionId`,
+and `requestId`, exact `stopReason=EndTurn`, and the preassigned session ID. It
+writes the validated review text to `review.md`. Read `review.md` for triage;
+retain `result.json` as the authoritative raw response and usage record.
 
 If the session is quiet, inspect `zmx list`, the result tail, and stderr before
 acting. If it exceeds the caller's approved wall-clock bound, stop the session
 and report an incomplete review. Preserve the prompt, raw result, stderr, and
-session id; do not automatically retry or fall back. Resume a recorded Grok
-session only when the user explicitly asks to continue that same review.
+session ids; do not automatically retry or fall back.
+
+Resume only when the user explicitly asks to continue that same review. Write
+a new prompt that asks Grok to finish and return the complete review, use a
+fresh run directory, and pass the recorded Grok UUID:
+
+```bash
+OLD_RUN_DIR="<original-run-directory>"
+RECOVERY_RUN_DIR="${OLD_RUN_DIR}-resume-$(date -u +%Y%m%dT%H%M%SZ)"
+RECOVERY_PROMPT="$RECOVERY_RUN_DIR/prompt.md"
+mkdir -p "$RECOVERY_RUN_DIR"
+
+# Write the recovery prompt to "$RECOVERY_PROMPT" first.
+"<path-to-this-skill>/scripts/run_review.sh" resume \
+  "$REPO" "$RECOVERY_PROMPT" "$RECOVERY_RUN_DIR" \
+  "$(<"$OLD_RUN_DIR/grok-session")"
+```
+
+Grok `0.2.99` fixes a session's sandbox profile for its lifetime. The wrapper
+passes the same `read-only` profile on resume so a recovery cannot widen it.
 
 ## Read and validate the result
 
-After `zmx wait` reports completion, inspect the raw JSON result and confirm:
+After the wrapper validates completion, inspect `review.md` and confirm:
 
-- the process reached a normal terminal state;
-- the top-level result has non-empty `text`, `sessionId`, and `requestId`;
-- `stopReason` is terminal and is not an interruption, cancellation, error,
-  or turn-limit termination;
 - the review text is non-empty and contains findings or an explicit no-findings
   statement;
 - the output is for the recorded scope and not a stale resumed session.
 
-Treat malformed JSON, missing fields, blank text, nonterminal stop reasons,
-turn exhaustion, interruption, timeout, and unavailable Grok as failed reviews.
-Report the exact run directory and failure; never present partial output as a
-completed review. Do not infer success from a zero-byte or truncated file.
+The wrapper already rejects malformed JSON, missing fields, blank text,
+nonterminal stop reasons, turn exhaustion, and mismatched sessions. Treat
+interruption, timeout, unavailable Grok, or review text that does not address the
+recorded scope as a failed review. Report the exact run directory and failure;
+never present partial output as a completed review.
 
 ## Validate findings against the repository
 
@@ -171,17 +199,33 @@ separate implementation request after the finding has been verified.
 ## Boundaries
 
 - The launcher hardens repository filesystem access with an enforced
-  `read-only` sandbox. It fails closed if Grok reports `ApplyFailed`, no
-  matching `ProfileApplied`, or `enforced=false`.
+  `read-only` sandbox. It rejects a run if Grok reports `ApplyFailed`, no
+  matching `ProfileApplied`, or `enforced=false` and serializes wrapper runs per
+  workspace so their events cannot be confused. Rejection includes verified
+  zmx termination; if termination remains visible, the lock stays in place.
+- Grok `0.2.99` documents a residual startup race for built-in profiles: if OS
+  enforcement fails, Grok can continue briefly while the wrapper observes the
+  failure and kills it. The launcher removes mutating/external built-in tools,
+  denies edit/write/MCP tools, and does not use `--always-approve` to reduce that
+  exposure. A custom profile would refuse natively, but requires persistent
+  Grok configuration this skill does not own. Do not treat a rejected run or
+  partial artifact as a review.
 - The sandbox intentionally permits Grok session/config writes under
-  `~/.grok/` and temporary run artifacts. It blocks repository writes only when
-  enforcement succeeds; it does not guarantee that in-process web/MCP calls or
-  macOS child-network activity cannot mutate external systems.
+  `~/.grok/` and temporary run artifacts. The launcher removes edit, write,
+  web and MCP operations through a combination of
+  `--disallowed-tools`, `--deny`, and dedicated disabling flags. Shell commands
+  and Grok's agent/background machinery remain available for code inspection
+  because `0.2.99` couples them at agent construction; the prompt prohibits
+  using subagents or background commands. On Linux, the sandbox blocks
+  child-process network access; on macOS, Grok `0.2.99` documents child-network
+  restriction as a no-op.
+- Detached Linux runs can report `ApplyFailed` when Landlock cannot open
+  `/dev/tty`. Preserve the artifacts and report the failure. Never retry by
+  dropping the sandbox.
 - The review prompt remains a soft policy against editing, deleting, resetting,
   stashing, committing, pushing, merging, commenting on GitHub, deploying,
-  installing, changing configuration, or mutating external state. Validate any
-  such claim from the result and environment rather than overstating the OS
-  guarantee.
+  installing, changing configuration, or mutating external state. On macOS in
+  particular, do not overstate the sandbox as an external-state guarantee.
 - Use one canonical path: this wrapper invokes Grok's native `/code-review`.
   Do not add a fallback reviewer or a second review mode.
 - Keep historical designs and prior review artifacts immutable.
