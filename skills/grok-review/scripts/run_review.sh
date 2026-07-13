@@ -129,8 +129,8 @@ case "$GROK_VERSION" in
     *) fail "unsupported Grok version: $GROK_VERSION" ;;
 esac
 
-NATIVE_SKILL="$HOME/.grok/skills/code-review/SKILL.md"
-[[ -f "$NATIVE_SKILL" ]] || fail "Grok native /code-review skill is missing: $NATIVE_SKILL"
+NATIVE_SKILL="$HOME/.grok/bundled/skills/review/SKILL.md"
+[[ -f "$NATIVE_SKILL" ]] || fail "Grok native /review skill is missing: $NATIVE_SKILL"
 command -v zmx >/dev/null 2>&1 || fail "zmx is unavailable"
 command -v jq >/dev/null 2>&1 || fail "jq is unavailable for sandbox and result validation"
 command -v rg >/dev/null 2>&1 || fail "rg is unavailable for zmx session validation"

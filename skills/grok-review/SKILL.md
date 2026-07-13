@@ -1,13 +1,13 @@
 ---
 name: grok-review
-description: Run a safe, branch-scoped Grok Build code review against a resolved base or pull request. Use when an external Grok review is requested for correctness, architecture, maintainability, regressions, or missing tests; the workflow invokes Grok's native /code-review skill, preserves durable artifacts, and never edits or publishes changes.
+description: Run a safe Grok Build code review of a branch or explicitly requested local changes. Use when an external Grok review is requested for correctness, architecture, maintainability, regressions, or missing tests; the workflow invokes Grok's native /review skill, preserves durable artifacts, and never edits or publishes changes.
 ---
 
 # Grok Review
 
-Use Grok Build as an external reviewer for a complete branch or pull-request
-change. Grok's installed `/code-review` skill owns the review standard and
-quality bar. This skill owns scope selection, the review-only boundary,
+Use Grok Build as an external reviewer for a complete branch or explicitly
+requested local changes. Grok's bundled `/review` skill owns the review
+standard and quality bar. This skill owns scope selection, the review-only boundary,
 execution, recovery, and result handling. Do not copy the native skill's
 review rules here; that would create two contracts that can drift.
 
@@ -16,14 +16,16 @@ review rules here; that would create two contracts that can drift.
 Resolve scope before starting Grok.
 
 1. Read the repository's `AGENTS.md` and other applicable project instructions.
-2. Use an explicitly supplied PR, range, base, or file list when provided.
+2. Use an explicitly supplied branch or local working tree when provided.
 3. Otherwise resolve the default base as `origin/main` and compute the merge
    base with `git merge-base origin/main HEAD`. Do not silently use `HEAD~1`.
 4. Record the repository root, base ref and SHA, merge-base SHA, head SHA,
    changed files, diff stat, user goal, relevant invariants, and verification
    already run.
-5. If a PR is in scope, use its actual base and head rather than guessing from
-   the local branch. Read PR metadata only; never post or edit GitHub content.
+5. If a PR is in scope, require an already-prepared local branch at its head and
+   verify that native branch mode's default base matches the PR base. Never
+   mutate the current checkout or invoke `/review --pr`; PR mode posts a
+   PENDING GitHub review.
 
 Inspect scope with read-only commands such as:
 
@@ -35,28 +37,24 @@ git diff --cached --stat
 git ls-files --others --exclude-standard
 ```
 
-Handle a dirty tree explicitly:
+Choose one native review mode:
 
-- Review the committed branch range by default.
-- Include staged, unstaged, or untracked files only when the user explicitly
-  puts the working tree or those files in scope.
+- Use branch mode by default. It excludes dirty changes.
+- Use local mode only when the user explicitly requests staged, unstaged, and
+  untracked changes.
 - If dirty changes are present but their ownership is ambiguous, stop and ask
   which changes belong in the review. Do not stash, clean, reset, commit, or
   create a compatibility path to make the tree appear clean.
 
 ## Prepare the prompt
 
-Write only the scope that `/code-review` cannot infer from the checkout to a
-temporary run directory:
+Write exactly one native invocation to a temporary run directory:
 
 ```text
-/code-review
-
-Review <merge-base>...HEAD. Include these dirty files: <explicit files, or none>.
+/review --branch <branch>
 ```
 
-Add the user goal or a material constraint only when it is not evident from the
-code.
+For an explicitly requested dirty-tree review, use `/review --local` instead.
 
 Keep secrets, credentials, tokens, and private keys out of the prompt and
 artifacts.
@@ -70,9 +68,9 @@ JSON validation stay in one executable contract. The launcher supports exactly
 Grok `0.2.99`, passes the prompt with `--prompt-file`, disables plan mode,
 memory, web search, edit/write tools, and MCP calls, and requests `--sandbox
 read-only` without auto-approving shell commands. It leaves Grok's default
-read/search/list/shell/background machinery intact because `0.2.99` cannot
-construct `run_terminal_cmd` when `--tools`, `--no-subagents`, or a disallowed
-`Agent` disables its shared background support.
+read/search/list/shell/agent/background machinery intact because native
+`/review` needs a reviewer subagent, while `0.2.99` couples
+`run_terminal_cmd` to its shared background support.
 
 Create a unique run directory and write the task-specific prompt before
 starting the launcher:
@@ -188,26 +186,28 @@ separate implementation request after the finding has been verified.
   zmx termination; if termination remains visible, the lock stays in place.
 - Grok `0.2.99` documents a residual startup race for built-in profiles: if OS
   enforcement fails, Grok can continue briefly while the wrapper observes the
-  failure and kills it. The launcher removes mutating/external built-in tools,
-  denies edit/write/MCP tools, and does not use `--always-approve` to reduce that
-  exposure. A custom profile would refuse natively, but requires persistent
+  failure and kills it. The launcher removes mutating and external built-in
+  tools, denies edit/write/MCP tools, and does not use `--always-approve` to
+  reduce that exposure. A custom profile would refuse natively, but requires persistent
   Grok configuration this skill does not own. Do not treat a rejected run or
   partial artifact as a review.
 - The sandbox intentionally permits Grok session/config writes under
-  `~/.grok/` and temporary run artifacts. The launcher removes edit, write,
-  web and MCP operations through a combination of
-  `--disallowed-tools`, `--deny`, and dedicated disabling flags. Shell commands
-  and Grok's agent/background machinery remain available for code inspection
-  because `0.2.99` couples them at agent construction; the prompt prohibits
-  using subagents or background commands. On Linux, the sandbox blocks
-  child-process network access; on macOS, Grok `0.2.99` documents child-network
-  restriction as a no-op.
+  `~/.grok/` and temporary review artifacts. The launcher removes edit, write,
+  web, and MCP operations through a combination of `--disallowed-tools`,
+  `--deny`, and dedicated disabling flags. Native `/review` retains
+  agent/background machinery for its reviewer subagent and can create its
+  protected scratch artifacts through sandboxed shell commands. On Linux, the
+  sandbox blocks child-process network access; on macOS, Grok `0.2.99`
+  documents child-network restriction as a no-op.
 - Detached Linux runs can report `ApplyFailed` when Landlock cannot open
   `/dev/tty`. Preserve the artifacts and report the failure. Never retry by
   dropping the sandbox.
-- Native `/code-review` supplies the soft review-only policy. On macOS in
+- Grok `0.2.99` sandbox events identify the workspace but not the Grok session.
+  Do not run another Grok process in the same workspace while this wrapper is
+  starting; its event could be mistaken for this run's enforcement result.
+- Native `/review` supplies the soft review-only policy. On macOS in
   particular, do not overstate the sandbox as an external-state guarantee.
-- Use one canonical path: this wrapper invokes Grok's native `/code-review`.
+- Use one canonical path: this wrapper invokes Grok's native `/review`.
   Do not add a fallback reviewer or a second review mode.
 - Keep historical designs and prior review artifacts immutable.
 - If implementation is later requested, create a clean external worktree and

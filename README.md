@@ -91,7 +91,7 @@ pi
 - `editorial-sketches` — editorial article illustration skill vendored from `helloianneo/ian-xiaohei-illustrations` commit `91b5608`
 - `oracle` — @steipete/oracle CLI workflow for second-model reviews with selected repo context
 - `fable-review` — trusted Claude Fable code review workflow using `claude -p --model claude-fable-5`
-- `grok-review` — safe, branch-scoped Grok Build review workflow delegating review standards to Grok's native `/code-review` skill
+- `grok-review` — safe Grok Build review workflow delegating branch and explicit dirty-tree reviews to Grok's native `/review` skill
 - `writing-mike-ruby-style` — Mike's personal Ruby/Rails style (mirrors his canonical style rules)
 - `effect-ts` — repository-first Effect v4 implementation, review, debugging, and source research
 - `prepare-branch-context` — read-only branch diff, commit, and PR context gathering skill vendored from `jnsahaj/skills`

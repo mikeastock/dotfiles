@@ -156,7 +156,7 @@ test_make_build() {
     grok_review_content=$(<"$PROJECT_DIR/build/claude/grok-review/SKILL.md")
     local grok_review_launcher_content
     grok_review_launcher_content=$(<"$PROJECT_DIR/build/claude/grok-review/scripts/run_review.sh")
-    assert_output_contains "$grok_review_content" "/code-review" "grok-review delegates review standards to Grok's native skill"
+    assert_output_contains "$grok_review_content" "/review --branch" "grok-review delegates review standards to Grok's native branch mode"
     assert_output_contains "$grok_review_content" "origin/main" "grok-review defines the default base"
     assert_output_contains "$grok_review_content" "zmx" "grok-review uses zmx for long-running reviews"
     assert_output_contains "$grok_review_content" "Never blindly implement reviewer feedback" "grok-review requires finding validation before implementation"

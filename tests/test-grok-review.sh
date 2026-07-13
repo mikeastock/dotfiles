@@ -25,10 +25,10 @@ GROK_SESSION_ID="019f4d7b-7517-7021-9dbf-9b9dcd20bd43"
 OTHER_SESSION_ID="019f4d7b-7517-7021-9dbf-9b9dcd20bd44"
 TEST_HOME="$TMP_DIR/home"
 
-mkdir -p "$FAKE_BIN" "$REPO" "$TEST_HOME/.grok/skills/code-review"
+mkdir -p "$FAKE_BIN" "$REPO" "$TEST_HOME/.grok/bundled/skills/review"
 git -C "$REPO" init -q
-printf '%s\n' '/code-review Reply with exactly PROBE_OK.' > "$PROMPT"
-printf '%s\n' '# Native test skill' > "$TEST_HOME/.grok/skills/code-review/SKILL.md"
+printf '%s\n' '/review --branch test-branch' > "$PROMPT"
+printf '%s\n' '# Native test skill' > "$TEST_HOME/.grok/bundled/skills/review/SKILL.md"
 
 cat > "$FAKE_BIN/grok" <<'EOF'
 #!/usr/bin/env bash
