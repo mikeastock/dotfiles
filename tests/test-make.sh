@@ -138,6 +138,7 @@ test_make_build() {
     assert_file_not_exists "$PROJECT_DIR/build/claude/semantic-commit" "semantic-commit skill is no longer built"
     for agent in amp claude pi; do
         assert_file_not_exists "$PROJECT_DIR/build/$agent/test-driven-development" "$agent no longer builds test-driven-development"
+        assert_file_not_exists "$PROJECT_DIR/build/$agent/systematic-debugging" "$agent no longer builds systematic-debugging"
     done
 
     local breadboard_content
@@ -276,6 +277,7 @@ test_make_install_skills() {
         "$SANDBOX_DIR/.claude/skills" \
         "$SANDBOX_DIR/.agents/skills"; do
         assert_file_not_exists "$skills_dir/test-driven-development" "Install excludes test-driven-development from $skills_dir"
+        assert_file_not_exists "$skills_dir/systematic-debugging" "Install excludes systematic-debugging from $skills_dir"
     done
 }
 

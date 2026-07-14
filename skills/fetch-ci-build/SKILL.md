@@ -56,8 +56,6 @@ digraph workflow {
     present [label="6. Present failures + proposed fixes"];
     ask [label="7. Ask: Apply fix?" shape=diamond];
     apply [label="Apply the fix"];
-    complex [label="Complex failure?" shape=diamond];
-    debug [label="Use systematic-debugging skill"];
     next [label="Next failure?" shape=diamond];
     done [label="Done"];
     
@@ -69,11 +67,8 @@ digraph workflow {
     read -> present;
     present -> ask;
     ask -> apply [label="yes"];
-    ask -> complex [label="no"];
+    ask -> next [label="no"];
     apply -> next;
-    complex -> debug [label="yes"];
-    complex -> next [label="no"];
-    debug -> next;
     next -> read [label="yes"];
     next -> done [label="no"];
 }
@@ -118,11 +113,6 @@ Ask how to proceed:
 - "Apply the suggested fix"
 - "Investigate further before fixing"
 - "Skip this failure"
-- "Use systematic-debugging for deeper investigation"
-
-### 7. Complex Failures
-
-If the failure requires deeper investigation (e.g., unclear root cause, flaky test, environmental issue), recommend the `systematic-debugging` skill.
 
 ## Error Types Detected
 
@@ -142,7 +132,3 @@ If the failure requires deeper investigation (e.g., unclear root cause, flaky te
 | Build still running | Wait for completion or check partial results |
 | Buildkite path still using old script | Use `references/buildkite.md` `bk` workflow first; only fall back to API/script if `bk` is unavailable |
 | Rate limiting | Wait and retry |
-
-## Integration with Other Skills
-
-- **systematic-debugging**: Use for complex failures requiring root cause analysis
