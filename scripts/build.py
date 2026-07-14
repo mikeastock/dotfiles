@@ -1314,8 +1314,37 @@ def install_amp_config():
     print(f"  Installed to {dest}")
 
 
+def read_codex_hook_state(config_file: Path) -> dict:
+    """Read Codex's runtime-managed hook trust and enablement state."""
+    if not config_file.exists():
+        return {}
+
+    try:
+        with open(config_file, "rb") as f:
+            config = tomllib.load(f)
+    except tomllib.TOMLDecodeError:
+        return {}
+
+    return config.get("hooks", {}).get("state", {})
+
+
+def append_codex_hook_state(config_file: Path, hook_state: dict) -> None:
+    """Append runtime hook state without treating it as managed dotfiles config."""
+    if not hook_state:
+        return
+
+    with open(config_file, "a") as f:
+        f.write("\n[hooks.state]\n")
+        for hook_id, state in hook_state.items():
+            f.write(f"\n[hooks.state.{json.dumps(hook_id)}]\n")
+            if "enabled" in state:
+                f.write(f"enabled = {str(state['enabled']).lower()}\n")
+            if "trusted_hash" in state:
+                f.write(f"trusted_hash = {json.dumps(state['trusted_hash'])}\n")
+
+
 def install_codex_config():
-    """Install Codex CLI configuration."""
+    """Install Codex CLI configuration while preserving runtime hook state."""
     print("Installing Codex config...")
 
     if not CODEX_CONFIG_FILE.exists():
@@ -1324,8 +1353,10 @@ def install_codex_config():
 
     dest = HOME / ".codex" / "config.toml"
     dest.parent.mkdir(parents=True, exist_ok=True)
+    hook_state = read_codex_hook_state(dest)
 
     shutil.copy(CODEX_CONFIG_FILE, dest)
+    append_codex_hook_state(dest, hook_state)
     print(f"  Installed to {dest}")
 
     for stale_file in ("model-catalog.json", "fireworks-glm52.config.toml"):

@@ -3,7 +3,8 @@ sandbox_mode = "danger-full-access"
 model = "gpt-5.6-sol"
 model_verbosity = "low"
 model_reasoning_effort = "medium"
-personality = "none"
+model_reasoning_summary = "concise"
+personality = "pragmatic"
 
 # Keep local CLI quiet about unstable features.
 suppress_unstable_features_warning = true

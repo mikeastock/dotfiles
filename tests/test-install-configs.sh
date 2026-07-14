@@ -45,7 +45,8 @@ test_config_new_files() {
     assert_file_exists "$SANDBOX_DIR/.pi/agent/settings.json" "Pi settings file was created"
     assert_file_exists "$SANDBOX_DIR/.codex/AGENTS.md" "Codex AGENTS.md was created"
     assert_file_exists "$SANDBOX_DIR/.pi/agent/AGENTS.md" "Pi AGENTS.md was created"
-    assert_output_contains "$(cat "$SANDBOX_DIR/.codex/config.toml")" 'personality = "none"' "Codex config uses the neutral personality"
+    assert_output_contains "$(cat "$SANDBOX_DIR/.codex/config.toml")" 'personality = "pragmatic"' "Codex config uses the pragmatic personality"
+    assert_output_contains "$(cat "$SANDBOX_DIR/.codex/config.toml")" 'model_reasoning_summary = "concise"' "Codex config uses concise reasoning summaries"
     assert_output_contains "$(cat "$SANDBOX_DIR/.codex/AGENTS.md")" "Visual Previews" "Codex AGENTS.md includes visual preview guidance"
     assert_output_contains "$(cat "$SANDBOX_DIR/.codex/AGENTS.md")" "clear, concise language without reducing technical precision" "Codex AGENTS.md includes clear communication guidance"
     assert_output_not_contains "$(cat "$SANDBOX_DIR/.codex/AGENTS.md")" "Hard-Cut Product Policy" "Codex AGENTS.md omits hard-cutover guidance"
@@ -119,6 +120,32 @@ test_codex_hooks_installed() {
     assert_output_contains "$hooks_json" '"matcher": "Bash"' "Codex guard applies to Bash commands"
     assert_output_contains "$hooks_json" '"command": "/home/mikeastock/.local/bin/dcg"' "Codex guard runs dcg"
     assert_file_not_exists "$SANDBOX_DIR/.codex/hooks/terraform_apply_gate.py" "Terraform hard-gate hook script is absent"
+}
+
+# Test: Codex config preserves runtime-managed hook trust state
+test_codex_preserve_hook_trust() {
+    log_test "Testing Codex hook trust state is preserved"
+    cd "$PROJECT_DIR"
+
+    rm -rf "$SANDBOX_DIR/.codex"
+    mkdir -p "$SANDBOX_DIR/.codex"
+    cat > "$SANDBOX_DIR/.codex/config.toml" <<'EOF'
+model = "old-model"
+
+[hooks.state]
+
+[hooks.state."/home/test/.codex/hooks.json:pre_tool_use:0:0"]
+enabled = false
+trusted_hash = "sha256:trusted-hook"
+EOF
+
+    HOME="$SANDBOX_DIR" make install-configs >/dev/null 2>&1
+
+    local codex_config
+    codex_config=$(cat "$SANDBOX_DIR/.codex/config.toml")
+    assert_output_contains "$codex_config" 'model = "gpt-5.6-sol"' "Codex managed config is refreshed"
+    assert_output_contains "$codex_config" 'trusted_hash = "sha256:trusted-hook"' "Codex hook trust hash is preserved"
+    assert_output_contains "$codex_config" 'enabled = false' "Codex hook enabled state is preserved"
 }
 
 # Test: Amp config preserves existing settings
@@ -330,6 +357,7 @@ main() {
     test_codex_custom_models_removed
     test_codex_terraform_apply_rules
     test_codex_hooks_installed
+    test_codex_preserve_hook_trust
     test_amp_preserve_existing
     test_pi_preserve_changelog_version
     test_config_idempotent
