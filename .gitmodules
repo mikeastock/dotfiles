@@ -28,3 +28,6 @@
 [submodule "plugins/shadcn-improve"]
 	path = plugins/shadcn-improve
 	url = https://github.com/shadcn/improve
+[submodule "plugins/intercom-2x-skills"]
+	path = plugins/intercom-2x-skills
+	url = https://github.com/intercom/2x-skills.git

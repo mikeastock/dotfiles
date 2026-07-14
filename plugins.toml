@@ -51,6 +51,11 @@ skills = [ "open-prose" ]
 url = "https://github.com/shadcn/improve"
 skills = [ "improve" ]
 
+["intercom/2x-skills"]
+url = "https://github.com/intercom/2x-skills"
+skills_path = "plugins/code-review-tools/skills/*"
+skills = [ "thermo-nuclear-code-review" ]
+
 ["mitsuhiko/agent-stuff"]
 url = "https://github.com/mitsuhiko/agent-stuff"
 skills = [] # tmux is vendored under skills/ so it can diverge from the plugin version

@@ -178,6 +178,9 @@ test_make_build() {
     assert_file_exists "$PROJECT_DIR/build/amp/impeccable/SKILL.md" "Amp builds impeccable skill"
     assert_file_exists "$PROJECT_DIR/build/claude/impeccable/SKILL.md" "Claude builds impeccable skill"
     assert_file_exists "$PROJECT_DIR/build/pi/impeccable/SKILL.md" "Pi builds impeccable skill"
+    assert_file_exists "$PROJECT_DIR/build/amp/thermo-nuclear-code-review/SKILL.md" "Amp builds thermo-nuclear-code-review skill"
+    assert_file_exists "$PROJECT_DIR/build/claude/thermo-nuclear-code-review/SKILL.md" "Claude builds thermo-nuclear-code-review skill"
+    assert_file_exists "$PROJECT_DIR/build/pi/thermo-nuclear-code-review/SKILL.md" "Pi builds thermo-nuclear-code-review skill"
 
     local amp_impeccable_content
     local claude_impeccable_content
@@ -265,6 +268,9 @@ test_make_install_skills() {
     assert_dir_exists "$SANDBOX_DIR/.config/agents/skills/x-search" "Amp installs x-search skill"
     assert_dir_exists "$SANDBOX_DIR/.claude/skills/x-search" "Claude installs x-search skill"
     assert_dir_exists "$SANDBOX_DIR/.agents/skills/x-search" "Pi installs x-search skill"
+    assert_dir_exists "$SANDBOX_DIR/.config/agents/skills/thermo-nuclear-code-review" "Amp installs thermo-nuclear-code-review skill"
+    assert_dir_exists "$SANDBOX_DIR/.claude/skills/thermo-nuclear-code-review" "Claude installs thermo-nuclear-code-review skill"
+    assert_dir_exists "$SANDBOX_DIR/.agents/skills/thermo-nuclear-code-review" "Pi installs thermo-nuclear-code-review skill"
     for skills_dir in \
         "$SANDBOX_DIR/.config/agents/skills" \
         "$SANDBOX_DIR/.claude/skills" \
