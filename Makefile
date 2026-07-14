@@ -15,7 +15,7 @@ HOME_LINKS := .gitconfig .ideavimrc .psqlrc .tmux.conf .tmuxinator .vscode
 # .config directories to symlink entirely
 CONFIG_DIRS := alacritty stylua lvim zellij direnv atuin ghostty
 
-.PHONY: all install install-non-interactive install-tools install-skills install-amp-plugins install-extensions install-prompts install-subagents install-themes install-configs amp-plugin-types amp-plugin-check package-manager-security-config build clean help submodule-init plugin-update check-python uidotsh \
+.PHONY: all install install-non-interactive install-tools install-skills install-amp-plugins install-extensions install-prompts install-subagents install-themes install-configs amp-plugin-types amp-plugin-check package-manager-security-config build clean help submodule-init plugin-update check-python \
 	dot-all dot-install dot-home-symlinks dot-config-symlinks dot-platform-defaults dot-macos-defaults dot-clean
 
 all: help
@@ -38,7 +38,6 @@ help:
 	@echo "  make amp-plugin-types        Refresh local Amp plugin TypeScript declarations"
 	@echo "  make amp-plugin-check        Refresh Amp plugin declarations and typecheck plugins"
 	@echo "  make package-manager-security-config Configure global npm/pnpm/bun/uv package security settings"
-	@echo "  make uidotsh                 Configure mcporter uidotsh from UIDOTSH_TOKEN and regenerate ~/.local/bin/uidotsh"
 	@echo "  make build                   Build skills/prompts/themes (without installing)"
 	@echo "  make plugin-update           Update all plugin submodules to latest"
 	@echo "  make clean                   Remove all installed skills, extensions, and build artifacts"
@@ -103,28 +102,6 @@ amp-plugin-types: check-python
 
 amp-plugin-check: amp-plugin-types
 	@pnpm exec tsc --noEmit --pretty false
-
-uidotsh:
-	@which mcporter >/dev/null 2>&1 || (echo "✗ Error: mcporter not installed"; exit 1)
-	@mkdir -p $(HOME)/.mcporter $(HOME)/.mcporter/generated $(HOME)/.local/bin
-	@if [ ! -f $(HOME)/.mcporter/mcporter.json ] || ! rg -q '"uidotsh"' $(HOME)/.mcporter/mcporter.json; then \
-		if [ -z "$${UIDOTSH_TOKEN:-}" ]; then \
-			echo "✗ Error: uidotsh config missing and UIDOTSH_TOKEN is not set"; \
-			echo "  First-time setup: UIDOTSH_TOKEN=<token> make uidotsh"; \
-			echo "  Optional ui.sh agent setup: npx @uidotsh/install <token>"; \
-			exit 1; \
-		fi; \
-		mcporter config add uidotsh "https://ui.sh/mcp?agent=mcporter" \
-			--header "Authorization=Bearer $${UIDOTSH_TOKEN}" \
-			--scope home >/dev/null; \
-	fi
-	@mcporter generate-cli \
-		--server uidotsh \
-		--output $(HOME)/.mcporter/generated/uidotsh.ts \
-		--bundle $(HOME)/.local/bin/uidotsh >/dev/null
-	@chmod +x $(HOME)/.local/bin/uidotsh
-	@rm -f $(HOME)/.local/bin/ui-sh $(HOME)/.mcporter/generated/ui-sh.ts
-	@echo "✓ uidotsh regenerated at $(HOME)/.local/bin/uidotsh"
 
 package-manager-security-config:
 	@$(PYTHON) $(CURDIR)/scripts/package_manager_security_config.py
