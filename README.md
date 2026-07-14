@@ -86,7 +86,6 @@ pi
 ### Notable custom skills
 
 - `brainstorming`, `writing-plans`, `executing-plans`, `requesting-code-review`, `receiving-code-review`, and `fetch-ci-build` — vendored superpower skills from `buildrtech/dotagents`; the three planning skills are temporarily excluded from installation
-- `layered-rails` — Rails layered architecture guidance (copied locally from `palkan/skills`, not managed as a plugin)
 - `babysit-pr` — GitHub PR monitoring/babysitting workflow imported from `openai/codex` commit `7e569f1`
 - `editorial-sketches` — editorial article illustration skill vendored from `helloianneo/ian-xiaohei-illustrations` commit `91b5608`
 - `oracle` — @steipete/oracle CLI workflow for second-model reviews with selected repo context
@@ -95,7 +94,6 @@ pi
 - `writing-mike-ruby-style` — Mike's personal Ruby/Rails style (mirrors his canonical style rules)
 - `effect-ts` — repository-first Effect v4 implementation, review, debugging, and source research
 - `prepare-branch-context` — read-only branch diff, commit, and PR context gathering skill vendored from `jnsahaj/skills`
-- `session-learning-miner` — mine Pi session history for repeated prompts, friction, reusable workflows, and skill/template candidates
 - `zmx` — guidance for managing persistent background terminal work
 - `tmux` — remote control tmux sessions through the active server, with an agent-neutral fallback socket when no server is running
 - `buildr-artifacts` — publish browser-viewable Buildr artifacts as static S3-hosted HTML/assets or stateful Vite apps served from Codexbox with `bld.run` URLs
