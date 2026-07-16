@@ -146,6 +146,51 @@ test_make_build() {
     assert_output_contains "$breadboard_content" "name: breadboard-reflection" "breadboard-reflection has normalized name"
     assert_output_contains "$breadboard_content" "description:" "breadboard-reflection has synthesized description"
 
+    local shaping_skill shaping_content openai_metadata direct_policy_count
+    for shaping_skill in shaping breadboarding breadboard-reflection; do
+        for agent in claude pi; do
+            shaping_content=$(<"$PROJECT_DIR/build/$agent/$shaping_skill/SKILL.md")
+            assert_output_contains "$shaping_content" "disable-model-invocation: true" "$agent makes $shaping_skill user-invocable only"
+        done
+
+        shaping_content=$(<"$PROJECT_DIR/build/amp/$shaping_skill/SKILL.md")
+        assert_output_not_contains "$shaping_content" "disable-model-invocation: true" "Amp build leaves $shaping_skill invocation metadata unchanged"
+
+        assert_file_exists "$PROJECT_DIR/build/pi/$shaping_skill/agents/openai.yaml" "Pi/shared build includes Codex policy for $shaping_skill"
+        openai_metadata=$(<"$PROJECT_DIR/build/pi/$shaping_skill/agents/openai.yaml")
+        direct_policy_count=$(printf '%s\n' "$openai_metadata" | rg --count '^  allow_implicit_invocation: false$')
+        assert_equals "$direct_policy_count" "1" "Codex requires explicit invocation for $shaping_skill"
+    done
+
+    local metadata_test_dir="$PROJECT_DIR/build/pi/shaping-metadata-test"
+    mkdir -p "$metadata_test_dir/agents"
+    cat > "$metadata_test_dir/agents/openai.yaml" <<'EOF'
+interface:
+  display_name: "Shaping"
+policy: { allow_implicit_invocation: true, future_setting: "keep, me" } # keep comment
+EOF
+    python3 -c "import importlib.util, pathlib; spec = importlib.util.spec_from_file_location('build', 'scripts/build.py'); module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module); module.disable_codex_implicit_invocation(pathlib.Path('$metadata_test_dir'))"
+    openai_metadata=$(<"$metadata_test_dir/agents/openai.yaml")
+    assert_output_contains "$openai_metadata" "display_name: \"Shaping\"" "Codex policy merge preserves interface metadata"
+    assert_output_contains "$openai_metadata" "future_setting: \"keep, me\"" "Codex policy merge preserves flow policy metadata"
+    assert_output_contains "$openai_metadata" 'policy: { allow_implicit_invocation: false, future_setting: "keep, me" } # keep comment' "Codex policy merge updates flow mappings"
+    assert_output_contains "$openai_metadata" "# keep comment" "Codex policy merge preserves flow mapping comments"
+
+    cat > "$metadata_test_dir/agents/openai.yaml" <<'EOF'
+policy: # invocation policy
+  nested:
+    allow_implicit_invocation: true
+interface:
+  display_name: "Shaping"
+EOF
+    python3 -c "import importlib.util, pathlib; spec = importlib.util.spec_from_file_location('build', 'scripts/build.py'); module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module); module.disable_codex_implicit_invocation(pathlib.Path('$metadata_test_dir'))"
+    openai_metadata=$(<"$metadata_test_dir/agents/openai.yaml")
+    assert_output_contains "$openai_metadata" "policy: # invocation policy" "Codex policy merge supports commented block mappings"
+    direct_policy_count=$(printf '%s\n' "$openai_metadata" | rg --count '^  allow_implicit_invocation: false$')
+    assert_equals "$direct_policy_count" "1" "Codex policy merge adds the direct policy key"
+    assert_output_contains "$openai_metadata" "    allow_implicit_invocation: true" "Codex policy merge preserves nested metadata"
+    assert_output_contains "$openai_metadata" "display_name: \"Shaping\"" "Codex block policy merge preserves following metadata"
+
     assert_file_exists "$PROJECT_DIR/skills/grok-review/SKILL.md" "grok-review source skill exists"
     assert_file_exists "$PROJECT_DIR/skills/grok-review/scripts/run_review.sh" "grok-review launcher exists"
     for agent in amp claude pi; do

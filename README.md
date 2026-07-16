@@ -72,6 +72,8 @@ Amp settings live in `amp-configs/settings.json`. `make install-configs` merges 
 
 `make install` preserves manually installed skills, Amp plugins, Pi extensions, prompts, subagents, and themes that live beside dotfiles-managed artifacts. The installer tracks top-level managed names in `~/.local/state/dotfiles/agent-install-manifest.json`, overwrites those managed artifacts on each install, and removes managed artifacts that are no longer built. If a built artifact conflicts with an existing unmanaged path, the install fails; rerun the underlying build script with `--force` only when you want dotfiles to claim that path.
 
+Plugin skills can be restricted to explicit user invocation with `skills_user_invocable_only` in `plugins.toml`. The build emits `disable-model-invocation: true` for Claude and Pi, plus `policy.allow_implicit_invocation: false` in `agents/openai.yaml` for Codex. The Codex metadata is included in the Pi/shared build because Codex also scans `~/.agents/skills`.
+
 ### Canonical Pi install
 
 ```bash
@@ -100,6 +102,7 @@ pi
 
 ### Notable plugin skills
 
+- `shaping`, `breadboarding`, and `breadboard-reflection` — explicit-only product shaping and breadboard workflows from `rjs/shaping-skills`
 - `prototype`, `grill-with-docs`, `teach`, and `writing-great-skills` — workflow and teaching skills from `mattpocock/skills`
 - `improve` — codebase audit and self-contained implementation planning skill from `shadcn/improve`
 - `impeccable` — frontend design, critique, polish, and live iteration skill from `pbakaus/impeccable`

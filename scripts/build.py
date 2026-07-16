@@ -267,6 +267,7 @@ class Plugin:
     skills_path_by_agent: dict[str, list[str]] = field(default_factory=dict)
     skills: list[str] = field(default_factory=list)  # Empty = none, ["*"] = all
     skills_skip_agents: list[str] = field(default_factory=list)
+    skills_user_invocable_only: list[str] = field(default_factory=list)
     extensions_path: list[str] = field(default_factory=lambda: ["extensions/*.ts"])
     extensions: list[str] = field(default_factory=list)  # Empty = none, ["*"] = all
     prompts_path: list[str] = field(default_factory=lambda: ["prompts/*.md"])
@@ -286,6 +287,17 @@ class Plugin:
         if agent is not None and agent in self.skills_path_by_agent:
             return self.skills_path_by_agent[agent]
         return self.skills_path
+
+    def skill_is_user_invocable_only(self, name: str) -> bool:
+        """Return whether a built skill should require explicit user invocation."""
+        if "*" in self.skills_user_invocable_only:
+            return True
+
+        configured_names = {
+            f"{self.alias}-{skill}" if self.alias else skill
+            for skill in self.skills_user_invocable_only
+        }
+        return name in configured_names
 
     @classmethod
     def from_dict(cls, name: str, data: dict) -> "Plugin":
@@ -323,6 +335,9 @@ class Plugin:
             skills_path_by_agent=normalize_path_map(data.get("skills_path_by_agent")),
             skills=normalize_items(data.get("skills")),
             skills_skip_agents=normalize_items(data.get("skills_skip_agents")),
+            skills_user_invocable_only=normalize_items(
+                data.get("skills_user_invocable_only")
+            ),
             extensions_path=normalize_path(
                 data.get("extensions_path", "extensions/*.ts")
             ),
@@ -739,6 +754,148 @@ def normalize_skill_frontmatter(content: str, expected_name: str) -> str:
     return content[: match.start(1)] + new_frontmatter + content[match.end(1) :]
 
 
+def set_skill_frontmatter_boolean(content: str, key: str, value: bool) -> str:
+    """Set a top-level boolean in normalized SKILL.md frontmatter."""
+    import re
+
+    frontmatter_pattern = r"^---\s*\n(.*?)\n---"
+    match = re.match(frontmatter_pattern, content, re.DOTALL)
+    if not match:
+        raise ValueError("SKILL.md content must have normalized frontmatter")
+
+    frontmatter = match.group(1)
+    replacement = f"{key}: {'true' if value else 'false'}"
+    key_pattern = rf"^{re.escape(key)}:\s*.*$"
+
+    if re.search(key_pattern, frontmatter, re.MULTILINE):
+        new_frontmatter = re.sub(
+            key_pattern,
+            replacement,
+            frontmatter,
+            flags=re.MULTILINE,
+        )
+    else:
+        new_frontmatter = f"{frontmatter.rstrip()}\n{replacement}"
+
+    return content[: match.start(1)] + new_frontmatter + content[match.end(1) :]
+
+
+def split_yaml_flow_mapping(body: str, metadata_path: Path) -> list[str]:
+    """Split a YAML flow mapping body on top-level commas."""
+    entries = []
+    start = 0
+    depth = 0
+    quote = None
+    index = 0
+
+    while index < len(body):
+        character = body[index]
+        if quote is not None:
+            if quote == '"' and character == "\\":
+                index += 2
+                continue
+            if character == quote:
+                if quote == "'" and index + 1 < len(body) and body[index + 1] == "'":
+                    index += 2
+                    continue
+                quote = None
+        elif character in {'"', "'"}:
+            quote = character
+        elif character in "[{":
+            depth += 1
+        elif character in "]}":
+            depth -= 1
+            if depth < 0:
+                sys.exit(f"Error: malformed flow mapping in {metadata_path}")
+        elif character == "," and depth == 0:
+            entries.append(body[start:index])
+            start = index + 1
+        index += 1
+
+    if quote is not None or depth != 0:
+        sys.exit(f"Error: malformed flow mapping in {metadata_path}")
+
+    entries.append(body[start:])
+    return [entry for entry in entries if entry.strip()]
+
+
+def disable_codex_implicit_invocation(skill_dir: Path) -> None:
+    """Set Codex's explicit-only policy while preserving other OpenAI metadata."""
+    import re
+
+    metadata_path = skill_dir / "agents" / "openai.yaml"
+    metadata_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if not metadata_path.exists():
+        metadata_path.write_text(
+            "policy:\n"
+            "  allow_implicit_invocation: false\n"
+        )
+        return
+
+    lines = metadata_path.read_text().splitlines()
+    policy_index = None
+    policy_rest = None
+    for index, line in enumerate(lines):
+        match = re.match(r"^policy:\s*(.*)$", line)
+        if match:
+            policy_index = index
+            policy_rest = match.group(1)
+            break
+
+    if policy_index is None:
+        if lines and lines[-1] != "":
+            lines.append("")
+        lines.extend(["policy:", "  allow_implicit_invocation: false"])
+    elif policy_rest == "" or policy_rest.startswith("#"):
+        block_end = len(lines)
+        child_indent = None
+        for index in range(policy_index + 1, len(lines)):
+            line = lines[index]
+            if line and not line[0].isspace() and not line.startswith("#"):
+                block_end = index
+                break
+            if line.strip() and not line.lstrip().startswith("#"):
+                indentation = len(line) - len(line.lstrip())
+                if child_indent is None or indentation < child_indent:
+                    child_indent = indentation
+
+        child_indent = child_indent or 2
+        invocation_index = None
+        for index in range(policy_index + 1, block_end):
+            line = lines[index]
+            indentation = len(line) - len(line.lstrip())
+            if (
+                indentation == child_indent
+                and re.match(r"^allow_implicit_invocation\s*:", line.lstrip())
+            ):
+                invocation_index = index
+                break
+
+        policy_line = f"{' ' * child_indent}allow_implicit_invocation: false"
+        if invocation_index is None:
+            lines.insert(policy_index + 1, policy_line)
+        else:
+            lines[invocation_index] = policy_line
+    else:
+        flow_match = re.match(r"^\{(.*)\}(\s*(?:#.*)?)$", policy_rest)
+        if flow_match is None:
+            sys.exit(f"Error: unsupported policy mapping in {metadata_path}")
+
+        entries = split_yaml_flow_mapping(flow_match.group(1), metadata_path)
+        for index, entry in enumerate(entries):
+            if re.match(r"^\s*allow_implicit_invocation\s*:", entry):
+                entries[index] = "allow_implicit_invocation: false"
+                break
+        else:
+            entries.append("allow_implicit_invocation: false")
+
+        flow_body = ", ".join(entry.strip() for entry in entries)
+        lines[policy_index] = f"policy: {{ {flow_body} }}{flow_match.group(2)}"
+
+    metadata_path.write_text("\n".join(lines).rstrip() + "\n")
+
+
 def find_skill_markdown(source: Path) -> Path | None:
     """Find the skill markdown file in a skill directory."""
     candidates = [
@@ -754,7 +911,13 @@ def find_skill_markdown(source: Path) -> Path | None:
     return candidates[0]
 
 
-def build_skill(name: str, source: Path, agent: str) -> bool | None:
+def build_skill(
+    name: str,
+    source: Path,
+    agent: str,
+    *,
+    user_invocable_only: bool = False,
+) -> bool | None:
     """
     Build a skill for a specific agent.
 
@@ -790,6 +953,12 @@ def build_skill(name: str, source: Path, agent: str) -> bool | None:
     # Process content: normalize frontmatter and strip agents field
     skill_content = normalize_skill_frontmatter(raw_content, name)
     skill_content = strip_agents_from_frontmatter(skill_content)
+    if user_invocable_only and agent in {"claude", "pi"}:
+        skill_content = set_skill_frontmatter_boolean(
+            skill_content,
+            "disable-model-invocation",
+            True,
+        )
 
     # In non-interactive mode, skip interactive overrides
     use_override = override.exists() and not (
@@ -818,6 +987,11 @@ def build_skill(name: str, source: Path, agent: str) -> bool | None:
             shutil.copytree(item, dest_item, dirs_exist_ok=True)
         else:
             shutil.copy(item, dest_item)
+
+    # Pi uses the shared ~/.agents/skills location that Codex also scans. Keep
+    # both harnesses explicit-only by emitting each harness's native metadata.
+    if user_invocable_only and agent in {"codex", "pi"}:
+        disable_codex_implicit_invocation(dest)
 
     return True
 
@@ -861,7 +1035,12 @@ def build_skills(plugins: dict[str, Plugin]):
                 path = paths_by_agent.get(agent)
                 if path is None:
                     continue
-                result = build_skill(name, path, agent)
+                result = build_skill(
+                    name,
+                    path,
+                    agent,
+                    user_invocable_only=plugin.skill_is_user_invocable_only(name),
+                )
                 if result is True:
                     built_for_agents.append(agent)
                 elif result is False:

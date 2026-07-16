@@ -6,6 +6,7 @@
 #   skills_path_by_agent - Optional agent-specific skill paths, keyed by amp/claude/pi
 #   skills          - List of skills to install: ["*"] for all, [] or omit for none
 #   skills_skip_agents - Agents that should not receive this plugin's skills (optional)
+#   skills_user_invocable_only - Skills that require explicit user invocation (optional)
 #   extensions_path - Glob pattern(s) to find extensions (default: "extensions/*.ts")
 #   extensions      - List of extensions to install: ["*"] for all, [] or omit for none
 #   prompts_path    - Glob pattern(s) to find prompt templates (default: "prompts/*.md")
@@ -74,6 +75,7 @@ subagents = [ "*" ]
 url = "https://github.com/rjs/shaping-skills.git"
 skills_path = "*"                                                # Skills are at root level
 skills = [ "shaping", "breadboarding", "breadboard-reflection" ]
+skills_user_invocable_only = [ "shaping", "breadboarding", "breadboard-reflection" ]
 
 ["earendil-works/pi-review"]
 url = "https://github.com/earendil-works/pi-review"
