@@ -151,6 +151,7 @@ test_make_build() {
     effect_content=$(<"$PROJECT_DIR/build/codex/effect/SKILL.md")
     assert_output_contains "$effect_content" "name: effect" "Built effect skill keeps its canonical name"
     assert_output_not_contains "$effect_content" "agents: amp, claude, codex, pi" "Build strips repository-specific agent metadata"
+    assert_output_not_contains "$effect_content" "metadata:" "Build removes metadata emptied by agent filtering"
 
     local breadboard_content
     breadboard_content=$(<"$breadboard_skill")
