@@ -94,7 +94,7 @@ pi
 - `fable-review` — trusted Claude Fable code review workflow using `claude -p --model claude-fable-5`
 - `grok-review` — safe Grok Build review workflow delegating branch and explicit dirty-tree reviews to Grok's native `/review` skill
 - `writing-mike-ruby-style` — Mike's personal Ruby/Rails style (mirrors his canonical style rules)
-- `effect-ts` — repository-first Effect v4 implementation, review, debugging, and source research
+- `effect` — opinionated production Effect v4 guide vendored from `kitlangton/skills` commit `30dee860`
 - `prepare-branch-context` — read-only branch diff, commit, and PR context gathering skill vendored from `jnsahaj/skills`
 - `zmx` — guidance for managing persistent background terminal work
 - `tmux` — remote control tmux sessions through the active server, with an agent-neutral fallback socket when no server is running

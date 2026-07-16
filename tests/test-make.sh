@@ -141,6 +141,17 @@ test_make_build() {
         assert_file_not_exists "$PROJECT_DIR/build/$agent/systematic-debugging" "$agent no longer builds systematic-debugging"
     done
 
+    for agent in amp claude codex pi; do
+        assert_file_exists "$PROJECT_DIR/build/$agent/effect/SKILL.md" "$agent builds the vendored effect skill"
+        assert_file_exists "$PROJECT_DIR/build/$agent/effect/references/SCHEMA.md" "$agent builds effect references"
+        assert_file_not_exists "$PROJECT_DIR/build/$agent/effect-ts" "$agent no longer builds effect-ts"
+    done
+
+    local effect_content
+    effect_content=$(<"$PROJECT_DIR/build/codex/effect/SKILL.md")
+    assert_output_contains "$effect_content" "name: effect" "Built effect skill keeps its canonical name"
+    assert_output_not_contains "$effect_content" "agents: amp, claude, codex, pi" "Build strips repository-specific agent metadata"
+
     local breadboard_content
     breadboard_content=$(<"$breadboard_skill")
     assert_output_contains "$breadboard_content" "name: breadboard-reflection" "breadboard-reflection has normalized name"
@@ -317,12 +328,18 @@ test_make_install_skills() {
     assert_dir_exists "$SANDBOX_DIR/.config/agents/skills/thermo-nuclear-code-review" "Amp installs thermo-nuclear-code-review skill"
     assert_dir_exists "$SANDBOX_DIR/.claude/skills/thermo-nuclear-code-review" "Claude installs thermo-nuclear-code-review skill"
     assert_dir_exists "$SANDBOX_DIR/.agents/skills/thermo-nuclear-code-review" "Pi installs thermo-nuclear-code-review skill"
+    assert_dir_exists "$SANDBOX_DIR/.config/agents/skills/effect" "Amp installs effect skill"
+    assert_dir_exists "$SANDBOX_DIR/.claude/skills/effect" "Claude installs effect skill"
+    assert_dir_exists "$SANDBOX_DIR/.codex/skills/effect" "Codex installs effect skill"
+    assert_dir_exists "$SANDBOX_DIR/.agents/skills/effect" "Pi installs effect skill"
     for skills_dir in \
         "$SANDBOX_DIR/.config/agents/skills" \
         "$SANDBOX_DIR/.claude/skills" \
+        "$SANDBOX_DIR/.codex/skills" \
         "$SANDBOX_DIR/.agents/skills"; do
         assert_file_not_exists "$skills_dir/test-driven-development" "Install excludes test-driven-development from $skills_dir"
         assert_file_not_exists "$skills_dir/systematic-debugging" "Install excludes systematic-debugging from $skills_dir"
+        assert_file_not_exists "$skills_dir/effect-ts" "Install excludes replaced effect-ts from $skills_dir"
     done
 }
 
