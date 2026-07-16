@@ -1,21 +1,24 @@
 ---
 name: zmx
-description: Manage persistent background terminal work with zmx in agent sessions. Use when running long-lived or background commands, including tests, dev servers, build jobs, migrations, one-off scripts, or any task that should continue independently of the current terminal invocation.
+description: Use zmx for durable, long-running processes that must persist beyond the current agent session, such as an app server the user will test later.
 metadata:
   category: tooling
 ---
 
 # zmx
 
-Use `zmx` as the persistent session runner for long-lived or background
-terminal work in agent sessions.
+Use `zmx` for durable, long-running work that must persist beyond the current
+agent session, such as an app server the user will test later.
 
 ## Rules
 
-- Prefer `zmx run` when work should continue independently of the current
-  terminal invocation.
-- Use one stable, descriptive session name per concern, such as `tests`,
-  `server-api`, or `build-ios`.
+- Use `zmx run` only when work must remain available after the current agent
+  session ends.
+- Do not use `zmx` for a server or process needed only while the agent performs
+  its own testing. Start, manage, and stop that process directly within the
+  session instead.
+- Use one stable, descriptive session name per concern, such as `app-server`,
+  `user-preview`, or `persistent-review`.
 - Reuse a session when iterative commands should share shell state; create a
   new session when isolation is safer.
 - For recurring workflows, keep session names consistent across runs.
