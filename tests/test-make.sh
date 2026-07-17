@@ -483,6 +483,19 @@ test_make_install_extensions() {
     cat > "$SANDBOX_DIR/.pi/agent/extensions/manual-extension/index.ts" <<'EOF'
 export default {};
 EOF
+    mkdir -p "$SANDBOX_DIR/.pi/agent/extensions/buildr-artifacts"
+    cat > "$SANDBOX_DIR/.pi/agent/extensions/buildr-artifacts/index.ts" <<'EOF'
+export default {};
+EOF
+    python3 - <<PY
+import json
+from pathlib import Path
+manifest_path = Path("$SANDBOX_DIR/.local/state/dotfiles/agent-install-manifest.json")
+manifest_path.parent.mkdir(parents=True, exist_ok=True)
+manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else {"version": 1, "targets": {}}
+manifest["targets"].setdefault("pi.extensions", []).append("buildr-artifacts")
+manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+PY
 
     # Run install-extensions with sandbox HOME
     local output
@@ -503,17 +516,16 @@ EOF
         TESTS_PASSED=$((TESTS_PASSED + 1))
     fi
 
-    assert_output_contains "$output" "buildr-artifacts (custom)" "buildr-artifacts installs from the vendored local copy"
     assert_output_contains "$output" "handoff (custom)" "handoff installs from the vendored local copy"
     assert_output_contains "$output" "openai-fast (custom)" "openai-fast installs from the vendored local copy"
     assert_output_contains "$output" "session-query (custom)" "session-query installs from the vendored local copy"
 
-    assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/buildr-artifacts" "buildr-artifacts extension installed"
     assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/handoff" "handoff extension installed"
     assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/openai-fast" "openai-fast extension installed"
     assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/session-query" "session-query extension installed"
     assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/tmux-status" "tmux-status extension installed"
     assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/web-access" "web-access extension installed"
+    assert_file_not_exists "$SANDBOX_DIR/.pi/agent/extensions/buildr-artifacts" "buildr-artifacts extension removed"
     assert_file_not_exists "$SANDBOX_DIR/.pi/agent/extensions/subagent" "subagent extension removed"
     assert_file_not_exists "$SANDBOX_DIR/.pi/agent/extensions/pi-web-access" "pi-web-access extension removed"
     assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/manual-extension" "Unmanaged Pi extension survives install"

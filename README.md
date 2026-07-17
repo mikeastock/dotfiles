@@ -124,7 +124,7 @@ pi
 
 ### Notable custom Pi extensions
 
-- `buildr-artifacts`, `handoff`, `openai-fast`, and `session-query` — vendored from `buildrtech/dotagents` commit `a484ad4`; `buildr-artifacts` publishes local HTML artifacts and `openai-fast` enables OpenAI priority service-tier requests
+- `handoff`, `openai-fast`, and `session-query` — vendored from `buildrtech/dotagents` commit `a484ad4`; `openai-fast` enables OpenAI priority service-tier requests
 - `pi-prompt-shelf` — local copy of `tanishqkancharla/pi-prompt-shelf`; shelves editor prompts per session with shortcuts and `/shelf`
 - `pi-codex-conversion` — local copy of `IgorWarzocha/pi-codex-conversion`; adds Codex-style tools and prompt adaptation for OpenAI/Codex models in Pi
 - `full-read-for-paths` — upgrades partial `read` calls to full reads for configured resource-file paths
