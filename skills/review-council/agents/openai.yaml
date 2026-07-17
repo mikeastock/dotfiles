@@ -1,0 +1,6 @@
+interface:
+  display_name: "Review Council"
+  short_description: "Run Fable, Grok, and Thermo reviews together"
+  default_prompt: "Use $review-council to review this branch concurrently with Fable, Grok, and Thermo against one pinned base."
+policy:
+  allow_implicit_invocation: false

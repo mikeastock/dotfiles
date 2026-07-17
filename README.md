@@ -93,6 +93,7 @@ pi
 - `oracle` — @steipete/oracle CLI workflow for second-model reviews with selected repo context
 - `fable-review` — trusted Claude Fable code review workflow using `claude -p --model claude-fable-5`
 - `grok-review` — safe Grok Build review workflow delegating branch and explicit dirty-tree reviews to Grok's native `/review` skill
+- `review-council` — explicit-only orchestration of Fable, Grok, and Thermo-Nuclear reviews against one pinned Git scope
 - `writing-mike-ruby-style` — Mike's personal Ruby/Rails style (mirrors his canonical style rules)
 - `prepare-branch-context` — read-only branch diff, commit, and PR context gathering skill vendored from `jnsahaj/skills`
 - `zmx` — guidance for managing persistent background terminal work
