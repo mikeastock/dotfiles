@@ -120,7 +120,6 @@ pi
 ### Notable custom Pi subagents
 
 - `architecture-reviewer` — reviews designs and plans for ownership, boundaries, invariants, failure modes, compatibility paths, and architecture-level tests before implementation
-- `code-reviewer` and `document-reviewer` — vendored from `buildrtech/dotagents` commit `a484ad4`
 
 ### Notable custom Pi extensions
 
