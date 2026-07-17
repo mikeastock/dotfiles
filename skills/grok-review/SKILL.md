@@ -124,9 +124,17 @@ writes the validated review text to `review.md`. Read `review.md` for triage;
 retain `result.json` as the authoritative raw response and usage record.
 
 If the session is quiet, inspect `zmx list`, the result tail, and stderr before
-acting. If it exceeds the caller's approved wall-clock bound, stop the session
-and report an incomplete review. Preserve the prompt, raw result, stderr, and
-session ids; do not automatically retry or fall back.
+acting. If it exceeds the caller's approved wall-clock bound, use the wrapper's
+canonical stop command and report an incomplete review:
+
+```bash
+"<path-to-this-skill>/scripts/run_review.sh" stop "$RUN_DIR"
+```
+
+The stop command tolerates an already-exited session, verifies that no owned
+zmx process remains, and releases only the matching workspace lock. Preserve
+the prompt, raw result, stderr, and session ids; do not automatically retry or
+fall back.
 
 Resume only when the user explicitly asks to continue that same review. Write
 a new prompt that asks Grok to finish and return the complete review, use a

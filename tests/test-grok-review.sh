@@ -147,6 +147,16 @@ wait_for_launcher() {
       "$PROJECT_DIR/skills/grok-review/scripts/run_review.sh" wait "$1"
 }
 
+stop_launcher() {
+    HOME="$TEST_HOME" PATH="$FAKE_BIN:$PATH" \
+      FAKE_ZMX_ACTIVE_FILE="$ACTIVE_SESSION" \
+      FAKE_ZMX_KILLED="$KILLED_MARKER" \
+      FAKE_ZMX_KILL_STATUS="${FAKE_ZMX_KILL_STATUS:-0}" \
+      FAKE_ZMX_LIST_STATUS="${FAKE_ZMX_LIST_STATUS:-0}" \
+      GROK_ABORT_WAIT_ATTEMPTS="${GROK_ABORT_WAIT_ATTEMPTS:-2}" \
+      "$PROJECT_DIR/skills/grok-review/scripts/run_review.sh" stop "$1"
+}
+
 log_test "Testing launcher requires the Git root"
 mkdir -p "$REPO/subdirectory"
 if "$PROJECT_DIR/skills/grok-review/scripts/run_review.sh" start \
@@ -179,6 +189,20 @@ output=$(wait_for_launcher "$RUN_DIR" 2>&1)
 assert_output_contains "$output" "Validated review" "Wait validates a completed review"
 assert_output_contains "$(<"$RUN_DIR/review.md")" "PROBE_OK" "Wait extracts validated review text"
 assert_file_not_exists "$(<"$RUN_DIR/workspace-lock")" "Successful review releases the workspace lock"
+
+log_test "Testing canonical stop accepts an already-exited session"
+output=$(FAKE_ZMX_KILL_STATUS=1 stop_launcher "$RUN_DIR" 2>&1)
+assert_output_contains "$output" "Stopped review" "Stop verifies an already-exited review despite kill status"
+
+log_test "Testing canonical stop across a symlinked temporary directory"
+mkdir "$TMP_DIR/physical-tmp"
+ln -s "$TMP_DIR/physical-tmp" "$TMP_DIR/logical-tmp"
+: > "$EVENTS"
+TMPDIR="$TMP_DIR/logical-tmp" run_launcher "$TMP_DIR/run-symlink-tmp" >/dev/null
+wait_for_launcher "$TMP_DIR/run-symlink-tmp" >/dev/null
+output=$(TMPDIR="$TMP_DIR/logical-tmp" FAKE_ZMX_KILL_STATUS=1 \
+  stop_launcher "$TMP_DIR/run-symlink-tmp" 2>&1)
+assert_output_contains "$output" "Stopped review" "Stop canonicalizes symlinked temporary paths"
 
 log_test "Testing explicit session recovery"
 : > "$EVENTS"

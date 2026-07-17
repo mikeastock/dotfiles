@@ -642,13 +642,43 @@ def parse_skill_agents(content: str) -> list[str] | None:
     return None
 
 
+def parse_skill_user_invocable_only(content: str) -> bool:
+    """Read the dotfiles-owned explicit-invocation flag from skill metadata."""
+    import re
+
+    frontmatter_match = re.match(r"^---\s*\n(.*?)\n---", content, re.DOTALL)
+    if frontmatter_match is None:
+        return False
+
+    in_metadata = False
+    for line in frontmatter_match.group(1).splitlines():
+        if line.startswith("metadata:"):
+            in_metadata = True
+            continue
+        if in_metadata and line and not line[0].isspace():
+            in_metadata = False
+        if not in_metadata:
+            continue
+        match = re.match(
+            r"^\s+user-invocable-only:\s*['\"]?([^'\"#\s]+)['\"]?\s*(?:#.*)?$",
+            line,
+        )
+        if match is None:
+            continue
+        value = match.group(1).lower()
+        if value not in {"true", "false"}:
+            sys.exit("Error: metadata.user-invocable-only must be true or false")
+        return value == "true"
+
+    return False
+
+
 def strip_agents_from_frontmatter(content: str) -> str:
     """
-    Remove the 'agents' field from SKILL.md frontmatter.
+    Remove dotfiles-only build metadata from SKILL.md frontmatter.
 
-    Handles both top-level agents field and metadata.agents field.
-    The agents field is build-time configuration and should not appear
-    in the installed skill.
+    Handles top-level agents, metadata.agents, and the explicit-invocation
+    build flag. These fields should not appear in the installed skill.
     """
     import re
 
@@ -670,6 +700,15 @@ def strip_agents_from_frontmatter(content: str) -> str:
     metadata_agents_pattern = r"^[ \t]+agents:\s*.*\n?"
     new_frontmatter = re.sub(
         metadata_agents_pattern, "", new_frontmatter, flags=re.MULTILINE
+    )
+    user_invocable_pattern = r"^[ \t]+user-invocable-only:\s*.*\n?"
+    new_frontmatter = re.sub(
+        user_invocable_pattern, "", new_frontmatter, flags=re.MULTILINE
+    )
+
+    empty_metadata_pattern = r"^metadata:[ \t]*\n(?:[ \t]*\n)*(?=(?:[^ \t\n]|\Z))"
+    new_frontmatter = re.sub(
+        empty_metadata_pattern, "", new_frontmatter, flags=re.MULTILINE
     )
     # Clean up trailing whitespace (pattern expects \n before ---)
     new_frontmatter = new_frontmatter.rstrip()
@@ -978,12 +1017,17 @@ def build_skill(
 
     # Copy additional files
     for item in source.iterdir():
-        if item.name.lower() == "skill.md" or item.name == "overrides":
+        if item.name.lower() == "skill.md" or item.name in {"overrides", "__pycache__"}:
             continue
 
         dest_item = dest / item.name
         if item.is_dir():
-            shutil.copytree(item, dest_item, dirs_exist_ok=True)
+            shutil.copytree(
+                item,
+                dest_item,
+                dirs_exist_ok=True,
+                ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
+            )
         else:
             shutil.copy(item, dest_item)
 
@@ -1066,8 +1110,18 @@ def build_skills(plugins: dict[str, Plugin]):
                         f"    Warning: Custom skill '{name}' conflicts with plugin skill"
                     )
                 built_for_agents = []
+                skill_md = find_skill_markdown(skill_dir)
+                user_invocable_only = bool(
+                    skill_md
+                    and parse_skill_user_invocable_only(skill_md.read_text())
+                )
                 for agent in AGENTS:
-                    result = build_skill(name, skill_dir, agent)
+                    result = build_skill(
+                        name,
+                        skill_dir,
+                        agent,
+                        user_invocable_only=user_invocable_only,
+                    )
                     if result is True:
                         built_for_agents.append(agent)
                     elif result is False:
@@ -1093,7 +1147,14 @@ def build_skills(plugins: dict[str, Plugin]):
             if allowed_agents is None or "codex" not in allowed_agents:
                 continue
             name = skill_dir.name
-            result = build_skill(name, skill_dir, "codex")
+            result = build_skill(
+                name,
+                skill_dir,
+                "codex",
+                user_invocable_only=parse_skill_user_invocable_only(
+                    skill_md.read_text()
+                ),
+            )
             if result is True:
                 built_for_codex.append(name)
 

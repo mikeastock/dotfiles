@@ -8,6 +8,7 @@ Usage:
   run_review.sh start <repository> <prompt-file> <run-directory> [max-turns]
   run_review.sh resume <repository> <prompt-file> <run-directory> <grok-session-id> [max-turns]
   run_review.sh wait <run-directory>
+  run_review.sh stop <run-directory>
 EOF
 }
 
@@ -49,6 +50,74 @@ validate_result() {
     printf 'Validated review: %s\n' "$run_dir/review.md"
 }
 
+session_is_active() {
+    local session="$1"
+    local sessions
+    sessions="$(zmx list --short 2>/dev/null)" || return 2
+    printf '%s\n' "$sessions" | rg -Fx "$session" >/dev/null
+}
+
+release_workspace_lock() {
+    local lock_dir="$1"
+    local expected_owner="$2"
+    local lock_owner="$lock_dir/zmx-session"
+    [[ -s "$lock_owner" ]] || return 1
+    [[ "$(<"$lock_owner")" == "$expected_owner" ]] || return 1
+    rm -f "$lock_owner"
+    if ! rmdir "$lock_dir" 2>/dev/null; then
+        printf '%s\n' "$expected_owner" > "$lock_owner"
+        return 1
+    fi
+}
+
+stop_review() {
+    [[ $# -eq 1 ]] || { usage; exit 2; }
+
+    local run_dir
+    run_dir="$(canonical_directory "$1")"
+    [[ -s "$run_dir/zmx-session" ]] || fail "zmx session marker is missing: $run_dir/zmx-session"
+    [[ -s "$run_dir/workspace-lock" ]] || fail "workspace lock marker is missing: $run_dir/workspace-lock"
+
+    local zmx_session lock_dir expected_parent wait_attempts session_status
+    zmx_session="$(<"$run_dir/zmx-session")"
+    [[ "$zmx_session" == grok-review-* ]] || fail "unexpected zmx session marker: $zmx_session"
+    lock_dir="$(<"$run_dir/workspace-lock")"
+    expected_parent="$(cd "${TMPDIR:-/tmp}" 2>/dev/null && pwd -P)" \
+        || fail "temporary directory is not readable: ${TMPDIR:-/tmp}"
+    [[ "$(dirname "$lock_dir")" == "$expected_parent" ]] \
+        || fail "unexpected workspace lock path: $lock_dir"
+    [[ "$(basename "$lock_dir")" =~ ^grok-review-lock-([0-9a-f]{40}|[0-9a-f]{64})$ ]] \
+        || fail "unexpected workspace lock name: $lock_dir"
+    wait_attempts="${GROK_ABORT_WAIT_ATTEMPTS:-10}"
+    [[ "$wait_attempts" =~ ^[1-9][0-9]*$ ]] \
+        || fail "GROK_ABORT_WAIT_ATTEMPTS must be a positive integer"
+
+    zmx kill "$zmx_session" >/dev/null 2>&1 || true
+    for _ in $(seq 1 "$wait_attempts"); do
+        if session_is_active "$zmx_session"; then
+            sleep 1
+            continue
+        else
+            session_status=$?
+        fi
+        if [[ "$session_status" -eq 1 ]]; then
+            if [[ -d "$lock_dir" ]]; then
+                if [[ -s "$lock_dir/zmx-session" && "$(<"$lock_dir/zmx-session")" != "$zmx_session" ]]; then
+                    printf 'Stopped review: %s (workspace lock belongs to a newer session)\n' "$zmx_session"
+                    return
+                fi
+                release_workspace_lock "$lock_dir" "$zmx_session" \
+                    || fail "process stopped but lock could not be released: $lock_dir"
+            fi
+            printf 'Stopped review: %s\n' "$zmx_session"
+            return
+        fi
+        sleep 1
+    done
+
+    fail "could not verify process termination, lock retained at $lock_dir"
+}
+
 wait_for_review() {
     [[ $# -eq 1 ]] || { usage; exit 2; }
 
@@ -75,6 +144,13 @@ if [[ "$MODE" == "wait" ]]; then
     command -v zmx >/dev/null 2>&1 || fail "zmx is unavailable"
     command -v jq >/dev/null 2>&1 || fail "jq is unavailable for result validation"
     wait_for_review "$@"
+    exit 0
+fi
+
+if [[ "$MODE" == "stop" ]]; then
+    command -v zmx >/dev/null 2>&1 || fail "zmx is unavailable"
+    command -v rg >/dev/null 2>&1 || fail "rg is unavailable for zmx session validation"
+    stop_review "$@"
     exit 0
 fi
 
@@ -142,26 +218,15 @@ ABORT_WAIT_ATTEMPTS="${GROK_ABORT_WAIT_ATTEMPTS:-10}"
     || fail "GROK_ABORT_WAIT_ATTEMPTS must be a positive integer"
 
 LOCK_KEY="$(printf '%s\n' "$REPO" | git hash-object --stdin)"
-LOCK_DIR="${TMPDIR:-/tmp}/grok-review-lock-$LOCK_KEY"
+LOCK_PARENT="$(cd "${TMPDIR:-/tmp}" 2>/dev/null && pwd -P)" \
+    || fail "temporary directory is not readable: ${TMPDIR:-/tmp}"
+LOCK_DIR="$LOCK_PARENT/grok-review-lock-$LOCK_KEY"
 LOCK_OWNER="$LOCK_DIR/zmx-session"
 ZMX_SESSION="grok-review-$(date -u +%Y%m%dT%H%M%SZ)-$$"
 
-session_is_active() {
-    local session="$1"
-    local sessions
-    sessions="$(zmx list --short 2>/dev/null)" || return 2
-    printf '%s\n' "$sessions" | rg -Fx "$session" >/dev/null
-}
-
 release_lock() {
     local expected_owner="$1"
-    [[ -s "$LOCK_OWNER" ]] || return 1
-    [[ "$(<"$LOCK_OWNER")" == "$expected_owner" ]] || return 1
-    rm -f "$LOCK_OWNER"
-    if ! rmdir "$LOCK_DIR" 2>/dev/null; then
-        printf '%s\n' "$expected_owner" > "$LOCK_OWNER"
-        return 1
-    fi
+    release_workspace_lock "$LOCK_DIR" "$expected_owner"
 }
 
 if ! mkdir "$LOCK_DIR" 2>/dev/null; then
@@ -179,6 +244,17 @@ if ! mkdir "$LOCK_DIR" 2>/dev/null; then
     release_lock "$EXISTING_SESSION" || fail "could not remove stale workspace lock: $LOCK_DIR"
     mkdir "$LOCK_DIR" 2>/dev/null || fail "could not acquire workspace lock: $LOCK_DIR"
 fi
+DETACHED_SESSION_STARTED=false
+cleanup_startup_lock() {
+    if [[ "$DETACHED_SESSION_STARTED" == false ]]; then
+        if [[ -s "$LOCK_OWNER" && "$(<"$LOCK_OWNER")" == "$ZMX_SESSION" ]]; then
+            release_lock "$ZMX_SESSION" || true
+        elif [[ -d "$LOCK_DIR" && ! -e "$LOCK_OWNER" ]]; then
+            rmdir "$LOCK_DIR" >/dev/null 2>&1 || true
+        fi
+    fi
+}
+trap cleanup_startup_lock EXIT
 printf '%s\n' "$ZMX_SESSION" > "$LOCK_OWNER"
 printf '%s\n' "$LOCK_DIR" > "$RUN_DIR/workspace-lock"
 
@@ -222,6 +298,7 @@ if ! zmx run "$ZMX_SESSION" -d bash -lc '
     release_lock "$ZMX_SESSION" || true
     fail "zmx could not start the review; see $START_LOG"
 fi
+DETACHED_SESSION_STARTED=true
 
 new_events() {
     if [[ -f "$GROK_SANDBOX_EVENTS" ]]; then
