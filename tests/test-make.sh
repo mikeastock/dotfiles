@@ -130,6 +130,8 @@ test_make_build() {
         done
     done
     assert_file_exists "$PROJECT_DIR/build/subagents/pi/architecture-reviewer.md" "Build includes architecture-reviewer subagent"
+    assert_file_exists "$PROJECT_DIR/build/subagents/pi/code-reviewer.md" "Build includes vendored code-reviewer subagent"
+    assert_file_exists "$PROJECT_DIR/build/subagents/pi/document-reviewer.md" "Build includes vendored document-reviewer subagent"
     assert_file_exists "$PROJECT_DIR/build/claude/teach/SKILL.md" "Claude builds Matt Pocock teach skill"
     assert_file_exists "$PROJECT_DIR/build/claude/writing-great-skills/SKILL.md" "Claude builds Matt Pocock writing-great-skills skill"
     assert_file_exists "$PROJECT_DIR/build/amp/x-search/SKILL.md" "Amp builds x-search skill"
@@ -141,17 +143,17 @@ test_make_build() {
         assert_file_not_exists "$PROJECT_DIR/build/$agent/systematic-debugging" "$agent no longer builds systematic-debugging"
     done
 
-    for agent in amp claude codex pi; do
-        assert_file_exists "$PROJECT_DIR/build/$agent/effect/SKILL.md" "$agent builds the vendored effect skill"
+    for agent in amp claude pi; do
+        assert_file_exists "$PROJECT_DIR/build/$agent/effect/SKILL.md" "$agent builds the Effect plugin skill"
         assert_file_exists "$PROJECT_DIR/build/$agent/effect/references/SCHEMA.md" "$agent builds effect references"
         assert_file_not_exists "$PROJECT_DIR/build/$agent/effect-ts" "$agent no longer builds effect-ts"
     done
+    assert_file_exists "$PROJECT_DIR/plugins/kitlangton-skills/skills/effect/SKILL.md" "Effect source comes from the kitlangton plugin"
+    assert_file_not_exists "$PROJECT_DIR/skills/effect" "Effect is not duplicated as a custom skill"
 
     local effect_content
-    effect_content=$(<"$PROJECT_DIR/build/codex/effect/SKILL.md")
+    effect_content=$(<"$PROJECT_DIR/build/pi/effect/SKILL.md")
     assert_output_contains "$effect_content" "name: effect" "Built effect skill keeps its canonical name"
-    assert_output_not_contains "$effect_content" "agents: amp, claude, codex, pi" "Build strips repository-specific agent metadata"
-    assert_output_not_contains "$effect_content" "metadata:" "Build removes metadata emptied by agent filtering"
 
     local breadboard_content
     breadboard_content=$(<"$breadboard_skill")
@@ -331,8 +333,8 @@ test_make_install_skills() {
     assert_dir_exists "$SANDBOX_DIR/.agents/skills/thermo-nuclear-code-review" "Pi installs thermo-nuclear-code-review skill"
     assert_dir_exists "$SANDBOX_DIR/.config/agents/skills/effect" "Amp installs effect skill"
     assert_dir_exists "$SANDBOX_DIR/.claude/skills/effect" "Claude installs effect skill"
-    assert_dir_exists "$SANDBOX_DIR/.codex/skills/effect" "Codex installs effect skill"
     assert_dir_exists "$SANDBOX_DIR/.agents/skills/effect" "Pi installs effect skill"
+    assert_file_not_exists "$SANDBOX_DIR/.codex/skills/effect" "Codex uses the shared Effect plugin skill without a duplicate install"
     for skills_dir in \
         "$SANDBOX_DIR/.config/agents/skills" \
         "$SANDBOX_DIR/.claude/skills" \
@@ -501,11 +503,10 @@ EOF
         TESTS_PASSED=$((TESTS_PASSED + 1))
     fi
 
-    assert_output_contains "$output" "buildr-artifacts (from buildrtech/dotagents)" "buildr-artifacts comes from buildrtech plugin"
-    assert_output_contains "$output" "handoff (from buildrtech/dotagents)" "handoff comes from buildrtech plugin"
-    assert_output_contains "$output" "openai-fast (from buildrtech/dotagents)" "openai-fast comes from buildrtech plugin"
-    assert_output_contains "$output" "session-query (from buildrtech/dotagents)" "session-query comes from buildrtech plugin"
-    assert_output_not_contains "$output" "openai-fast (custom)" "openai-fast is no longer installed from the local copy"
+    assert_output_contains "$output" "buildr-artifacts (custom)" "buildr-artifacts installs from the vendored local copy"
+    assert_output_contains "$output" "handoff (custom)" "handoff installs from the vendored local copy"
+    assert_output_contains "$output" "openai-fast (custom)" "openai-fast installs from the vendored local copy"
+    assert_output_contains "$output" "session-query (custom)" "session-query installs from the vendored local copy"
 
     assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/buildr-artifacts" "buildr-artifacts extension installed"
     assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/handoff" "handoff extension installed"

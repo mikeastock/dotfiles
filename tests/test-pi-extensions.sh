@@ -64,4 +64,13 @@ else
     TESTS_PASSED=$((TESTS_PASSED + 1))
 fi
 
+log_test "Running Pi extension unit tests..."
+if pnpm run test:extensions; then
+    log_info "PASS: Pi extension unit tests succeeded"
+    TESTS_PASSED=$((TESTS_PASSED + 1))
+else
+    log_error "FAIL: Pi extension unit tests failed"
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+fi
+
 print_summary

@@ -5,10 +5,13 @@
   "packageManager": "pnpm@10.0.0",
   "scripts": {
     "typecheck": "tsc --noEmit",
+    "test:extensions": "node --import tsx --test pi-extensions/handoff/index.test.ts pi-extensions/openai-fast/config.test.ts pi-extensions/openai-fast/index.test.ts pi-extensions/buildr-artifacts/*.test.ts",
     "amp:plugin-types": "python3 scripts/update_amp_plugin_types.py",
     "amp:plugin-check": "pnpm amp:plugin-types && tsc --noEmit --pretty false"
   },
   "devDependencies": {
+    "@20minutes/s3rver": "^4.0.3",
+    "@aws-sdk/client-s3": "^3.1046.0",
     "@earendil-works/pi-ai": "^0.80.6",
     "@earendil-works/pi-coding-agent": "^0.80.6",
     "@earendil-works/pi-tui": "^0.80.6",

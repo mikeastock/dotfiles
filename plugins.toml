@@ -30,6 +30,10 @@ installer_url = "https://raw.githubusercontent.com/Dicklesworthstone/destructive
 url = "https://github.com/anthropics/skills"
 skills = [ "frontend-design" ]
 
+["kitlangton/skills"]
+url = "https://github.com/kitlangton/skills"
+skills = [ "effect" ]
+
 ["pbakaus/impeccable"]
 url = "https://github.com/pbakaus/impeccable.git"
 skills_path_by_agent = { amp = ".agents/skills/*", claude = ".claude/skills/*", pi = ".pi/skills/*" }
@@ -62,14 +66,6 @@ url = "https://github.com/mitsuhiko/agent-stuff"
 skills = [] # tmux is vendored under skills/ so it can diverge from the plugin version
 extensions_path = "extensions/*.ts"
 extensions = [ "context" ]
-
-["buildrtech/dotagents"]
-url = "https://github.com/buildrtech/dotagents"
-skills = [] # Superpower skills are vendored under skills/ so all coding agents receive them
-extensions_path = "pi-extensions/*"
-extensions = [ "buildr-artifacts", "handoff", "openai-fast", "session-query" ]
-extension_dependency_packages = { "buildr-artifacts" = "package.json" }
-subagents = [ "*" ]
 
 ["rjs/shaping-skills"]
 url = "https://github.com/rjs/shaping-skills.git"
