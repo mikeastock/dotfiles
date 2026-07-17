@@ -13,12 +13,12 @@ from pathlib import Path
 
 sys.dont_write_bytecode = True
 PROJECT_DIR = Path(__file__).resolve().parents[1]
-RUNNER_PATH = PROJECT_DIR / "skills/parallel-code-review/scripts/run_parallel_reviews.py"
-SPEC = importlib.util.spec_from_file_location("parallel_code_review", RUNNER_PATH)
+RUNNER_PATH = PROJECT_DIR / "skills/review-council/scripts/run_parallel_reviews.py"
+SPEC = importlib.util.spec_from_file_location("review_council", RUNNER_PATH)
 assert SPEC and SPEC.loader
-parallel_code_review = importlib.util.module_from_spec(SPEC)
-sys.modules[SPEC.name] = parallel_code_review
-SPEC.loader.exec_module(parallel_code_review)
+review_council = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = review_council
+SPEC.loader.exec_module(review_council)
 BUILD_SPEC = importlib.util.spec_from_file_location("dotfiles_build", PROJECT_DIR / "scripts/build.py")
 assert BUILD_SPEC and BUILD_SPEC.loader
 dotfiles_build = importlib.util.module_from_spec(BUILD_SPEC)
@@ -37,7 +37,7 @@ def git(repository: Path, *args: str) -> str:
     return completed.stdout.strip()
 
 
-class ParallelCodeReviewTest(unittest.TestCase):
+class ReviewCouncilTest(unittest.TestCase):
     def setUp(self) -> None:
         self.temp_dir = tempfile.TemporaryDirectory()
         self.root = Path(self.temp_dir.name)
@@ -55,7 +55,7 @@ class ParallelCodeReviewTest(unittest.TestCase):
         self.head_sha = git(self.repository, "rev-parse", "HEAD")
         self.brief = self.root / "brief.md"
         self.brief.write_text(
-            "Goal: validate the parallel reviewer.\n"
+            "Goal: validate the review council.\n"
             "Context: test fixture repository.\n"
             "Constraints: review only.\n"
             "Verification: focused tests.\n"
@@ -77,7 +77,7 @@ class ParallelCodeReviewTest(unittest.TestCase):
         return argparse.Namespace(**values)
 
     def test_resolves_and_pins_explicit_fixed_point(self) -> None:
-        scope = parallel_code_review.resolve_scope(self.args())
+        scope = review_council.resolve_scope(self.args())
 
         self.assertEqual(scope.fixed_sha, self.base_sha)
         self.assertEqual(scope.merge_base_sha, self.base_sha)
@@ -85,18 +85,18 @@ class ParallelCodeReviewTest(unittest.TestCase):
         self.assertEqual(scope.changed_files, 1)
 
     def test_rejects_invalid_and_empty_fixed_points(self) -> None:
-        with self.assertRaisesRegex(parallel_code_review.ReviewError, "does not resolve"):
-            parallel_code_review.resolve_scope(self.args(base="missing-ref"))
-        with self.assertRaisesRegex(parallel_code_review.ReviewError, "scope is empty"):
-            parallel_code_review.resolve_scope(self.args(base="HEAD"))
+        with self.assertRaisesRegex(review_council.ReviewError, "does not resolve"):
+            review_council.resolve_scope(self.args(base="missing-ref"))
+        with self.assertRaisesRegex(review_council.ReviewError, "scope is empty"):
+            review_council.resolve_scope(self.args(base="HEAD"))
 
     def test_dirty_tree_requires_explicit_exclusion(self) -> None:
         (self.repository / "untracked.txt").write_text("not reviewed\n")
 
-        with self.assertRaisesRegex(parallel_code_review.ReviewError, "--allow-dirty"):
-            parallel_code_review.resolve_scope(self.args())
+        with self.assertRaisesRegex(review_council.ReviewError, "--allow-dirty"):
+            review_council.resolve_scope(self.args())
 
-        scope = parallel_code_review.resolve_scope(self.args(allow_dirty=True))
+        scope = review_council.resolve_scope(self.args(allow_dirty=True))
         self.assertEqual(scope.dirty_entries, 1)
         self.assertEqual(scope.head_sha, self.head_sha)
 
@@ -104,7 +104,7 @@ class ParallelCodeReviewTest(unittest.TestCase):
         git(self.repository, "update-ref", "refs/remotes/origin/main", self.base_sha)
         git(self.repository, "symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/main")
 
-        scope = parallel_code_review.resolve_scope(
+        scope = review_council.resolve_scope(
             self.args(base=None, against_main=True)
         )
 
@@ -114,7 +114,7 @@ class ParallelCodeReviewTest(unittest.TestCase):
     def test_safe_dry_run_validates_without_creating_clones(self) -> None:
         output = self.root / "dry-run"
 
-        exit_code = parallel_code_review.main(
+        exit_code = review_council.main(
             [
                 "--repo",
                 str(self.repository),
@@ -134,10 +134,10 @@ class ParallelCodeReviewTest(unittest.TestCase):
         self.assertFalse((output / "clones").exists())
 
     def test_disposable_clone_pins_grok_base_and_disables_remote(self) -> None:
-        scope = parallel_code_review.resolve_scope(self.args())
+        scope = review_council.resolve_scope(self.args())
         clone = self.root / "reviewer-clone"
 
-        parallel_code_review.prepare_clone(scope, clone)
+        review_council.prepare_clone(scope, clone)
 
         self.assertEqual(git(clone, "rev-parse", "HEAD"), self.head_sha)
         self.assertEqual(
@@ -146,7 +146,7 @@ class ParallelCodeReviewTest(unittest.TestCase):
         )
         self.assertEqual(git(clone, "merge-base", "origin/main", "HEAD"), self.base_sha)
         self.assertEqual(git(clone, "rev-parse", "main"), self.base_sha)
-        self.assertEqual(git(clone, "remote", "get-url", "origin"), "disabled://parallel-code-review")
+        self.assertEqual(git(clone, "remote", "get-url", "origin"), "disabled://review-council")
         self.assertFalse((clone / ".git/objects/info/alternates").exists())
 
     def test_disposable_clone_excludes_uncommitted_git_objects(self) -> None:
@@ -155,10 +155,10 @@ class ParallelCodeReviewTest(unittest.TestCase):
         git(self.repository, "add", "secret.txt")
         secret_blob = git(self.repository, "rev-parse", ":secret.txt")
         git(self.repository, "reset", "--quiet", "HEAD", "secret.txt")
-        scope = parallel_code_review.resolve_scope(self.args(allow_dirty=True))
+        scope = review_council.resolve_scope(self.args(allow_dirty=True))
         clone = self.root / "isolated-clone"
 
-        parallel_code_review.prepare_clone(scope, clone)
+        review_council.prepare_clone(scope, clone)
 
         leaked = subprocess.run(
             ["git", "-C", str(clone), "cat-file", "-e", secret_blob],
@@ -169,15 +169,15 @@ class ParallelCodeReviewTest(unittest.TestCase):
         self.assertNotEqual(leaked.returncode, 0)
 
     def test_failed_clone_preparation_removes_partial_clone(self) -> None:
-        scope = parallel_code_review.resolve_scope(self.args())
-        invalid_scope = parallel_code_review.dataclasses.replace(
+        scope = review_council.resolve_scope(self.args())
+        invalid_scope = review_council.dataclasses.replace(
             scope,
             head_sha="0" * 40,
         )
         clone = self.root / "partial-clone"
 
-        with self.assertRaises(parallel_code_review.ReviewError):
-            parallel_code_review.prepare_clone(invalid_scope, clone)
+        with self.assertRaises(review_council.ReviewError):
+            review_council.prepare_clone(invalid_scope, clone)
 
         self.assertFalse(clone.exists())
 
@@ -185,8 +185,8 @@ class ParallelCodeReviewTest(unittest.TestCase):
         existing = self.root / "existing-run"
         existing.mkdir()
 
-        with self.assertRaisesRegex(parallel_code_review.ReviewError, "already exists"):
-            parallel_code_review.create_run_directory(str(existing))
+        with self.assertRaisesRegex(review_council.ReviewError, "already exists"):
+            review_council.create_run_directory(str(existing))
 
     def test_build_metadata_stripping_removes_empty_block_across_blank_line(self) -> None:
         content = (
@@ -222,7 +222,7 @@ class ParallelCodeReviewTest(unittest.TestCase):
                 "-c",
                 f"import time; time.sleep({delay}); print('{name}'); raise SystemExit({exit_code})",
             ]
-            code = parallel_code_review.run_process(
+            code = review_council.run_process(
                 command,
                 cwd=self.root,
                 stdout_path=output,
@@ -231,13 +231,13 @@ class ParallelCodeReviewTest(unittest.TestCase):
                 registry=registry,
             )
             if code:
-                raise parallel_code_review.ReviewError(f"fixture exited {code}")
+                raise review_council.ReviewError(f"fixture exited {code}")
             return output
 
         return task
 
     def test_reviewers_run_concurrently_and_report_partial_failure(self) -> None:
-        registry = parallel_code_review.ProcessRegistry()
+        registry = review_council.ProcessRegistry()
         deadline = time.monotonic() + 5
         tasks = {
             "fable": self.process_task("fable", 1.0, 0, registry, deadline),
@@ -246,7 +246,7 @@ class ParallelCodeReviewTest(unittest.TestCase):
         }
 
         started = time.monotonic()
-        results = parallel_code_review.run_reviewers(tasks)
+        results = review_council.run_reviewers(tasks)
         elapsed = time.monotonic() - started
 
         self.assertLess(elapsed, 2.5)
@@ -254,14 +254,14 @@ class ParallelCodeReviewTest(unittest.TestCase):
         self.assertEqual(results["grok"].status, "failed")
         self.assertEqual(results["thermo"].status, "completed")
 
-        scope = parallel_code_review.resolve_scope(self.args())
-        summary = parallel_code_review.write_summary(self.root, scope, results, [])
+        scope = review_council.resolve_scope(self.args())
+        summary = review_council.write_summary(self.root, scope, results, [])
         summary_text = summary.read_text()
         self.assertIn("partial failure", summary_text)
         self.assertIn("Missing or failed reviewer output is not approval", summary_text)
 
     def test_timeout_kills_owned_process_group(self) -> None:
-        registry = parallel_code_review.ProcessRegistry()
+        registry = review_council.ProcessRegistry()
         marker = self.root / "late-child-output"
         output = self.root / "timeout.out"
         stderr = self.root / "timeout.err"
@@ -272,8 +272,8 @@ class ParallelCodeReviewTest(unittest.TestCase):
             "time.sleep(10)"
         )
 
-        with self.assertRaises(parallel_code_review.ReviewTimeout):
-            parallel_code_review.run_process(
+        with self.assertRaises(review_council.ReviewTimeout):
+            review_council.run_process(
                 [sys.executable, "-c", parent_code],
                 cwd=self.root,
                 stdout_path=output,
@@ -285,10 +285,10 @@ class ParallelCodeReviewTest(unittest.TestCase):
         self.assertFalse(marker.exists())
 
     def test_setup_command_timeout_uses_owned_process_group(self) -> None:
-        registry = parallel_code_review.ProcessRegistry()
+        registry = review_council.ProcessRegistry()
 
-        with self.assertRaises(parallel_code_review.ReviewTimeout):
-            parallel_code_review.run_external(
+        with self.assertRaises(review_council.ReviewTimeout):
+            review_council.run_external(
                 [sys.executable, "-c", "import time; time.sleep(10)"],
                 cwd=self.root,
                 text=True,
@@ -297,7 +297,7 @@ class ParallelCodeReviewTest(unittest.TestCase):
             )
 
     def test_successful_leader_cannot_leave_reviewer_descendants(self) -> None:
-        registry = parallel_code_review.ProcessRegistry()
+        registry = review_council.ProcessRegistry()
         marker = self.root / "orphan-output"
         output = self.root / "leader.out"
         stderr = self.root / "leader.err"
@@ -307,7 +307,7 @@ class ParallelCodeReviewTest(unittest.TestCase):
             f"subprocess.Popen([sys.executable, '-c', {child_code!r}])"
         )
 
-        code = parallel_code_review.run_process(
+        code = review_council.run_process(
             [sys.executable, "-c", parent_code],
             cwd=self.root,
             stdout_path=output,
@@ -321,7 +321,7 @@ class ParallelCodeReviewTest(unittest.TestCase):
         self.assertFalse(marker.exists())
 
     def test_cancellation_terminates_registered_process(self) -> None:
-        registry = parallel_code_review.ProcessRegistry()
+        registry = review_council.ProcessRegistry()
         process = subprocess.Popen(
             [sys.executable, "-c", "import time; time.sleep(10)"],
             start_new_session=True,
@@ -343,21 +343,21 @@ class ParallelCodeReviewTest(unittest.TestCase):
             "printf '%s\\n' '{\"type\":\"result\",\"subtype\":\"error\",\"is_error\":true,\"terminal_reason\":\"failed\",\"result\":\"partial\"}'\n"
         )
         claude.chmod(0o755)
-        scope = parallel_code_review.resolve_scope(self.args())
+        scope = review_council.resolve_scope(self.args())
 
-        with self.assertRaisesRegex(parallel_code_review.ReviewError, "no non-empty final result"):
-            dependencies = parallel_code_review.Dependencies(
+        with self.assertRaisesRegex(review_council.ReviewError, "no non-empty final result"):
+            dependencies = review_council.Dependencies(
                 claude=claude,
                 pi=claude,
                 grok_wrapper=claude,
                 thermo_skill=self.brief,
             )
-            parallel_code_review.run_fable(
-                parallel_code_review.ReviewContext(
+            review_council.run_fable(
+                review_council.ReviewContext(
                     scope,
                     self.brief.read_text(),
                     dependencies,
-                    parallel_code_review.ProcessRegistry(),
+                    review_council.ProcessRegistry(),
                 ),
                 self.repository,
                 output_dir,
@@ -379,22 +379,22 @@ class ParallelCodeReviewTest(unittest.TestCase):
         )
         review.write_text("\n")
 
-        with self.assertRaisesRegex(parallel_code_review.ReviewError, "final plugin verdict"):
-            parallel_code_review.validate_thermo_result(review, skill)
+        with self.assertRaisesRegex(review_council.ReviewError, "final plugin verdict"):
+            review_council.validate_thermo_result(review, skill)
         self.assertTrue((self.root / "result-diagnostic.json").is_file())
 
         review.write_text("A finding.\n\n**REFINE** — Address the major issue.\n")
-        parallel_code_review.validate_thermo_result(review, skill)
+        review_council.validate_thermo_result(review, skill)
 
         review.write_text(
             "Quoted rubric:\n**APPROVE** — Example only.\n\n**RETHINK** — Actual verdict.\n"
         )
-        with self.assertRaisesRegex(parallel_code_review.ReviewError, "exactly one"):
-            parallel_code_review.validate_thermo_result(review, skill)
+        with self.assertRaisesRegex(review_council.ReviewError, "exactly one"):
+            review_council.validate_thermo_result(review, skill)
 
         review.write_text("**APPROVE** — \n")
-        with self.assertRaisesRegex(parallel_code_review.ReviewError, "exactly one"):
-            parallel_code_review.validate_thermo_result(review, skill)
+        with self.assertRaisesRegex(review_council.ReviewError, "exactly one"):
+            review_council.validate_thermo_result(review, skill)
 
     def test_grok_wait_error_invokes_canonical_stop(self) -> None:
         output_dir = self.root / "grok"
@@ -413,20 +413,20 @@ class ParallelCodeReviewTest(unittest.TestCase):
             "fi\n"
         )
         wrapper.chmod(0o755)
-        with self.assertRaisesRegex(parallel_code_review.ReviewError, "Grok wait exited 7"):
-            scope = parallel_code_review.resolve_scope(self.args())
-            dependencies = parallel_code_review.Dependencies(
+        with self.assertRaisesRegex(review_council.ReviewError, "Grok wait exited 7"):
+            scope = review_council.resolve_scope(self.args())
+            dependencies = review_council.Dependencies(
                 claude=wrapper,
                 pi=wrapper,
                 grok_wrapper=wrapper,
                 thermo_skill=self.brief,
             )
-            parallel_code_review.run_grok(
-                parallel_code_review.ReviewContext(
+            review_council.run_grok(
+                review_council.ReviewContext(
                     scope,
                     self.brief.read_text(),
                     dependencies,
-                    parallel_code_review.ProcessRegistry(),
+                    review_council.ProcessRegistry(),
                 ),
                 self.repository,
                 output_dir,
@@ -443,7 +443,7 @@ class ParallelCodeReviewTest(unittest.TestCase):
         clone_two.mkdir(parents=True)
         sibling.mkdir()
 
-        errors = parallel_code_review.cleanup_clones(
+        errors = review_council.cleanup_clones(
             {"one": clone_one, "two": clone_two}
         )
 
@@ -454,24 +454,24 @@ class ParallelCodeReviewTest(unittest.TestCase):
 
     def test_missing_reviewer_result_is_never_complete(self) -> None:
         results = {
-            name: parallel_code_review.ReviewResult(name, "completed", 0.1)
+            name: review_council.ReviewResult(name, "completed", 0.1)
             for name in ("fable", "grok")
         }
 
-        self.assertFalse(parallel_code_review.all_reviews_completed(results))
+        self.assertFalse(review_council.all_reviews_completed(results))
 
-        invalid_results = parallel_code_review.run_reviewers(
+        invalid_results = review_council.run_reviewers(
             {"fable": lambda: self.root / "missing-review.md"}
         )
         self.assertEqual(invalid_results["fable"].status, "failed")
 
     def test_clone_setup_failure_produces_aggregate_failure_results(self) -> None:
-        results = parallel_code_review.setup_failure_results(
+        results = review_council.setup_failure_results(
             "grok",
-            parallel_code_review.ReviewTimeout("clone timed out"),
+            review_council.ReviewTimeout("clone timed out"),
         )
-        scope = parallel_code_review.resolve_scope(self.args())
-        summary = parallel_code_review.write_summary(self.root, scope, results, [])
+        scope = review_council.resolve_scope(self.args())
+        summary = review_council.write_summary(self.root, scope, results, [])
 
         self.assertEqual(set(results), {"fable", "grok", "thermo"})
         self.assertEqual(results["grok"].status, "timed_out")
@@ -487,7 +487,7 @@ class ParallelCodeReviewTest(unittest.TestCase):
             '{"type":"result","subtype":"success","is_error":false,"terminal_reason":"completed","result":"final review"}\n'
         )
 
-        parallel_code_review.parse_fable_result(stream, output)
+        review_council.parse_fable_result(stream, output)
 
         self.assertEqual(output.read_text(), "final review\n")
 
@@ -503,15 +503,15 @@ class ParallelCodeReviewTest(unittest.TestCase):
         old_path = os.environ.get("PATH", "")
         os.environ["PATH"] = f"{fake_bin}:{old_path}"
         try:
-            scope = parallel_code_review.resolve_scope(
+            scope = review_council.resolve_scope(
                 self.args(base=None, pr="42")
             )
             self.assertEqual(scope.fixed_sha, self.base_sha)
             self.assertEqual(scope.head_sha, self.head_sha)
 
             git(self.repository, "checkout", "--quiet", "HEAD~1")
-            with self.assertRaisesRegex(parallel_code_review.ReviewError, "does not match"):
-                parallel_code_review.resolve_scope(self.args(base=None, pr="42"))
+            with self.assertRaisesRegex(review_council.ReviewError, "does not match"):
+                review_council.resolve_scope(self.args(base=None, pr="42"))
         finally:
             os.environ["PATH"] = old_path
 
@@ -556,7 +556,7 @@ class ParallelCodeReviewTest(unittest.TestCase):
         previous = {name: os.environ.get(name) for name in overrides}
         os.environ.update(overrides)
         try:
-            exit_code = parallel_code_review.main(
+            exit_code = review_council.main(
                 [
                     "--repo",
                     str(self.repository),

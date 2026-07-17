@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Sequence
 
 
-REVIEW_BRANCH = "parallel-code-review-head"
+REVIEW_BRANCH = "review-council-head"
 
 
 class ReviewError(RuntimeError):
@@ -387,7 +387,7 @@ def create_run_directory(requested: str | None) -> Path:
             parent = Path(os.environ.get("TMPDIR", "/tmp"))
             run_dir = Path(
                 tempfile.mkdtemp(
-                    prefix=f"parallel-code-review-{os.getuid()}-",
+                    prefix=f"review-council-{os.getuid()}-",
                     dir=parent,
                 )
             )
@@ -526,7 +526,7 @@ def prepare_clone(
             "remote",
             "set-url",
             "origin",
-            "disabled://parallel-code-review",
+            "disabled://review-council",
             deadline=deadline,
             registry=registry,
         )
@@ -534,7 +534,7 @@ def prepare_clone(
             clone,
             "config",
             "remote.origin.pushurl",
-            "disabled://parallel-code-review",
+            "disabled://review-council",
             deadline=deadline,
             registry=registry,
         )

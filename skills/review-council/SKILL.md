@@ -1,12 +1,12 @@
 ---
-name: parallel-code-review
+name: review-council
 description: Run Fable, Grok, and Thermo-Nuclear code reviews concurrently against one validated, immutable Git scope, while preserving separate outputs and reporting partial failures. Use when the user explicitly asks for a parallel, three-reviewer, multi-model, or strongest available code review of a PR, branch, commit range, or comparison with main.
 metadata:
   agents: "claude, codex, pi"
   user-invocable-only: "true"
 ---
 
-# Parallel Code Review
+# Review Council
 
 Run the existing Fable, Grok, and Thermo-Nuclear review contracts together. Keep this workflow review-only: never edit source, commit, push, post GitHub comments, deploy, or implement findings.
 

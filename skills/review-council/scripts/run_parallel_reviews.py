@@ -151,7 +151,7 @@ def write_summary(
     else:
         state = "partial failure"
     lines = [
-        "# Parallel code review",
+        "# Review Council",
         "",
         f"Overall: **{state}** ({completed}/{len(REVIEWERS)} reviewers completed)",
         "",
@@ -331,7 +331,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             cleanup_errors = cleanup_clones(clones, registry.protected_paths())
 
         summary = write_summary(run_dir, scope, results, cleanup_errors)
-        print(f"Parallel review artifacts: {run_dir}")
+        print(f"Review Council artifacts: {run_dir}")
         print(f"Summary: {summary}")
         if interrupted.is_set():
             return 130
@@ -346,5 +346,5 @@ if __name__ == "__main__":
     try:
         raise SystemExit(main())
     except ReviewError as error:
-        print(f"parallel-code-review: {error}", file=sys.stderr)
+        print(f"review-council: {error}", file=sys.stderr)
         raise SystemExit(2)

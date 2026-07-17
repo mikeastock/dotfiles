@@ -236,29 +236,29 @@ EOF
     assert_output_not_contains "$grok_review_content" 'Do not add a speculative `--tools` override' "grok-review does not forbid the validated launcher controls"
     assert_output_not_contains "$grok_review_content" "Pull requests must be ready for review, never draft" "grok-review does not own PR publishing policy"
 
-    assert_file_exists "$PROJECT_DIR/skills/parallel-code-review/SKILL.md" "parallel-code-review source skill exists"
-    assert_file_exists "$PROJECT_DIR/skills/parallel-code-review/scripts/run_parallel_reviews.py" "parallel-code-review runner exists"
-    assert_file_not_exists "$PROJECT_DIR/build/amp/parallel-code-review" "Amp omits explicit-only parallel-code-review skill"
+    assert_file_exists "$PROJECT_DIR/skills/review-council/SKILL.md" "review-council source skill exists"
+    assert_file_exists "$PROJECT_DIR/skills/review-council/scripts/run_parallel_reviews.py" "review-council runner exists"
+    assert_file_not_exists "$PROJECT_DIR/build/amp/review-council" "Amp omits explicit-only review-council skill"
     for agent in claude pi codex; do
-        assert_file_exists "$PROJECT_DIR/build/$agent/parallel-code-review/SKILL.md" "$agent builds parallel-code-review skill"
-        assert_file_exists "$PROJECT_DIR/build/$agent/parallel-code-review/scripts/run_parallel_reviews.py" "$agent builds the parallel review runner"
-        assert_file_exists "$PROJECT_DIR/build/$agent/parallel-code-review/scripts/review_core.py" "$agent builds the parallel review core"
-        assert_file_exists "$PROJECT_DIR/build/$agent/parallel-code-review/scripts/review_adapters.py" "$agent builds the reviewer adapters"
-        assert_file_not_exists "$PROJECT_DIR/build/$agent/parallel-code-review/scripts/__pycache__" "$agent build omits Python bytecode caches"
+        assert_file_exists "$PROJECT_DIR/build/$agent/review-council/SKILL.md" "$agent builds review-council skill"
+        assert_file_exists "$PROJECT_DIR/build/$agent/review-council/scripts/run_parallel_reviews.py" "$agent builds the review council runner"
+        assert_file_exists "$PROJECT_DIR/build/$agent/review-council/scripts/review_core.py" "$agent builds the review council core"
+        assert_file_exists "$PROJECT_DIR/build/$agent/review-council/scripts/review_adapters.py" "$agent builds the reviewer adapters"
+        assert_file_not_exists "$PROJECT_DIR/build/$agent/review-council/scripts/__pycache__" "$agent build omits Python bytecode caches"
     done
     for agent in claude pi; do
-        local parallel_review_content
-        parallel_review_content=$(<"$PROJECT_DIR/build/$agent/parallel-code-review/SKILL.md")
-        assert_output_contains "$parallel_review_content" "disable-model-invocation: true" "$agent makes parallel-code-review user-invocable only"
-        assert_output_not_contains "$parallel_review_content" "user-invocable-only" "$agent build strips dotfiles-only invocation metadata"
+        local review_council_content
+        review_council_content=$(<"$PROJECT_DIR/build/$agent/review-council/SKILL.md")
+        assert_output_contains "$review_council_content" "disable-model-invocation: true" "$agent makes review-council user-invocable only"
+        assert_output_not_contains "$review_council_content" "user-invocable-only" "$agent build strips dotfiles-only invocation metadata"
     done
-    local codex_parallel_review_content
-    codex_parallel_review_content=$(<"$PROJECT_DIR/build/codex/parallel-code-review/SKILL.md")
-    assert_output_not_contains "$codex_parallel_review_content" "user-invocable-only" "codex build strips dotfiles-only invocation metadata"
+    local codex_review_council_content
+    codex_review_council_content=$(<"$PROJECT_DIR/build/codex/review-council/SKILL.md")
+    assert_output_not_contains "$codex_review_council_content" "user-invocable-only" "codex build strips dotfiles-only invocation metadata"
     for agent in pi codex; do
-        local parallel_openai_metadata
-        parallel_openai_metadata=$(<"$PROJECT_DIR/build/$agent/parallel-code-review/agents/openai.yaml")
-        assert_output_contains "$parallel_openai_metadata" "allow_implicit_invocation: false" "$agent requires explicit invocation for parallel-code-review"
+        local review_council_openai_metadata
+        review_council_openai_metadata=$(<"$PROJECT_DIR/build/$agent/review-council/agents/openai.yaml")
+        assert_output_contains "$review_council_openai_metadata" "allow_implicit_invocation: false" "$agent requires explicit invocation for review-council"
     done
 
     assert_file_exists "$PROJECT_DIR/build/amp/impeccable/SKILL.md" "Amp builds impeccable skill"
@@ -361,10 +361,10 @@ test_make_install_skills() {
     assert_dir_exists "$SANDBOX_DIR/.claude/skills/effect" "Claude installs effect skill"
     assert_dir_exists "$SANDBOX_DIR/.agents/skills/effect" "Pi installs effect skill"
     assert_file_not_exists "$SANDBOX_DIR/.codex/skills/effect" "Codex uses the shared Effect plugin skill without a duplicate install"
-    assert_file_not_exists "$SANDBOX_DIR/.config/agents/skills/parallel-code-review" "Amp omits explicit-only parallel-code-review skill"
-    assert_dir_exists "$SANDBOX_DIR/.claude/skills/parallel-code-review" "Claude installs parallel-code-review skill"
-    assert_dir_exists "$SANDBOX_DIR/.codex/skills/parallel-code-review" "Codex installs parallel-code-review skill"
-    assert_dir_exists "$SANDBOX_DIR/.agents/skills/parallel-code-review" "Pi installs parallel-code-review skill"
+    assert_file_not_exists "$SANDBOX_DIR/.config/agents/skills/review-council" "Amp omits explicit-only review-council skill"
+    assert_dir_exists "$SANDBOX_DIR/.claude/skills/review-council" "Claude installs review-council skill"
+    assert_dir_exists "$SANDBOX_DIR/.codex/skills/review-council" "Codex installs review-council skill"
+    assert_dir_exists "$SANDBOX_DIR/.agents/skills/review-council" "Pi installs review-council skill"
     for skills_dir in \
         "$SANDBOX_DIR/.config/agents/skills" \
         "$SANDBOX_DIR/.claude/skills" \
