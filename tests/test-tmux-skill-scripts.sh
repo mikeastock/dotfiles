@@ -42,7 +42,7 @@ test_find_sessions_on_socket() {
 
     SOCKET_DIR="$(mktemp -d)"
     SOCKET="$SOCKET_DIR/test.sock"
-    tmux -S "$SOCKET" new -d -s agent-test -n shell 'printf ready; sleep 30'
+    tmux -f /dev/null -S "$SOCKET" new -d -s agent-test -n shell 'printf ready; sleep 30'
 
     local output
     output="$($PROJECT_DIR/skills/tmux/scripts/find-sessions.sh -S "$SOCKET")"
@@ -58,7 +58,7 @@ test_wait_for_text_on_socket() {
     if [ -z "$SOCKET" ]; then
         SOCKET_DIR="$(mktemp -d)"
         SOCKET="$SOCKET_DIR/test.sock"
-        tmux -S "$SOCKET" new -d -s agent-test -n shell 'printf ready; sleep 30'
+        tmux -f /dev/null -S "$SOCKET" new -d -s agent-test -n shell 'printf ready; sleep 30'
     fi
 
     assert_success "wait-for-text finds pane text" \

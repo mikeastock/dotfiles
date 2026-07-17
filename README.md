@@ -94,7 +94,6 @@ pi
 - `fable-review` — trusted Claude Fable code review workflow using `claude -p --model claude-fable-5`
 - `grok-review` — safe Grok Build review workflow delegating branch and explicit dirty-tree reviews to Grok's native `/review` skill
 - `writing-mike-ruby-style` — Mike's personal Ruby/Rails style (mirrors his canonical style rules)
-- `effect-ts` — repository-first Effect v4 implementation, review, debugging, and source research
 - `prepare-branch-context` — read-only branch diff, commit, and PR context gathering skill vendored from `jnsahaj/skills`
 - `zmx` — guidance for managing persistent background terminal work
 - `tmux` — remote control tmux sessions through the active server, with an agent-neutral fallback socket when no server is running
@@ -107,6 +106,7 @@ pi
 - `improve` — codebase audit and self-contained implementation planning skill from `shadcn/improve`
 - `impeccable` — frontend design, critique, polish, and live iteration skill from `pbakaus/impeccable`
 - `thermo-nuclear-code-review` — strict structural and architectural code review skill from `intercom/2x-skills`
+- `effect` — opinionated production Effect v4 guide from `kitlangton/skills`, pinned as a plugin submodule at commit `30dee860`
 
 ### Notable custom Pi prompt templates
 
@@ -123,8 +123,7 @@ pi
 
 ### Notable custom Pi extensions
 
-- `buildr-artifacts` — installed from `buildrtech/dotagents`; provides `share_artifact` and `/share_artifact` for publishing local HTML artifacts to Buildr artifact storage
-- `openai-fast` — installed from `buildrtech/dotagents`; provides a `/fast` toggle that applies OpenAI `service_tier=priority` for configured models
+- `handoff`, `openai-fast`, and `session-query` — vendored from `buildrtech/dotagents` commit `a484ad4`; `openai-fast` enables OpenAI priority service-tier requests
 - `pi-prompt-shelf` — local copy of `tanishqkancharla/pi-prompt-shelf`; shelves editor prompts per session with shortcuts and `/shelf`
 - `pi-codex-conversion` — local copy of `IgorWarzocha/pi-codex-conversion`; adds Codex-style tools and prompt adaptation for OpenAI/Codex models in Pi
 - `full-read-for-paths` — upgrades partial `read` calls to full reads for configured resource-file paths

@@ -130,6 +130,8 @@ test_make_build() {
         done
     done
     assert_file_exists "$PROJECT_DIR/build/subagents/pi/architecture-reviewer.md" "Build includes architecture-reviewer subagent"
+    assert_file_not_exists "$PROJECT_DIR/build/subagents/pi/code-reviewer.md" "Build excludes removed code-reviewer subagent"
+    assert_file_not_exists "$PROJECT_DIR/build/subagents/pi/document-reviewer.md" "Build excludes removed document-reviewer subagent"
     assert_file_exists "$PROJECT_DIR/build/claude/teach/SKILL.md" "Claude builds Matt Pocock teach skill"
     assert_file_exists "$PROJECT_DIR/build/claude/writing-great-skills/SKILL.md" "Claude builds Matt Pocock writing-great-skills skill"
     assert_file_exists "$PROJECT_DIR/build/amp/x-search/SKILL.md" "Amp builds x-search skill"
@@ -140,6 +142,18 @@ test_make_build() {
         assert_file_not_exists "$PROJECT_DIR/build/$agent/test-driven-development" "$agent no longer builds test-driven-development"
         assert_file_not_exists "$PROJECT_DIR/build/$agent/systematic-debugging" "$agent no longer builds systematic-debugging"
     done
+
+    for agent in amp claude pi; do
+        assert_file_exists "$PROJECT_DIR/build/$agent/effect/SKILL.md" "$agent builds the Effect plugin skill"
+        assert_file_exists "$PROJECT_DIR/build/$agent/effect/references/SCHEMA.md" "$agent builds effect references"
+        assert_file_not_exists "$PROJECT_DIR/build/$agent/effect-ts" "$agent no longer builds effect-ts"
+    done
+    assert_file_exists "$PROJECT_DIR/plugins/kitlangton-skills/skills/effect/SKILL.md" "Effect source comes from the kitlangton plugin"
+    assert_file_not_exists "$PROJECT_DIR/skills/effect" "Effect is not duplicated as a custom skill"
+
+    local effect_content
+    effect_content=$(<"$PROJECT_DIR/build/pi/effect/SKILL.md")
+    assert_output_contains "$effect_content" "name: effect" "Built effect skill keeps its canonical name"
 
     local breadboard_content
     breadboard_content=$(<"$breadboard_skill")
@@ -317,12 +331,18 @@ test_make_install_skills() {
     assert_dir_exists "$SANDBOX_DIR/.config/agents/skills/thermo-nuclear-code-review" "Amp installs thermo-nuclear-code-review skill"
     assert_dir_exists "$SANDBOX_DIR/.claude/skills/thermo-nuclear-code-review" "Claude installs thermo-nuclear-code-review skill"
     assert_dir_exists "$SANDBOX_DIR/.agents/skills/thermo-nuclear-code-review" "Pi installs thermo-nuclear-code-review skill"
+    assert_dir_exists "$SANDBOX_DIR/.config/agents/skills/effect" "Amp installs effect skill"
+    assert_dir_exists "$SANDBOX_DIR/.claude/skills/effect" "Claude installs effect skill"
+    assert_dir_exists "$SANDBOX_DIR/.agents/skills/effect" "Pi installs effect skill"
+    assert_file_not_exists "$SANDBOX_DIR/.codex/skills/effect" "Codex uses the shared Effect plugin skill without a duplicate install"
     for skills_dir in \
         "$SANDBOX_DIR/.config/agents/skills" \
         "$SANDBOX_DIR/.claude/skills" \
+        "$SANDBOX_DIR/.codex/skills" \
         "$SANDBOX_DIR/.agents/skills"; do
         assert_file_not_exists "$skills_dir/test-driven-development" "Install excludes test-driven-development from $skills_dir"
         assert_file_not_exists "$skills_dir/systematic-debugging" "Install excludes systematic-debugging from $skills_dir"
+        assert_file_not_exists "$skills_dir/effect-ts" "Install excludes replaced effect-ts from $skills_dir"
     done
 }
 
@@ -463,6 +483,19 @@ test_make_install_extensions() {
     cat > "$SANDBOX_DIR/.pi/agent/extensions/manual-extension/index.ts" <<'EOF'
 export default {};
 EOF
+    mkdir -p "$SANDBOX_DIR/.pi/agent/extensions/buildr-artifacts"
+    cat > "$SANDBOX_DIR/.pi/agent/extensions/buildr-artifacts/index.ts" <<'EOF'
+export default {};
+EOF
+    python3 - <<PY
+import json
+from pathlib import Path
+manifest_path = Path("$SANDBOX_DIR/.local/state/dotfiles/agent-install-manifest.json")
+manifest_path.parent.mkdir(parents=True, exist_ok=True)
+manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else {"version": 1, "targets": {}}
+manifest["targets"].setdefault("pi.extensions", []).append("buildr-artifacts")
+manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+PY
 
     # Run install-extensions with sandbox HOME
     local output
@@ -483,18 +516,16 @@ EOF
         TESTS_PASSED=$((TESTS_PASSED + 1))
     fi
 
-    assert_output_contains "$output" "buildr-artifacts (from buildrtech/dotagents)" "buildr-artifacts comes from buildrtech plugin"
-    assert_output_contains "$output" "handoff (from buildrtech/dotagents)" "handoff comes from buildrtech plugin"
-    assert_output_contains "$output" "openai-fast (from buildrtech/dotagents)" "openai-fast comes from buildrtech plugin"
-    assert_output_contains "$output" "session-query (from buildrtech/dotagents)" "session-query comes from buildrtech plugin"
-    assert_output_not_contains "$output" "openai-fast (custom)" "openai-fast is no longer installed from the local copy"
+    assert_output_contains "$output" "handoff (custom)" "handoff installs from the vendored local copy"
+    assert_output_contains "$output" "openai-fast (custom)" "openai-fast installs from the vendored local copy"
+    assert_output_contains "$output" "session-query (custom)" "session-query installs from the vendored local copy"
 
-    assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/buildr-artifacts" "buildr-artifacts extension installed"
     assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/handoff" "handoff extension installed"
     assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/openai-fast" "openai-fast extension installed"
     assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/session-query" "session-query extension installed"
     assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/tmux-status" "tmux-status extension installed"
     assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/web-access" "web-access extension installed"
+    assert_file_not_exists "$SANDBOX_DIR/.pi/agent/extensions/buildr-artifacts" "buildr-artifacts extension removed"
     assert_file_not_exists "$SANDBOX_DIR/.pi/agent/extensions/subagent" "subagent extension removed"
     assert_file_not_exists "$SANDBOX_DIR/.pi/agent/extensions/pi-web-access" "pi-web-access extension removed"
     assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/manual-extension" "Unmanaged Pi extension survives install"
@@ -550,19 +581,35 @@ test_make_install_prompts() {
     assert_file_exists "$SANDBOX_DIR/.pi/agent/prompts/manual.md" "Unmanaged Pi prompt survives install"
 }
 
-# Test: make install-subagents preserves unmanaged siblings
+# Test: make install-subagents removes obsolete managed subagents and preserves unmanaged siblings
 test_make_install_subagents_preserves_unmanaged_siblings() {
-    log_test "Testing 'make install-subagents' preserves unmanaged siblings"
+    log_test "Testing 'make install-subagents' removes obsolete managed subagents and preserves unmanaged siblings"
     cd "$PROJECT_DIR"
 
     mkdir -p "$SANDBOX_DIR/.pi/agent/agents"
     echo "manual subagent" > "$SANDBOX_DIR/.pi/agent/agents/manual.md"
+    echo "obsolete code reviewer" > "$SANDBOX_DIR/.pi/agent/agents/code-reviewer.md"
+    echo "obsolete document reviewer" > "$SANDBOX_DIR/.pi/agent/agents/document-reviewer.md"
+    python3 - <<PY
+import json
+from pathlib import Path
+manifest_path = Path("$SANDBOX_DIR/.local/state/dotfiles/agent-install-manifest.json")
+manifest_path.parent.mkdir(parents=True, exist_ok=True)
+manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else {"version": 1, "targets": {}}
+managed = manifest["targets"].setdefault("pi.subagents", [])
+for name in ("code-reviewer.md", "document-reviewer.md"):
+    if name not in managed:
+        managed.append(name)
+manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+PY
 
     local output
     output=$(HOME="$SANDBOX_DIR" XDG_STATE_HOME="$SANDBOX_DIR/.local/state" make install-subagents 2>&1)
 
     assert_output_contains "$output" "Installing subagents" "Install shows subagent progress"
     assert_file_exists "$SANDBOX_DIR/.pi/agent/agents/architecture-reviewer.md" "Pi architecture-reviewer subagent installed"
+    assert_file_not_exists "$SANDBOX_DIR/.pi/agent/agents/code-reviewer.md" "Obsolete managed code-reviewer subagent removed"
+    assert_file_not_exists "$SANDBOX_DIR/.pi/agent/agents/document-reviewer.md" "Obsolete managed document-reviewer subagent removed"
     assert_file_exists "$SANDBOX_DIR/.pi/agent/agents/manual.md" "Unmanaged Pi subagent survives install"
 }
 
@@ -642,7 +689,7 @@ test_make_clean() {
     assert_file_not_exists "$SANDBOX_DIR/.claude/skills/zmx" "Clean removes managed skill"
     assert_file_not_exists "$SANDBOX_DIR/.pi/agent/extensions/web-access" "Clean removes managed extension"
     assert_file_not_exists "$SANDBOX_DIR/.pi/agent/prompts/refactor-pass.md" "Clean removes managed prompt"
-    assert_file_not_exists "$SANDBOX_DIR/.pi/agent/agents/code-reviewer.md" "Clean removes managed subagent"
+    assert_file_not_exists "$SANDBOX_DIR/.pi/agent/agents/architecture-reviewer.md" "Clean removes managed subagent"
     assert_file_not_exists "$SANDBOX_DIR/.pi/agent/themes/catppuccin-latte.json" "Clean removes managed theme"
     assert_dir_exists "$SANDBOX_DIR/.claude/skills/manual-clean-skill" "Clean preserves unmanaged skill"
     assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/manual-clean-extension" "Clean preserves unmanaged extension"

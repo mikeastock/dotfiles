@@ -5,6 +5,7 @@
   "packageManager": "pnpm@10.0.0",
   "scripts": {
     "typecheck": "tsc --noEmit",
+    "test:extensions": "node --import tsx --test pi-extensions/handoff/index.test.ts pi-extensions/openai-fast/config.test.ts pi-extensions/openai-fast/index.test.ts",
     "amp:plugin-types": "python3 scripts/update_amp_plugin_types.py",
     "amp:plugin-check": "pnpm amp:plugin-types && tsc --noEmit --pretty false"
   },

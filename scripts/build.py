@@ -671,7 +671,6 @@ def strip_agents_from_frontmatter(content: str) -> str:
     new_frontmatter = re.sub(
         metadata_agents_pattern, "", new_frontmatter, flags=re.MULTILINE
     )
-
     # Clean up trailing whitespace (pattern expects \n before ---)
     new_frontmatter = new_frontmatter.rstrip()
 
