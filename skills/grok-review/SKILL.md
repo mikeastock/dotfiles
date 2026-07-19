@@ -62,15 +62,16 @@ artifacts.
 ## Run one review
 
 The bundled `scripts/run_review.sh` owns the security-critical launcher and
-result parser. Use it instead of retyping Grok commands so version checks,
-native-skill checks, session identity, zmx failures, sandbox verification, and
-JSON validation stay in one executable contract. The launcher supports exactly
-Grok `0.2.99`, passes the prompt with `--prompt-file`, disables plan mode,
-memory, web search, edit/write tools, and MCP calls, and requests `--sandbox
-read-only` without auto-approving shell commands. It leaves Grok's default
+result parser. Use it instead of retyping Grok commands so native-skill checks,
+session identity, zmx failures, sandbox verification, and JSON validation stay
+in one executable contract. The launcher uses the installed Grok CLI without a
+version gate. Runtime compatibility fails closed through the native-skill
+check, enforced read-only sandbox evidence, and structured result validation.
+It passes the prompt with `--prompt-file`, disables plan mode, memory, web
+search, edit/write tools, and MCP calls, and requests `--sandbox read-only`
+without auto-approving shell commands. It leaves Grok's default
 read/search/list/shell/agent/background machinery intact because native
-`/review` needs a reviewer subagent, while `0.2.99` couples
-`run_terminal_cmd` to its shared background support.
+`/review` needs a reviewer subagent and shell background support.
 
 Create a unique run directory and write the task-specific prompt before
 starting the launcher:
@@ -152,8 +153,8 @@ mkdir -p "$RECOVERY_RUN_DIR"
   "$(<"$OLD_RUN_DIR/grok-session")"
 ```
 
-Grok `0.2.99` fixes a session's sandbox profile for its lifetime. The wrapper
-passes the same `read-only` profile on resume so a recovery cannot widen it.
+Grok fixes a session's sandbox profile for its lifetime. The wrapper passes the
+same `read-only` profile on resume so a recovery cannot widen it.
 
 ## Read and validate the result
 
@@ -192,7 +193,7 @@ separate implementation request after the finding has been verified.
   matching `ProfileApplied`, or `enforced=false` and serializes wrapper runs per
   workspace so their events cannot be confused. Rejection includes verified
   zmx termination; if termination remains visible, the lock stays in place.
-- Grok `0.2.99` documents a residual startup race for built-in profiles: if OS
+- Grok documents a residual startup race for built-in profiles: if OS
   enforcement fails, Grok can continue briefly while the wrapper observes the
   failure and kills it. The launcher removes mutating and external built-in
   tools, denies edit/write/MCP tools, and does not use `--always-approve` to
@@ -205,12 +206,12 @@ separate implementation request after the finding has been verified.
   `--deny`, and dedicated disabling flags. Native `/review` retains
   agent/background machinery for its reviewer subagent and can create its
   protected scratch artifacts through sandboxed shell commands. On Linux, the
-  sandbox blocks child-process network access; on macOS, Grok `0.2.99`
-  documents child-network restriction as a no-op.
+  sandbox blocks child-process network access; on macOS, Grok documents
+  child-network restriction as a no-op.
 - Detached Linux runs can report `ApplyFailed` when Landlock cannot open
   `/dev/tty`. Preserve the artifacts and report the failure. Never retry by
   dropping the sandbox.
-- Grok `0.2.99` sandbox events identify the workspace but not the Grok session.
+- Grok sandbox events identify the workspace but not the Grok session.
   Do not run another Grok process in the same workspace while this wrapper is
   starting; its event could be mistaken for this run's enforcement result.
 - Native `/review` supplies the soft review-only policy. On macOS in

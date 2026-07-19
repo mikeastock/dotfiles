@@ -198,12 +198,6 @@ fi
 
 GROK_BIN="${GROK_BIN:-$HOME/.grok/bin/grok}"
 [[ -x "$GROK_BIN" ]] || fail "Grok is unavailable at $GROK_BIN"
-GROK_VERSION="$("$GROK_BIN" --version 2>/dev/null)" \
-    || fail "could not read Grok version from $GROK_BIN"
-case "$GROK_VERSION" in
-    "grok 0.2.99"|"grok 0.2.99 "*) ;;
-    *) fail "unsupported Grok version: $GROK_VERSION" ;;
-esac
 
 NATIVE_SKILL="$HOME/.grok/bundled/skills/review/SKILL.md"
 [[ -f "$NATIVE_SKILL" ]] || fail "Grok native /review skill is missing: $NATIVE_SKILL"

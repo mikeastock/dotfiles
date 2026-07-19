@@ -21,6 +21,7 @@ RUN_DIR_RESUMED="$TMP_DIR/run-resumed"
 COMMAND_LOG="$TMP_DIR/command.log"
 KILLED_MARKER="$TMP_DIR/killed"
 ACTIVE_SESSION="$TMP_DIR/active-session"
+VERSION_CHECKED_MARKER="$TMP_DIR/version-checked"
 GROK_SESSION_ID="019f4d7b-7517-7021-9dbf-9b9dcd20bd43"
 OTHER_SESSION_ID="019f4d7b-7517-7021-9dbf-9b9dcd20bd44"
 TEST_HOME="$TMP_DIR/home"
@@ -33,6 +34,7 @@ printf '%s\n' '# Native test skill' > "$TEST_HOME/.grok/bundled/skills/review/SK
 cat > "$FAKE_BIN/grok" <<'EOF'
 #!/usr/bin/env bash
 if [[ "${1:-}" == "--version" ]]; then
+    : > "$FAKE_GROK_VERSION_CHECKED"
     printf '%s\n' "${FAKE_GROK_VERSION:-grok 0.2.99 (test) [stable]}"
     exit 0
 fi
@@ -117,6 +119,7 @@ run_launcher() {
       FAKE_ZMX_COMMAND_LOG="$COMMAND_LOG" \
       FAKE_ZMX_KILLED="$KILLED_MARKER" \
       FAKE_ZMX_ACTIVE_FILE="$ACTIVE_SESSION" \
+      FAKE_GROK_VERSION_CHECKED="$VERSION_CHECKED_MARKER" \
       FAKE_ZMX_KILL_STATUS="${FAKE_ZMX_KILL_STATUS:-0}" \
       FAKE_ZMX_LIST_STATUS="${FAKE_ZMX_LIST_STATUS:-0}" \
       FAKE_ZMX_STAYS_ACTIVE="${FAKE_ZMX_STAYS_ACTIVE:-0}" \
@@ -177,11 +180,12 @@ assert_output_contains "$(<"$COMMAND_LOG")" "--sandbox read-only" "Launcher pass
 assert_output_contains "$(<"$COMMAND_LOG")" "--prompt-file" "Launcher passes the prompt file"
 assert_output_contains "$(<"$COMMAND_LOG")" "--no-plan" "Launcher disables plan mode"
 assert_output_not_contains "$(<"$COMMAND_LOG")" "--always-approve" "Launcher does not auto-approve shell commands"
+assert_file_not_exists "$VERSION_CHECKED_MARKER" "Launcher does not gate on the installed Grok version"
 assert_output_contains "$(<"$COMMAND_LOG")" '--disable-web-search' "Launcher disables web search"
 assert_output_contains "$(<"$COMMAND_LOG")" '--disallowed-tools "search_replace,write,web_search,web_fetch"' "Launcher removes mutating and external built-in tools"
 assert_output_contains "$(<"$COMMAND_LOG")" '--deny MCPTool' "Launcher denies MCP calls"
-assert_output_not_contains "$(<"$COMMAND_LOG")" '--tools' "Launcher avoids Grok 0.2.99 shell allowlist incompatibility"
-assert_output_not_contains "$(<"$COMMAND_LOG")" '--no-subagents' "Launcher preserves Grok 0.2.99 shell background support"
+assert_output_not_contains "$(<"$COMMAND_LOG")" '--tools' "Launcher avoids narrowing native review tools"
+assert_output_not_contains "$(<"$COMMAND_LOG")" '--no-subagents' "Launcher preserves native reviewer subagents"
 assert_output_contains "$(<"$RUN_DIR/grok-session")" "$GROK_SESSION_ID" "Launcher records the Grok session"
 
 log_test "Testing structured result validation"
@@ -244,17 +248,6 @@ else
     TESTS_PASSED=$((TESTS_PASSED + 1))
 fi
 assert_file_exists "$KILLED_MARKER" "Launcher stops a review after missing sandbox evidence"
-
-log_test "Testing Grok review launcher rejects version drift"
-rm -f "$COMMAND_LOG"
-if FAKE_GROK_VERSION='grok 0.3.0 (test) [stable]' run_launcher "$TMP_DIR/run-version" >"$TMP_DIR/version.log" 2>&1; then
-    log_error "FAIL: Launcher accepted an unsupported Grok version"
-    TESTS_FAILED=$((TESTS_FAILED + 1))
-else
-    log_info "PASS: Launcher rejects an unsupported Grok version"
-    TESTS_PASSED=$((TESTS_PASSED + 1))
-fi
-assert_file_not_exists "$COMMAND_LOG" "Version failure occurs before zmx launch"
 
 log_test "Testing result validation rejects a mismatched session"
 : > "$EVENTS"
