@@ -37,6 +37,7 @@ test_config_new_files() {
     # Verify all files were created
     assert_file_exists "$SANDBOX_DIR/.config/amp/settings.json" "Amp settings file was created"
     assert_file_exists "$SANDBOX_DIR/.codex/config.toml" "Codex config file was created"
+    assert_file_not_exists "$SANDBOX_DIR/.codex/grok-4-5.config.toml" "Codex wrapper profile is absent"
     assert_file_not_exists "$SANDBOX_DIR/.codex/model-catalog.json" "Codex custom model catalog is absent"
     assert_file_not_exists "$SANDBOX_DIR/.codex/fireworks-glm52.config.toml" "Codex Fireworks profile is absent"
     assert_file_exists "$SANDBOX_DIR/.codex/rules/default.rules" "Codex default rules file was created"
@@ -59,9 +60,9 @@ test_config_new_files() {
     assert_json_field "$amp_json" '."amp.terminal.copyOnSelect"' "false" "Amp: terminal copy-on-select comes from amp-configs"
 }
 
-# Test: Codex config does not install custom model providers or stale profiles
-test_codex_custom_models_removed() {
-    log_test "Testing Codex custom models are removed"
+# Test: Codex keeps vanilla defaults and removes stale custom model files
+test_codex_grok_daemon_model() {
+    log_test "Testing Codex vanilla defaults with optional OpenCodex Grok route"
     cd "$PROJECT_DIR"
 
     mkdir -p "$SANDBOX_DIR/.codex"
@@ -71,6 +72,9 @@ EOF
     cat > "$SANDBOX_DIR/.codex/fireworks-glm52.config.toml" <<'EOF'
 model_provider = "fireworks"
 EOF
+    cat > "$SANDBOX_DIR/.codex/grok-4-5.config.toml" <<'EOF'
+model_provider = "opencodex"
+EOF
 
     HOME="$SANDBOX_DIR" make install-configs >/dev/null 2>&1
 
@@ -78,9 +82,31 @@ EOF
     codex_config=$(cat "$SANDBOX_DIR/.codex/config.toml")
 
     assert_output_not_contains "$codex_config" "model_catalog_json" "Codex config does not point at a custom model catalog"
-    assert_output_not_contains "$codex_config" "model_providers.fireworks" "Codex config does not register Fireworks"
+    assert_output_not_contains "$codex_config" "[model_providers.opencodex]" "Codex relies on OpenCodex's built-in provider injection"
+    assert_output_contains "$codex_config" 'model = "gpt-5.6-sol"' "Codex keeps the vanilla OpenAI default model"
+    assert_output_contains "$codex_config" 'service_tier = "fast"' "Codex keeps the vanilla OpenAI fast service tier"
+    assert_output_not_contains "$codex_config" 'model = "xai/grok-4.5"' "Codex does not default to Grok"
     assert_file_not_exists "$SANDBOX_DIR/.codex/model-catalog.json" "Codex stale custom model catalog was removed"
     assert_file_not_exists "$SANDBOX_DIR/.codex/fireworks-glm52.config.toml" "Codex stale Fireworks profile was removed"
+    assert_file_not_exists "$SANDBOX_DIR/.codex/grok-4-5.config.toml" "Codex stale Grok wrapper profile was removed"
+}
+
+# Test: Codex config can be installed independently of other agent state
+test_codex_config_standalone() {
+    log_test "Testing standalone Codex config installation"
+    cd "$PROJECT_DIR"
+
+    mkdir -p "$SANDBOX_DIR/.config/amp"
+    printf '{ invalid json\n' > "$SANDBOX_DIR/.config/amp/settings.json"
+
+    local output
+    output=$(HOME="$SANDBOX_DIR" make install-codex-config 2>&1)
+
+    assert_output_contains "$output" "Installing Codex config" "Standalone install reaches Codex configuration"
+    assert_file_exists "$SANDBOX_DIR/.codex/config.toml" "Standalone install creates the Codex config"
+    assert_file_not_exists "$SANDBOX_DIR/.codex/grok-4-5.config.toml" "Standalone install removes the Grok wrapper profile"
+
+    rm -f "$SANDBOX_DIR/.config/amp/settings.json"
 }
 
 # Test: Codex config enables prompts and installs Terraform apply rules
@@ -354,7 +380,8 @@ main() {
     test_help_shows_config
     test_config_creates_directories
     test_config_new_files
-    test_codex_custom_models_removed
+    test_codex_grok_daemon_model
+    test_codex_config_standalone
     test_codex_terraform_apply_rules
     test_codex_hooks_installed
     test_codex_preserve_hook_trust

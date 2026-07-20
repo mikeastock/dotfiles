@@ -52,6 +52,10 @@ make plugin-update           # update plugin submodules
 
 External native tools are pinned under `[external_tools]` in `plugins.toml`. They are installed into `~/.local/bin` without allowing upstream installers to modify agent settings; this repository owns those settings through `make install-configs`. The full `make install` workflow installs tools before configs.
 
+### Optional Grok 4.5 in Codex
+
+Run `make install-opencodex` once. This installs the pinned OpenCodex package, writes a managed config that keeps vanilla Codex/OpenAI defaults, adds optional `xai/grok-4.5`, and enables the user-level systemd service. The service loads `XAI_API_KEY` from `~/.env` and injects proxy routing plus the model catalog into Codex. Plain `codex`, Codex App, and the app server keep using the normal OpenAI models; pick `xai/grok-4.5` when you want Grok.
+
 ### Amp plugin development
 
 Personal Amp plugins live in `amp-plugins/*.ts`. `make install-amp-plugins` copies them into `~/.config/amp/plugins/`. This repo also includes a local TypeScript declaration refresh so plugin files can import `PluginAPI` from `@ampcode/plugin` without publishing or installing a separate package.

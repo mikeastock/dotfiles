@@ -1,0 +1,35 @@
+{
+  "port": 10100,
+  "hostname": "127.0.0.1",
+  "openaiProviderTierVersion": 2,
+  "defaultProvider": "openai",
+  "providers": {
+    "openai": {
+      "adapter": "openai-responses",
+      "baseUrl": "https://chatgpt.com/backend-api/codex",
+      "authMode": "forward",
+      "codexAccountMode": "pool"
+    },
+    "xai": {
+      "adapter": "openai-chat",
+      "baseUrl": "https://api.x.ai/v1",
+      "authMode": "key",
+      "apiKey": "${XAI_API_KEY}",
+      "models": ["grok-4.5"],
+      "selectedModels": ["grok-4.5"],
+      "liveModels": true,
+      "defaultModel": "grok-4.5",
+      "modelContextWindows": { "grok-4.5": 500000 },
+      "modelInputModalities": { "grok-4.5": ["text", "image"] },
+      "modelReasoningEfforts": { "grok-4.5": ["low", "medium", "high"] },
+      "modelDefaultReasoningEfforts": { "grok-4.5": "medium" },
+      "preserveReasoningContentModels": ["grok-4.5"],
+      "parallelToolCalls": true
+    }
+  },
+  "webSearchSidecar": { "enabled": false },
+  "visionSidecar": { "enabled": false },
+  "websockets": true,
+  "codexAutoStart": false,
+  "syncResumeHistory": false
+}

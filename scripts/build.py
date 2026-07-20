@@ -15,6 +15,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import urllib.request
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -72,6 +73,10 @@ CONFIGS_DIR = ROOT / "configs"
 CODEX_CONFIG_FILE = CONFIGS_DIR / "codex-config.toml"
 CODEX_HOOKS_FILE = CONFIGS_DIR / "codex" / "hooks.json"
 CODEX_RULES_DIR = CONFIGS_DIR / "codex" / "rules"
+OPENCODEX_CONFIG_FILE = CONFIGS_DIR / "opencodex-config.json"
+OPENCODEX_SYSTEMD_CONFIG_FILE = CONFIGS_DIR / "opencodex-systemd.conf"
+OPENCODEX_MISE_TOOL = "npm:@bitkyc08/opencodex@2.7.27"
+OPENCODEX_VERSION = "2.7.27"
 PI_CONFIGS_DIR = ROOT / "pi-configs"
 PI_SETTINGS_FILE = PI_CONFIGS_DIR / "pi-settings.json"
 PI_MODELS_FILE = PI_CONFIGS_DIR / "pi-models.json"
@@ -398,10 +403,15 @@ def load_external_tools() -> dict[str, ExternalTool]:
 
 
 def run_cmd(
-    cmd: list[str], check: bool = True, cwd: Path | None = None
+    cmd: list[str],
+    check: bool = True,
+    cwd: Path | None = None,
+    env: dict[str, str] | None = None,
 ) -> subprocess.CompletedProcess:
     """Run a shell command."""
-    return subprocess.run(cmd, check=check, capture_output=True, text=True, cwd=cwd)
+    return subprocess.run(
+        cmd, check=check, capture_output=True, text=True, cwd=cwd, env=env
+    )
 
 
 def init_submodules():
@@ -451,6 +461,119 @@ def install_external_tools(tools: dict[str, ExternalTool]) -> None:
                     ]
                 )
         print(f"  {tool.name} {tool.version} -> {destination / tool.name}")
+
+
+def dotenv_value(path: Path, name: str) -> str | None:
+    """Read one simple dotenv assignment without executing the file."""
+    if not path.exists():
+        return None
+
+    value = None
+    for raw_line in path.read_text().splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, candidate = line.split("=", 1)
+        if key.strip() != name:
+            continue
+        candidate = candidate.strip()
+        if (
+            len(candidate) >= 2
+            and candidate[0] == candidate[-1]
+            and candidate[0] in "\"'"
+        ):
+            candidate = candidate[1:-1]
+        value = candidate
+    return value
+
+
+def opencodex_environment() -> dict[str, str]:
+    """Build an OpenCodex environment with the managed xAI credential."""
+    env = os.environ.copy()
+    xai_key = dotenv_value(HOME / ".env", "XAI_API_KEY")
+    if not xai_key:
+        sys.exit(f"Error: XAI_API_KEY is missing from {HOME / '.env'}")
+    env["XAI_API_KEY"] = xai_key
+    return env
+
+
+def opencodex_executable() -> Path:
+    """Resolve OpenCodex from the pinned mise installation."""
+    mise = shutil.which("mise")
+    if not mise:
+        sys.exit("Error: mise is required to install OpenCodex")
+    result = run_cmd([mise, "which", "ocx"], check=False)
+    path = Path(result.stdout.strip()) if result.returncode == 0 else None
+    if not path or not path.is_file():
+        sys.exit("Error: OpenCodex is not installed")
+    return path
+
+
+def install_opencodex() -> None:
+    """Install and start the managed OpenCodex user service."""
+    print("Installing OpenCodex daemon...")
+    if not OPENCODEX_CONFIG_FILE.exists() or not OPENCODEX_SYSTEMD_CONFIG_FILE.exists():
+        sys.exit("Error: managed OpenCodex configuration is missing")
+
+    env = opencodex_environment()
+    env["NPM_CONFIG_IGNORE_SCRIPTS"] = "false"
+    env["NPM_CONFIG_ALLOW_SCRIPTS"] = "bun"
+    run_cmd(["mise", "use", "-g", OPENCODEX_MISE_TOOL], env=env)
+    run_cmd(["mise", "install"], env=env)
+
+    ocx = opencodex_executable()
+    version = run_cmd([str(ocx), "--version"], env=env).stdout.strip()
+    if version != f"opencodex {OPENCODEX_VERSION}":
+        sys.exit(f"Error: unexpected OpenCodex version: {version}")
+
+    config_dir = HOME / ".opencodex"
+    config_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
+    config_dest = config_dir / "config.json"
+    shutil.copy(OPENCODEX_CONFIG_FILE, config_dest)
+    config_dest.chmod(0o600)
+
+    drop_in_dir = (
+        HOME / ".config" / "systemd" / "user" / "opencodex-proxy.service.d"
+    )
+    drop_in_dir.mkdir(parents=True, exist_ok=True)
+    drop_in_dest = drop_in_dir / "environment.conf"
+    shutil.copy(OPENCODEX_SYSTEMD_CONFIG_FILE, drop_in_dest)
+
+    stale_drop_in_dir = HOME / ".config" / "systemd" / "user" / "opencodex.service.d"
+    stale_drop_in = stale_drop_in_dir / "environment.conf"
+    if (
+        stale_drop_in.exists()
+        and stale_drop_in.read_bytes() == b"[Service]\nEnvironmentFile=%h/.env\n"
+    ):
+        stale_drop_in.unlink()
+        stale_drop_in_dir.rmdir()
+
+    run_cmd([str(ocx), "service", "install"], env=env)
+    for _ in range(50):
+        health = run_cmd([str(ocx), "health", "--json"], check=False, env=env)
+        if health.returncode == 0:
+            print(f"  Installed OpenCodex {OPENCODEX_VERSION}")
+            print(f"  Config: {config_dest}")
+            print(f"  Service override: {drop_in_dest}")
+            return
+        time.sleep(0.1)
+    sys.exit("Error: OpenCodex service did not become healthy")
+
+
+def sync_running_opencodex() -> None:
+    """Restore OpenCodex routing after refreshing the managed Codex config."""
+    if not (HOME / ".opencodex" / "runtime-port.json").exists():
+        return
+    try:
+        env = opencodex_environment()
+        ocx = opencodex_executable()
+    except SystemExit:
+        return
+    health = run_cmd([str(ocx), "health", "--json"], check=False, env=env)
+    if health.returncode != 0:
+        return
+    run_cmd([str(ocx), "sync"], env=env)
+    print("  Refreshed active OpenCodex routing")
 
 
 def glob_paths(base: Path, patterns: list[str]) -> list[Path]:
@@ -1598,11 +1721,17 @@ def install_codex_config():
     append_codex_hook_state(dest, hook_state)
     print(f"  Installed to {dest}")
 
-    for stale_file in ("model-catalog.json", "fireworks-glm52.config.toml"):
+    for stale_file in (
+        "model-catalog.json",
+        "fireworks-glm52.config.toml",
+        "grok-4-5.config.toml",
+    ):
         stale_path = dest.parent / stale_file
         if stale_path.exists():
             stale_path.unlink()
             print(f"  Removed {stale_path}")
+
+    sync_running_opencodex()
 
 
 def install_codex_rules():
@@ -1810,6 +1939,8 @@ def main():
             "install-subagents",
             "install-themes",
             "install-configs",
+            "install-codex-config",
+            "install-opencodex",
             "clean",
             "submodule-init",
         ],
@@ -1879,6 +2010,10 @@ def main():
         install_themes(force=args.force)
     elif args.command == "install-configs":
         install_configs()
+    elif args.command == "install-codex-config":
+        install_codex_config()
+    elif args.command == "install-opencodex":
+        install_opencodex()
     elif args.command == "clean":
         clean()
 

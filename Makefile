@@ -15,7 +15,7 @@ HOME_LINKS := .gitconfig .ideavimrc .psqlrc .tmux.conf .tmuxinator .vscode
 # .config directories to symlink entirely
 CONFIG_DIRS := alacritty stylua lvim zellij direnv atuin ghostty
 
-.PHONY: all install install-non-interactive install-tools install-skills install-amp-plugins install-extensions install-prompts install-subagents install-themes install-configs amp-plugin-types amp-plugin-check package-manager-security-config build clean help submodule-init plugin-update check-python \
+.PHONY: all install install-non-interactive install-tools install-skills install-amp-plugins install-extensions install-prompts install-subagents install-themes install-configs install-codex-config install-opencodex amp-plugin-types amp-plugin-check package-manager-security-config build clean help submodule-init plugin-update check-python \
 	dot-all dot-install dot-home-symlinks dot-config-symlinks dot-platform-defaults dot-macos-defaults dot-clean
 
 all: help
@@ -35,6 +35,8 @@ help:
 	@echo "  make install-subagents       Install subagent definitions only (Pi agent)"
 	@echo "  make install-themes          Install themes only (Pi agent)"
 	@echo "  make install-configs         Install all agent configs (Amp, Codex, Pi)"
+	@echo "  make install-codex-config    Install the managed Codex config and profiles only"
+	@echo "  make install-opencodex       Install the pinned OpenCodex package through mise"
 	@echo "  make amp-plugin-types        Refresh local Amp plugin TypeScript declarations"
 	@echo "  make amp-plugin-check        Refresh Amp plugin declarations and typecheck plugins"
 	@echo "  make package-manager-security-config Configure global npm/pnpm/bun/uv package security settings"
@@ -96,6 +98,12 @@ install-themes: check-python
 
 install-configs: check-python
 	@$(PYTHON) "$(BUILD_SCRIPT)" install-configs
+
+install-codex-config: check-python
+	@$(PYTHON) "$(BUILD_SCRIPT)" install-codex-config
+
+install-opencodex:
+	@$(PYTHON) "$(BUILD_SCRIPT)" install-opencodex
 
 amp-plugin-types: check-python
 	@$(PYTHON) $(CURDIR)/scripts/update_amp_plugin_types.py
