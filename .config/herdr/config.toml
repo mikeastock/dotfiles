@@ -1,5 +1,6 @@
 # Herdr configuration managed by dotfiles.
 # Goal: make Herdr feel close to this repo's tmux setup.
+# Target: Herdr 0.7.x (herdr.dev)
 
 onboarding = false
 
@@ -17,7 +18,9 @@ prefix = "ctrl+a"
 # Session/workspace controls.
 detach = "prefix+q"
 workspace_picker = "prefix+w"
+goto = "prefix+g"
 new_workspace = "prefix+shift+n"
+new_worktree = "prefix+shift+g"
 rename_workspace = "prefix+shift+w"
 close_workspace = "prefix+shift+d"
 previous_workspace = "shift+left"
@@ -31,15 +34,21 @@ switch_tab = "prefix+1..9"
 rename_tab = "prefix+shift+t"
 close_tab = "prefix+shift+x"
 
-# Vim-style pane navigation.
+# Vim-style pane navigation and swap.
 focus_pane_left = "prefix+h"
 focus_pane_down = "prefix+j"
 focus_pane_up = "prefix+k"
 focus_pane_right = "prefix+l"
+swap_pane_left = "prefix+shift+h"
+swap_pane_down = "prefix+shift+j"
+swap_pane_up = "prefix+shift+k"
+swap_pane_right = "prefix+shift+l"
 cycle_pane_next = "prefix+tab"
 cycle_pane_previous = "prefix+shift+tab"
+rename_pane = "prefix+shift+p"
 
 # Splits: v for side-by-side, s for stacked, matching the custom tmux bindings.
+# settings stays on comma so prefix+s can keep the horizontal split.
 split_vertical = "prefix+v"
 split_horizontal = "prefix+s"
 
@@ -52,17 +61,21 @@ help = "prefix+?"
 settings = "prefix+comma"
 reload_config = "prefix+shift+r"
 open_notification_target = "prefix+o"
-edit_scrollback = ["prefix+e", "prefix+["]
+# 0.7.x split these: edit opens $EDITOR, copy_mode is keyboard selection.
+edit_scrollback = "prefix+e"
+copy_mode = "prefix+["
 
 [ui]
-# Let Herdr capture mouse input so wheel scrolling can use Herdr's rendered pane scrollback.
+# Leave mouse to the terminal so Cmd/Ctrl-click URLs keep working.
 # Full-screen TUIs that request mouse reporting may still receive wheel events directly.
 mouse_capture = false
 mouse_scroll_lines = 6
 confirm_close = true
 prompt_new_tab_name = false
+prompt_new_workspace_name = false
 show_agent_labels_on_pane_borders = false
-agent_panel_scope = "all"
+# Replaces the old agent_panel_scope key removed in recent Herdr.
+agent_panel_sort = "spaces"
 accent = "cyan"
 sidebar_width = 26
 sidebar_min_width = 18
@@ -73,6 +86,10 @@ delivery = "off"
 
 [ui.sound]
 enabled = false
+
+[session]
+# Resume supported agent panes into native conversations after server restart.
+resume_agents_on_restore = true
 
 [experimental]
 allow_nested = false
