@@ -181,6 +181,30 @@ EOF
     assert_json_field "$amp_json" '."amp.showCosts"' "false" "Amp: showCosts preserved"
 }
 
+# Test: Amp config accepts trailing commas from settings editors
+test_amp_trailing_commas() {
+    log_test "Testing 'make install-configs' accepts trailing commas in Amp settings"
+    cd "$PROJECT_DIR"
+
+    mkdir -p "$SANDBOX_DIR/.config/amp"
+    cat > "$SANDBOX_DIR/.config/amp/settings.json" <<'EOF'
+{
+  "amp.dangerouslyAllowAll": true,
+  "amp.permissions": [
+    {"pattern": "bash*,}", "action": "allow"},
+  ],
+}
+EOF
+
+    HOME="$SANDBOX_DIR" make install-configs >/dev/null 2>&1
+
+    local amp_json
+    amp_json=$(cat "$SANDBOX_DIR/.config/amp/settings.json")
+    assert_json_field "$amp_json" '."amp.dangerouslyAllowAll"' "true" "Amp: trailing-comma setting is preserved"
+    assert_json_field "$amp_json" '."amp.permissions"[0].pattern' "bash*,}" "Amp: commas inside strings are preserved"
+    assert_json_field "$amp_json" '."amp.skills.path"' "~/.config/agents/skills" "Amp: managed setting is merged"
+}
+
 # Test: Pi config preserves changelog version while updating managed settings
 test_pi_preserve_changelog_version() {
     log_test "Testing 'make install-configs' preserves Pi changelog version"
@@ -359,6 +383,7 @@ main() {
     test_codex_hooks_installed
     test_codex_preserve_hook_trust
     test_amp_preserve_existing
+    test_amp_trailing_commas
     test_pi_preserve_changelog_version
     test_config_idempotent
     test_amp_json_validity

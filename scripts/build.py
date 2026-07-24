@@ -48,6 +48,42 @@ def remove_path(path: Path) -> None:
         shutil.rmtree(path)
 
 
+def load_json_with_trailing_commas(path: Path):
+    """Load JSON while accepting trailing commas used by some settings editors."""
+    contents = path.read_text()
+
+    try:
+        return json.loads(contents)
+    except json.JSONDecodeError:
+        cleaned = []
+        in_string = False
+        escaped = False
+
+        for index, character in enumerate(contents):
+            if in_string:
+                cleaned.append(character)
+                if escaped:
+                    escaped = False
+                elif character == "\\":
+                    escaped = True
+                elif character == '"':
+                    in_string = False
+                continue
+
+            if character == '"':
+                in_string = True
+            elif character == ",":
+                next_index = index + 1
+                while next_index < len(contents) and contents[next_index].isspace():
+                    next_index += 1
+                if next_index < len(contents) and contents[next_index] in "}]":
+                    continue
+
+            cleaned.append(character)
+
+        return json.loads("".join(cleaned))
+
+
 if sys.version_info < (3, 11):
     sys.exit("Error: Python 3.11+ required (for tomllib)")
 
@@ -1532,10 +1568,10 @@ def install_amp_config():
     dest = HOME / ".config" / "amp" / "settings.json"
     dest.parent.mkdir(parents=True, exist_ok=True)
 
-    # Load existing settings or start with empty dict
+    # Amp accepts trailing commas in settings files, so preserve those settings
+    # before rewriting the merged result as strict JSON.
     if dest.exists():
-        with open(dest) as f:
-            settings = json.load(f)
+        settings = load_json_with_trailing_commas(dest)
     else:
         settings = {}
 
