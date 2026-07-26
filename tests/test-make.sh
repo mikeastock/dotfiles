@@ -224,7 +224,7 @@ EOF
     assert_output_contains "$grok_review_launcher_content" "--output-format json" "launcher requests JSON output"
     assert_output_contains "$grok_review_launcher_content" "--sandbox read-only" "launcher enforces the read-only sandbox"
     assert_output_contains "$grok_review_launcher_content" "--prompt-file" "launcher passes the prompt file"
-    assert_output_contains "$grok_review_launcher_content" "0.2.99" "launcher pins the validated Grok version"
+    assert_output_not_contains "$grok_review_launcher_content" "0.2.99" "launcher does not pin the Grok CLI version"
     assert_output_contains "$grok_review_launcher_content" "--no-plan" "launcher disables plan mode"
     assert_output_not_contains "$grok_review_launcher_content" "--always-approve" "launcher does not auto-approve shell commands"
     assert_output_contains "$grok_review_launcher_content" '--disable-web-search' "launcher disables Grok web search"
