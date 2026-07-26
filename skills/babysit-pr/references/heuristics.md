@@ -33,7 +33,7 @@ If uncertain, inspect failed logs once before choosing rerun.
    - If likely flaky/unrelated and not safely rerunnable: stop and report the blocker; do not edit unrelated tests, build scripts, CI configuration, dependency pins, or infrastructure code.
    - If checks are still pending and no failed job is available yet: wait.
 3. If flaky reruns for the same SHA reach the configured limit (default 3): stop and report persistent failure.
-4. Independently, process any new human review comments.
+4. Independently, process new review feedback and every unresolved Greptile, Codex, or Cursor Bugbot thread.
 
 ## Review comment agreement criteria
 
@@ -44,6 +44,11 @@ Address the comment when:
 - The requested change does not conflict with the user’s intent or recent guidance.
 - The change can be made safely without unrelated refactors.
 
+For Greptile, Codex, and Cursor Bugbot feedback, independently validate the claim. Fix valid
+feedback, or reply with a concise `[codex]` technical pushback when it is invalid, obsolete, or out
+of scope. Resolve the handled bot thread with the guarded watcher command in either case. Do not
+make an unnecessary code change just to satisfy a bot.
+
 Fix valid human review feedback in code when possible, but do not post a GitHub reply to a human-authored comment/thread unless the user explicitly confirms the exact response.
 
 Do not auto-fix when:
@@ -53,6 +58,18 @@ Do not auto-fix when:
 - The proposed change requires product/design decisions the user has not made.
 - The codebase is in a dirty/unrelated state that makes safe editing uncertain.
 - The comment only needs a written answer or disagreement response; propose the reply to the user instead of posting it automatically.
+
+## Review-green gate
+
+Do not report a PR as review-clean until all of the following are true:
+
+- CI is terminal and green for the current head SHA.
+- GitHub reports no blocking review decision.
+- All newly surfaced review feedback has been judged.
+- Every unresolved inline thread that contains Greptile, Codex, or Cursor Bugbot feedback has been resolved.
+
+The watcher must continue after this milestone while the PR remains open. New bot feedback, a new
+commit, a changed review decision, or a reopened/unresolved thread resets the gate.
 
 ## Stop-and-ask conditions
 
