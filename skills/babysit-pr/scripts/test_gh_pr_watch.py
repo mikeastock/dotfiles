@@ -52,6 +52,11 @@ def test_collect_snapshot_fetches_review_items_before_ci(monkeypatch, tmp_path):
     )
     monkeypatch.setattr(
         gh_pr_watch,
+        "get_unresolved_bot_review_threads",
+        lambda *args, **kwargs: call_order.append("threads") or [],
+    )
+    monkeypatch.setattr(
+        gh_pr_watch,
         "fetch_new_review_items",
         lambda *args, **kwargs: call_order.append("review") or [],
     )
@@ -98,6 +103,7 @@ def test_collect_snapshot_fetches_review_items_before_ci(monkeypatch, tmp_path):
 
     assert call_order.index("review") < call_order.index("checks")
     assert call_order.index("review") < call_order.index("workflow")
+    assert call_order.index("threads") < call_order.index("checks")
 
 
 def test_recommend_actions_prioritizes_review_comments():
@@ -116,6 +122,128 @@ def test_recommend_actions_prioritizes_review_comments():
         "diagnose_ci_failure",
         "retry_failed_checks",
     ]
+
+
+@pytest.mark.parametrize(
+    ("login", "reviewer"),
+    [
+        ("chatgpt-codex-connector[bot]", "codex"),
+        ("greptile-apps[bot]", "greptile"),
+        ("cursor[bot]", "cursor bugbot"),
+        ("bugbot[bot]", "cursor bugbot"),
+    ],
+)
+def test_tracked_reviewer_for_login_accepts_requested_review_bots(login, reviewer):
+    assert gh_pr_watch.tracked_reviewer_for_login(login) == reviewer
+
+
+def test_unresolved_bot_review_threads_exclude_resolved_and_untracked_threads():
+    threads = gh_pr_watch.normalize_unresolved_bot_review_threads(
+        [
+            {
+                "id": "thread-greptile",
+                "isResolved": False,
+                "isOutdated": False,
+                "comments": {
+                    "nodes": [
+                        {
+                            "fullDatabaseId": "101",
+                            "author": {"login": "greptile-apps[bot]"},
+                            "body": "This needs a nil guard.",
+                            "path": "app/example.rb",
+                            "line": 12,
+                            "createdAt": "2026-07-26T10:00:00Z",
+                            "url": "https://github.com/openai/codex/pull/123#discussion_r101",
+                        }
+                    ]
+                },
+            },
+            {
+                "id": "thread-resolved",
+                "isResolved": True,
+                "isOutdated": False,
+                "comments": {
+                    "nodes": [
+                        {
+                            "fullDatabaseId": "102",
+                            "author": {"login": "chatgpt-codex-connector[bot]"},
+                        }
+                    ]
+                },
+            },
+            {
+                "id": "thread-untracked",
+                "isResolved": False,
+                "isOutdated": False,
+                "comments": {
+                    "nodes": [
+                        {
+                            "fullDatabaseId": "103",
+                            "author": {"login": "dependabot[bot]"},
+                        }
+                    ]
+                },
+            },
+            {
+                "id": "thread-pending",
+                "isResolved": False,
+                "isOutdated": False,
+                "comments": {
+                    "nodes": [
+                        {
+                            "fullDatabaseId": "104",
+                            "author": {"login": "cursor[bot]"},
+                            "pullRequestReview": {"state": "PENDING"},
+                        }
+                    ]
+                },
+            },
+        ]
+    )
+
+    assert threads == [
+        {
+            "id": "thread-greptile",
+            "is_outdated": False,
+            "bot_comments": [
+                {
+                    "reviewer": "greptile",
+                    "author": "greptile-apps[bot]",
+                    "rest_comment_id": "101",
+                    "body": "This needs a nil guard.",
+                    "path": "app/example.rb",
+                    "line": 12,
+                    "created_at": "2026-07-26T10:00:00Z",
+                    "url": "https://github.com/openai/codex/pull/123#discussion_r101",
+                }
+            ],
+            "latest_bot_comment": {
+                "reviewer": "greptile",
+                "author": "greptile-apps[bot]",
+                "rest_comment_id": "101",
+                "body": "This needs a nil guard.",
+                "path": "app/example.rb",
+                "line": 12,
+                "created_at": "2026-07-26T10:00:00Z",
+                "url": "https://github.com/openai/codex/pull/123#discussion_r101",
+            },
+        }
+    ]
+
+
+def test_unresolved_bot_review_thread_blocks_ready_to_merge():
+    actions = gh_pr_watch.recommend_actions(
+        sample_pr(),
+        sample_checks(),
+        [],
+        [],
+        [],
+        0,
+        3,
+        [{"id": "thread-greptile"}],
+    )
+
+    assert actions == ["process_review_comment"]
 
 
 def test_pending_review_feedback_surfaces_only_after_publication(monkeypatch):

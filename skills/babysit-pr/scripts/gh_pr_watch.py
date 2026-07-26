@@ -28,7 +28,9 @@ PENDING_CHECK_STATES = {
     "REQUESTED",
 }
 REVIEW_BOT_LOGIN_KEYWORDS = {
-    "codex",
+    "codex": {"codex"},
+    "greptile": {"greptile"},
+    "cursor bugbot": {"cursor", "bugbot"},
 }
 TRUSTED_AUTHOR_ASSOCIATIONS = {
     "OWNER",
@@ -45,6 +47,53 @@ MERGE_CONFLICT_OR_BLOCKING_STATES = {
     "DRAFT",
     "UNKNOWN",
 }
+
+REVIEW_THREADS_QUERY = """
+query($owner: String!, $name: String!, $number: Int!, $after: String) {
+  repository(owner: $owner, name: $name) {
+    pullRequest(number: $number) {
+      reviewThreads(first: 100, after: $after) {
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+        nodes {
+          id
+          isResolved
+          isOutdated
+          comments(first: 100) {
+            nodes {
+              fullDatabaseId
+              author {
+                login
+              }
+              body
+              path
+              line
+              createdAt
+              url
+              pullRequestReview {
+                state
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+"""
+
+RESOLVE_REVIEW_THREAD_MUTATION = """
+mutation($threadId: ID!) {
+  resolveReviewThread(input: {threadId: $threadId}) {
+    thread {
+      id
+      isResolved
+    }
+  }
+}
+"""
 
 
 class GhCommandError(RuntimeError):
@@ -76,6 +125,11 @@ def parse_args():
         help="Rerun failed jobs for current failed workflow runs when policy allows",
     )
     parser.add_argument(
+        "--resolve-review-thread",
+        metavar="THREAD_ID",
+        help="Resolve one unresolved thread owned by a tracked review bot",
+    )
+    parser.add_argument(
         "--json",
         action="store_true",
         help="Emit machine-readable output (default behavior for --once and --retry-failed-now)",
@@ -86,9 +140,10 @@ def parse_args():
         parser.error("--poll-seconds must be > 0")
     if args.max_flaky_retries < 0:
         parser.error("--max-flaky-retries must be >= 0")
-    if args.watch and args.retry_failed_now:
-        parser.error("--watch cannot be combined with --retry-failed-now")
-    if not args.once and not args.watch and not args.retry_failed_now:
+    actions = [args.once, args.watch, args.retry_failed_now, bool(args.resolve_review_thread)]
+    if sum(bool(action) for action in actions) > 1:
+        parser.error("--once, --watch, --retry-failed-now, and --resolve-review-thread are mutually exclusive")
+    if not any(actions):
         args.once = True
     return args
 
@@ -216,6 +271,13 @@ def extract_repo_from_pr_url(pr_url):
     if len(parts) >= 4 and parts[2] == "pull":
         return f"{parts[0]}/{parts[1]}"
     return None
+
+
+def split_repo(repo):
+    owner, separator, name = repo.partition("/")
+    if not separator or not owner or not name:
+        raise GhCommandError(f"Expected repository in OWNER/REPO form, got: {repo}")
+    return owner, name
 
 
 def load_state(path):
@@ -512,11 +574,18 @@ def is_bot_login(login):
     return bool(login) and login.endswith("[bot]")
 
 
-def is_actionable_review_bot_login(login):
+def tracked_reviewer_for_login(login):
     if not is_bot_login(login):
-        return False
+        return None
     lower_login = login.lower()
-    return any(keyword in lower_login for keyword in REVIEW_BOT_LOGIN_KEYWORDS)
+    for reviewer, keywords in REVIEW_BOT_LOGIN_KEYWORDS.items():
+        if any(keyword in lower_login for keyword in keywords):
+            return reviewer
+    return None
+
+
+def is_actionable_review_bot_login(login):
+    return tracked_reviewer_for_login(login) is not None
 
 
 def is_trusted_human_review_author(item, authenticated_login):
@@ -527,6 +596,94 @@ def is_trusted_human_review_author(item, authenticated_login):
         return True
     association = str(item.get("author_association") or "").upper()
     return association in TRUSTED_AUTHOR_ASSOCIATIONS
+
+
+def get_review_threads(pr):
+    owner, name = split_repo(pr["repo"])
+    threads = []
+    after = None
+    while True:
+        args = [
+            "api",
+            "graphql",
+            "-f",
+            f"query={REVIEW_THREADS_QUERY}",
+            "-f",
+            f"owner={owner}",
+            "-f",
+            f"name={name}",
+            "-F",
+            f"number={pr['number']}",
+        ]
+        if after:
+            args.extend(["-f", f"after={after}"])
+        payload = gh_json(args)
+        try:
+            connection = payload["data"]["repository"]["pullRequest"]["reviewThreads"]
+        except (KeyError, TypeError) as err:
+            raise GhCommandError("Unexpected payload from pull-request review threads query") from err
+        nodes = connection.get("nodes") or []
+        if not isinstance(nodes, list):
+            raise GhCommandError("Expected review-thread nodes to be a list")
+        threads.extend(nodes)
+        page_info = connection.get("pageInfo") or {}
+        if not page_info.get("hasNextPage"):
+            break
+        after = page_info.get("endCursor")
+        if not after:
+            raise GhCommandError("Review-thread query indicated another page without an end cursor")
+    return threads
+
+
+def normalize_unresolved_bot_review_threads(items):
+    unresolved_threads = []
+    for item in items:
+        if not isinstance(item, dict) or item.get("isResolved"):
+            continue
+        comments = item.get("comments") or {}
+        nodes = comments.get("nodes") if isinstance(comments, dict) else None
+        if not isinstance(nodes, list):
+            continue
+        bot_comments = []
+        for comment in nodes:
+            if not isinstance(comment, dict):
+                continue
+            review = comment.get("pullRequestReview") or {}
+            if isinstance(review, dict) and str(review.get("state") or "").upper() == "PENDING":
+                continue
+            author = extract_login(comment.get("author"))
+            reviewer = tracked_reviewer_for_login(author)
+            if reviewer is None:
+                continue
+            bot_comments.append(
+                {
+                    "reviewer": reviewer,
+                    "author": author,
+                    "rest_comment_id": comment.get("fullDatabaseId"),
+                    "body": str(comment.get("body") or ""),
+                    "path": comment.get("path"),
+                    "line": comment.get("line"),
+                    "created_at": str(comment.get("createdAt") or ""),
+                    "url": str(comment.get("url") or ""),
+                }
+            )
+        if not bot_comments:
+            continue
+        bot_comments.sort(key=lambda comment: (comment["created_at"], str(comment["rest_comment_id"] or "")))
+        unresolved_threads.append(
+            {
+                "id": str(item.get("id") or ""),
+                "is_outdated": bool(item.get("isOutdated")),
+                "bot_comments": bot_comments,
+                "latest_bot_comment": bot_comments[-1],
+            }
+        )
+    unresolved_threads.sort(key=lambda thread: thread["id"])
+    return unresolved_threads
+
+
+def get_unresolved_bot_review_threads(pr):
+    return normalize_unresolved_bot_review_threads(get_review_threads(pr))
 
 
 def fetch_new_review_items(pr, state, fresh_state, authenticated_login=None):
@@ -632,7 +789,7 @@ def unique_actions(actions):
     return out
 
 
-def is_pr_ready_to_merge(pr, checks_summary, new_review_items):
+def is_pr_ready_to_merge(pr, checks_summary, new_review_items, unresolved_bot_review_threads=None):
     if pr["closed"] or pr["merged"]:
         return False
     if not checks_summary["all_terminal"]:
@@ -640,6 +797,8 @@ def is_pr_ready_to_merge(pr, checks_summary, new_review_items):
     if checks_summary["failed_count"] > 0 or checks_summary["pending_count"] > 0:
         return False
     if new_review_items:
+        return False
+    if unresolved_bot_review_threads:
         return False
     if str(pr.get("mergeable") or "") != "MERGEABLE":
         return False
@@ -650,7 +809,16 @@ def is_pr_ready_to_merge(pr, checks_summary, new_review_items):
     return True
 
 
-def recommend_actions(pr, checks_summary, failed_runs, failed_jobs, new_review_items, retries_used, max_retries):
+def recommend_actions(
+    pr,
+    checks_summary,
+    failed_runs,
+    failed_jobs,
+    new_review_items,
+    retries_used,
+    max_retries,
+    unresolved_bot_review_threads=None,
+):
     actions = []
     if pr["closed"] or pr["merged"]:
         if new_review_items:
@@ -658,11 +826,11 @@ def recommend_actions(pr, checks_summary, failed_runs, failed_jobs, new_review_i
         actions.append("stop_pr_closed")
         return unique_actions(actions)
 
-    if is_pr_ready_to_merge(pr, checks_summary, new_review_items):
+    if is_pr_ready_to_merge(pr, checks_summary, new_review_items, unresolved_bot_review_threads):
         actions.append("ready_to_merge")
         return unique_actions(actions)
 
-    if new_review_items:
+    if new_review_items or unresolved_bot_review_threads:
         actions.append("process_review_comment")
 
     has_failed_pr_checks = checks_summary["failed_count"] > 0 or bool(failed_jobs)
@@ -688,6 +856,7 @@ def collect_snapshot(args):
         state["started_at"] = int(time.time())
 
     authenticated_login = get_authenticated_login()
+    unresolved_bot_review_threads = get_unresolved_bot_review_threads(pr)
     new_review_items = fetch_new_review_items(
         pr,
         state,
@@ -714,6 +883,7 @@ def collect_snapshot(args):
         new_review_items,
         retries_used,
         args.max_flaky_retries,
+        unresolved_bot_review_threads,
     )
 
     state["pr"] = {"repo": pr["repo"], "number": pr["number"]}
@@ -727,6 +897,7 @@ def collect_snapshot(args):
         "failed_runs": failed_runs,
         "failed_jobs": failed_jobs,
         "new_review_items": new_review_items,
+        "unresolved_bot_review_threads": unresolved_bot_review_threads,
         "actions": actions,
         "retry_state": {
             "current_sha_retries_used": retries_used,
@@ -734,6 +905,33 @@ def collect_snapshot(args):
         },
     }
     return snapshot, state_path
+
+
+def resolve_review_thread(args):
+    pr = resolve_pr(args.pr, repo_override=args.repo)
+    threads = get_unresolved_bot_review_threads(pr)
+    target = next((thread for thread in threads if thread["id"] == args.resolve_review_thread), None)
+    if target is None:
+        raise GhCommandError(
+            "Refusing to resolve a thread that is not an unresolved Greptile, Codex, or Cursor Bugbot thread"
+        )
+    payload = gh_json(
+        [
+            "api",
+            "graphql",
+            "-f",
+            f"query={RESOLVE_REVIEW_THREAD_MUTATION}",
+            "-f",
+            f"threadId={args.resolve_review_thread}",
+        ]
+    )
+    try:
+        thread = payload["data"]["resolveReviewThread"]["thread"]
+    except (KeyError, TypeError) as err:
+        raise GhCommandError("Unexpected payload from resolve-review-thread mutation") from err
+    if not isinstance(thread, dict) or not thread.get("isResolved"):
+        raise GhCommandError("GitHub did not confirm that the review thread was resolved")
+    return {"pr": pr, "thread": target, "resolved_thread": thread}
 
 
 def retry_failed_now(args):
@@ -813,6 +1011,7 @@ def snapshot_change_key(snapshot):
     pr = snapshot.get("pr") or {}
     checks = snapshot.get("checks") or {}
     review_items = snapshot.get("new_review_items") or []
+    unresolved_threads = snapshot.get("unresolved_bot_review_threads") or []
     return (
         str(pr.get("head_sha") or ""),
         str(pr.get("state") or ""),
@@ -827,6 +1026,7 @@ def snapshot_change_key(snapshot):
             for item in review_items
             if isinstance(item, dict)
         ),
+        tuple(str(thread.get("id") or "") for thread in unresolved_threads if isinstance(thread, dict)),
         tuple(snapshot.get("actions") or []),
     )
 
@@ -870,6 +1070,9 @@ def run_watch(args):
 def main():
     args = parse_args()
     try:
+        if args.resolve_review_thread:
+            print_json(resolve_review_thread(args))
+            return 0
         if args.retry_failed_now:
             print_json(retry_failed_now(args))
             return 0
