@@ -11,8 +11,6 @@
 #   extensions      - List of extensions to install: ["*"] for all, [] or omit for none
 #   prompts_path    - Glob pattern(s) to find prompt templates (default: "prompts/*.md")
 #   prompts         - List of prompt templates to install: ["*"] for all, [] or omit for none
-#   subagents_path  - Glob pattern(s) to find subagent definitions (default: "agents/*.md")
-#   subagents       - List of subagents to install: ["*"] for all, [] or omit for none
 #   alias           - Optional prefix to prevent name collisions
 #
 # Pinned native dependencies live under [external_tools.<name>]. Their upstream

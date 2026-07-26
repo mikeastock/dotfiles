@@ -13,7 +13,6 @@
   ],
   "packages": [
     "npm:pi-autoresearch",
-    "npm:pi-subagents",
     "npm:pi-verbosity-control"
   ],
   "theme": "catppuccin-mocha",

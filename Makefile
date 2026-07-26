@@ -15,7 +15,7 @@ HOME_LINKS := .gitconfig .ideavimrc .psqlrc .tmux.conf .tmuxinator .vscode
 # .config directories to symlink entirely
 CONFIG_DIRS := alacritty stylua lvim zellij direnv atuin ghostty
 
-.PHONY: all install install-non-interactive install-tools install-skills install-amp-plugins install-extensions install-prompts install-subagents install-themes install-configs amp-plugin-types amp-plugin-check package-manager-security-config build clean help submodule-init plugin-update check-python \
+.PHONY: all install install-non-interactive install-tools install-skills install-amp-plugins install-extensions install-prompts install-themes install-configs amp-plugin-types amp-plugin-check package-manager-security-config build clean help submodule-init plugin-update check-python \
 	dot-all dot-install dot-home-symlinks dot-config-symlinks dot-platform-defaults dot-macos-defaults dot-clean
 
 all: help
@@ -32,7 +32,6 @@ help:
 	@echo "  make install-amp-plugins     Install Amp plugins from amp-plugins/"
 	@echo "  make install-extensions      Install extensions only (Pi agent)"
 	@echo "  make install-prompts         Install prompt templates only (Pi agent)"
-	@echo "  make install-subagents       Install subagent definitions only (Pi agent)"
 	@echo "  make install-themes          Install themes only (Pi agent)"
 	@echo "  make install-configs         Install all agent configs (Amp, Codex, Pi)"
 	@echo "  make amp-plugin-types        Refresh local Amp plugin TypeScript declarations"
@@ -87,9 +86,6 @@ install-extensions: check-python
 
 install-prompts: check-python
 	@$(PYTHON) "$(BUILD_SCRIPT)" install-prompts $(FORCE_FLAG)
-
-install-subagents: check-python
-	@$(PYTHON) "$(BUILD_SCRIPT)" install-subagents $(FORCE_FLAG)
 
 install-themes: check-python
 	@$(PYTHON) "$(BUILD_SCRIPT)" install-themes $(FORCE_FLAG)
@@ -248,6 +244,7 @@ dot-clean:
 		[ -L $(HOME)/$$link ] && rm $(HOME)/$$link || true; \
 	done
 	@# ~/.local/bin scripts
+	@[ -L $(HOME)/.local/bin/tmux-status-load ] && rm $(HOME)/.local/bin/tmux-status-load || true
 	@for script in $(CURDIR)/bin/*; do \
 		name=$$(basename $$script); \
 		[ -L $(HOME)/.local/bin/$$name ] && rm $(HOME)/.local/bin/$$name || true; \

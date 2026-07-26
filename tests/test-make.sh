@@ -121,17 +121,6 @@ test_make_build() {
     # breadboard-reflection upstream skill has no frontmatter; build should add description
     local breadboard_skill="$PROJECT_DIR/build/claude/breadboard-reflection/SKILL.md"
     assert_file_exists "$breadboard_skill" "breadboard-reflection skill is built"
-    assert_file_exists "$PROJECT_DIR/skills/brainstorming/SKILL.md" "brainstorming skill is vendored locally"
-    assert_file_exists "$PROJECT_DIR/skills/writing-plans/SKILL.md" "writing-plans skill is vendored locally"
-    assert_file_exists "$PROJECT_DIR/skills/executing-plans/SKILL.md" "executing-plans skill is vendored locally"
-    for agent in amp claude pi; do
-        for skill in brainstorming writing-plans executing-plans; do
-            assert_file_not_exists "$PROJECT_DIR/build/$agent/$skill" "$agent excludes $skill from the build"
-        done
-    done
-    assert_file_exists "$PROJECT_DIR/build/subagents/pi/architecture-reviewer.md" "Build includes architecture-reviewer subagent"
-    assert_file_not_exists "$PROJECT_DIR/build/subagents/pi/code-reviewer.md" "Build excludes removed code-reviewer subagent"
-    assert_file_not_exists "$PROJECT_DIR/build/subagents/pi/document-reviewer.md" "Build excludes removed document-reviewer subagent"
     assert_file_exists "$PROJECT_DIR/build/claude/teach/SKILL.md" "Claude builds Matt Pocock teach skill"
     assert_file_exists "$PROJECT_DIR/build/claude/writing-great-skills/SKILL.md" "Claude builds Matt Pocock writing-great-skills skill"
     assert_file_exists "$PROJECT_DIR/build/amp/x-search/SKILL.md" "Amp builds x-search skill"
@@ -340,14 +329,6 @@ test_make_install_skills() {
         TESTS_FAILED=$((TESTS_FAILED + 1))
     fi
 
-    for skills_dir in \
-        "$SANDBOX_DIR/.config/agents/skills" \
-        "$SANDBOX_DIR/.claude/skills" \
-        "$SANDBOX_DIR/.agents/skills"; do
-        for skill in brainstorming writing-plans executing-plans; do
-            assert_file_not_exists "$skills_dir/$skill" "Install excludes $skill from $skills_dir"
-        done
-    done
     assert_dir_exists "$SANDBOX_DIR/.config/agents/skills/zmx" "Amp installs zmx skill"
     assert_dir_exists "$SANDBOX_DIR/.claude/skills/zmx" "Claude installs zmx skill"
     assert_dir_exists "$SANDBOX_DIR/.agents/skills/zmx" "Pi installs zmx skill"
@@ -553,7 +534,6 @@ PY
     assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/handoff" "handoff extension installed"
     assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/openai-fast" "openai-fast extension installed"
     assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/session-query" "session-query extension installed"
-    assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/tmux-status" "tmux-status extension installed"
     assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/web-access" "web-access extension installed"
     assert_file_not_exists "$SANDBOX_DIR/.pi/agent/extensions/buildr-artifacts" "buildr-artifacts extension removed"
     assert_file_not_exists "$SANDBOX_DIR/.pi/agent/extensions/subagent" "subagent extension removed"
@@ -611,38 +591,6 @@ test_make_install_prompts() {
     assert_file_exists "$SANDBOX_DIR/.pi/agent/prompts/manual.md" "Unmanaged Pi prompt survives install"
 }
 
-# Test: make install-subagents removes obsolete managed subagents and preserves unmanaged siblings
-test_make_install_subagents_preserves_unmanaged_siblings() {
-    log_test "Testing 'make install-subagents' removes obsolete managed subagents and preserves unmanaged siblings"
-    cd "$PROJECT_DIR"
-
-    mkdir -p "$SANDBOX_DIR/.pi/agent/agents"
-    echo "manual subagent" > "$SANDBOX_DIR/.pi/agent/agents/manual.md"
-    echo "obsolete code reviewer" > "$SANDBOX_DIR/.pi/agent/agents/code-reviewer.md"
-    echo "obsolete document reviewer" > "$SANDBOX_DIR/.pi/agent/agents/document-reviewer.md"
-    python3 - <<PY
-import json
-from pathlib import Path
-manifest_path = Path("$SANDBOX_DIR/.local/state/dotfiles/agent-install-manifest.json")
-manifest_path.parent.mkdir(parents=True, exist_ok=True)
-manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else {"version": 1, "targets": {}}
-managed = manifest["targets"].setdefault("pi.subagents", [])
-for name in ("code-reviewer.md", "document-reviewer.md"):
-    if name not in managed:
-        managed.append(name)
-manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
-PY
-
-    local output
-    output=$(HOME="$SANDBOX_DIR" XDG_STATE_HOME="$SANDBOX_DIR/.local/state" make install-subagents 2>&1)
-
-    assert_output_contains "$output" "Installing subagents" "Install shows subagent progress"
-    assert_file_exists "$SANDBOX_DIR/.pi/agent/agents/architecture-reviewer.md" "Pi architecture-reviewer subagent installed"
-    assert_file_not_exists "$SANDBOX_DIR/.pi/agent/agents/code-reviewer.md" "Obsolete managed code-reviewer subagent removed"
-    assert_file_not_exists "$SANDBOX_DIR/.pi/agent/agents/document-reviewer.md" "Obsolete managed document-reviewer subagent removed"
-    assert_file_exists "$SANDBOX_DIR/.pi/agent/agents/manual.md" "Unmanaged Pi subagent survives install"
-}
-
 # Test: make install-themes (with sandbox)
 test_make_install_themes() {
     log_test "Testing 'make install-themes' (sandboxed)"
@@ -681,7 +629,6 @@ test_make_install() {
 
     local pi_settings
     pi_settings=$(<"$SANDBOX_DIR/.pi/agent/settings.json")
-    assert_output_contains "$pi_settings" "npm:pi-subagents" "Pi settings include npm pi-subagents package"
 }
 
 # Test: make clean (with sandbox)
@@ -719,12 +666,10 @@ test_make_clean() {
     assert_file_not_exists "$SANDBOX_DIR/.claude/skills/zmx" "Clean removes managed skill"
     assert_file_not_exists "$SANDBOX_DIR/.pi/agent/extensions/web-access" "Clean removes managed extension"
     assert_file_not_exists "$SANDBOX_DIR/.pi/agent/prompts/refactor-pass.md" "Clean removes managed prompt"
-    assert_file_not_exists "$SANDBOX_DIR/.pi/agent/agents/architecture-reviewer.md" "Clean removes managed subagent"
     assert_file_not_exists "$SANDBOX_DIR/.pi/agent/themes/catppuccin-latte.json" "Clean removes managed theme"
     assert_dir_exists "$SANDBOX_DIR/.claude/skills/manual-clean-skill" "Clean preserves unmanaged skill"
     assert_dir_exists "$SANDBOX_DIR/.pi/agent/extensions/manual-clean-extension" "Clean preserves unmanaged extension"
     assert_file_exists "$SANDBOX_DIR/.pi/agent/prompts/manual-clean.md" "Clean preserves unmanaged prompt"
-    assert_file_exists "$SANDBOX_DIR/.pi/agent/agents/manual-clean.md" "Clean preserves unmanaged subagent"
 }
 
 # Test: default make target (should run help)
@@ -844,7 +789,6 @@ main() {
     test_make_install_amp_plugins
     test_make_install_extensions
     test_make_install_prompts
-    test_make_install_subagents_preserves_unmanaged_siblings
     test_make_install_themes
     test_make_install
     test_make_clean

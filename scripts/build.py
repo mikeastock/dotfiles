@@ -3,7 +3,7 @@
 Build system for AI agent plugins.
 
 Reads plugins.toml and builds/installs skills, prompt templates,
-subagents, and extensions for Claude Code, Codex CLI, and Pi Agent.
+and extensions for Claude Code, Codex CLI, and Pi Agent.
 
 Requires Python 3.11+ (uses tomllib from stdlib).
 """
@@ -22,18 +22,6 @@ from pathlib import Path
 # Extensions that require user interaction and should be skipped in non-interactive mode
 INTERACTIVE_EXTENSIONS = {
     "confirm-destructive",
-}
-
-# Skill overrides that explicitly require interactivity
-INTERACTIVE_OVERRIDES = {
-    "brainstorming-claude.md",
-}
-
-# Temporarily omit these planning skills; remove the three names to restore installation.
-TEMPORARILY_EXCLUDED_SKILLS = {
-    "brainstorming",
-    "executing-plans",
-    "writing-plans",
 }
 
 # Global flag for non-interactive mode
@@ -93,7 +81,6 @@ import tomllib
 ROOT = Path(__file__).parent.parent
 PLUGINS_DIR = ROOT / "plugins"
 SKILLS_DIR = ROOT / "skills"
-SUBAGENTS_DIR = ROOT / "subagents"
 PROMPTS_DIR = ROOT / "prompts"
 AMP_PLUGINS_DIR = ROOT / "amp-plugins"
 AMP_CONFIGS_DIR = ROOT / "amp-configs"
@@ -115,6 +102,7 @@ GLOBAL_AGENTS_MD = CONFIGS_DIR / "AGENTS.md"
 
 # Installation paths
 HOME = Path.home()
+LEGACY_PI_SUBAGENTS_DIR = HOME / ".pi" / "agent" / "agents"
 INSTALL_PATHS = {
     "amp": {
         "skills": HOME / ".config" / "agents" / "skills",
@@ -130,7 +118,6 @@ INSTALL_PATHS = {
         "skills": HOME / ".agents" / "skills",
         "extensions": HOME / ".pi" / "agent" / "extensions",
         "prompts": HOME / ".pi" / "agent" / "prompts",
-        "subagents": HOME / ".pi" / "agent" / "agents",
         "themes": HOME / ".pi" / "agent" / "themes",
     },
 }
@@ -308,8 +295,6 @@ class Plugin:
     extensions: list[str] = field(default_factory=list)  # Empty = none, ["*"] = all
     prompts_path: list[str] = field(default_factory=lambda: ["prompts/*.md"])
     prompts: list[str] = field(default_factory=list)  # Empty = none, ["*"] = all
-    subagents_path: list[str] = field(default_factory=lambda: ["agents/*.md"])
-    subagents: list[str] = field(default_factory=list)  # Empty = none, ["*"] = all
     extension_dependency_packages: dict[str, str] = field(default_factory=dict)
     alias: str | None = None
 
@@ -380,8 +365,6 @@ class Plugin:
             extensions=normalize_items(data.get("extensions")),
             prompts_path=normalize_path(data.get("prompts_path", "prompts/*.md")),
             prompts=normalize_items(data.get("prompts")),
-            subagents_path=normalize_path(data.get("subagents_path", "agents/*.md")),
-            subagents=normalize_items(data.get("subagents")),
             extension_dependency_packages=dict(
                 data.get("extension_dependency_packages", {})
             ),
@@ -535,9 +518,6 @@ def discover_items(
     elif item_type == "prompts":
         patterns = plugin.prompts_path
         enabled = plugin.prompts
-    elif item_type == "subagents":
-        patterns = plugin.subagents_path
-        enabled = plugin.subagents
     else:
         raise ValueError(f"Unknown item type: {item_type}")
 
@@ -578,8 +558,6 @@ def discover_items(
                 continue
         elif item_type == "prompts" and path.is_file() and path.suffix == ".md":
             name = path.stem
-        elif item_type == "subagents" and path.is_file() and path.suffix == ".md":
-            name = path.stem
         else:
             continue
 
@@ -604,11 +582,6 @@ def custom_extension_dirs() -> list[Path]:
         for path in sorted(PI_EXTENSIONS_DIR.iterdir())
         if path.is_dir() and (path / "index.ts").exists()
     ]
-
-
-def is_interactive_override(override_path: Path) -> bool:
-    """Check if an override file is interactive-only."""
-    return override_path.name in INTERACTIVE_OVERRIDES
 
 
 def parse_skill_agents(content: str) -> list[str] | None:
@@ -998,11 +971,8 @@ def build_skill(
     Returns:
         True if built successfully
         False if skipped due to missing skill markdown
-        None if skipped due to agent filtering or temporary exclusion
+        None if skipped due to agent filtering
     """
-    if name in TEMPORARILY_EXCLUDED_SKILLS:
-        return None
-
     skill_md = find_skill_markdown(source)
     if skill_md is None:
         print(f"    Warning: {source} has no SKILL.md/skill.md, skipping")
@@ -1034,13 +1004,9 @@ def build_skill(
             True,
         )
 
-    # In non-interactive mode, skip interactive overrides
-    use_override = override.exists() and not (
-        NON_INTERACTIVE and is_interactive_override(override)
-    )
-    use_local_override = local_override.exists() and not (
-        NON_INTERACTIVE and is_interactive_override(local_override)
-    )
+    # Apply global and per-skill overrides.
+    use_override = override.exists()
+    use_local_override = local_override.exists()
 
     with open(dest_skill_md, "w") as out:
         out.write(skill_content)
@@ -1241,63 +1207,6 @@ def build_prompts(plugins: dict[str, Plugin]):
     print(f"  Built {len(built)} prompt templates")
 
 
-def build_subagents(plugins: dict[str, Plugin]):
-    """Build subagent definitions for Pi from plugins and custom subagents directory."""
-    print("Building subagents...")
-
-    build_subagents_dir = BUILD_DIR / "subagents" / "pi"
-    if build_subagents_dir.exists():
-        shutil.rmtree(build_subagents_dir)
-    build_subagents_dir.mkdir(parents=True, exist_ok=True)
-
-    built = set()
-
-    # Process plugin subagents
-    for plugin in plugins.values():
-        for name, path in discover_items(plugin, "subagents"):
-            if name in built:
-                print(
-                    f"    Warning: Subagent '{name}' already exists, skipping duplicate from {plugin.name}"
-                )
-                continue
-
-            shutil.copy(path, build_subagents_dir / f"{name}.md")
-            print(f"  {name} (from {plugin.name})")
-            built.add(name)
-
-    # Process custom subagents
-    if SUBAGENTS_DIR.exists():
-        for agent_file in sorted(SUBAGENTS_DIR.glob("*.md")):
-            name = agent_file.stem
-            if name in built:
-                print(
-                    f"    Warning: Custom subagent '{name}' conflicts with plugin subagent"
-                )
-
-            shutil.copy(agent_file, build_subagents_dir / f"{name}.md")
-            print(f"  {name} (custom)")
-            built.add(name)
-
-    # Process subagents bundled with extensions
-    for ext_dir in custom_extension_dirs():
-        agents_dir = ext_dir / "agents"
-        if not agents_dir.exists():
-            continue
-        for agent_file in sorted(agents_dir.glob("*.md")):
-            name = agent_file.stem
-            if name in built:
-                print(
-                    f"    Warning: Extension subagent '{name}' from {ext_dir.name} conflicts with existing subagent"
-                )
-                continue
-
-            shutil.copy(agent_file, build_subagents_dir / f"{name}.md")
-            print(f"  {name} (from extension {ext_dir.name})")
-            built.add(name)
-
-    print(f"  Built {len(built)} subagents")
-
-
 def install_skills(force: bool = False):
     """Install built skills to agent directories."""
     print("Installing skills...")
@@ -1368,27 +1277,6 @@ def install_prompts(force: bool = False):
     )
 
     print(f"  pi: {count} prompts -> {dest}")
-
-
-def install_subagents(force: bool = False):
-    """Install built subagent definitions to Pi agents directory."""
-    print("Installing subagents...")
-
-    source = BUILD_DIR / "subagents" / "pi"
-    if not source.exists():
-        print("  No built subagents found, skipping")
-        return
-
-    dest = INSTALL_PATHS["pi"]["subagents"]
-    count = sync_managed_children(
-        "pi.subagents",
-        source,
-        dest,
-        pattern="*.md",
-        force=force,
-    )
-
-    print(f"  pi: {count} subagents -> {dest}")
 
 
 def install_themes(force: bool = False):
@@ -1784,6 +1672,16 @@ def install_configs():
     install_global_agents_md()
 
 
+def remove_legacy_pi_subagents() -> None:
+    """Remove Pi subagents previously managed by this repository."""
+    manifest = load_install_manifest()
+    if "pi.subagents" not in manifest.get("targets", {}):
+        return
+
+    clean_manifest_target(manifest, "pi.subagents", LEGACY_PI_SUBAGENTS_DIR)
+    save_install_manifest(manifest)
+
+
 def clean():
     """Remove all installed artifacts."""
     print("Cleaning installed artifacts...")
@@ -1797,8 +1695,8 @@ def clean():
     clean_manifest_target(manifest, "pi.extensions", INSTALL_PATHS["pi"]["extensions"])
     clean_manifest_target(manifest, "amp.plugins", INSTALL_PATHS["amp"]["plugins"])
     clean_manifest_target(manifest, "pi.prompts", INSTALL_PATHS["pi"]["prompts"])
-    clean_manifest_target(manifest, "pi.subagents", INSTALL_PATHS["pi"]["subagents"])
     clean_manifest_target(manifest, "pi.themes", INSTALL_PATHS["pi"]["themes"])
+    clean_manifest_target(manifest, "pi.subagents", LEGACY_PI_SUBAGENTS_DIR)
     save_install_manifest(manifest)
 
     if not manifest.get("targets") and INSTALL_MANIFEST.exists():
@@ -1843,7 +1741,6 @@ def main():
             "install-amp-plugins",
             "install-extensions",
             "install-prompts",
-            "install-subagents",
             "install-themes",
             "install-configs",
             "clean",
@@ -1876,19 +1773,17 @@ def main():
             print("Building in non-interactive mode...")
         build_skills(plugins)
         build_prompts(plugins)
-        build_subagents(plugins)
         build_themes()
     elif args.command == "install":
         if NON_INTERACTIVE:
             print("Installing in non-interactive mode...")
         init_submodules()
+        remove_legacy_pi_subagents()
         build_skills(plugins)
         build_prompts(plugins)
-        build_subagents(plugins)
         build_themes()
         install_skills(force=args.force)
         install_prompts(force=args.force)
-        install_subagents(force=args.force)
         install_themes(force=args.force)
         install_extensions(plugins, force=args.force)
         install_amp_plugins(force=args.force)
@@ -1907,9 +1802,6 @@ def main():
     elif args.command == "install-prompts":
         build_prompts(plugins)
         install_prompts(force=args.force)
-    elif args.command == "install-subagents":
-        build_subagents(plugins)
-        install_subagents(force=args.force)
     elif args.command == "install-themes":
         build_themes()
         install_themes(force=args.force)

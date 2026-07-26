@@ -70,7 +70,7 @@ Amp settings live in `amp-configs/settings.json`. `make install-configs` merges 
 
 ### Managed install behavior
 
-`make install` preserves manually installed skills, Amp plugins, Pi extensions, prompts, subagents, and themes that live beside dotfiles-managed artifacts. The installer tracks top-level managed names in `~/.local/state/dotfiles/agent-install-manifest.json`, overwrites those managed artifacts on each install, and removes managed artifacts that are no longer built. If a built artifact conflicts with an existing unmanaged path, the install fails; rerun the underlying build script with `--force` only when you want dotfiles to claim that path.
+`make install` preserves manually installed skills, Amp plugins, Pi extensions, prompts, and themes that live beside dotfiles-managed artifacts. The installer tracks top-level managed names in `~/.local/state/dotfiles/agent-install-manifest.json`, overwrites those managed artifacts on each install, and removes managed artifacts that are no longer built. If a built artifact conflicts with an existing unmanaged path, the install fails; rerun the underlying build script with `--force` only when you want dotfiles to claim that path.
 
 Plugin skills can be restricted to explicit user invocation with `skills_user_invocable_only` in `plugins.toml`. The build emits `disable-model-invocation: true` for Claude and Pi, plus `policy.allow_implicit_invocation: false` in `agents/openai.yaml` for Codex. The Codex metadata is included in the Pi/shared build because Codex also scans `~/.agents/skills`.
 
@@ -87,7 +87,7 @@ pi
 
 ### Notable custom skills
 
-- `brainstorming`, `writing-plans`, `executing-plans`, `requesting-code-review`, `receiving-code-review`, and `fetch-ci-build` — vendored superpower skills from `buildrtech/dotagents`; the three planning skills are temporarily excluded from installation
+- `receiving-code-review` and `fetch-ci-build` — vendored superpower skills from `buildrtech/dotagents`
 - `babysit-pr` — GitHub PR monitoring/babysitting workflow imported from `openai/codex` commit `7e569f1`
 - `editorial-sketches` — editorial article illustration skill vendored from `helloianneo/ian-xiaohei-illustrations` commit `91b5608`
 - `oracle` — @steipete/oracle CLI workflow for second-model reviews with selected repo context
@@ -118,10 +118,6 @@ pi
 - `/pr-comments` - fetch PR review comments and evaluate them before changing code
 - `/review-loop` - run a parent-orchestrated adversarial review loop
 
-### Notable custom Pi subagents
-
-- `architecture-reviewer` — reviews designs and plans for ownership, boundaries, invariants, failure modes, compatibility paths, and architecture-level tests before implementation
-
 ### Notable custom Pi extensions
 
 - `handoff`, `openai-fast`, and `session-query` — vendored from `buildrtech/dotagents` commit `a484ad4`; `openai-fast` enables OpenAI priority service-tier requests
@@ -139,7 +135,6 @@ dotfiles/
 ├── skills/                  # custom agent skills
 ├── amp-configs/             # managed Amp settings
 ├── amp-plugins/             # custom Amp plugins
-├── subagents/               # custom Pi subagents
 ├── pi-extensions/           # Pi extensions
 ├── pi-themes/               # Pi themes
 ├── prompts/                 # Pi prompt templates
