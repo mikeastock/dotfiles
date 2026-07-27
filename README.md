@@ -120,7 +120,8 @@ pi
 
 ### Notable custom Pi extensions
 
-- `handoff`, `openai-fast`, and `session-query` — vendored from `buildrtech/dotagents` commit `a484ad4`; `openai-fast` enables OpenAI priority service-tier requests
+- `handoff` and `session-query` — vendored from `buildrtech/dotagents` commit `a484ad4`
+- `openai-fast` — mirrors `calesennett/pi-codex-fast`; `/codex-fast` toggles priority service-tier requests for supported OpenAI Codex models, with state stored under `pi-codex-fast.enabled` in Pi settings
 - `pi-prompt-shelf` — local copy of `tanishqkancharla/pi-prompt-shelf`; shelves editor prompts per session with shortcuts and `/shelf`
 - `pi-codex-conversion` — local copy of `IgorWarzocha/pi-codex-conversion`; adds Codex-style tools and prompt adaptation for OpenAI/Codex models in Pi
 - `full-read-for-paths` — upgrades partial `read` calls to full reads for configured resource-file paths

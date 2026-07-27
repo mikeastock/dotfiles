@@ -1,409 +1,200 @@
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { homedir } from "node:os";
+import { dirname, join } from "node:path";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
-import {
-	DEFAULT_CONFIG_FILE,
-	DEFAULT_SUPPORTED_MODEL_KEYS,
-	FAST_CONFIG_BASENAME,
-	getConfigPaths,
-	parseSupportedModelKey,
-	parseSupportedModels,
-	readConfigFile,
-	resolveFastConfig,
-	writeConfigFile,
-	type FastConfigFile,
-	type FastSupportedModel,
-	type ResolvedFastConfig,
-} from "./config.js";
 
-const FAST_COMMAND = "fast";
-const FAST_FLAG = "fast";
-const FAST_COMMAND_ARGS = ["on", "off", "status"] as const;
-const FAST_SERVICE_TIER = "priority";
-
-interface FastModeState {
-	active: boolean;
-}
-
-type FooterComponentLike = {
-	prototype: {
-		render(width: number): string[];
-	};
-};
-
-interface FastConfigApi {
-	resolveFastConfig(cwd: string): ResolvedFastConfig;
-	readConfigFile(filePath: string): FastConfigFile | null;
-	writeConfigFile(filePath: string, config: FastConfigFile): void;
-	footerComponent?: FooterComponentLike;
-}
-
-type FastPayload = Record<string, unknown> & {
-	service_tier?: string;
-};
-
-type FooterModel = NonNullable<ExtensionContext["model"]> & {
-	reasoning?: boolean;
-};
-
-let originalFooterRender: ((width: number) => string[]) | undefined;
-let patchedFooterComponent: FooterComponentLike | undefined;
-let footerPatched = false;
+const STATUS_KEY = "fast-priority";
+const SETTINGS_KEY = "pi-codex-fast";
+const PRIORITY_MODELS = [
+	"openai-codex/gpt-5.4",
+	"openai-codex/gpt-5.5",
+	"openai-codex/gpt-5.6-sol",
+	"openai-codex/gpt-5.6-terra",
+	"openai-codex/gpt-5.6-luna",
+];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function getConfigCwd(ctx: ExtensionContext): string {
-	return ctx.cwd || process.cwd();
+function currentModelName(ctx: Pick<ExtensionContext, "model">): string | undefined {
+	return ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : undefined;
 }
 
-function getCurrentModelKey(model: ExtensionContext["model"]): string | undefined {
-	if (!model) {
-		return undefined;
-	}
-
-	return `${model.provider}/${model.id}`;
+function supportsPriorityServiceTier(ctx: Pick<ExtensionContext, "model">): boolean {
+	const modelName = currentModelName(ctx);
+	return modelName !== undefined && PRIORITY_MODELS.includes(modelName);
 }
 
-function isFastSupportedModel(model: ExtensionContext["model"], supportedModels: FastSupportedModel[]): boolean {
-	if (!model) {
-		return false;
-	}
-
-	return supportedModels.some((supported) => supported.provider === model.provider && supported.id === model.id);
+function asObject(value: unknown): Record<string, unknown> | null {
+	if (!isRecord(value)) return null;
+	return value;
 }
 
-function describeSupportedModels(supportedModels: FastSupportedModel[]): string {
-	if (supportedModels.length === 0) {
-		return "none configured";
-	}
-
-	return supportedModels.map((model) => `${model.provider}/${model.id}`).join(", ");
+function globalSettingsPath(): string {
+	return join(process.env.PI_CODING_AGENT_DIR ?? join(homedir(), ".pi", "agent"), "settings.json");
 }
 
-function describeCurrentState(
-	ctx: Pick<ExtensionContext, "model">,
-	active: boolean,
-	supportedModels: FastSupportedModel[],
-): string {
-	const model = getCurrentModelKey(ctx.model) ?? "none";
-
-	if (!active) {
-		return `Fast mode is off. Current model: ${model}.`;
-	}
-	if (!ctx.model) {
-		return `Fast mode is on. No model is selected. Supported models: ${describeSupportedModels(supportedModels)}.`;
-	}
-	if (isFastSupportedModel(ctx.model, supportedModels)) {
-		return `Fast mode is on for ${model}.`;
-	}
-
-	return `Fast mode is on, but ${model} does not support it. Supported models: ${describeSupportedModels(supportedModels)}.`;
+function projectSettingsPath(cwd: string): string {
+	return join(cwd, ".pi", "settings.json");
 }
 
-function getFastIndicator(
-	ctx: Pick<ExtensionContext, "model" | "ui">,
-	active: boolean,
-	supportedModels: FastSupportedModel[],
-): string | undefined {
-	if (!active || !isFastSupportedModel(ctx.model, supportedModels)) {
-		return undefined;
+async function readSettings(path: string): Promise<Record<string, unknown>> {
+	try {
+		const content = await readFile(path, "utf8");
+		const settings = JSON.parse(content) as unknown;
+		return isRecord(settings) ? settings : {};
+	} catch (error) {
+		if (isRecord(error) && error.code === "ENOENT") return {};
+		throw error;
 	}
-
-	return ctx.ui.theme.fg("success", "⚡");
 }
 
-function buildFooterRightSideCandidates(model: FooterModel, thinkingLevel: string | undefined): string[] {
-	let rightSideWithoutProvider = model.id;
-
-	if (model.reasoning) {
-		const level = thinkingLevel || "off";
-		rightSideWithoutProvider = level === "off" ? `${model.id} • thinking off` : `${model.id} • ${level}`;
-	}
-
-	return [`(${model.provider}) ${rightSideWithoutProvider}`, rightSideWithoutProvider];
-}
-
-function injectFastIntoFooterLine(
-	line: string,
-	model: FooterModel,
-	thinkingLevel: string | undefined,
-	indicator: string,
-): string {
-	const candidates = buildFooterRightSideCandidates(model, thinkingLevel);
-	const suffix = ` • ${indicator}`;
-
-	for (const candidate of candidates) {
-		const candidateStart = line.lastIndexOf(candidate);
-		if (candidateStart === -1) {
+function mergeSettings(base: Record<string, unknown>, overrides: Record<string, unknown>): Record<string, unknown> {
+	const merged: Record<string, unknown> = { ...base };
+	for (const [key, overrideValue] of Object.entries(overrides)) {
+		const baseValue = merged[key];
+		if (isRecord(baseValue) && isRecord(overrideValue)) {
+			merged[key] = mergeSettings(baseValue, overrideValue);
 			continue;
 		}
-
-		let paddingStart = candidateStart;
-		while (paddingStart > 0 && line[paddingStart - 1] === " ") {
-			paddingStart -= 1;
-		}
-
-		const prefix = line.slice(0, paddingStart);
-		const suffixAnsi = line.slice(candidateStart + candidate.length);
-		const availableWidth = candidateStart - paddingStart + visibleWidth(candidate);
-		const desiredRightSide = `${candidate}${suffix}`;
-		const fittedRightSide = truncateToWidth(desiredRightSide, availableWidth, "");
-		const fittedWidth = visibleWidth(fittedRightSide);
-		const nextPadding = " ".repeat(Math.max(0, availableWidth - fittedWidth));
-		return `${prefix}${nextPadding}${fittedRightSide}${suffixAnsi}`;
+		merged[key] = overrideValue;
 	}
-
-	return line;
+	return merged;
 }
 
-async function loadFooterComponent(): Promise<FooterComponentLike | undefined> {
-	try {
-		const module = await import("@earendil-works/pi-coding-agent");
-		return module.FooterComponent as FooterComponentLike;
-	} catch {
-		return undefined;
-	}
+async function loadPersistedFastMode(cwd: string): Promise<boolean | undefined> {
+	const settings = mergeSettings(
+		await readSettings(globalSettingsPath()),
+		await readSettings(projectSettingsPath(cwd)),
+	);
+	const extensionSettings = asObject(settings[SETTINGS_KEY]);
+	return typeof extensionSettings?.enabled === "boolean" ? extensionSettings.enabled : undefined;
 }
 
-function patchFooterRender(
-	footerComponent: FooterComponentLike | undefined,
-	getIndicator: (ctx: { model?: FooterModel; thinkingLevel?: string }) => string | undefined,
-): void {
-	if (footerPatched || !footerComponent) {
-		return;
-	}
-
-	originalFooterRender = footerComponent.prototype.render;
-	patchedFooterComponent = footerComponent;
-	footerComponent.prototype.render = function renderWithFast(this: unknown, width: number): string[] {
-		const lines = originalFooterRender?.call(this, width) ?? [];
-		if (lines.length < 2) {
-			return lines;
-		}
-
-		const session = (this as { session?: { state?: { model?: FooterModel; thinkingLevel?: string } } }).session;
-		const model = session?.state?.model;
-		if (!model) {
-			return lines;
-		}
-
-		const indicator = getIndicator({ model, thinkingLevel: session?.state?.thinkingLevel });
-		if (!indicator) {
-			return lines;
-		}
-
-		const nextLines = [...lines];
-		nextLines[1] = injectFastIntoFooterLine(lines[1] ?? "", model, session?.state?.thinkingLevel, indicator);
-		return nextLines;
+async function persistFastMode(enabled: boolean): Promise<void> {
+	const path = globalSettingsPath();
+	const globalSettings = await readSettings(path);
+	const extensionSettings = asObject(globalSettings[SETTINGS_KEY]) ?? {};
+	globalSettings[SETTINGS_KEY] = {
+		...extensionSettings,
+		enabled,
 	};
-	footerPatched = true;
+	await mkdir(dirname(path), { recursive: true });
+	await writeFile(path, `${JSON.stringify(globalSettings, null, 2)}\n`);
 }
 
-function unpatchFooterRender(): void {
-	if (!footerPatched || !originalFooterRender || !patchedFooterComponent) {
-		return;
+export default function codexFastExtension(pi: ExtensionAPI): void {
+	let fastModeEnabled = false;
+	let settingsWriteQueue: Promise<void> = Promise.resolve();
+
+	function persistState(enabled: boolean, ctx: ExtensionContext): void {
+		settingsWriteQueue = settingsWriteQueue
+			.catch(() => undefined)
+			.then(() => persistFastMode(enabled));
+
+		void settingsWriteQueue.catch((error) => {
+			if (!ctx.hasUI) return;
+			const message = error instanceof Error ? error.message : String(error);
+			ctx.ui.notify(`pi-codex-fast: failed to write settings: ${message}`, "warning");
+		});
 	}
 
-	patchedFooterComponent.prototype.render = originalFooterRender;
-	footerPatched = false;
-	originalFooterRender = undefined;
-	patchedFooterComponent = undefined;
-}
+	function updateStatus(ctx: ExtensionContext): void {
+		if (!ctx.hasUI) return;
+		if (!fastModeEnabled) {
+			ctx.ui.setStatus(STATUS_KEY, undefined);
+			return;
+		}
 
-function applyFastServiceTier(payload: unknown): unknown {
-	if (!isRecord(payload)) {
-		return payload;
+		const label = supportsPriorityServiceTier(ctx) ? "fast" : "fast (inactive)";
+		ctx.ui.setStatus(STATUS_KEY, ctx.ui.theme.fg("accent", label));
 	}
 
-	const nextPayload: FastPayload = { ...payload };
-	nextPayload.service_tier = FAST_SERVICE_TIER;
-	return nextPayload;
-}
+	function notifyState(ctx: ExtensionContext): void {
+		if (!ctx.hasUI) return;
+		if (!fastModeEnabled) {
+			ctx.ui.notify("Fast mode disabled. Requests will use the default service tier.", "info");
+			return;
+		}
 
-export function createOpenaiFastExtension(
-	configApi: FastConfigApi = { resolveFastConfig, readConfigFile, writeConfigFile },
-): (pi: ExtensionAPI) => void {
-	return function openaiFast(pi: ExtensionAPI): void {
-		let state: FastModeState = { active: false };
-		let cachedConfig: ResolvedFastConfig | undefined;
+		const modelLabel = currentModelName(ctx) ?? "no active model";
+		if (supportsPriorityServiceTier(ctx)) {
+			ctx.ui.notify(`Fast mode enabled (${modelLabel}).`, "info");
+			return;
+		}
 
-		const applyFooterPatch = (footerComponent: FooterComponentLike | undefined) => {
-			patchFooterRender(footerComponent, ({ model, thinkingLevel }) => {
-				if (!model) {
-					return undefined;
-				}
+		ctx.ui.notify(`Fast mode enabled but inactive (${modelLabel}).`, "info");
+	}
 
-				const supportedModels = cachedConfig?.supportedModels ?? parseSupportedModels(DEFAULT_SUPPORTED_MODEL_KEYS) ?? [];
-				return getFastIndicator(
-					{ model, ui: { theme: { fg: (_color: string, text: string) => text } } as ExtensionContext["ui"] },
-					state.active,
-					supportedModels,
-				);
-			});
+	function setFastMode(enabled: boolean, ctx: ExtensionContext, options?: { persist?: boolean; notify?: boolean }): void {
+		fastModeEnabled = enabled;
+		if (options?.persist !== false) persistState(enabled, ctx);
+		updateStatus(ctx);
+		if (options?.notify !== false) notifyState(ctx);
+	}
+
+	async function reloadFastModeState(ctx: ExtensionContext, options?: { includeStartupFlag?: boolean }): Promise<void> {
+		fastModeEnabled = false;
+
+		try {
+			const persistedEnabled = await loadPersistedFastMode(ctx.cwd);
+			if (typeof persistedEnabled === "boolean") {
+				fastModeEnabled = persistedEnabled;
+			}
+		} catch (error) {
+			if (ctx.hasUI) {
+				const message = error instanceof Error ? error.message : String(error);
+				ctx.ui.notify(`pi-codex-fast: failed to load settings: ${message}`, "warning");
+			}
+		}
+
+		if (options?.includeStartupFlag && pi.getFlag("fast") === true) {
+			fastModeEnabled = true;
+		}
+
+		updateStatus(ctx);
+	}
+
+	pi.registerFlag("fast", {
+		description: "Start with fast mode enabled",
+		type: "boolean",
+		default: false,
+	});
+
+	pi.registerCommand("codex-fast", {
+		description: "Toggle fast mode",
+		handler: async (_args, ctx) => {
+			setFastMode(!fastModeEnabled, ctx);
+		},
+	});
+
+	pi.on("session_start", async (_event, ctx) => {
+		await reloadFastModeState(ctx, { includeStartupFlag: true });
+	});
+
+	pi.on("model_select", async (_event, ctx) => {
+		updateStatus(ctx);
+	});
+
+	pi.on("before_provider_request", (event, ctx) => {
+		if (!fastModeEnabled || !supportsPriorityServiceTier(ctx) || !isRecord(event.payload)) {
+			return;
+		}
+
+		return {
+			...event.payload,
+			service_tier: "priority",
 		};
-
-		applyFooterPatch(configApi.footerComponent);
-		if (!configApi.footerComponent) {
-			void loadFooterComponent().then(applyFooterPatch);
-		}
-
-		function refreshConfig(ctx: ExtensionContext): ResolvedFastConfig {
-			cachedConfig = configApi.resolveFastConfig(getConfigCwd(ctx));
-			return cachedConfig;
-		}
-
-		function getConfig(ctx: ExtensionContext): ResolvedFastConfig {
-			return cachedConfig ?? refreshConfig(ctx);
-		}
-
-		function persistState(config: ResolvedFastConfig): void {
-			cachedConfig = { ...config, active: state.active };
-			if (!config.persistState) {
-				return;
-			}
-
-			const nextConfig = { ...(configApi.readConfigFile(config.configPath) ?? {}), active: state.active };
-			configApi.writeConfigFile(config.configPath, nextConfig);
-		}
-
-		async function enableFastMode(ctx: ExtensionContext, notify: boolean = true): Promise<void> {
-			const config = refreshConfig(ctx);
-			if (state.active) {
-				if (notify) {
-					ctx.ui.notify("Fast mode is already on.", "info");
-				}
-				return;
-			}
-
-			state = { active: true };
-			persistState(config);
-			if (notify) {
-				ctx.ui.notify(describeCurrentState(ctx, state.active, config.supportedModels), "info");
-			}
-		}
-
-		async function disableFastMode(ctx: ExtensionContext, notify: boolean = true): Promise<void> {
-			const config = refreshConfig(ctx);
-			if (!state.active) {
-				if (notify) {
-					ctx.ui.notify("Fast mode is already off.", "info");
-				}
-				return;
-			}
-
-			state = { active: false };
-			persistState(config);
-			if (notify) {
-				ctx.ui.notify("Fast mode disabled.", "info");
-			}
-		}
-
-		async function toggleFastMode(ctx: ExtensionContext): Promise<void> {
-			if (state.active) {
-				await disableFastMode(ctx);
-				return;
-			}
-
-			await enableFastMode(ctx);
-		}
-
-		pi.registerFlag(FAST_FLAG, {
-			description: "Start with OpenAI fast mode enabled",
-			type: "boolean",
-			default: false,
-		});
-
-		pi.registerCommand(FAST_COMMAND, {
-			description: "Toggle fast mode (priority service tier for configured models)",
-			getArgumentCompletions: (prefix) => {
-				const items = FAST_COMMAND_ARGS.filter((value) => value.startsWith(prefix)).map((value) => ({
-					value,
-					label: value,
-				}));
-				return items.length > 0 ? items : null;
-			},
-			handler: async (args, ctx) => {
-				const command = args.trim().toLowerCase();
-				if (!command) {
-					await toggleFastMode(ctx);
-					return;
-				}
-
-				switch (command) {
-					case "on":
-						await enableFastMode(ctx);
-						return;
-					case "off":
-						await disableFastMode(ctx);
-						return;
-					case "status":
-						ctx.ui.notify(describeCurrentState(ctx, state.active, refreshConfig(ctx).supportedModels), "info");
-						return;
-					default:
-						ctx.ui.notify("Usage: /fast [on|off|status]", "error");
-				}
-			},
-		});
-
-		pi.on("before_provider_request", (event, ctx) => {
-			const config = getConfig(ctx);
-			if (!state.active || !isFastSupportedModel(ctx.model, config.supportedModels)) {
-				return;
-			}
-
-			return applyFastServiceTier(event.payload);
-		});
-
-		pi.on("session_start", async (_event, ctx) => {
-			const config = refreshConfig(ctx);
-			state = config.persistState && typeof config.active === "boolean" ? { active: config.active } : { active: false };
-
-			if (pi.getFlag(FAST_FLAG) === true) {
-				state = { active: true };
-				persistState(config);
-				ctx.ui.notify(describeCurrentState(ctx, state.active, config.supportedModels), "info");
-				return;
-			}
-
-			if (state.active) {
-				ctx.ui.notify(describeCurrentState(ctx, state.active, config.supportedModels), "info");
-			}
-		});
-
-		pi.on("model_select", async (_event, ctx) => {
-			refreshConfig(ctx);
-		});
-
-		pi.on("session_shutdown", async () => {
-			unpatchFooterRender();
-		});
-	};
+	});
 }
-
-const openaiFast = createOpenaiFastExtension();
-
-export default openaiFast;
 
 export const _test = {
-	FAST_COMMAND,
-	FAST_FLAG,
-	FAST_CONFIG_BASENAME,
-	FAST_COMMAND_ARGS,
-	FAST_SERVICE_TIER,
-	DEFAULT_SUPPORTED_MODEL_KEYS,
-	DEFAULT_CONFIG_FILE,
-	getConfigPaths,
-	parseSupportedModelKey,
-	parseSupportedModels,
-	readConfigFile,
-	resolveFastConfig,
-	isFastSupportedModel,
-	describeSupportedModels,
-	describeCurrentState,
-	buildFooterRightSideCandidates,
-	injectFastIntoFooterLine,
-	getFastIndicator,
-	applyFastServiceTier,
-	createOpenaiFastExtension,
+	PRIORITY_MODELS,
+	SETTINGS_KEY,
+	currentModelName,
+	supportsPriorityServiceTier,
+	mergeSettings,
+	loadPersistedFastMode,
+	persistFastMode,
 };
