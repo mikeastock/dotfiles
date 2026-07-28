@@ -15,7 +15,11 @@ HOME_LINKS := .gitconfig .ideavimrc .psqlrc .tmux.conf .tmuxinator .vscode
 # .config directories to symlink entirely
 CONFIG_DIRS := alacritty stylua lvim zellij direnv atuin ghostty
 
+SKILL_LOCK_SCRIPT := $(CURDIR)/scripts/skill_lock.py
+SKILL_ADD_FLAGS := $(if $(SKILL),--skill $(SKILL),)$(if $(ALL_SKILLS), --all-skills,)
+
 .PHONY: all install install-non-interactive install-tools install-skills install-amp-plugins install-extensions install-prompts install-themes install-configs amp-plugin-types amp-plugin-check package-manager-security-config build clean help submodule-init plugin-update check-python \
+	skill-add skill-vendor skill-update skill-sync \
 	dot-all dot-install dot-home-symlinks dot-config-symlinks dot-platform-defaults dot-macos-defaults dot-clean
 
 all: help
@@ -40,6 +44,14 @@ help:
 	@echo "  make build                   Build skills/prompts/themes (without installing)"
 	@echo "  make plugin-update           Update all plugin submodules to latest"
 	@echo "  make clean                   Remove all installed skills, extensions, and build artifacts"
+	@echo ""
+	@echo "Skills CLI (npx skills) lock + vendor:"
+	@echo "  make skill-add SOURCE=owner/repo   Add via npx skills, vendor into skills/"
+	@echo "  make skill-add SOURCE=owner/repo SKILL=name"
+	@echo "  make skill-add SOURCE=owner/repo ALL_SKILLS=1"
+	@echo "  make skill-vendor                 Copy .agents/skills -> skills/ from lockfile"
+	@echo "  make skill-update                 Update locked project skills, then vendor"
+	@echo "  make skill-sync                   Restore from skills-lock.json, then vendor"
 	@echo ""
 	@echo "Dotfiles:"
 	@echo "  make dot-all                Run all dotfile setup tasks"
@@ -109,6 +121,24 @@ plugin-update:
 	@echo "Updating plugin submodules..."
 	@git submodule update --remote --merge
 	@echo "Plugins updated"
+
+# Skills CLI lockfile bridge: stage via npx skills into .agents/skills, vendor into skills/
+skill-add: check-python
+	@if [ -z "$(SOURCE)" ]; then \
+		echo "Usage: make skill-add SOURCE=owner/repo [SKILL=name] [ALL_SKILLS=1]"; \
+		exit 1; \
+	fi
+	@$(PYTHON) "$(SKILL_LOCK_SCRIPT)" add "$(SOURCE)" $(SKILL_ADD_FLAGS)
+
+skill-vendor: check-python
+	@$(PYTHON) "$(SKILL_LOCK_SCRIPT)" vendor
+
+skill-update: check-python
+	@$(PYTHON) "$(SKILL_LOCK_SCRIPT)" update $(SKILL)
+
+skill-sync: check-python
+	@$(PYTHON) "$(SKILL_LOCK_SCRIPT)" sync
+
 
 # Helper: create symlink or error if non-symlink exists
 # Usage: $(call safe_symlink,source,target)

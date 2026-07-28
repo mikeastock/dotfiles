@@ -18,20 +18,23 @@ agents/
 ├── plugins/                        # Git submodules (skill sources, owner-repo format)
 │   ├── anthropics-skills/          # github.com/anthropics/skills
 │   └── mitsuhiko-agent-stuff/      # github.com/mitsuhiko/agent-stuff
-├── skills/                         # Custom skills (local)
+├── skills/                         # Custom + vendored skills (local)
 │   └── <skill-name>/
 │       ├── SKILL.md                # Skill definition (YAML frontmatter + markdown)
 │       └── <additional files>      # Supporting scripts/resources
+├── skills-lock.json                # npx skills lockfile (ecosystem packages)
 ├── skill-overrides/                # Agent-specific appends
 │   └── <skill>-<agent>.md          # Appended to SKILL.md during build
 ├── pi-extensions/                  # Custom Pi extensions (local)
 │   ├── protected-paths/
 │   └── <extension-name>/index.ts
 ├── scripts/
-│   └── build.py                    # Python build system (requires Python 3.11+)
+│   ├── build.py                    # Python build system (requires Python 3.11+)
+│   └── skill_lock.py               # skills CLI lock + vendor bridge
 ├── tests/                          # Test suite
 │   ├── test-helpers.sh             # Shared test utilities
 │   ├── test-make.sh                # Makefile tests
+│   ├── test-skill-lock.sh          # skills CLI lock + vendor tests
 │   ├── test-pi-skills-config.sh    # Pi config tests
 │   ├── test-pi-extensions.sh       # Pi extensions type-check tests
 │   └── run-all.sh                  # Run all tests
@@ -82,12 +85,26 @@ make install
 | `make install-extensions` | Install Pi extensions only |
 | `make clean` | Remove all installed artifacts and build directory |
 | `make plugin-update` | Update all plugin submodules to latest |
+| `make skill-add SOURCE=owner/repo` | Add a skills-CLI package, lock it, and vendor into `skills/` |
+| `make skill-vendor` | Copy staged `.agents/skills` entries from `skills-lock.json` into `skills/` |
+| `make skill-update` | Update locked project skills via `npx skills`, then re-vendor |
+| `make skill-sync` | Restore from `skills-lock.json`, then vendor |
 | `make agents-config` | Configure all agents to use their own skills directories (avoid duplicates) |
+
+### Skills CLI packages (lock + vendor)
+Ecosystem skills installed with [`npx skills`](https://github.com/vercel-labs/skills) are tracked in committed `skills-lock.json` and copied into `skills/` for the normal build pipeline.
+
+- Staging: `.agents/skills/` (gitignored)
+- Canonical copies: `skills/<name>/` (committed)
+- Bridge script: `scripts/skill_lock.py`
+
+Prefer `make skill-add SOURCE=owner/repo` over installing skills only into home agent dirs. Hand-written skills still live directly under `skills/`; large multi-skill repos can remain plugin submodules in `plugins.toml`.
 
 ### Testing
 ```bash
 ./tests/run-all.sh          # Run all tests
 ./tests/test-make.sh        # Test Makefile commands
+./tests/test-skill-lock.sh  # Test skills-CLI lock + vendor bridge
 ./tests/test-pi-skills-config.sh  # Test Pi config command
 ./tests/test-pi-extensions.sh     # Test Pi extensions type-checking
 ```
@@ -182,6 +199,13 @@ Extensions use the unified `ExtensionAPI` which provides:
 ### Adding a Skill Override
 1. Create `skill-overrides/<skill-name>-<agent>.md` (agent: `claude` or `pi`)
 2. Content will be appended to the skill during build
+
+### Adding a Skills CLI Package (`npx skills`)
+1. Run `make skill-add SOURCE=owner/repo` (optional `SKILL=name` or `ALL_SKILLS=1`)
+2. This updates committed `skills-lock.json`, stages under gitignored `.agents/skills/`, and vendors copies into `skills/`
+3. Run `make install` so home agent dirs pick up the new skill
+4. Update README.md under notable custom / lockfile skills
+5. To refresh later: `make skill-update` or `make skill-sync`
 
 ### Adding an Extension (Pi only)
 1. Fetch the [Pi Coding Agent extensions documentation](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/extensions.md) for the current API

@@ -15,6 +15,9 @@
 # Agent build output
 build/
 
+# skills CLI project staging (canonical copies live in skills/; lock in skills-lock.json)
+.agents/
+
 # Node.js
 node_modules/
 

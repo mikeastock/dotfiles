@@ -48,6 +48,38 @@ make install-configs
 make build                   # build agent artifacts only
 make clean                   # clean agent build/install artifacts
 make plugin-update           # update plugin submodules
+
+# Skills CLI packages (npx skills) — lockfile + vendored copies
+make skill-add SOURCE=github/gh-stack
+make skill-add SOURCE=owner/repo SKILL=name
+make skill-vendor            # copy staged .agents/skills -> skills/ from skills-lock.json
+make skill-update            # npx skills update (project) then re-vendor
+make skill-sync              # restore from skills-lock.json then vendor
+```
+
+### Skills CLI packages (`npx skills`)
+
+Third-party skills from the [skills](https://github.com/vercel-labs/skills) ecosystem are tracked in `skills-lock.json` and **vendored as copies** under `skills/` so `make install` stays offline and multi-agent.
+
+| Piece | Role |
+|-------|------|
+| `skills-lock.json` | Committed lockfile (source + content hash from `npx skills`) |
+| `.agents/skills/` | Staging only (gitignored); written by `npx skills add` |
+| `skills/<name>/` | Canonical vendored copy; consumed by `scripts/build.py` |
+
+```bash
+# Preferred: one-shot add + vendor
+make skill-add SOURCE=github/gh-stack
+
+# Or manually:
+npx skills add github/gh-stack --agent universal --copy -y
+make skill-vendor
+
+# On a new machine, if skills/ copies are already in git, just:
+make install
+
+# To re-fetch locked skills into staging and re-vendor:
+make skill-sync
 ```
 
 External native tools are pinned under `[external_tools]` in `plugins.toml`. They are installed into `~/.local/bin` without allowing upstream installers to modify agent settings; this repository owns those settings through `make install-configs`. The full `make install` workflow installs tools before configs.
@@ -99,6 +131,7 @@ pi
 - `zmx` — guidance for managing persistent background terminal work
 - `tmux` — remote control tmux sessions through the active server, with an agent-neutral fallback socket when no server is running
 - `buildr-artifacts` — publish browser-viewable Buildr artifacts as static S3-hosted HTML/assets or stateful Vite apps served from Codexbox with `bld.run` URLs
+- `gh-stack` — stacked PR workflow for the `gh-stack` GitHub CLI extension (from `github/gh-stack` via `skills-lock.json`)
 
 ### Notable plugin skills
 
@@ -132,7 +165,8 @@ pi
 ```text
 dotfiles/
 ├── .config/                 # shell/editor/terminal configs
-├── skills/                  # custom agent skills
+├── skills/                  # custom + vendored agent skills
+├── skills-lock.json         # npx skills lockfile (ecosystem packages)
 ├── amp-configs/             # managed Amp settings
 ├── amp-plugins/             # custom Amp plugins
 ├── pi-extensions/           # Pi extensions
@@ -140,6 +174,7 @@ dotfiles/
 ├── prompts/                 # Pi prompt templates
 ├── plugins/                 # plugin submodules
 ├── scripts/build.py         # agent build/install system
+├── scripts/skill_lock.py    # skills CLI lock + vendor bridge
 ├── tests/                   # agent tooling tests
 └── Makefile                 # dotfiles + agent commands
 ```
