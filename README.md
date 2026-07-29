@@ -99,6 +99,7 @@ pi
 - `zmx` — guidance for managing persistent background terminal work
 - `tmux` — remote control tmux sessions through the active server, with an agent-neutral fallback socket when no server is running
 - `buildr-artifacts` — publish browser-viewable Buildr artifacts as static S3-hosted HTML/assets or stateful Vite apps served from Codexbox with `bld.run` URLs
+- `socratic-quiz` — guided Socratic questioning for deep understanding, vendored from `pchalasani/claude-code-tools` commit `29ae733`
 
 ### Notable plugin skills
 
