@@ -1,0 +1,6 @@
+interface:
+  display_name: "Technical Explainer Comic"
+  short_description: "Build visual technical explainers with drill-down traces"
+  default_prompt: "Use $technical-explainer-comic to explain this system as an editorial comic with expandable technical traces and publish it as one HTML artifact."
+policy:
+  allow_implicit_invocation: true
