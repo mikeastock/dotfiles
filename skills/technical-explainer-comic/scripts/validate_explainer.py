@@ -3,12 +3,14 @@
 import argparse
 import html as html_module
 import json
+import re
 import struct
 import sys
 from pathlib import Path, PurePosixPath
 
 
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
+INLINE_PATTERN = re.compile(r"(`[^`\n]+`|\*\*[^*\n]+\*\*)")
 
 
 def nonempty_string(value):
@@ -24,6 +26,14 @@ def safe_image_path(value):
         and ".." not in path.parts
         and path.suffix.lower() == ".png"
     )
+
+
+def plain_text(value):
+    def strip_markup(match):
+        token = match.group(0)
+        return token[1:-1] if token.startswith("`") else token[2:-2]
+
+    return INLINE_PATTERN.sub(strip_markup, value)
 
 
 def validate_manifest_data(data):
@@ -42,6 +52,27 @@ def validate_manifest_data(data):
         for field in ("title", "body"):
             if not nonempty_string(read_note.get(field)):
                 errors.append(f"read_note.{field} must be a non-empty string")
+
+    legend = data.get("legend")
+    if legend is not None:
+        if not isinstance(legend, list) or len(legend) != 3:
+            errors.append("legend must contain exactly 3 items")
+        else:
+            tones = []
+            for index, item in enumerate(legend):
+                prefix = f"legend[{index}]"
+                if not isinstance(item, dict):
+                    errors.append(f"{prefix} must be an object")
+                    continue
+                tone = item.get("tone")
+                if tone not in ("orange", "blue", "red"):
+                    errors.append(f"{prefix}.tone must be orange, blue, or red")
+                else:
+                    tones.append(tone)
+                if not nonempty_string(item.get("label")):
+                    errors.append(f"{prefix}.label must be a non-empty string")
+            if sorted(tones) != ["blue", "orange", "red"]:
+                errors.append("legend must use each tone exactly once")
 
     panels = data.get("panels")
     if not isinstance(panels, list):
@@ -183,7 +214,7 @@ def validate_artifact(data, artifact):
         errors.append("index.html must not be a symlink")
 
     document = index_path.read_text(encoding="utf-8")
-    if html_module.escape(data["title"]) not in document:
+    if html_module.escape(plain_text(data["title"])) not in document:
         errors.append("index.html does not contain the manifest title")
     if document.count("<details>") != len(data["panels"]):
         errors.append("index.html must contain one details element per panel")
@@ -218,13 +249,19 @@ def validate_artifact(data, artifact):
         except (OSError, ValueError) as error:
             errors.append(f"invalid panel image {panel['image']}: {error}")
             continue
+        if width == 0 or height == 0:
+            errors.append(
+                f"invalid panel image {panel['image']}: dimensions must be non-zero"
+            )
+            continue
         ratio = width / height
         if not 1.70 <= ratio <= 1.86:
             errors.append(
                 f"panel image must be approximately 16:9: {panel['image']} "
                 f"is {width}x{height}"
             )
-        if f'src="{panel["image"]}"' not in document:
+        escaped_image = html_module.escape(panel["image"], quote=True)
+        if f'src="{escaped_image}"' not in document:
             errors.append(f"index.html does not reference {panel['image']}")
 
     return errors

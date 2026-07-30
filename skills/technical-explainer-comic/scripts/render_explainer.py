@@ -8,12 +8,22 @@ from pathlib import Path
 
 sys.dont_write_bytecode = True
 
-from validate_explainer import load_manifest, validate_manifest_data
+from validate_explainer import (
+    INLINE_PATTERN,
+    load_manifest,
+    plain_text,
+    validate_manifest_data,
+)
 
 
 SKILL_DIR = Path(__file__).resolve().parent.parent
 TEMPLATE_PATH = SKILL_DIR / "assets" / "page-template.html"
-INLINE_PATTERN = re.compile(r"(`[^`\n]+`|\*\*[^*\n]+\*\*)")
+TEMPLATE_TOKEN_PATTERN = re.compile(r"\{\{([A-Z_]+)\}\}")
+DEFAULT_LEGEND = (
+    {"tone": "orange", "label": "input or work movement"},
+    {"tone": "blue", "label": "state or trusted processing"},
+    {"tone": "red", "label": "constraint or failure"},
+)
 
 
 def inline_markup(value):
@@ -41,6 +51,16 @@ def render_nav(panels):
             )
         )
     return "\n".join(items)
+
+
+def render_legend(legend):
+    return "\n".join(
+        '<span><i class="swatch {tone}"></i> {label}</span>'.format(
+            tone=html.escape(item["tone"]),
+            label=html.escape(item["label"]),
+        )
+        for item in (legend or DEFAULT_LEGEND)
+    )
 
 
 def render_panel(panel):
@@ -153,13 +173,14 @@ def render_appendix(appendix):
 def render_document(data):
     template = TEMPLATE_PATH.read_text(encoding="utf-8")
     replacements = {
-        "META_DESCRIPTION": html.escape(data["summary"]),
-        "HEAD_TITLE": html.escape(data["title"]),
+        "META_DESCRIPTION": html.escape(plain_text(data["summary"])),
+        "HEAD_TITLE": html.escape(plain_text(data["title"])),
         "HERO_EYEBROW": html.escape(data["eyebrow"]),
         "HERO_TITLE": inline_markup(data["title"]),
         "HERO_SUMMARY": inline_markup(data["summary"]),
         "READ_NOTE_TITLE": inline_markup(data["read_note"]["title"]),
         "READ_NOTE_BODY": inline_markup(data["read_note"]["body"]),
+        "LEGEND_ITEMS": render_legend(data.get("legend")),
         "NAV_ITEMS": render_nav(data["panels"]),
         "PANELS": "\n".join(render_panel(panel) for panel in data["panels"]),
         "APPENDIX": render_appendix(data.get("appendix")),
@@ -169,12 +190,14 @@ def render_document(data):
             for source in data["footer"]["sources"]
         ),
     }
-    for token, value in replacements.items():
-        template = template.replace(f"{{{{{token}}}}}", value)
-    unresolved = re.findall(r"\{\{[A-Z_]+\}\}", template)
-    if unresolved:
-        raise ValueError(f"unresolved template tokens: {', '.join(unresolved)}")
-    return template
+
+    def substitute(match):
+        token = match.group(1)
+        if token not in replacements:
+            raise ValueError(f"unresolved template token: {token}")
+        return replacements[token]
+
+    return TEMPLATE_TOKEN_PATTERN.sub(substitute, template)
 
 
 def main():

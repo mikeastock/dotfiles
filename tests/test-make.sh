@@ -136,6 +136,12 @@ test_make_build() {
     assert_output_contains "$explainer_content" "Build the evidence packet" "Explainer skill requires source evidence"
     assert_output_contains "$explainer_content" "Generate each illustration separately" "Explainer skill preserves per-panel generation"
     assert_output_contains "$explainer_content" "desktop and mobile viewport" "Explainer skill requires responsive browser QA"
+    assert_output_contains "$explainer_content" "one normal unit of work" "Explainer skill uses a generic operation model"
+
+    local explainer_trace_contract
+    explainer_trace_contract=$(<"$PROJECT_DIR/build/pi/technical-explainer-comic/references/trace-contract.md")
+    assert_output_contains "$explainer_trace_contract" "Some systems have no separate establishment path" "Explainer trace does not invent setup"
+    assert_output_contains "$explainer_trace_contract" "Normal-operation trace" "Explainer trace covers steady-state work"
 
     # breadboard-reflection upstream skill has no frontmatter; build should add description
     local breadboard_skill="$PROJECT_DIR/build/claude/breadboard-reflection/SKILL.md"

@@ -57,15 +57,15 @@ def fixture_manifest():
                 "summary": "The visible layer stays **plain** and concise.",
                 "callout": {
                     "title": "Key idea",
-                    "body": "Persistent state lives under `grant:<id>`.",
+                    "body": "Persistent state lives under `job:<id>`.",
                 },
                 "image": f"assets/fixture-illustrations/{number}-panel.png",
-                "alt": f"Xiaohei demonstrates fixture panel {number}.",
+                "alt": f"A character demonstrates fixture panel {number}.",
                 "caption": f"Panel {number} · fixture",
                 "caption_note": "One cognitive turn",
                 "trace": [
-                    "Client calls `POST /example`.",
-                    "Service reads `grant:<id>`.",
+                    "Producer calls `POST /jobs`.",
+                    "Worker reads `job:<id>`.",
                     "Service returns the bounded result.",
                 ],
                 "trace_note": "This is test-only evidence.",
@@ -73,7 +73,7 @@ def fixture_manifest():
         )
 
     return {
-        "title": "Fixture system, from setup to request.",
+        "title": "Fixture system, from enqueue to result.",
         "eyebrow": "A three-panel technical comic",
         "summary": "A deterministic fixture for the explainer renderer.",
         "read_note": {
@@ -86,9 +86,9 @@ def fixture_manifest():
             "intro": "One record family behind the fixture.",
             "records": [
                 {
-                    "key": "grant:<id>",
-                    "created": "Setup",
-                    "contains": "Encrypted props",
+                    "key": "job:<id>",
+                    "created": "Enqueue",
+                    "contains": "Validated work and attempt count",
                     "lifetime": "One hour",
                 }
             ],
@@ -116,6 +116,9 @@ class ExplainerTests(unittest.TestCase):
         self.manifest = fixture_manifest()
         for panel in self.manifest["panels"]:
             write_png(self.artifact / panel["image"])
+        self.write_manifest()
+
+    def write_manifest(self):
         self.manifest_path.write_text(
             json.dumps(self.manifest, indent=2) + "\n",
             encoding="utf-8",
@@ -157,7 +160,105 @@ class ExplainerTests(unittest.TestCase):
         self.assertEqual(html.count("<details>"), 3)
         self.assertIn("&lt;unsafe&gt;", html)
         self.assertNotIn("<unsafe>", html)
-        self.assertIn("<code>grant:&lt;id&gt;</code>", html)
+        self.assertIn("<code>job:&lt;id&gt;</code>", html)
+        self.assertIn("input or work movement", html)
+
+    def test_renderer_substitutes_only_template_tokens(self):
+        self.manifest["title"] = "Literal {{PANELS}} and **bold**"
+        self.manifest["summary"] = "Keep {{FOOTER_NOTE}} literal."
+        self.write_manifest()
+
+        render = self.run_script(
+            RENDERER,
+            "--manifest",
+            self.manifest_path,
+            "--output",
+            self.artifact,
+        )
+        self.assertEqual(render.returncode, 0, render.stderr)
+
+        html = (self.artifact / "index.html").read_text(encoding="utf-8")
+        self.assertIn("<title>Literal {{PANELS}} and bold</title>", html)
+        self.assertIn(
+            "<h1>Literal {{PANELS}} and <strong>bold</strong></h1>",
+            html,
+        )
+        self.assertIn(
+            '<meta name="description" content="Keep {{FOOTER_NOTE}} literal." />',
+            html,
+        )
+        self.assertEqual(validate_artifact(self.manifest, self.artifact), [])
+
+    def test_custom_legend_renders_all_three_tones(self):
+        self.manifest["legend"] = [
+            {"tone": "orange", "label": "message movement"},
+            {"tone": "blue", "label": "worker state"},
+            {"tone": "red", "label": "retry & dead letter"},
+        ]
+        self.write_manifest()
+
+        render = self.run_script(
+            RENDERER,
+            "--manifest",
+            self.manifest_path,
+            "--output",
+            self.artifact,
+        )
+        self.assertEqual(render.returncode, 0, render.stderr)
+
+        html = (self.artifact / "index.html").read_text(encoding="utf-8")
+        self.assertIn("message movement", html)
+        self.assertIn("worker state", html)
+        self.assertIn("retry &amp; dead letter", html)
+
+    def test_manifest_rejects_incomplete_or_duplicate_legend(self):
+        invalid = copy.deepcopy(self.manifest)
+        invalid["legend"] = [
+            {"tone": "orange", "label": "movement"},
+            {"tone": "orange", "label": "more movement"},
+        ]
+        errors = validate_manifest_data(invalid)
+        self.assertIn("legend must contain exactly 3 items", errors)
+
+        invalid["legend"].append({"tone": "red", "label": "failure"})
+        errors = validate_manifest_data(invalid)
+        self.assertIn("legend must use each tone exactly once", errors)
+
+    def test_renderer_and_validator_accept_escaped_image_path(self):
+        image = "assets/fixture-illustrations/01-a&b.png"
+        self.manifest["panels"][0]["image"] = image
+        write_png(self.artifact / image)
+        self.write_manifest()
+
+        render = self.run_script(
+            RENDERER,
+            "--manifest",
+            self.manifest_path,
+            "--output",
+            self.artifact,
+        )
+        self.assertEqual(render.returncode, 0, render.stderr)
+        errors = validate_artifact(self.manifest, self.artifact)
+        self.assertEqual(errors, [])
+
+    def test_renderer_accepts_unordered_trace_without_appendix(self):
+        self.manifest.pop("appendix")
+        self.manifest["panels"][0]["trace_ordered"] = False
+        self.write_manifest()
+
+        render = self.run_script(
+            RENDERER,
+            "--manifest",
+            self.manifest_path,
+            "--output",
+            self.artifact,
+        )
+        self.assertEqual(render.returncode, 0, render.stderr)
+
+        html = (self.artifact / "index.html").read_text(encoding="utf-8")
+        self.assertIn("<ul>", html)
+        self.assertNotIn('<section class="appendix">', html)
+        self.assertNotIn("{{APPENDIX}}", html)
 
     def test_renderer_requires_force_for_existing_index(self):
         first = self.run_script(
@@ -210,6 +311,19 @@ class ExplainerTests(unittest.TestCase):
         write_png(self.artifact / self.manifest["panels"][0]["image"], 100, 100)
         errors = validate_artifact(self.manifest, self.artifact)
         self.assertTrue(any("approximately 16:9" in error for error in errors), errors)
+
+    def test_artifact_rejects_zero_dimension_image(self):
+        render = self.run_script(
+            RENDERER,
+            "--manifest",
+            self.manifest_path,
+            "--output",
+            self.artifact,
+        )
+        self.assertEqual(render.returncode, 0, render.stderr)
+        write_png(self.artifact / self.manifest["panels"][0]["image"], 160, 0)
+        errors = validate_artifact(self.manifest, self.artifact)
+        self.assertTrue(any("dimensions must be non-zero" in error for error in errors), errors)
 
 
 if __name__ == "__main__":

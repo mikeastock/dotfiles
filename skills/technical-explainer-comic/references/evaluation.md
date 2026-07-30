@@ -7,7 +7,7 @@ Test the deterministic surface first, then instruction following in a fresh sess
 Run from the dotfiles repository:
 
 ```bash
-python3 skills/technical-explainer-comic/scripts/test_explainer.py
+./tests/test-technical-explainer-comic.sh
 python3 "${CODEX_HOME:-$HOME/.codex}/skills/.system/skill-creator/scripts/quick_validate.py" \
   skills/technical-explainer-comic
 make build
@@ -27,6 +27,7 @@ Positive prompts:
 - `Explain this OAuth service as a technical comic with expandable request traces.`
 - `Show me how this queue worker handles one job and 500 concurrent jobs in one HTML artifact.`
 - `Use $technical-explainer-comic to trace sign-in, refresh, and a normal API request.`
+- `Explain this pipeline as a technical comic, but use my mascot instead of the default character.`
 
 Negative prompts that should not invoke it:
 
@@ -38,7 +39,8 @@ Pass when all positive prompts select this skill and none of the negative prompt
 
 ## 3. Bounded forward test
 
-Choose a small system with:
+Choose a small system with no user-facing authorization flow, such as a queue consumer,
+scheduled job, event handler, or cache-invalidation path. It should have:
 
 - one entry endpoint
 - one persistent record
@@ -63,7 +65,14 @@ The session must produce:
 - desktop and mobile browser evidence
 
 Do not give the session the expected trace or panel content. The implementation under test is
-the evidence.
+the evidence. Pass only when:
+
+- the story distinguishes establishment from one normal operation, or explicitly proves there
+  is no separate establishment path
+- the lifecycle or failure beat remains present
+- registration, callback, token, refresh, or other authorization beats appear only when the
+  evidence packet cites implementation code for them
+- the legend labels describe how the three colors are actually used
 
 ## 4. Scoring rubric
 
@@ -72,9 +81,9 @@ Score each category from 0 to 2:
 | Category | 0 | 1 | 2 |
 | --- | --- | --- | --- |
 | Source accuracy | Unsupported claims | Mostly sourced | Every material claim sourced |
-| Trace completeness | Major transition missing | Main path only | Setup, request, lifecycle, failure |
+| Trace completeness | Major transition missing | Main path only | Establishment, normal operation, lifecycle, failure |
 | Visual explanation | Decorative or slide-like | Mixed | One clear metaphor per panel |
-| Technical drill-down | Vague details | Some exact mechanics | Endpoints, state, TTLs, checks |
+| Technical drill-down | Vague details | Some exact mechanics | Entry points, state, lifetimes, checks |
 | Artifact quality | Broken or unreadable | Works in one viewport | Desktop/mobile and interaction pass |
 
 Require at least 9/10.
@@ -86,6 +95,7 @@ Hard failures:
 - credentials or customer data in the artifact
 - broken image or missing alt text
 - no expandable technical trace
+- legend labels that do not match the panels
 - upload claimed without a verified URL
 
 ## 5. Publication test
