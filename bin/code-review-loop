@@ -1,0 +1,411 @@
+#!/usr/bin/env bash
+# code-review-loop — thin wrapper around the user Grok workflow `review-gauntlet`.
+#
+# Default launch is durable: keeps a Grok session alive for multi-hour review
+# rounds (Fable/Grok/Codex/Thermo) via zmx + interactive Grok.
+#
+# Usage:
+#   code-review-loop                          # current branch's open PR (via gh)
+#   code-review-loop --base origin/main --brief "Auth fix for trial gating"
+#   code-review-loop --commit abc123def
+#   code-review-loop --pr 1234
+#   code-review-loop --branch feature/x --max-rounds 3
+#   code-review-loop --skip codex,thermo
+#   code-review-loop --print
+#   code-review-loop --foreground              # attach TUI in this terminal (no zmx)
+#
+# Env:
+#   GROK_BIN              path to grok (default: grok on PATH, else ~/.grok/bin/grok)
+#   CODE_REVIEW_MODEL     optional -m model for grok
+#   CODE_REVIEW_SESSION   zmx session name (default: code-review-loop-<scope>)
+#   CODE_REVIEW_LOG       log path when detached (default: $TMPDIR/code-review-loop-<session>.log)
+
+set -euo pipefail
+
+WORKFLOW_NAME="review-gauntlet"
+WORKFLOW_PATH="${HOME}/.grok/workflows/${WORKFLOW_NAME}.rhai"
+
+usage() {
+  cat <<'EOF'
+code-review-loop — multi-model review → Fable triage → fix loop (Grok workflow)
+
+Usage:
+  code-review-loop [options]
+
+With no scope flags, detects the open PR for the current branch via `gh pr view`
+and reviews that. Brief defaults to the PR title when omitted.
+
+Scope (pick at most one primary):
+  (default)            Current branch's open PR (requires gh + an open PR)
+  --base <ref>         Diff merge-base(<ref>, HEAD)...HEAD (no PR auto-detect)
+  --commit <sha>       Review a single commit
+  --pr <n|url>         Review a PR (local checkout must be at PR head)
+  --branch <name>      Review that branch vs merge-base with origin/main
+  --head <ref>         Override reviewed head (with --base)
+
+Judgment / loop:
+  --brief <text>       What the change is for (defaults to PR title when on a PR)
+  --brief-file <path>  Read brief from file
+  --max-rounds <n>     1–5 (default 3)
+  --skip <list>        Comma-separated reviewers to skip: fable,grok,codex,thermo
+  --allow-dirty        Allow dirty worktree when reviewing a committed range
+
+Launch (default = durable detached session):
+  (default)            zmx + pseudo-TTY interactive Grok (survives long runs)
+  --foreground         Run interactive Grok in this terminal (no zmx detach)
+  --headless           Alias for durable detached launch (same as default)
+  --print              Print the grok command and args JSON; do not run
+  --cwd <path>         Working directory (default: current)
+  -h, --help           Show this help
+
+Examples:
+  code-review-loop
+  code-review-loop --brief "Focus on authz edge cases"
+  code-review-loop --pr 4521 --brief "Leveling export bug"
+  code-review-loop --base origin/main --brief "No PR; whole branch"
+  code-review-loop --skip codex --foreground
+
+Watch progress:
+  zmx list --short
+  zmx history <session>
+  Open Grok in the same cwd and use /workflows
+EOF
+}
+
+die() {
+  printf 'code-review-loop: %s\n' "$*" >&2
+  exit 1
+}
+
+# --- resolve grok ------------------------------------------------------------
+
+resolve_grok() {
+  if [[ -n "${GROK_BIN:-}" ]]; then
+    [[ -x "$GROK_BIN" ]] || die "GROK_BIN not executable: $GROK_BIN"
+    printf '%s\n' "$GROK_BIN"
+    return
+  fi
+  if command -v grok >/dev/null 2>&1; then
+    command -v grok
+    return
+  fi
+  if [[ -x "${HOME}/.grok/bin/grok" ]]; then
+    printf '%s\n' "${HOME}/.grok/bin/grok"
+    return
+  fi
+  die "grok not found on PATH or at ~/.grok/bin/grok"
+}
+
+# --- json helpers (python3; no jq required) ----------------------------------
+
+build_args_json() {
+  CODE_REVIEW_BASE="${base:-}" \
+  CODE_REVIEW_COMMIT="${commit:-}" \
+  CODE_REVIEW_PR="${pr:-}" \
+  CODE_REVIEW_BRANCH="${branch:-}" \
+  CODE_REVIEW_HEAD="${head:-}" \
+  CODE_REVIEW_BRIEF="${brief:-}" \
+  CODE_REVIEW_MAX_ROUNDS="${max_rounds:-}" \
+  CODE_REVIEW_SKIP="${skip:-}" \
+  CODE_REVIEW_ALLOW_DIRTY="${allow_dirty:-0}" \
+  python3 - <<'PY'
+import json, os
+
+def nonempty(key):
+    v = os.environ.get(key, "").strip()
+    return v if v else None
+
+args = {}
+
+commit = nonempty("CODE_REVIEW_COMMIT")
+pr = nonempty("CODE_REVIEW_PR")
+branch = nonempty("CODE_REVIEW_BRANCH")
+base = nonempty("CODE_REVIEW_BASE")
+head = nonempty("CODE_REVIEW_HEAD")
+brief = nonempty("CODE_REVIEW_BRIEF")
+max_rounds = nonempty("CODE_REVIEW_MAX_ROUNDS")
+skip = nonempty("CODE_REVIEW_SKIP")
+allow_dirty = os.environ.get("CODE_REVIEW_ALLOW_DIRTY", "0") == "1"
+
+if base:
+    args["base"] = base
+if commit:
+    args["commit"] = commit
+if pr:
+    args["pr"] = int(pr) if pr.isdigit() else pr
+if branch:
+    args["branch"] = branch
+if head:
+    args["head"] = head
+if brief:
+    args["brief"] = brief
+if max_rounds:
+    try:
+        args["max_rounds"] = int(max_rounds)
+    except ValueError as e:
+        raise SystemExit(f"invalid --max-rounds: {max_rounds}") from e
+if skip:
+    args["skip_reviewers"] = [s.strip() for s in skip.split(",") if s.strip()]
+if allow_dirty:
+    args["allow_dirty"] = True
+
+if not any(k in args for k in ("base", "commit", "pr", "branch")):
+    raise SystemExit("internal error: no review scope resolved")
+
+print(json.dumps(args, separators=(",", ":")))
+PY
+}
+
+# --- PR auto-detect ----------------------------------------------------------
+
+detect_current_pr() {
+  if ! command -v gh >/dev/null 2>&1; then
+    return 1
+  fi
+  local out
+  if [[ -n "${cwd}" ]]; then
+    out="$(cd "$cwd" && gh pr view --json number,title --jq '[.number, (.title // "")] | @tsv' 2>/dev/null)" || return 1
+  else
+    out="$(gh pr view --json number,title --jq '[.number, (.title // "")] | @tsv' 2>/dev/null)" || return 1
+  fi
+  [[ -n "$out" ]] || return 1
+  printf '%s\n' "$out"
+}
+
+resolve_default_scope() {
+  if [[ -n "$commit" || -n "$pr" || -n "$branch" || -n "$base" ]]; then
+    return 0
+  fi
+
+  local detected number title
+  if detected="$(detect_current_pr)"; then
+    number="${detected%%$'\t'*}"
+    title="${detected#*$'\t'}"
+    [[ -n "$number" ]] || die "gh pr view returned an empty PR number"
+    pr="$number"
+    if [[ -z "$brief" && -n "$title" ]]; then
+      brief="$title"
+    fi
+    printf 'code-review-loop: no scope flags — using open PR #%s\n' "$pr" >&2
+    if [[ -n "$title" ]]; then
+      printf '  title: %s\n' "$title" >&2
+    fi
+    return 0
+  fi
+
+  base="origin/main"
+  printf 'code-review-loop: no open PR for this branch (or gh unavailable) — falling back to --base %s\n' "$base" >&2
+  printf '  tip: open/create a PR, or pass --pr / --commit / --branch / --base explicitly\n' >&2
+}
+
+session_name_for_scope() {
+  if [[ -n "${CODE_REVIEW_SESSION:-}" ]]; then
+    printf '%s\n' "$CODE_REVIEW_SESSION"
+    return
+  fi
+  local tag="main"
+  if [[ -n "$pr" ]]; then
+    tag="pr${pr}"
+  elif [[ -n "$commit" ]]; then
+    tag="c${commit:0:8}"
+  elif [[ -n "$branch" ]]; then
+    tag="b$(printf '%s' "$branch" | tr -c 'A-Za-z0-9._-' '_')"
+  elif [[ -n "$base" ]]; then
+    tag="base-$(printf '%s' "$base" | tr -c 'A-Za-z0-9._-' '_')"
+  fi
+  # Keep zmx session names short and stable per scope so re-runs replace cleanly.
+  printf 'code-review-loop-%s\n' "$tag"
+}
+
+# --- parse args --------------------------------------------------------------
+
+base=""
+commit=""
+pr=""
+branch=""
+head=""
+brief=""
+max_rounds=""
+skip=""
+allow_dirty=0
+# launch_mode: durable (default) | foreground
+launch_mode="durable"
+print_only=0
+cwd=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    --base)
+      [[ $# -ge 2 ]] || die "--base requires a value"
+      base="$2"
+      shift 2
+      ;;
+    --commit)
+      [[ $# -ge 2 ]] || die "--commit requires a value"
+      commit="$2"
+      shift 2
+      ;;
+    --pr)
+      [[ $# -ge 2 ]] || die "--pr requires a value"
+      pr="$2"
+      shift 2
+      ;;
+    --branch)
+      [[ $# -ge 2 ]] || die "--branch requires a value"
+      branch="$2"
+      shift 2
+      ;;
+    --head)
+      [[ $# -ge 2 ]] || die "--head requires a value"
+      head="$2"
+      shift 2
+      ;;
+    --brief)
+      [[ $# -ge 2 ]] || die "--brief requires a value"
+      brief="$2"
+      shift 2
+      ;;
+    --brief-file)
+      [[ $# -ge 2 ]] || die "--brief-file requires a value"
+      [[ -f "$2" ]] || die "brief file not found: $2"
+      brief="$(cat "$2")"
+      shift 2
+      ;;
+    --max-rounds)
+      [[ $# -ge 2 ]] || die "--max-rounds requires a value"
+      max_rounds="$2"
+      shift 2
+      ;;
+    --skip)
+      [[ $# -ge 2 ]] || die "--skip requires a value"
+      skip="$2"
+      shift 2
+      ;;
+    --allow-dirty)
+      allow_dirty=1
+      shift
+      ;;
+    --headless)
+      # Historical flag: keep as durable detach (the only path that works).
+      launch_mode="durable"
+      shift
+      ;;
+    --foreground|--attach)
+      launch_mode="foreground"
+      shift
+      ;;
+    --print|--dry-run)
+      print_only=1
+      shift
+      ;;
+    --cwd)
+      [[ $# -ge 2 ]] || die "--cwd requires a value"
+      cwd="$2"
+      shift 2
+      ;;
+    *)
+      die "unknown argument: $1 (try --help)"
+      ;;
+  esac
+done
+
+primary=0
+[[ -n "$commit" ]] && primary=$((primary + 1))
+[[ -n "$pr" ]] && primary=$((primary + 1))
+[[ -n "$branch" ]] && primary=$((primary + 1))
+if [[ $primary -gt 1 ]]; then
+  die "use only one of --commit, --pr, or --branch"
+fi
+
+resolve_default_scope
+
+[[ -f "$WORKFLOW_PATH" ]] || die "workflow not found: $WORKFLOW_PATH
+Install/save review-gauntlet under ~/.grok/workflows/ first."
+
+GROK="$(resolve_grok)"
+ARGS_JSON="$(build_args_json)"
+SESSION="$(session_name_for_scope)"
+LOG_PATH="${CODE_REVIEW_LOG:-${TMPDIR:-/tmp}/${SESSION}.log}"
+
+SLASH_PROMPT="/workflow ${WORKFLOW_NAME} ${ARGS_JSON}"
+
+# Interactive grok keeps the host process alive across workflow completion.
+build_interactive_cmd() {
+  local -a c=( "$GROK" )
+  if [[ -n "$cwd" ]]; then
+    c+=( --cwd "$cwd" )
+  fi
+  if [[ -n "${CODE_REVIEW_MODEL:-}" ]]; then
+    c+=( -m "$CODE_REVIEW_MODEL" )
+  fi
+  c+=( --always-approve "$SLASH_PROMPT" )
+  # Print as a single shell-quoted command for script/zmx.
+  printf '%q ' "${c[@]}"
+}
+
+if [[ $print_only -eq 1 ]]; then
+  printf 'workflow: %s\n' "$WORKFLOW_PATH"
+  printf 'args:     %s\n' "$ARGS_JSON"
+  printf 'mode:     %s\n' "$launch_mode"
+  printf 'session:  %s\n' "$SESSION"
+  printf 'log:      %s\n' "$LOG_PATH"
+  printf 'command:\n  '
+  build_interactive_cmd
+  printf '\n'
+  if [[ "$launch_mode" == "durable" ]]; then
+    printf 'detach:   zmx run %s + script (pseudo-TTY)\n' "$SESSION"
+  fi
+  exit 0
+fi
+
+printf 'code-review-loop: launching %s\n' "$WORKFLOW_NAME" >&2
+printf '  args: %s\n' "$ARGS_JSON" >&2
+printf '  mode: %s\n' "$launch_mode" >&2
+
+case "$launch_mode" in
+  foreground)
+    printf '  tip: watch progress with /workflows in this TUI\n' >&2
+    # shellcheck disable=SC2046
+    eval exec $(build_interactive_cmd)
+    ;;
+
+  durable)
+    command -v zmx >/dev/null 2>&1 || die "zmx not found — install zmx, or use --foreground"
+    command -v script >/dev/null 2>&1 || die "script(1) not found — needed for a pseudo-TTY; use --foreground"
+
+    # Replace any prior same-scope session so re-runs do not pile up.
+    zmx kill "$SESSION" >/dev/null 2>&1 || true
+
+    # Interactive Grok under script so the process has a TTY; zmx detaches so
+    # the run survives the calling shell. Log via script's typescript file.
+    INNER="$(build_interactive_cmd)"
+    # Outer shell: export TERM, run script -qefc with the grok command, tee is script itself.
+    ZMX_CMD=$(cat <<EOS
+set -euo pipefail
+export TERM="\${TERM:-xterm-256color}"
+# script provides a real TTY; -q quiet, -e return child status, -f flush, -c command
+script -qefc ${INNER@Q} ${LOG_PATH@Q}
+EOS
+)
+
+    # Prefer -d for detach; redirect zmx bootstrap noise away.
+    if ! zmx run "$SESSION" -d bash -lc "$ZMX_CMD" >/dev/null 2>&1; then
+      die "failed to start zmx session '$SESSION'"
+    fi
+
+    printf '  session: %s\n' "$SESSION" >&2
+    printf '  log:     %s\n' "$LOG_PATH" >&2
+    printf '  tip:     zmx list --short | zmx history %s\n' "$SESSION" >&2
+    printf '  tip:     open grok in the same cwd and use /workflows\n' >&2
+    printf 'code-review-loop: detached (durable). Workflow is running in session %s.\n' "$SESSION" >&2
+    exit 0
+    ;;
+
+  *)
+    die "internal error: unknown launch_mode=$launch_mode"
+    ;;
+esac

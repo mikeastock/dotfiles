@@ -181,6 +181,23 @@ dot-home-symlinks:
 			ln -s $$script $(HOME)/.local/bin/$$name; \
 		fi; \
 	done
+	@# Symlink Grok user workflows into ~/.grok/workflows/
+	@mkdir -p $(HOME)/.grok/workflows
+	@if [ -d $(CURDIR)/configs/grok/workflows ]; then \
+		for wf in $(CURDIR)/configs/grok/workflows/*; do \
+			[ -f "$$wf" ] || continue; \
+			name=$$(basename $$wf); \
+			if [ -L $(HOME)/.grok/workflows/$$name ]; then \
+				:; \
+			elif [ -e $(HOME)/.grok/workflows/$$name ]; then \
+				echo "✗ Error: $(HOME)/.grok/workflows/$$name exists and is not a symlink"; \
+				echo "  Remove it manually to proceed"; \
+				exit 1; \
+			else \
+				ln -s $$wf $(HOME)/.grok/workflows/$$name; \
+			fi; \
+		done; \
+	fi
 	@echo "✓ Home symlinks created"
 
 # Symlink .config files and directories
@@ -249,6 +266,14 @@ dot-clean:
 		name=$$(basename $$script); \
 		[ -L $(HOME)/.local/bin/$$name ] && rm $(HOME)/.local/bin/$$name || true; \
 	done
+	@# ~/.grok/workflows
+	@if [ -d $(CURDIR)/configs/grok/workflows ]; then \
+		for wf in $(CURDIR)/configs/grok/workflows/*; do \
+			[ -f "$$wf" ] || continue; \
+			name=$$(basename $$wf); \
+			[ -L $(HOME)/.grok/workflows/$$name ] && rm $(HOME)/.grok/workflows/$$name || true; \
+		done; \
+	fi
 	@# Config directories
 	@for dir in $(CONFIG_DIRS); do \
 		[ -L $(HOME)/.config/$$dir ] && rm $(HOME)/.config/$$dir || true; \
