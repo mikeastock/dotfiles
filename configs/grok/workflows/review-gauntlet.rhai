@@ -177,10 +177,8 @@ fn trimmed(s) {
     }
 }
 
-fn max_rounds_from_args(a) {
-    if a == () { return 3; }
-    let n = a.max_rounds;
-    if n == () { return 3; }
+// Clamp max_rounds to 1..5 (default 3).
+fn clamp_rounds(n) {
     if type_of(n) == "i64" || type_of(n) == "f64" {
         let i = n;
         if i < 1 { return 1; }
@@ -190,25 +188,229 @@ fn max_rounds_from_args(a) {
     3
 }
 
-fn brief_from_args(a) {
-    if a == () { return ""; }
-    let b = a.brief;
-    if b == () { return ""; }
-    trimmed(b)
+// Parse skip list from array or comma-separated string → array of names.
+fn parse_skip_list(v) {
+    let out = [];
+    if v == () { return out; }
+    if type_of(v) == "array" {
+        for s in v {
+            let t = trimmed(s.to_string());
+            if t != "" { out.push(t); }
+        }
+        return out;
+    }
+    if type_of(v) == "string" {
+        // Split on commas without regex: hand-roll.
+        let s = trimmed(v);
+        if s == "" { return out; }
+        let cur = "";
+        let i = 0;
+        let n = s.len();
+        while i < n {
+            let ch = s[i];
+            if ch == ',' {
+                cur.trim();
+                if cur != "" { out.push(cur); }
+                cur = "";
+            } else {
+                cur += ch;
+            }
+            i += 1;
+        }
+        cur.trim();
+        if cur != "" { out.push(cur); }
+        return out;
+    }
+    out
 }
 
-fn scope_mode_label(a) {
-    if a == () { return "default-main"; }
-    if a.commit != () && trimmed(a.commit.to_string()) != "" { return "commit"; }
-    if a.pr != () && trimmed(a.pr.to_string()) != "" { return "pr"; }
-    if a.branch != () && trimmed(a.branch.to_string()) != "" { return "branch"; }
-    if a.base != () && trimmed(a.base.to_string()) != "" { return "base"; }
-    "default-main"
+// Find first index of needle in haystack, or -1.
+fn find_substr(hay, needle) {
+    if type_of(hay) != "string" || type_of(needle) != "string" { return -1; }
+    let hn = hay.len();
+    let nn = needle.len();
+    if nn == 0 { return 0; }
+    if nn > hn { return -1; }
+    let i = 0;
+    while i + nn <= hn {
+        if hay.sub_string(i, nn) == needle { return i; }
+        i += 1;
+    }
+    -1
 }
 
-fn reviewer_enabled(a, name) {
-    if a == () { return true; }
-    let skip = a.skip_reviewers;
+// True if s looks like a pure decimal integer (PR number).
+fn is_digits(s) {
+    if type_of(s) != "string" || s == "" { return false; }
+    let i = 0;
+    let n = s.len();
+    while i < n {
+        let ch = s[i];
+        if ch < '0' || ch > '9' { return false; }
+        i += 1;
+    }
+    true
+}
+
+// True if s looks like a full/short git SHA (7–40 hex).
+fn is_hex_sha(s) {
+    if type_of(s) != "string" { return false; }
+    let n = s.len();
+    if n < 7 || n > 40 { return false; }
+    let i = 0;
+    while i < n {
+        let ch = s[i];
+        let ok = (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F');
+        if !ok { return false; }
+        i += 1;
+    }
+    true
+}
+
+// Classify a free-form target string into a scope mode + value.
+// Returns #{ mode, pr, commit, branch, base } with only the relevant field set.
+fn classify_target(raw) {
+    let t = trimmed(raw.to_string());
+    if t == "" {
+        return #{ mode: "auto", pr: "", commit: "", branch: "", base: "" };
+    }
+    // Strip leading '#'
+    if t.len() > 1 && t[0] == '#' {
+        t = t.sub_string(1, t.len() - 1);
+        t.trim();
+    }
+    // GitHub PR URL → digits after /pull/
+    let pull_marker = "/pull/";
+    let idx = find_substr(t, pull_marker);
+    if idx >= 0 {
+        let start = idx + pull_marker.len();
+        let rest = t.sub_string(start, t.len() - start);
+        let num = "";
+        let j = 0;
+        while j < rest.len() {
+            let ch = rest[j];
+            if ch >= '0' && ch <= '9' {
+                num += ch;
+                j += 1;
+            } else {
+                break;
+            }
+        }
+        if num != "" {
+            return #{ mode: "pr", pr: num, commit: "", branch: "", base: "" };
+        }
+    }
+    if is_digits(t) {
+        return #{ mode: "pr", pr: t, commit: "", branch: "", base: "" };
+    }
+    if is_hex_sha(t) {
+        return #{ mode: "commit", pr: "", commit: t, branch: "", base: "" };
+    }
+    // Base comparison targets
+    if t == "main" || t == "master" || t == "origin/main" || t == "origin/master" || find_substr(t, "...") >= 0 {
+        return #{ mode: "base", pr: "", commit: "", branch: "", base: t };
+    }
+    // Default: branch name
+    return #{ mode: "branch", pr: "", commit: "", branch: t, base: "" };
+}
+
+// Normalize any supported args shape into a flat scope map.
+// Supported:
+//   (none) / {}                          → auto (open PR, else origin/main)
+//   "11571" | "#11571" | PR URL | sha    → classified target
+//   "feature/x" | "origin/main"          → branch or base
+//   { target: "..." }                    → same as string target
+//   { pr|commit|branch|base: ... }       → explicit (still works)
+// Optional on objects: brief, rounds|max_rounds, skip|skip_reviewers, dirty|allow_dirty, head
+fn normalize_args(raw) {
+    let out = #{
+        mode: "auto",
+        pr: "",
+        commit: "",
+        branch: "",
+        base: "",
+        head: "",
+        brief: "",
+        max_rounds: 3,
+        skip_reviewers: [],
+        allow_dirty: false,
+    };
+
+    if raw == () {
+        return out;
+    }
+
+    // Plain string / number → target
+    if type_of(raw) == "string" || type_of(raw) == "i64" || type_of(raw) == "f64" {
+        let c = classify_target(raw.to_string());
+        out.mode = c.mode;
+        out.pr = c.pr;
+        out.commit = c.commit;
+        out.branch = c.branch;
+        out.base = c.base;
+        return out;
+    }
+
+    if type_of(raw) != "map" {
+        return out;
+    }
+
+    // Optional common fields
+    if raw.brief != () { out.brief = trimmed(raw.brief.to_string()); }
+    if raw.rounds != () { out.max_rounds = clamp_rounds(raw.rounds); }
+    else if raw.max_rounds != () { out.max_rounds = clamp_rounds(raw.max_rounds); }
+    if raw.skip != () { out.skip_reviewers = parse_skip_list(raw.skip); }
+    else if raw.skip_reviewers != () { out.skip_reviewers = parse_skip_list(raw.skip_reviewers); }
+    if raw.dirty == true || raw.allow_dirty == true { out.allow_dirty = true; }
+    if raw.head != () { out.head = trimmed(raw.head.to_string()); }
+
+    // Preferred simple form: target
+    if raw.target != () && trimmed(raw.target.to_string()) != "" {
+        let c = classify_target(raw.target.to_string());
+        out.mode = c.mode;
+        out.pr = c.pr;
+        out.commit = c.commit;
+        out.branch = c.branch;
+        out.base = c.base;
+        return out;
+    }
+
+    // Explicit legacy keys
+    if raw.pr != () && trimmed(raw.pr.to_string()) != "" {
+        out.mode = "pr";
+        out.pr = trimmed(raw.pr.to_string());
+        return out;
+    }
+    if raw.commit != () && trimmed(raw.commit.to_string()) != "" {
+        out.mode = "commit";
+        out.commit = trimmed(raw.commit.to_string());
+        return out;
+    }
+    if raw.branch != () && trimmed(raw.branch.to_string()) != "" {
+        out.mode = "branch";
+        out.branch = trimmed(raw.branch.to_string());
+        return out;
+    }
+    if raw.base != () && trimmed(raw.base.to_string()) != "" {
+        out.mode = "base";
+        out.base = trimmed(raw.base.to_string());
+        return out;
+    }
+
+    // Empty object → auto
+    out.mode = "auto";
+    return out;
+}
+
+fn scope_mode_label(spec) {
+    if spec == () { return "auto"; }
+    if spec.mode != () { return trimmed(spec.mode.to_string()); }
+    "auto"
+}
+
+fn reviewer_enabled(spec, name) {
+    if spec == () { return true; }
+    let skip = spec.skip_reviewers;
     if skip == () { return true; }
     if type_of(skip) != "array" { return true; }
     for s in skip {
@@ -321,18 +523,21 @@ fn fable_authority_rules() {
 }
 
 // --- args --------------------------------------------------------------------
+//
+// Simple shapes (preferred):
+//   /workflow review-gauntlet
+//   /workflow review-gauntlet 11571
+//   /workflow review-gauntlet "#11571"
+//   /workflow review-gauntlet {"target":"11571"}
+//   /workflow review-gauntlet {"target":"origin/main","brief":"optional note"}
+//   /workflow review-gauntlet {"target":"feature/x","rounds":2,"skip":"codex"}
+// Brief is always optional. Empty/missing args → open PR for this branch, else origin/main.
 
-if args == () {
-    pause("verification", "Pass args for review-gauntlet. Examples:\n  #{ base: \"origin/main\", brief: \"...\" }\n  #{ commit: \"abc123\", brief: \"...\" }\n  #{ pr: 123, brief: \"...\" }\n  #{ branch: \"feature/x\", brief: \"...\" }\nOptional: max_rounds (1-5, default 3), head, skip_reviewers: [\"codex\"], allow_dirty: true");
-}
-
-let max_rounds = max_rounds_from_args(args);
-let user_brief = brief_from_args(args);
-let mode = scope_mode_label(args);
-let allow_dirty = false;
-if args.allow_dirty != () && args.allow_dirty == true {
-    allow_dirty = true;
-}
+let scope = normalize_args(args);
+let max_rounds = scope.max_rounds;
+let user_brief = scope.brief;
+let mode = scope_mode_label(scope);
+let allow_dirty = scope.allow_dirty == true;
 
 log("review-gauntlet mode=" + mode + " max_rounds=" + max_rounds.to_string() + " allow_dirty=" + allow_dirty.to_string());
 
@@ -343,14 +548,16 @@ phase("Scope");
 let scope_prompt = "";
 scope_prompt += "You resolve an immutable git review scope for a multi-reviewer gauntlet. Do not edit source.\n";
 scope_prompt += "Work at the repo root (git rev-parse --show-toplevel).\n\n";
-scope_prompt += "ARGS (JSON):\n";
-scope_prompt += json_encode(args) + "\n\n";
-scope_prompt += "Resolve exactly one scope:\n";
-scope_prompt += "1. args.commit set → review that single commit (base=commit^, head=commit) or the range it introduced.\n";
-scope_prompt += "2. args.pr set → ensure local checkout is at the PR head; base = PR base ref/SHA; head = PR head SHA.\n";
-scope_prompt += "3. args.branch set → head = that branch tip; base = merge-base with origin/main (or args.base if set).\n";
-scope_prompt += "4. args.base set (no commit/pr/branch) → head = args.head or HEAD; base = merge-base(args.base, head).\n";
-scope_prompt += "5. none of the above → base = origin/main (fetch if needed), head = HEAD, merge-base comparison.\n\n";
+scope_prompt += "NORMALIZED SCOPE (JSON):\n";
+scope_prompt += json_encode(scope) + "\n\n";
+scope_prompt += "Resolve scope from mode:\n";
+scope_prompt += "1. mode=commit → review that single commit (base=commit^, head=commit).\n";
+scope_prompt += "2. mode=pr → ensure local checkout is at the PR head; base = PR base; head = PR head SHA.\n";
+scope_prompt += "   Use `gh pr view <pr>` if needed. pr field may be a number or URL fragment.\n";
+scope_prompt += "3. mode=branch → head = that branch tip; base = merge-base with origin/main.\n";
+scope_prompt += "4. mode=base → head = scope.head or HEAD; base = merge-base(scope.base, head).\n";
+scope_prompt += "5. mode=auto (default) → if `gh pr view` finds an open PR for the current branch, use that PR;\n";
+scope_prompt += "   else base = origin/main, head = HEAD. Prefer the PR title as brief when brief is empty.\n\n";
 scope_prompt += "Rules:\n";
 scope_prompt += "- Record base_sha, head_sha, merge_base_sha via git rev-parse (full SHAs).\n";
 scope_prompt += "- Diff is three-dot: git diff <merge_base_sha>...<head_sha> (or single-commit range for commit mode).\n";
@@ -358,10 +565,11 @@ scope_prompt += "- Reject empty diffs (ok=false, error explains).\n";
 scope_prompt += "- If the worktree is dirty and allow_dirty is not true, set ok=false and explain; do not stash/clean.\n";
 scope_prompt += "- Create artifact_dir under ${TMPDIR:-/tmp}/review-gauntlet-<utc>-<pid> with mode 0700.\n";
 scope_prompt += "- Write scope.json and brief.md into artifact_dir.\n";
-scope_prompt += "- brief: combine args.brief with observed diff_stat and key changed paths; no secrets, no .env contents.\n";
+scope_prompt += "- brief: optional. If scope.brief is non-empty, use it; else synthesize from PR title (auto/pr)\n";
+scope_prompt += "  and/or diff_stat + key paths. Never require the user to pass a brief. No secrets/.env.\n";
 scope_prompt += "- branch_name: current or reviewed branch short name for Grok /review --branch.\n";
 scope_prompt += "- changed_files: list from git diff --name-only (cap 200).\n";
-scope_prompt += "- Use shell (git, mkdir, python3). Read AGENTS.md / README only as needed for brief context.\n";
+scope_prompt += "- Use shell (git, mkdir, python3, gh). Read AGENTS.md / README only as needed for brief context.\n";
 scope_prompt += "- Return the schema fields. ok=true only when SHAs resolve and the diff is non-empty.\n";
 
 let scope_res = agent(scope_prompt, #{
@@ -466,7 +674,7 @@ while round < max_rounds {
     let review_jobs = [];
 
     // --- Fable ---------------------------------------------------------------
-    if reviewer_enabled(args, "fable") {
+    if reviewer_enabled(scope, "fable") {
         let p = "";
         p += "Run an EXTERNAL Fable code review. You orchestrate only; Fable authors the findings.\n";
         p += "Do not edit application source. Do not implement fixes.\n\n";
@@ -498,11 +706,11 @@ while round < max_rounds {
             output_schema: review_schema,
         });
     } else {
-        log("Skipping fable (args.skip_reviewers)");
+        log("Skipping fable (scope.skip_reviewers)");
     }
 
     // --- Grok ----------------------------------------------------------------
-    if reviewer_enabled(args, "grok") {
+    if reviewer_enabled(scope, "grok") {
         let p = "";
         p += "Run an EXTERNAL independent Grok Build code review via the grok-review skill wrapper.\n";
         p += "Do not edit application source. Do not implement fixes.\n\n";
@@ -529,11 +737,11 @@ while round < max_rounds {
             output_schema: review_schema,
         });
     } else {
-        log("Skipping grok (args.skip_reviewers)");
+        log("Skipping grok (scope.skip_reviewers)");
     }
 
     // --- Codex ---------------------------------------------------------------
-    if reviewer_enabled(args, "codex") {
+    if reviewer_enabled(scope, "codex") {
         let p = "";
         p += "Run an EXTERNAL Codex non-interactive code review. Do not edit application source.\n\n";
         p += scope_blob + "\n";
@@ -554,11 +762,11 @@ while round < max_rounds {
             output_schema: review_schema,
         });
     } else {
-        log("Skipping codex (args.skip_reviewers)");
+        log("Skipping codex (scope.skip_reviewers)");
     }
 
     // --- Thermonuclear -------------------------------------------------------
-    if reviewer_enabled(args, "thermo") {
+    if reviewer_enabled(scope, "thermo") {
         let p = "";
         p += "Run a Thermonuclear (thermo-nuclear-code-review) structural review. Review-only; no edits.\n\n";
         p += scope_blob + "\n";
@@ -585,11 +793,11 @@ while round < max_rounds {
             output_schema: review_schema,
         });
     } else {
-        log("Skipping thermo (args.skip_reviewers)");
+        log("Skipping thermo (scope.skip_reviewers)");
     }
 
     if review_jobs.len() == 0 {
-        pause("verification", "All reviewers were skipped via args.skip_reviewers. Enable at least one of: fable, grok, codex, thermo.");
+        pause("verification", "All reviewers were skipped via skip. Enable at least one of: fable, grok, codex, thermo.");
     }
 
     let review_results = parallel(review_jobs);
