@@ -25,6 +25,7 @@ test_make_help() {
     assert_output_contains "$output" "make install" "Help shows install command"
     assert_output_contains "$output" "make install-amp-plugins" "Help shows Amp plugin install command"
     assert_output_contains "$output" "make install-tools" "Help shows external tool install command"
+    assert_output_contains "$output" "make setup-tools" "Help shows external tool setup command"
     assert_output_contains "$output" "make install-prompts" "Help shows install-prompts command"
     assert_output_contains "$output" "make install-themes" "Help shows install-themes command"
     assert_output_contains "$output" "make build" "Help shows build command"
@@ -38,9 +39,14 @@ test_make_install_tools() {
     log_test "Testing 'make install-tools' (sandboxed)"
     cd "$PROJECT_DIR"
 
-    local fake_installer args_log output
+    local fake_installer args_log fake_bin fake_cargo scopey_args_log scopey_binary_args_log output
     fake_installer="$SANDBOX_DIR/dcg-install.sh"
     args_log="$SANDBOX_DIR/dcg-install-args.log"
+    fake_bin="$SANDBOX_DIR/bin"
+    fake_cargo="$fake_bin/cargo"
+    scopey_args_log="$SANDBOX_DIR/scopey-install-args.log"
+    scopey_binary_args_log="$SANDBOX_DIR/scopey-binary-args.log"
+    mkdir -p "$fake_bin"
     cat > "$fake_installer" <<'EOF'
 #!/usr/bin/env bash
 printf '%s\n' "$@" > "$DCG_TEST_ARGS_LOG"
@@ -50,10 +56,37 @@ chmod +x "$HOME/.local/bin/dcg"
 EOF
     chmod +x "$fake_installer"
 
-    output=$(HOME="$SANDBOX_DIR" DCG_INSTALLER_PATH="$fake_installer" DCG_TEST_ARGS_LOG="$args_log" make install-tools 2>&1)
+    cat > "$fake_cargo" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$@" > "$SCOPEY_TEST_ARGS_LOG"
+root=""
+while [ "$#" -gt 0 ]; do
+    if [ "$1" = "--root" ]; then
+        root="$2"
+        shift 2
+    else
+        shift
+    fi
+done
+mkdir -p "$root/bin"
+cat > "$root/bin/scopey" <<'SCRIPT'
+#!/usr/bin/env bash
+if [ -n "${SCOPEY_TEST_BINARY_ARGS_LOG:-}" ]; then
+    printf '%s\n' "$@" > "$SCOPEY_TEST_BINARY_ARGS_LOG"
+fi
+if [ "$1" = "--version" ]; then
+    echo "scopey 0.1.1"
+fi
+SCRIPT
+chmod +x "$root/bin/scopey"
+EOF
+    chmod +x "$fake_cargo"
+
+    output=$(HOME="$SANDBOX_DIR" PATH="$fake_bin:$PATH" DCG_INSTALLER_PATH="$fake_installer" DCG_TEST_ARGS_LOG="$args_log" SCOPEY_TEST_ARGS_LOG="$scopey_args_log" SCOPEY_TEST_BINARY_ARGS_LOG="$scopey_binary_args_log" make install-tools 2>&1)
 
     assert_output_contains "$output" "Installing external tools" "Install shows external tool progress"
     assert_file_exists "$SANDBOX_DIR/.local/bin/dcg" "dcg binary was installed"
+    assert_file_exists "$SANDBOX_DIR/.local/bin/scopey" "scopey binary was installed"
 
     local args
     args=$(<"$args_log")
@@ -63,6 +96,20 @@ EOF
     assert_output_contains "$args" "$SANDBOX_DIR/.local/bin" "dcg installs under the active HOME"
     assert_output_contains "$args" "--verify" "dcg installer runs its self-test"
     assert_output_contains "$args" "--no-configure" "dcg installer cannot mutate agent configs"
+
+    local scopey_args
+    scopey_args=$(<"$scopey_args_log")
+    assert_output_contains "$scopey_args" "--git" "scopey installs from its Git repository"
+    assert_output_contains "$scopey_args" "https://github.com/ArchAstro/scopey.git" "scopey uses the configured repository"
+    assert_output_contains "$scopey_args" "--tag" "scopey receives a pinned tag"
+    assert_output_contains "$scopey_args" "v0.1.1" "scopey receives the configured version"
+    assert_output_contains "$scopey_args" "--root" "scopey installs under an explicit root"
+    assert_output_contains "$scopey_args" "$SANDBOX_DIR/.local" "scopey installs under the active HOME"
+    assert_output_contains "$scopey_args" "--locked" "scopey uses its locked dependency graph"
+
+    output=$(HOME="$SANDBOX_DIR" PATH="$fake_bin:$PATH" SCOPEY_TEST_BINARY_ARGS_LOG="$scopey_binary_args_log" make setup-tools 2>&1)
+    assert_output_contains "$output" "Configuring external tools" "Setup shows external tool progress"
+    assert_output_contains "$(<"$scopey_binary_args_log")" "setup" "scopey setup runs after managed config installation"
 }
 
 # Test: make build
@@ -93,9 +140,9 @@ test_make_build() {
 
     # Check that skills were built (at least one skill should exist)
     local skill_count
-    skill_count=$(find "$PROJECT_DIR/build/claude" -maxdepth 1 -type d | wc -l)
-    if [ "$skill_count" -gt 1 ]; then
-        log_info "PASS: Build created skills ($((skill_count - 1)) skills found)"
+    skill_count=$(fd --max-depth 1 --type d . "$PROJECT_DIR/build/claude" | wc -l)
+    if [ "$skill_count" -gt 0 ]; then
+        log_info "PASS: Build created skills ($skill_count skills found)"
         TESTS_PASSED=$((TESTS_PASSED + 1))
     else
         log_error "FAIL: Build did not create any skills"
@@ -294,7 +341,7 @@ test_make_install_skills() {
 
     # Check directories were created in sandbox
     local amp_skills_count
-    amp_skills_count=$(find "$SANDBOX_DIR/.config/agents/skills" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
+    amp_skills_count=$( ( fd --max-depth 1 --type d . "$SANDBOX_DIR/.config/agents/skills" 2>/dev/null || true ) | wc -l)
     if [ "$amp_skills_count" -gt 0 ]; then
         log_info "PASS: Amp skills installed ($amp_skills_count directories)"
         TESTS_PASSED=$((TESTS_PASSED + 1))
@@ -304,7 +351,7 @@ test_make_install_skills() {
     fi
 
     local claude_skills_count
-    claude_skills_count=$(find "$SANDBOX_DIR/.claude/skills" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
+    claude_skills_count=$( ( fd --max-depth 1 --type d . "$SANDBOX_DIR/.claude/skills" 2>/dev/null || true ) | wc -l)
     if [ "$claude_skills_count" -gt 0 ]; then
         log_info "PASS: Claude skills installed ($claude_skills_count directories)"
         TESTS_PASSED=$((TESTS_PASSED + 1))
@@ -316,7 +363,7 @@ test_make_install_skills() {
 
 
     local pi_skills_count
-    pi_skills_count=$(find "$SANDBOX_DIR/.agents/skills" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
+    pi_skills_count=$( ( fd --max-depth 1 --type d . "$SANDBOX_DIR/.agents/skills" 2>/dev/null || true ) | wc -l)
     if [ "$pi_skills_count" -gt 0 ]; then
         log_info "PASS: Pi skills installed ($pi_skills_count directories)"
         TESTS_PASSED=$((TESTS_PASSED + 1))
@@ -510,7 +557,7 @@ PY
 
     # Check if extensions directory has any extensions
     local extensions_count
-    extensions_count=$(find "$SANDBOX_DIR/.pi/agent/extensions" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
+    extensions_count=$( ( fd --max-depth 1 --type d . "$SANDBOX_DIR/.pi/agent/extensions" 2>/dev/null || true ) | wc -l)
     if [ "$extensions_count" -gt 0 ]; then
         log_info "PASS: Pi extensions installed ($extensions_count directories)"
         TESTS_PASSED=$((TESTS_PASSED + 1))
@@ -613,9 +660,10 @@ test_make_install() {
 
     # Run full install with sandbox HOME
     local output
-    output=$(HOME="$SANDBOX_DIR" XDG_STATE_HOME="$SANDBOX_DIR/.local/state" DCG_INSTALLER_PATH="$SANDBOX_DIR/dcg-install.sh" DCG_TEST_ARGS_LOG="$SANDBOX_DIR/dcg-install-args.log" make install 2>&1)
+    output=$(HOME="$SANDBOX_DIR" XDG_STATE_HOME="$SANDBOX_DIR/.local/state" PATH="$SANDBOX_DIR/bin:$PATH" DCG_INSTALLER_PATH="$SANDBOX_DIR/dcg-install.sh" DCG_TEST_ARGS_LOG="$SANDBOX_DIR/dcg-install-args.log" SCOPEY_TEST_ARGS_LOG="$SANDBOX_DIR/scopey-install-args.log" make install 2>&1)
 
     assert_output_contains "$output" "All skills, prompt templates, themes, extensions, and Amp plugins installed" "Install shows completion message"
+    assert_output_contains "$output" "Configuring external tools" "Install configures external agent tools after managed configs"
     assert_file_exists "$SANDBOX_DIR/.pi/agent/prompts/refactor-pass.md" "Install includes Pi prompts"
     assert_file_exists "$SANDBOX_DIR/.pi/agent/themes/catppuccin-latte.json" "Install includes Pi themes"
     assert_file_exists "$SANDBOX_DIR/.pi/agent/settings.json" "Install includes Pi settings"

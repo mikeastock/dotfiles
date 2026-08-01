@@ -13,9 +13,10 @@
 #   prompts         - List of prompt templates to install: ["*"] for all, [] or omit for none
 #   alias           - Optional prefix to prevent name collisions
 #
-# Pinned native dependencies live under [external_tools.<name>]. Their upstream
+# Pinned native dependencies live under [external_tools.<name>]. Script-backed
 # installers run with an explicit version, destination, verification, and
-# --no-configure so this repository remains the source of truth for agent config.
+# --no-configure. Cargo Git tools install their pinned tag into ~/.local/bin.
+# Optional setup_args run only after this repository installs its agent configs.
 #
 # Plugin directories use hyphen separator: owner/repo -> plugins/owner-repo/
 
@@ -23,6 +24,12 @@
 repo = "Dicklesworthstone/destructive_command_guard"
 version = "v0.6.5"
 installer_url = "https://raw.githubusercontent.com/Dicklesworthstone/destructive_command_guard/{version}/install.sh"
+
+[external_tools.scopey]
+repo = "ArchAstro/scopey"
+version = "v0.1.1"
+install_method = "cargo_git"
+setup_args = ["setup"]
 
 ["anthropics/skills"]
 url = "https://github.com/anthropics/skills"
