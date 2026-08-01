@@ -165,6 +165,31 @@ test_make_build() {
         TESTS_FAILED=$((TESTS_FAILED + 1))
     fi
 
+    for agent in amp claude pi; do
+        local explainer_dir="$PROJECT_DIR/build/$agent/technical-explainer-comic"
+        assert_file_exists "$explainer_dir/SKILL.md" "$agent builds technical-explainer-comic"
+        assert_file_exists "$explainer_dir/agents/openai.yaml" "$agent keeps explainer UI metadata"
+        assert_file_exists "$explainer_dir/assets/page-template.html" "$agent builds explainer HTML template"
+        assert_file_exists "$explainer_dir/references/trace-contract.md" "$agent builds explainer trace contract"
+        assert_file_exists "$explainer_dir/references/manifest-schema.md" "$agent builds explainer manifest schema"
+        assert_file_exists "$explainer_dir/references/evaluation.md" "$agent builds explainer evaluation guide"
+        assert_file_exists "$explainer_dir/scripts/render_explainer.py" "$agent builds explainer renderer"
+        assert_file_exists "$explainer_dir/scripts/validate_explainer.py" "$agent builds explainer validator"
+        assert_file_exists "$explainer_dir/scripts/test_explainer.py" "$agent builds explainer tests"
+    done
+
+    local explainer_content
+    explainer_content=$(<"$PROJECT_DIR/build/pi/technical-explainer-comic/SKILL.md")
+    assert_output_contains "$explainer_content" "Build the evidence packet" "Explainer skill requires source evidence"
+    assert_output_contains "$explainer_content" "Generate each illustration separately" "Explainer skill preserves per-panel generation"
+    assert_output_contains "$explainer_content" "desktop and mobile viewport" "Explainer skill requires responsive browser QA"
+    assert_output_contains "$explainer_content" "one normal unit of work" "Explainer skill uses a generic operation model"
+
+    local explainer_trace_contract
+    explainer_trace_contract=$(<"$PROJECT_DIR/build/pi/technical-explainer-comic/references/trace-contract.md")
+    assert_output_contains "$explainer_trace_contract" "Some systems have no separate establishment path" "Explainer trace does not invent setup"
+    assert_output_contains "$explainer_trace_contract" "Normal-operation trace" "Explainer trace covers steady-state work"
+
     # breadboard-reflection upstream skill has no frontmatter; build should add description
     local breadboard_skill="$PROJECT_DIR/build/claude/breadboard-reflection/SKILL.md"
     assert_file_exists "$breadboard_skill" "breadboard-reflection skill is built"
