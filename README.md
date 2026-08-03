@@ -96,7 +96,7 @@ pi
 - `fable-review` — trusted Claude Fable code review workflow using `claude -p --model claude-fable-5`
 - `grok-review` — safe Grok Build review workflow delegating branch and explicit dirty-tree reviews to Grok's native `/review` skill
 - `grok-driver` — headless Grok as implementation driver for frozen work orders, with the host agent as coordinator (complement of `grok-review`)
-- `review-council` — explicit-only orchestration of Fable, Grok, and Thermo-Nuclear reviews against one pinned Git scope
+- `review-gauntlet` — multi-model review → Fable triage → fix loop via the Grok `review-gauntlet` workflow / `code-review-loop` CLI (replaces review-council)
 - `writing-mike-ruby-style` — Mike's personal Ruby/Rails style (mirrors his canonical style rules)
 - `prepare-branch-context` — read-only branch diff, commit, and PR context gathering skill vendored from `jnsahaj/skills`
 - `zmx` — guidance for managing persistent background terminal work
