@@ -1,4 +1,4 @@
-# Global Agent Guidelines
+# AGENTS.md
 
 **ALWAYS** use `fd` instead of `find`
 **ALWAYS** use `rg` instead of `grep`
@@ -93,23 +93,16 @@
 
 ## Mindset & Process
 
-- Think a lot before acting.
-- **No breadcrumbs**. If you delete or move code, do not leave a comment in the old place. No "// moved to X", no "relocated". Just remove it.
-- **Think hard, do not lose the plot**.
-- Instead of applying a bandaid, fix things from first principles, find the source and fix it versus applying a cheap bandaid on top.
-- Fix small papercuts when you trip over them. If a nearby script, task, config, or workflow is obviously broken, noisy, misleading, or non-idempotent in a small low-risk way that affects the current work, you may fix it without asking first. Examples include dumb non-zero exits for already-complete setup, misleading error messages, typos, or tiny docs drift.
-- Raise larger cleanups before expanding scope. If the better fix turns into a broader refactor, changes architecture or user-visible behavior, touches multiple subsystems, adds dependencies, or needs substantial new testing, stop and ask the user before continuing.
-- Write idiomatic, simple, maintainable code. Always ask yourself if this is the most simple intuitive solution to the problem.
-- Leave each repo better than how you found it. If something is giving a code smell, fix it for the next person.
-- Clean up unused code ruthlessly. If a function no longer needs a parameter or a helper is dead, delete it and update the callers instead of letting the junk linger.
-- **Search before pivoting**. If you are stuck or uncertain, do a quick web search for official docs or specs, then continue with the current approach. Do not change direction unless asked.
+- Do not preserve backward compatibility. Remove obsolete paths instead of adding compatibility layers, fallbacks, or migrations.
+- Choose the simplest implementation that fully meets the current requirements. Avoid speculative abstractions, configuration, and indirection.
+- Grow the system in layers. Start from the smallest version that works end to end, and add each new capability on top of a product that already works. Never trade a working product for unfinished complexity.
+- Keep components modular and concerns clearly separated.
+- Prefer established, well-maintained libraries when they reduce overall complexity or improve reliability. Do not reimplement common functionality without a clear reason.
+- Lean on the dependencies already in the project before writing your own implementation or adding packages. Do not assume a library lacks a capability without checking its documentation and types.
+- Make architectural decisions for the long term. Do not accept a stopgap that only works for now and is meant to be replaced later.
 
 ## Testing Philosophy
 
 - Avoid mock tests; do unit or e2e (end-to-end) instead. Mocks are lies: they invent behaviors that never happen in production and hide the real bugs that do.
 - Test everything with rigor. Our intent is ensuring a new person contributing to the same code base cannot break our stuff and that nothing slips by. We love rigour.
 - Unless the user asks otherwise, run only the tests you added or modified instead of the entire suite to avoid wasting time.
-
-## Dependencies & External APIs
-
-- If you need to add a new dependency to a project to solve an issue, search the web and find the best, most maintained option. Something most other folks use with the best exposed API. We don't want to be in a situation where we are using an unmaintained dependency, that no one else relies on.
