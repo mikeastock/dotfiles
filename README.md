@@ -99,6 +99,7 @@ pi
 - `review-gauntlet` — multi-model review → Fable triage → fix loop via the Grok `review-gauntlet` workflow / `code-review-loop` CLI (replaces review-council)
 - `writing-mike-ruby-style` — Mike's personal Ruby/Rails style (mirrors his canonical style rules)
 - `prepare-branch-context` — read-only branch diff, commit, and PR context gathering skill vendored from `jnsahaj/skills`
+- `simplify` — behavior-preserving code and comment simplification skill vendored from `bholmesdev/skills`
 - `zmx` — guidance for managing persistent background terminal work
 - `tmux` — remote control tmux sessions through the active server, with an agent-neutral fallback socket when no server is running
 - `buildr-artifacts` — publish browser-viewable Buildr artifacts as static S3-hosted HTML/assets or stateful Vite apps served from Codexbox with `bld.run` URLs
