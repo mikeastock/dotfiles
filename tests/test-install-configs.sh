@@ -47,14 +47,15 @@ test_config_new_files() {
     assert_file_exists "$SANDBOX_DIR/.pi/agent/AGENTS.md" "Pi AGENTS.md was created"
     assert_output_contains "$(cat "$SANDBOX_DIR/.codex/config.toml")" 'personality = "pragmatic"' "Codex config uses the pragmatic personality"
     assert_output_contains "$(cat "$SANDBOX_DIR/.codex/config.toml")" 'model_reasoning_summary = "concise"' "Codex config uses concise reasoning summaries"
-    assert_output_contains "$(cat "$SANDBOX_DIR/.codex/AGENTS.md")" "Visual Previews" "Codex AGENTS.md includes visual preview guidance"
+    assert_output_not_contains "$(cat "$SANDBOX_DIR/.codex/AGENTS.md")" "Background Processes" "Codex AGENTS.md omits background process guidance"
+    assert_output_not_contains "$(cat "$SANDBOX_DIR/.codex/AGENTS.md")" "Visual Previews" "Codex AGENTS.md omits visual preview guidance"
     assert_output_contains "$(cat "$SANDBOX_DIR/.codex/AGENTS.md")" "clear, concise language without reducing technical precision" "Codex AGENTS.md includes clear communication guidance"
     assert_output_contains "$(cat "$SANDBOX_DIR/.codex/AGENTS.md")" "Do not preserve backward compatibility. Remove obsolete paths instead of adding compatibility layers, fallbacks, or migrations." "Codex AGENTS.md includes current implementation guidance"
     assert_output_contains "$(cat "$SANDBOX_DIR/.codex/AGENTS.md")" "Lean on the dependencies already in the project before writing your own implementation or adding packages." "Codex AGENTS.md includes dependency reuse guidance"
     assert_output_not_contains "$(cat "$SANDBOX_DIR/.codex/AGENTS.md")" "Hard-Cut Product Policy" "Codex AGENTS.md omits hard-cutover guidance"
     assert_output_not_contains "$(cat "$SANDBOX_DIR/.codex/AGENTS.md")" "fix things from first principles" "Codex AGENTS.md omits superseded mindset guidance"
-    assert_output_contains "$(cat "$SANDBOX_DIR/.pi/agent/AGENTS.md")" "SIDESHOW_URL=http://localhost:8228 sideshow agent-howto" "Pi AGENTS.md includes sideshow setup command"
-    assert_output_contains "$(cat "$SANDBOX_DIR/.codex/AGENTS.md")" "SIDESHOW_URL=https://devbox-mike.tail5a0ea0.ts.net:8228 sideshow agent-howto" "Codex AGENTS.md includes Tailscale sideshow setup command"
+    assert_output_not_contains "$(cat "$SANDBOX_DIR/.pi/agent/AGENTS.md")" "sideshow agent-howto" "Pi AGENTS.md omits sideshow setup commands"
+    assert_output_not_contains "$(cat "$SANDBOX_DIR/.codex/AGENTS.md")" "sideshow agent-howto" "Codex AGENTS.md omits sideshow setup commands"
 
     local amp_json
     amp_json=$(cat "$SANDBOX_DIR/.config/amp/settings.json")
