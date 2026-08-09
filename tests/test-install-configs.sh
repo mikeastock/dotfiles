@@ -108,9 +108,9 @@ test_codex_terraform_apply_rules() {
     assert_output_contains "$codex_rules" 'decision = "prompt"' "Codex Terraform rules request prompt approval"
 }
 
-# Test: Codex destructive command guard hook is installed
+# Test: Codex Scopey hooks are installed
 test_codex_hooks_installed() {
-    log_test "Testing Codex destructive command guard hook"
+    log_test "Testing Codex Scopey hooks"
     cd "$PROJECT_DIR"
 
     rm -rf "$SANDBOX_DIR/.codex"
@@ -120,9 +120,9 @@ test_codex_hooks_installed() {
     local hooks_json
     hooks_json=$(cat "$SANDBOX_DIR/.codex/hooks.json")
 
-    assert_output_contains "$hooks_json" '"PreToolUse"' "Codex hooks include a PreToolUse guard"
-    assert_output_contains "$hooks_json" '"matcher": "Bash"' "Codex guard applies to Bash commands"
-    assert_output_contains "$hooks_json" '"command": "/home/mikeastock/.local/bin/dcg"' "Codex guard runs dcg"
+    assert_output_contains "$hooks_json" '"command": "scopey hook user-prompt"' "Codex hooks include Scopey prompt tracking"
+    assert_output_contains "$hooks_json" '"command": "scopey hook post-tool"' "Codex hooks include Scopey tool tracking"
+    assert_output_not_contains "$hooks_json" '"PreToolUse"' "Codex hooks do not install a command guard"
     assert_file_not_exists "$SANDBOX_DIR/.codex/hooks/terraform_apply_gate.py" "Terraform hard-gate hook script is absent"
 }
 

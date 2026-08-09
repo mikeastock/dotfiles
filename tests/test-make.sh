@@ -39,23 +39,12 @@ test_make_install_tools() {
     log_test "Testing 'make install-tools' (sandboxed)"
     cd "$PROJECT_DIR"
 
-    local fake_installer args_log fake_bin fake_cargo scopey_args_log scopey_binary_args_log output
-    fake_installer="$SANDBOX_DIR/dcg-install.sh"
-    args_log="$SANDBOX_DIR/dcg-install-args.log"
+    local fake_bin fake_cargo scopey_args_log scopey_binary_args_log output
     fake_bin="$SANDBOX_DIR/bin"
     fake_cargo="$fake_bin/cargo"
     scopey_args_log="$SANDBOX_DIR/scopey-install-args.log"
     scopey_binary_args_log="$SANDBOX_DIR/scopey-binary-args.log"
     mkdir -p "$fake_bin"
-    cat > "$fake_installer" <<'EOF'
-#!/usr/bin/env bash
-printf '%s\n' "$@" > "$DCG_TEST_ARGS_LOG"
-mkdir -p "$HOME/.local/bin"
-printf '#!/usr/bin/env bash\necho 0.6.5\n' > "$HOME/.local/bin/dcg"
-chmod +x "$HOME/.local/bin/dcg"
-EOF
-    chmod +x "$fake_installer"
-
     cat > "$fake_cargo" <<'EOF'
 #!/usr/bin/env bash
 printf '%s\n' "$@" > "$SCOPEY_TEST_ARGS_LOG"
@@ -82,20 +71,10 @@ chmod +x "$root/bin/scopey"
 EOF
     chmod +x "$fake_cargo"
 
-    output=$(HOME="$SANDBOX_DIR" PATH="$fake_bin:$PATH" DCG_INSTALLER_PATH="$fake_installer" DCG_TEST_ARGS_LOG="$args_log" SCOPEY_TEST_ARGS_LOG="$scopey_args_log" SCOPEY_TEST_BINARY_ARGS_LOG="$scopey_binary_args_log" make install-tools 2>&1)
+    output=$(HOME="$SANDBOX_DIR" PATH="$fake_bin:$PATH" SCOPEY_TEST_ARGS_LOG="$scopey_args_log" SCOPEY_TEST_BINARY_ARGS_LOG="$scopey_binary_args_log" make install-tools 2>&1)
 
     assert_output_contains "$output" "Installing external tools" "Install shows external tool progress"
-    assert_file_exists "$SANDBOX_DIR/.local/bin/dcg" "dcg binary was installed"
     assert_file_exists "$SANDBOX_DIR/.local/bin/scopey" "scopey binary was installed"
-
-    local args
-    args=$(<"$args_log")
-    assert_output_contains "$args" "--version" "dcg installer receives a pinned version flag"
-    assert_output_contains "$args" "v0.6.5" "dcg installer receives the configured version"
-    assert_output_contains "$args" "--dest" "dcg installer receives an explicit destination"
-    assert_output_contains "$args" "$SANDBOX_DIR/.local/bin" "dcg installs under the active HOME"
-    assert_output_contains "$args" "--verify" "dcg installer runs its self-test"
-    assert_output_contains "$args" "--no-configure" "dcg installer cannot mutate agent configs"
 
     local scopey_args
     scopey_args=$(<"$scopey_args_log")
@@ -690,7 +669,7 @@ test_make_install() {
 
     # Run full install with sandbox HOME
     local output
-    output=$(HOME="$SANDBOX_DIR" XDG_STATE_HOME="$SANDBOX_DIR/.local/state" PATH="$SANDBOX_DIR/bin:$PATH" DCG_INSTALLER_PATH="$SANDBOX_DIR/dcg-install.sh" DCG_TEST_ARGS_LOG="$SANDBOX_DIR/dcg-install-args.log" SCOPEY_TEST_ARGS_LOG="$SANDBOX_DIR/scopey-install-args.log" make install 2>&1)
+    output=$(HOME="$SANDBOX_DIR" XDG_STATE_HOME="$SANDBOX_DIR/.local/state" PATH="$SANDBOX_DIR/bin:$PATH" SCOPEY_TEST_ARGS_LOG="$SANDBOX_DIR/scopey-install-args.log" make install 2>&1)
 
     assert_output_contains "$output" "All skills, prompt templates, themes, extensions, and Amp plugins installed" "Install shows completion message"
     assert_output_contains "$output" "Configuring external tools" "Install configures external agent tools after managed configs"
@@ -717,7 +696,7 @@ test_make_clean() {
     echo "manual" > "$SANDBOX_DIR/.pi/agent/agents/manual-clean.md"
 
     # First install
-    HOME="$SANDBOX_DIR" XDG_STATE_HOME="$SANDBOX_DIR/.local/state" DCG_INSTALLER_PATH="$SANDBOX_DIR/dcg-install.sh" DCG_TEST_ARGS_LOG="$SANDBOX_DIR/dcg-install-args.log" make install >/dev/null 2>&1
+    HOME="$SANDBOX_DIR" XDG_STATE_HOME="$SANDBOX_DIR/.local/state" make install >/dev/null 2>&1
 
     # Then clean
     local output

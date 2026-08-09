@@ -38,7 +38,7 @@ This repo also contains reusable skills, prompt templates, and extensions for Am
 
 ```bash
 make install                 # install agent skills/prompts/themes/extensions and Amp plugins
-make install-tools           # install pinned external agent tools such as dcg and scopey
+make install-tools           # install pinned external agent tools
 make setup-tools             # configure installed tools that integrate with agents
 make install-skills
 make install-amp-plugins
