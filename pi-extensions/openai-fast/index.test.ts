@@ -46,19 +46,13 @@ function createHarness(fastFlag = false): Harness {
 }
 
 function createContext(cwd: string, provider = "openai-codex", id = "gpt-5.6-sol") {
-	const statuses: Array<[string, string | undefined]> = [];
 	const notifications: Array<[string, string]> = [];
 	return {
 		cwd,
 		hasUI: true,
 		model: { provider, id },
-		statuses,
 		notifications,
 		ui: {
-			theme: { fg: (_color: string, text: string) => `[accent]${text}` },
-			setStatus(key: string, value: string | undefined) {
-				statuses.push([key, value]);
-			},
 			notify(message: string, level: string) {
 				notifications.push([message, level]);
 			},
@@ -78,7 +72,7 @@ describe("pi-codex-fast", () => {
 
 		assert.deepEqual([...harness.flags.keys()], ["fast"]);
 		assert.deepEqual([...harness.commands.keys()], ["codex-fast"]);
-		assert.deepEqual([...harness.events.keys()].sort(), ["before_provider_request", "model_select", "session_start"]);
+		assert.deepEqual([...harness.events.keys()].sort(), ["before_provider_request", "session_shutdown", "session_start"]);
 	});
 
 	it("supports only the upstream OpenAI Codex priority models", () => {
@@ -96,6 +90,19 @@ describe("pi-codex-fast", () => {
 		);
 	});
 
+	it("adds the fast indicator to the existing model footer line", () => {
+		const originalLine = "0.0%/128k                     (openai-codex) gpt-5.6-sol • high";
+		const updatedLine = _test.injectFastIntoFooterLine(
+			originalLine,
+			{ provider: "openai-codex", id: "gpt-5.6-sol", reasoning: true } as any,
+			"high",
+			"⚡",
+		);
+
+		assert.equal(updatedLine, "0.0%/128k                (openai-codex) gpt-5.6-sol • high • ⚡");
+		assert.equal(updatedLine.split("\n").length, 1);
+	});
+
 	it("loads the project setting over the global setting", async () => {
 		const root = await temporaryDirectory();
 		const agentDir = join(root, "agent");
@@ -109,7 +116,7 @@ describe("pi-codex-fast", () => {
 		assert.equal(await _test.loadPersistedFastMode(cwd), true);
 	});
 
-	it("enables priority requests from persisted state and shows fast status", async () => {
+	it("enables priority requests from persisted state", async () => {
 		const root = await temporaryDirectory();
 		const agentDir = join(root, "agent");
 		const cwd = join(root, "project");
@@ -123,10 +130,9 @@ describe("pi-codex-fast", () => {
 		const payload = harness.events.get("before_provider_request")?.({ payload: { model: "gpt-5.6-sol" } }, ctx);
 
 		assert.deepEqual(payload, { model: "gpt-5.6-sol", service_tier: "priority" });
-		assert.deepEqual(ctx.statuses.at(-1), ["fast-priority", "[accent]fast"]);
 	});
 
-	it("marks fast mode inactive and leaves unsupported requests unchanged", async () => {
+	it("leaves unsupported requests unchanged", async () => {
 		const root = await temporaryDirectory();
 		process.env.PI_CODING_AGENT_DIR = join(root, "agent");
 		const harness = createHarness(true);
@@ -136,7 +142,6 @@ describe("pi-codex-fast", () => {
 		const payload = harness.events.get("before_provider_request")?.({ payload: { model: "gpt-5.6-sol" } }, ctx);
 
 		assert.equal(payload, undefined);
-		assert.deepEqual(ctx.statuses.at(-1), ["fast-priority", "[accent]fast (inactive)"]);
 	});
 
 	it("persists toggles under pi-codex-fast.enabled without replacing other settings", async () => {
