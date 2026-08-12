@@ -34,3 +34,6 @@
 [submodule "plugins/AVGVSTVS96-better-github-skill"]
 	path = plugins/AVGVSTVS96-better-github-skill
 	url = https://github.com/AVGVSTVS96/better-github-skill
+[submodule "plugins/humanlayer-skills"]
+	path = plugins/humanlayer-skills
+	url = https://github.com/humanlayer/skills

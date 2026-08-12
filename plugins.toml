@@ -83,3 +83,8 @@ extensions = [ "*" ]                                               # Install all
 url = "https://github.com/AVGVSTVS96/better-github-skill"
 skills_path = "."                                                  # SKILL.md is at repo root
 skills = [ "better-github-skill" ]
+
+["humanlayer/skills"]
+url = "https://github.com/humanlayer/skills"
+skills_path = "plugins/show-me/skills/*"
+skills = [ "show-me" ]
