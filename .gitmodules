@@ -31,3 +31,6 @@
 [submodule "plugins/kitlangton-skills"]
 	path = plugins/kitlangton-skills
 	url = https://github.com/kitlangton/skills
+[submodule "plugins/AVGVSTVS96-better-github-skill"]
+	path = plugins/AVGVSTVS96-better-github-skill
+	url = https://github.com/AVGVSTVS96/better-github-skill

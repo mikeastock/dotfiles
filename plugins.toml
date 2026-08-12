@@ -2,7 +2,8 @@
 #
 # Each plugin is a table with fully qualified name (owner/repo):
 #   url             - Git repository URL (required)
-#   skills_path     - Glob pattern(s) to find skills (default: "skills/*")
+#   skills_path     - Glob pattern(s) to find skills (default: "skills/*");
+#                     use "." when SKILL.md lives at the plugin repo root
 #   skills_path_by_agent - Optional agent-specific skill paths, keyed by amp/claude/pi
 #   skills          - List of skills to install: ["*"] for all, [] or omit for none
 #   skills_skip_agents - Agents that should not receive this plugin's skills (optional)
@@ -77,3 +78,8 @@ skills_user_invocable_only = [ "shaping", "breadboarding", "breadboard-reflectio
 url = "https://github.com/earendil-works/pi-review"
 extensions_path = "."                                              # Extension file is at root level
 extensions = [ "*" ]                                               # Install all extensions from this plugin
+
+["AVGVSTVS96/better-github-skill"]
+url = "https://github.com/AVGVSTVS96/better-github-skill"
+skills_path = "."                                                  # SKILL.md is at repo root
+skills = [ "better-github-skill" ]

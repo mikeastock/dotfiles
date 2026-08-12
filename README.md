@@ -113,6 +113,7 @@ pi
 - `impeccable` — frontend design, critique, polish, and live iteration skill from `pbakaus/impeccable`
 - `thermo-nuclear-code-review` — strict structural and architectural code review skill from `intercom/2x-skills`
 - `effect` — opinionated production Effect v4 guide from `kitlangton/skills`, pinned as a plugin submodule at commit `30dee860`
+- `better-github-skill` — agent-optimized `gh` workflows (PR snapshot, review threads, CI failures) from `AVGVSTVS96/better-github-skill`
 
 ### Notable custom Pi prompt templates
 

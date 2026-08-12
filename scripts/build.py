@@ -592,7 +592,12 @@ def discover_items(
     items = []
     for path in glob_paths(plugin_dir, patterns):
         if item_type == "skills" and path.is_dir():
-            name = path.name
+            # Root-level single-skill repos (skills_path = ".") use the repo
+            # name from owner/repo instead of the plugins/owner-repo dirname.
+            if path.resolve() == plugin_dir.resolve():
+                name = plugin.name.rsplit("/", 1)[-1]
+            else:
+                name = path.name
         elif item_type == "extensions":
             if path.is_dir() and (path / "index.ts").exists():
                 name = path.name
@@ -1080,7 +1085,14 @@ def build_skill(
 
     # Copy additional files
     for item in source.iterdir():
-        if item.name.lower() == "skill.md" or item.name in {"overrides", "__pycache__"}:
+        # Skip skill docs (rewritten above), local overrides, caches, and VCS
+        # metadata. Root-level single-skill plugin submodules expose a .git file
+        # that must not ship into installed skill directories.
+        if item.name.lower() == "skill.md" or item.name in {
+            "overrides",
+            "__pycache__",
+            ".git",
+        }:
             continue
 
         dest_item = dest / item.name
@@ -1089,7 +1101,7 @@ def build_skill(
                 item,
                 dest_item,
                 dirs_exist_ok=True,
-                ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
+                ignore=shutil.ignore_patterns("__pycache__", "*.pyc", ".git"),
             )
         else:
             shutil.copy(item, dest_item)
