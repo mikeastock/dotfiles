@@ -1,6 +1,6 @@
 ---
 name: babysit-pr
-description: Babysit a GitHub pull request through CI and review closure. Watch Greptile, Codex, and Cursor Bugbot feedback with the GitHub CLI only; use judgment to fix or push back on bot comments, resolve handled bot threads, and keep polling until the PR is closed or review/CI state needs user help. Use when the user asks Codex to monitor a PR, watch CI, handle review comments, or keep an eye on failures and feedback on an open PR.
+description: Babysit a GitHub pull request through CI and review closure. Fetch all review feedback with better-github-skill, use judgment to address or push back on each item, comment on and resolve handled threads, and keep polling until the PR is closed or review/CI state needs user help. Use when the user asks an agent to monitor a PR, watch CI, handle review comments, or keep an eye on failures and feedback on an open PR.
 ---
 
 # PR Babysitter
@@ -14,8 +14,14 @@ Babysit a PR persistently until one of these terminal outcomes occurs:
 
 Do not stop merely because a single snapshot returns `idle` while checks are still pending.
 
-Use the `gh` CLI exclusively for all GitHub reads and writes. This includes `gh pr`, `gh run`, and
-`gh api` (REST and GraphQL). Never use a harness-provided GitHub connector, even if one is available.
+Use the `gh` CLI exclusively for all GitHub reads and writes. This includes the
+`better-github-skill` scripts, which are read-only wrappers around `gh`, plus direct `gh pr`, `gh run`,
+and `gh api` (REST and GraphQL) commands for writes. Never use a harness-provided GitHub connector,
+even if one is available.
+
+Load and follow `better-github-skill` whenever this skill runs. Its PR snapshot and thread report are
+the authoritative way to inspect PR state and feedback; the watcher supplies polling, retry, and
+tracked-bot bookkeeping but is not a complete feedback source.
 
 ## Inputs
 Accept any of the following:
@@ -28,15 +34,15 @@ Accept any of the following:
 
 1. When the user asks to "monitor"/"watch"/"babysit" a PR, start with the watcher's continuous mode (`--watch`) unless you are intentionally doing a one-shot diagnostic snapshot.
 2. Run the watcher script to snapshot PR/review/CI state (or consume each streamed snapshot from `--watch`).
-3. Inspect the `actions` list in the JSON response.
-4. If `diagnose_ci_failure` is present, inspect failed run logs and classify the failure.
-5. If the failure is likely caused by the current branch, patch code locally, commit, and push. Do not patch random flaky tests, CI infrastructure, dependency outages, runner issues, or other failures that are unrelated to the branch.
-6. If `process_review_comment` is present, inspect both newly published review items and `unresolved_bot_review_threads`. Treat an unresolved Greptile, Codex, or Cursor Bugbot thread as unfinished work even if its comment was surfaced on an earlier poll.
-7. Apply judgment to tracked bot feedback. If it is correct and actionable, patch, test, commit, and push. If it is incorrect, already addressed, or out of scope, post a concise `[codex]` pushback explaining why. In either case, reply when useful and resolve the handled bot thread using `gh` only.
-8. Do not post replies to human-authored review comments/threads unless the user explicitly confirms the exact response. If a human review item is non-actionable, already addressed, or not valid, surface the item and recommended response to the user instead of replying on GitHub.
+3. On every poll, independently run both `better-github-skill` reports: `pr-snapshot.ts` for complete PR state and `pr-threads.ts --all` for the complete review conversation. Do this even when the watcher reports `idle` or omits `process_review_comment`.
+4. Inspect every published review body, PR issue comment, and inline thread from every author. Include resolved and outdated threads so follow-ups and feedback hidden by default are not missed. Ignore only pending draft reviews, pure automation/status noise, and the agent's own already-handled replies.
+5. Inspect the watcher's `actions` list. If `diagnose_ci_failure` is present, inspect failed run logs and classify the failure.
+6. If the failure is likely caused by the current branch, patch code locally, commit, and push. Do not patch random flaky tests, CI infrastructure, dependency outages, runner issues, or other failures that are unrelated to the branch.
+7. Independently judge each feedback item; reviewer identity is context, not a substitute for technical validation. If it is correct and actionable, patch and test it. If it is incorrect, already addressed, obsolete, or out of scope, prepare a concise technical pushback. If it is ambiguous or requires a product decision, ask the user rather than guessing.
+8. After handling an item, leave a concise reply when it clarifies the fix or pushback, then resolve its inline thread. Do not comment merely to acknowledge an item, do not reply repeatedly, and do not resolve a thread until every substantive point and follow-up in it has been handled. Use direct `gh` commands for comments and GraphQL resolution.
 9. If the failure is likely flaky/unrelated and `retry_failed_checks` is present, rerun failed jobs with `--retry-failed-now`.
 10. If both actionable review feedback and `retry_failed_checks` are present, prioritize review feedback first; a new commit will retrigger CI, so avoid rerunning flaky checks on the old SHA unless you intentionally defer the review change.
-11. On every loop, look for newly surfaced review feedback and unresolved tracked-bot threads before acting on CI failures or mergeability state, then verify mergeability / merge-conflict status (for example via `gh pr view`) alongside CI.
+11. On every loop, fetch all feedback with `pr-threads.ts --all` and inspect unresolved threads before acting on CI failures or mergeability state, then verify mergeability, conflicts, and CI with `pr-snapshot.ts`.
 12. After any push or rerun action, immediately return to step 1 and continue polling on the updated SHA/state.
 13. If you had been using `--watch` before pausing to patch/commit/push, relaunch `--watch` yourself in the same turn immediately after the push (do not wait for the user to re-invoke the skill).
 14. Repeat polling until `stop_pr_closed` appears or a user-help-required blocker is reached. A green + review-clean + mergeable PR is a progress milestone, not a reason to stop the watcher while the PR is still open.
@@ -68,22 +74,34 @@ python3 ~/.agents/skills/babysit-pr/scripts/gh_pr_watch.py --pr auto --retry-fai
 python3 ~/.agents/skills/babysit-pr/scripts/gh_pr_watch.py --pr <number-or-url> --once
 ```
 
-### Resolve a handled bot review thread
+### Fetch complete PR state and feedback
 
-The watcher returns each unresolved thread's GraphQL `id`, its latest bot comment, and that
-comment's REST `rest_comment_id`. After making a fix or posting a justified bot-only pushback, resolve
-the exact thread through the guarded CLI command:
+```bash
+node ~/.agents/skills/better-github-skill/scripts/pr-snapshot.ts <pr> --json
+node ~/.agents/skills/better-github-skill/scripts/pr-threads.ts <pr> --all --full --json
+```
+
+Omit `<pr>` to infer it from the current branch. Use `-R <owner>/<repo>` when outside the repository.
+`--all` is required: the default thread report hides resolved and outdated threads. `--full` prevents
+truncated feedback from hiding a substantive point. Save or compare the structured reports between
+polls so every new comment and follow-up is considered exactly once.
+
+### Resolve a handled tracked-bot review thread
+
+The watcher returns each unresolved tracked-bot thread's GraphQL `id`, its latest bot comment, and
+that comment's REST `rest_comment_id`. After making a fix or posting justified pushback, resolve the
+exact thread through the guarded CLI command:
 
 ```bash
 python3 ~/.agents/skills/babysit-pr/scripts/gh_pr_watch.py \
   --pr auto --resolve-review-thread <thread-id>
 ```
 
-To reply to an inline bot comment before resolving it, use `gh api`, never a GitHub connector:
+To reply to an inline comment before resolving it, use `gh api`, never a GitHub connector:
 
 ```bash
 gh api repos/<owner>/<repo>/pulls/<pr>/comments \
-  -X POST -f body='[codex] <concise fix or pushback rationale>' \
+  -X POST -f body='[agent] <concise fix or pushback rationale>' \
   -F in_reply_to=<rest-comment-id>
 ```
 
@@ -108,44 +126,48 @@ If classification is ambiguous, perform one manual diagnosis attempt before choo
 Read `~/.agents/skills/babysit-pr/references/heuristics.md` for a concise checklist.
 
 ## Review Comment Handling
-The watcher surfaces review items from:
+The watcher is deliberately selective and is not the complete review source. On every loop, use
+`better-github-skill`'s `pr-threads.ts --all --full --json` report to fetch:
 
 - PR issue comments
-- Inline review comments
-- Review submissions (COMMENT / APPROVED / CHANGES_REQUESTED)
+- Review submission bodies (COMMENT / APPROVED / CHANGES_REQUESTED)
+- Every inline review thread, including resolved and outdated threads
+- Feedback and follow-ups from humans, known review bots, and previously unknown review bots
 
 Only act on published feedback. Ignore review submissions in GitHub's `PENDING` state and inline
-comments attached to those pending reviews. Do not mark pending review feedback as seen; it should
-be eligible to surface after the reviewer submits the review.
+comments attached to those pending reviews. Do not treat pending feedback as seen; reconsider it
+after publication. On the first poll, inspect existing feedback as well as newly arriving feedback.
 
-It intentionally tracks review bot feedback whose login identifies it as Codex (for example
-`chatgpt-codex-connector[bot]`), Greptile, or Cursor Bugbot (`cursor` / `bugbot`). Other bot noise
-is ignored. It also surfaces trusted human review authors (for example repo
-OWNER/MEMBER/COLLABORATOR, plus the authenticated operator).
-On a fresh watcher state file, existing unaddressed published review feedback may be surfaced immediately (not only comments that arrive after monitoring starts). This is intentional so already-open review comments are not missed.
+Classify each substantive item as `address`, `push back`, `needs clarification`, or `already handled`.
+Validate claims against the current branch, PR diff, tests, and user intent. Batch compatible fixes
+into a focused change, but preserve a clear mapping from each comment to its disposition.
 
-`unresolved_bot_review_threads` is the review-green gate for tracked bots. Do not call a PR
-review-clean while any of those threads remain unresolved, even if the thread is outdated or the
-comment was seen in an earlier snapshot. A review is green only when the current SHA's CI is green,
-there is no blocking GitHub review decision, no new review feedback awaits a decision, and every
-tracked bot thread is resolved. Continue watching after reaching that milestone because a reviewer
-can submit a new review while the PR remains open.
+`unresolved_bot_review_threads` is only the watcher's tracked-bot gate. The complete review-green gate
+comes from the better-github thread report: do not call a PR review-clean while substantive feedback
+is unjudged or any actionable inline thread remains unresolved, even if it is outdated or was seen in
+an earlier snapshot. A review is green only when the current SHA's CI is green, there is no blocking
+GitHub review decision, all published feedback has a disposition, and all handled actionable threads
+are resolved. Continue watching after reaching that milestone because new feedback can arrive.
 
-When you agree with tracked bot feedback and it is actionable:
+When you agree with actionable feedback:
 
 1. Patch code locally.
-2. Run focused validation, commit with `codex: address PR review feedback (#<n>)`, and push to the PR head branch.
-3. Reply `[codex]` with the concise fix and commit SHA when it helps the reviewer, then resolve the exact bot thread with `--resolve-review-thread`.
+2. Run focused validation, commit with `fix: address PR review feedback (#<n>)`, and push to the PR head branch.
+3. Reply `[agent]` with the concise fix and commit SHA when it helps the reviewer, then resolve the exact thread.
 4. Resume watching on the new SHA immediately (do not stop after reporting the push).
 5. If monitoring was running in `--watch` mode, restart `--watch` immediately after the push in the same turn; do not wait for the user to ask again.
 
-When you disagree with a tracked bot comment, verify the claim against the branch and relevant
-tests. Reply `[codex]` with a concise technical rationale, resolve that bot thread, and continue
-watching. Do not manufacture a code change merely to silence a bot finding.
+When you disagree with any comment, verify the claim against the branch and relevant tests. Reply
+with a concise technical rationale, resolve the thread when appropriate, and continue watching. Do
+not manufacture a code change merely to silence a reviewer.
 
-Do not post replies to human-authored GitHub review comments/threads automatically. If you disagree with a human comment, believe it is non-actionable/already addressed, or need to answer a question, report the item to the user with a suggested response and wait for explicit confirmation before posting anything on GitHub. If the user approves a response, prefix it with `[codex]` so it is clear the response is automated and not from the human user.
-If the watcher later surfaces your own approved reply because the authenticated operator is treated as a trusted review author, treat that self-authored item as already handled and do not reply again.
-If a code review comment/thread is already marked as resolved in GitHub, treat it as non-actionable and safely ignore it unless new unresolved follow-up feedback appears.
+Use judgment for human and bot feedback alike. You may reply to and resolve a review thread after
+independently handling it; prefix agent-authored replies with `[agent]` so visible automation is
+clear. Ask the user before posting only when the response makes a product decision, commits the user
+to work beyond this PR, reveals sensitive information, or cannot be supported confidently from the
+repository evidence. Treat the agent's own replies as handled and do not reply to them again.
+Resolved or outdated threads still need inspection: normally leave them untouched, but act if they
+contain an unaddressed substantive point or a new unresolved follow-up.
 
 ## GitHub State Mutation Policy
 
@@ -153,23 +175,20 @@ You can read any PR state you need for monitoring. Writes must comply with this 
 
 You can push PRs to update the code under review or to force CI re-runs as described above.
 
-You may reply to and resolve an unresolved Greptile, Codex, or Cursor Bugbot review thread once you
-have independently judged it: correct findings receive a focused fix; invalid, obsolete, or
-out-of-scope findings receive a concise `[codex]` pushback. Use `gh api` for the reply and the
-watcher's guarded `--resolve-review-thread` command for resolution. The command refuses to resolve
-anything except a currently unresolved tracked-bot thread.
-
-Do not resolve or reply to a human review thread unless it belongs to the user who requested
-babysitting and the existing confirmation requirements have been met.
+You may reply to and resolve any review thread once you have independently judged and handled every
+substantive point in it: correct findings receive a focused fix; invalid, obsolete, or out-of-scope
+findings receive concise `[agent]` pushback. Use `gh api` for replies. The watcher's guarded
+`--resolve-review-thread` command works only for tracked bots; resolve other eligible threads with
+the GraphQL `resolveReviewThread` mutation using the thread ID from `pr-threads.ts --json`.
 
 Before making any changes, fetch the PR state yourself instead of relying on the PR watcher script's
 output.
 
 Unless explicitly asked, do not:
 
-* comment on other humans' review threads, communicate with the user in chat instead
-* resolve review threads from humans other than the user
-* interact with humans other than the user
+* post non-substantive acknowledgements or speculative replies
+* resolve a thread whose feedback or follow-ups have not been fully handled
+* make product decisions or commitments on the user's behalf
 * mark PRs as drafts or ready for review
 * close or reopen PRs
 
@@ -189,23 +208,23 @@ something visible to other humans. When in doubt, ask the user for clarification
 
 Commit message defaults:
 
-- `codex: fix CI failure on PR #<n>`
-- `codex: address PR review feedback (#<n>)`
+- `fix: resolve CI failure on PR #<n>`
+- `fix: address PR review feedback (#<n>)`
 
 ## Monitoring Loop Pattern
-Use this loop in a live Codex session:
+Use this loop in a live agent session:
 
 1. Run `--once`.
 2. Read `actions`.
 3. First check whether the PR is now merged or otherwise closed; if so, report that terminal state and stop polling immediately.
-4. Check CI summary, new review items, unresolved tracked-bot threads, and mergeability/conflict status.
+4. Run both `better-github-skill` reports. Check the complete published review conversation from every author, all unresolved threads, CI summary, and mergeability/conflict status.
 5. Diagnose CI failures and classify branch-related vs flaky/unrelated. If the overall run is still pending but `failed_jobs` already includes a failed job, fetch that job's logs and diagnose immediately instead of waiting for the whole workflow run to finish. Patch only when the failure is branch-related.
-6. For each tracked bot item or unresolved tracked-bot thread, fix/push when it is valid or reply `[codex]` with a concise pushback when it is not, then resolve the handled bot thread. Preserve the human-comment confirmation policy. If a later snapshot surfaces your own approved reply, treat it as informational and continue without responding again.
+6. For each substantive feedback item from any author, fix/push when valid or reply `[agent]` with concise evidence-based pushback when invalid, then resolve the fully handled inline thread. Ask the user only for ambiguous or product-level decisions. Treat later snapshots of your own reply as informational.
 7. Process actionable review comments before flaky reruns when both are present; if a review fix requires a commit, push it and skip rerunning failed checks on the old SHA.
 8. Retry failed checks only when `retry_failed_checks` is present and you are not about to replace the current SHA with a review/CI fix commit. Do not make code changes for unrelated flakes or infrastructure failures just to get CI green.
-9. If you pushed a commit, resolved an eligible review thread, or triggered a rerun, report the action briefly and continue polling (do not stop). If a human review comment needs a written GitHub response, stop and ask for confirmation before posting.
+9. If you pushed a commit, commented, resolved an eligible review thread, or triggered a rerun, report the action briefly and continue polling (do not stop). Stop and ask only when feedback needs user judgment or a response you cannot support safely.
 10. After a review-fix push, proactively restart continuous monitoring (`--watch`) in the same turn unless a strict stop condition has already been reached.
-11. If everything is passing, mergeable, not blocked on required review approval, has no unaddressed review items, and has no unresolved tracked-bot threads, report that the PR is currently review-green and ready to merge but keep the watcher running so new review comments are surfaced quickly while the PR remains open.
+11. If everything is passing, mergeable, not blocked on required review approval, has no unaddressed review items, and has no actionable unresolved threads from any author, report that the PR is currently review-green and ready to merge but keep the watcher running so new review comments are surfaced quickly while the PR remains open.
 12. If blocked on a user-help-required issue (infra outage, exhausted flaky retries, unclear reviewer request, permissions), report the blocker and stop.
 13. Otherwise sleep according to the polling cadence below and repeat.
 
@@ -227,7 +246,7 @@ Keep review polling aggressive and continue monitoring even after CI turns green
 Stop only when one of the following is true:
 
 - PR merged or closed (stop as soon as a poll/snapshot confirms this).
-- User intervention is required and Codex cannot safely proceed alone.
+- User intervention is required and the agent cannot safely proceed alone.
 
 Keep polling when:
 
@@ -237,7 +256,7 @@ Keep polling when:
 - CI is green but mergeability is unknown/pending.
 - CI is green and mergeable, but the PR is still open and you are waiting for possible new review comments or merge-conflict changes.
 - The PR is green but blocked on review approval (`REVIEW_REQUIRED` / similar); continue polling at the base cadence and surface any new review comments without asking for confirmation to keep watching.
-- Any Greptile, Codex, or Cursor Bugbot thread is unresolved, including one that became outdated after a push.
+- Any substantive feedback remains unjudged or any actionable inline thread remains unresolved, regardless of author or whether it became outdated after a push.
 
 ## Output Expectations
 Provide concise progress updates while monitoring and a final summary that includes:
@@ -252,7 +271,7 @@ Provide concise progress updates while monitoring and a final summary that inclu
 - Final PR SHA
 - CI status summary
 - Mergeability / conflict status
-- Review-green status and unresolved tracked-bot threads
+- Review-green status and all remaining unresolved or unaddressed feedback
 - Fixes pushed
 - Flaky retry cycles used
 - Remaining unresolved failures or review comments

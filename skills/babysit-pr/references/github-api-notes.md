@@ -39,6 +39,15 @@ Reruns only failed jobs (and dependencies) for a workflow run.
 
 ## Review-related endpoints
 
+Use better-github-skill's reports as the primary read path:
+
+- `node ~/.agents/skills/better-github-skill/scripts/pr-snapshot.ts <pr> --json`
+- `node ~/.agents/skills/better-github-skill/scripts/pr-threads.ts <pr> --all --full --json`
+
+The thread report combines review bodies, issue comments, and inline threads with resolution and
+outdated state. `--all` and `--full` ensure hidden or truncated feedback is not missed. The underlying
+REST endpoints are:
+
 - Issue comments on PR:
   - `gh api repos/{owner}/{repo}/issues/<pr_number>/comments?per_page=100`
 - Inline PR review comments:
@@ -58,12 +67,14 @@ data to retain unresolved threads authored
 by Greptile, Codex, or Cursor Bugbot as a review-green blocker.
 
 - Reply to an inline bot comment:
-  - `gh api repos/{owner}/{repo}/pulls/{pr_number}/comments -X POST -f body='[codex] <rationale>' -F in_reply_to={rest_comment_id}`
+  - `gh api repos/{owner}/{repo}/pulls/{pr_number}/comments -X POST -f body='[agent] <rationale>' -F in_reply_to={rest_comment_id}`
 - Resolve a verified tracked-bot thread:
   - `python3 ~/.agents/skills/babysit-pr/scripts/gh_pr_watch.py --pr auto --resolve-review-thread {thread_id}`
 
 The watcher resolves through `gh api graphql` and refuses a thread unless it is currently unresolved
-and contains feedback from a tracked bot. Never resolve a human thread through this path.
+and contains feedback from a tracked bot. For other fully handled threads, use the same
+`resolveReviewThread` GraphQL mutation directly with the thread ID from better-github-skill. Never
+resolve a thread until every substantive point and follow-up has been handled.
 
 ## JSON fields consumed by the watcher
 
@@ -109,4 +120,5 @@ and contains feedback from a tracked bot. Never resolve a human thread through t
 
 Only unresolved threads with an author login that identifies Greptile, Codex, or Cursor Bugbot are
 returned as `unresolved_bot_review_threads`; comments from a pending review are excluded until the
-review is published.
+review is published. This watcher field is not complete feedback. Always inspect the full
+better-github-skill thread report from every author before deciding that review is clean.

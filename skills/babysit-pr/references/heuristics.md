@@ -33,7 +33,7 @@ If uncertain, inspect failed logs once before choosing rerun.
    - If likely flaky/unrelated and not safely rerunnable: stop and report the blocker; do not edit unrelated tests, build scripts, CI configuration, dependency pins, or infrastructure code.
    - If checks are still pending and no failed job is available yet: wait.
 3. If flaky reruns for the same SHA reach the configured limit (default 3): stop and report persistent failure.
-4. Independently, process new review feedback and every unresolved Greptile, Codex, or Cursor Bugbot thread.
+4. Independently, use better-github-skill's full thread report to process all published feedback and every actionable unresolved thread, regardless of author.
 
 ## Review comment agreement criteria
 
@@ -44,12 +44,10 @@ Address the comment when:
 - The requested change does not conflict with the user’s intent or recent guidance.
 - The change can be made safely without unrelated refactors.
 
-For Greptile, Codex, and Cursor Bugbot feedback, independently validate the claim. Fix valid
-feedback, or reply with a concise `[codex]` technical pushback when it is invalid, obsolete, or out
-of scope. Resolve the handled bot thread with the guarded watcher command in either case. Do not
-make an unnecessary code change just to satisfy a bot.
-
-Fix valid human review feedback in code when possible, but do not post a GitHub reply to a human-authored comment/thread unless the user explicitly confirms the exact response.
+Independently validate every claim, regardless of whether it came from a human, known review bot, or
+unknown bot. Fix valid feedback, or reply with concise `[agent]` technical pushback when it is invalid,
+obsolete, or out of scope. Resolve a thread only after every substantive point and follow-up is
+handled. Do not make an unnecessary code change just to satisfy a reviewer.
 
 Do not auto-fix when:
 
@@ -57,7 +55,7 @@ Do not auto-fix when:
 - The request conflicts with explicit user instructions.
 - The proposed change requires product/design decisions the user has not made.
 - The codebase is in a dirty/unrelated state that makes safe editing uncertain.
-- The comment only needs a written answer or disagreement response; propose the reply to the user instead of posting it automatically.
+- The comment needs a product decision, an unsupported commitment, or a response that cannot be justified confidently from repository evidence.
 
 ## Review-green gate
 
@@ -66,9 +64,9 @@ Do not report a PR as review-clean until all of the following are true:
 - CI is terminal and green for the current head SHA.
 - GitHub reports no blocking review decision.
 - All newly surfaced review feedback has been judged.
-- Every unresolved inline thread that contains Greptile, Codex, or Cursor Bugbot feedback has been resolved.
+- Every substantive published item has been judged and every actionable inline thread has been resolved, regardless of author.
 
-The watcher must continue after this milestone while the PR remains open. New bot feedback, a new
+The watcher must continue after this milestone while the PR remains open. New feedback, a new
 commit, a changed review decision, or a reopened/unresolved thread resets the gate.
 
 ## Stop-and-ask conditions
@@ -80,4 +78,4 @@ Stop and ask the user instead of continuing automatically when:
 - The PR branch cannot be pushed.
 - CI failures persist after the flaky retry budget.
 - Reviewer feedback requires a product decision or cross-team coordination.
-- A human review comment requires a written GitHub reply instead of a code change.
+- Feedback requires a product decision or a response the agent cannot support safely from repository evidence.
