@@ -38,8 +38,6 @@ This repo also contains reusable skills, prompt templates, and extensions for Am
 
 ```bash
 make install                 # install agent skills/prompts/themes/extensions and Amp plugins
-make install-tools           # install pinned external agent tools
-make setup-tools             # configure installed tools that integrate with agents
 make install-skills
 make install-amp-plugins
 make install-prompts
@@ -50,8 +48,6 @@ make build                   # build agent artifacts only
 make clean                   # clean agent build/install artifacts
 make plugin-update           # update plugin submodules
 ```
-
-External native tools are pinned under `[external_tools]` in `plugins.toml`. They are installed into `~/.local/bin` without allowing upstream installers to modify agent settings; this repository owns those settings through `make install-configs`. The full `make install` workflow installs tools, applies managed configs, then runs any declared tool setup. Scopey therefore installs hooks for Claude, Codex, Grok, Pi, and OpenCode after the managed Codex hook configuration is in place.
 
 ### Amp plugin development
 

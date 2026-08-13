@@ -14,8 +14,6 @@ import os
 import shutil
 import subprocess
 import sys
-import tempfile
-import urllib.request
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -93,7 +91,6 @@ BUILD_DIR = ROOT / "build"
 CONFIG_FILE = ROOT / "plugins.toml"
 CONFIGS_DIR = ROOT / "configs"
 CODEX_CONFIG_FILE = CONFIGS_DIR / "codex-config.toml"
-CODEX_HOOKS_FILE = CONFIGS_DIR / "codex" / "hooks.json"
 CODEX_RULES_DIR = CONFIGS_DIR / "codex" / "rules"
 PI_CONFIGS_DIR = ROOT / "pi-configs"
 PI_SETTINGS_FILE = PI_CONFIGS_DIR / "pi-settings.json"
@@ -372,36 +369,6 @@ class Plugin:
         )
 
 
-@dataclass
-class ExternalTool:
-    """Pinned external binary installed through a supported source."""
-
-    name: str
-    repo: str
-    version: str
-    installer_url: str | None = None
-    install_method: str = "script"
-    setup_args: list[str] | None = None
-
-    @classmethod
-    def from_dict(cls, name: str, data: dict) -> "ExternalTool":
-        tool = cls(
-            name=name,
-            repo=data["repo"],
-            version=data["version"],
-            installer_url=data.get("installer_url"),
-            install_method=data.get("install_method", "script"),
-            setup_args=data.get("setup_args"),
-        )
-        if tool.install_method not in {"script", "cargo_git"}:
-            raise ValueError(
-                f"Unsupported external tool install_method for {name}: {tool.install_method}"
-            )
-        if tool.install_method == "script" and not tool.installer_url:
-            raise ValueError(f"External tool {name} requires installer_url")
-        return tool
-
-
 def load_config() -> dict[str, Plugin]:
     """Load and parse plugins.toml."""
     if not CONFIG_FILE.exists():
@@ -410,21 +377,7 @@ def load_config() -> dict[str, Plugin]:
     with open(CONFIG_FILE, "rb") as f:
         data = tomllib.load(f)
 
-    return {
-        name: Plugin.from_dict(name, cfg)
-        for name, cfg in data.items()
-        if name != "external_tools"
-    }
-
-
-def load_external_tools() -> dict[str, ExternalTool]:
-    """Load pinned external tools from plugins.toml."""
-    with open(CONFIG_FILE, "rb") as f:
-        data = tomllib.load(f)
-    return {
-        name: ExternalTool.from_dict(name, cfg)
-        for name, cfg in data.get("external_tools", {}).items()
-    }
+    return {name: Plugin.from_dict(name, cfg) for name, cfg in data.items()}
 
 
 def run_cmd(
@@ -439,98 +392,6 @@ def init_submodules():
     print("Initializing git submodules...")
     run_cmd(["git", "submodule", "update", "--init", "--recursive"])
     print("  Done")
-
-
-def install_external_tools(tools: dict[str, ExternalTool]) -> None:
-    """Install pinned external tools without allowing them to mutate agent configs."""
-    print("Installing external tools...")
-    destination = HOME / ".local" / "bin"
-    destination.mkdir(parents=True, exist_ok=True)
-
-    for tool in tools.values():
-        if tool.install_method == "cargo_git":
-            run_cmd(
-                [
-                    "cargo",
-                    "install",
-                    "--git",
-                    f"https://github.com/{tool.repo}.git",
-                    "--tag",
-                    tool.version,
-                    "--root",
-                    str(destination.parent),
-                    "--locked",
-                    "--force",
-                ]
-            )
-        else:
-            install_script_external_tool(tool, destination)
-
-        verify_external_tool(tool, destination)
-        print(f"  {tool.name} {tool.version} -> {destination / tool.name}")
-
-
-def install_script_external_tool(tool: ExternalTool, destination: Path) -> None:
-    """Install one external tool with its upstream script."""
-    assert tool.installer_url
-
-    override = os.environ.get(f"{tool.name.upper()}_INSTALLER_PATH")
-    if override:
-        installer = Path(override)
-        run_cmd(
-            [
-                "bash",
-                str(installer),
-                "--version",
-                tool.version,
-                "--dest",
-                str(destination),
-                "--verify",
-                "--no-configure",
-            ]
-        )
-    else:
-        url = tool.installer_url.format(version=tool.version)
-        with tempfile.TemporaryDirectory() as temp_dir:
-            installer = Path(temp_dir) / f"{tool.name}-install.sh"
-            urllib.request.urlretrieve(url, installer)
-            run_cmd(
-                [
-                    "bash",
-                    str(installer),
-                    "--version",
-                    tool.version,
-                    "--dest",
-                    str(destination),
-                    "--verify",
-                    "--no-configure",
-                ]
-            )
-
-
-def verify_external_tool(tool: ExternalTool, destination: Path) -> None:
-    """Check the binary installed by the pinned tool definition."""
-    binary = destination / tool.name
-    result = run_cmd([str(binary), "--version"])
-    expected_version = tool.version.removeprefix("v")
-    if expected_version not in result.stdout:
-        raise RuntimeError(
-            f"{tool.name} verification failed: expected {expected_version} in "
-            f"{result.stdout.strip()!r}"
-        )
-
-
-def setup_external_tools(tools: dict[str, ExternalTool]) -> None:
-    """Configure tools after the repository installs its managed agent configs."""
-    configured_tools = [tool for tool in tools.values() if tool.setup_args]
-    if not configured_tools:
-        return
-
-    print("Configuring external tools...")
-    destination = HOME / ".local" / "bin"
-    for tool in configured_tools:
-        run_cmd([str(destination / tool.name), *tool.setup_args])
-        print(f"  {tool.name} {' '.join(tool.setup_args)}")
 
 
 def glob_paths(base: Path, patterns: list[str]) -> list[Path]:
@@ -1619,27 +1480,6 @@ def install_codex_rules():
         print(f"  Installed to {target}")
 
 
-def install_codex_hooks():
-    """Install Codex CLI hooks."""
-    print("Installing Codex hooks...")
-
-    if not CODEX_HOOKS_FILE.exists():
-        print("  No codex hooks found, skipping")
-        return
-
-    codex_dir = HOME / ".codex"
-    codex_dir.mkdir(parents=True, exist_ok=True)
-
-    dest_file = codex_dir / "hooks.json"
-    shutil.copy(CODEX_HOOKS_FILE, dest_file)
-    print(f"  Installed to {dest_file}")
-
-    stale_hook = codex_dir / "hooks" / "terraform_apply_gate.py"
-    if stale_hook.exists():
-        stale_hook.unlink()
-        print(f"  Removed {stale_hook}")
-
-
 def install_pi_settings():
     """Install Pi agent settings."""
     import json
@@ -1739,7 +1579,6 @@ def install_configs():
     install_amp_config()
     install_codex_config()
     install_codex_rules()
-    install_codex_hooks()
     install_pi_settings()
     install_pi_models()
     install_global_agents_md()
@@ -1809,8 +1648,6 @@ def main():
         choices=[
             "build",
             "install",
-            "install-tools",
-            "setup-tools",
             "install-skills",
             "install-amp-plugins",
             "install-extensions",
@@ -1838,7 +1675,6 @@ def main():
     NON_INTERACTIVE = args.non_interactive
 
     plugins = load_config()
-    external_tools = load_external_tools()
 
     if args.command == "submodule-init":
         init_submodules()
@@ -1861,17 +1697,11 @@ def main():
         install_themes(force=args.force)
         install_extensions(plugins, force=args.force)
         install_amp_plugins(force=args.force)
-        install_external_tools(external_tools)
         install_configs()
-        setup_external_tools(external_tools)
         print("\nAll done!")
     elif args.command == "install-skills":
         build_skills(plugins)
         install_skills(force=args.force)
-    elif args.command == "install-tools":
-        install_external_tools(external_tools)
-    elif args.command == "setup-tools":
-        setup_external_tools(external_tools)
     elif args.command == "install-amp-plugins":
         install_amp_plugins(force=args.force)
     elif args.command == "install-extensions":

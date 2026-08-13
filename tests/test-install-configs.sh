@@ -30,7 +30,6 @@ test_config_new_files() {
     assert_output_contains "$output" "Installing Amp config" "Shows Amp configuration"
     assert_output_contains "$output" "Installing Codex config" "Shows Codex configuration"
     assert_output_contains "$output" "Installing Codex rules" "Shows Codex rules installation"
-    assert_output_contains "$output" "Installing Codex hooks" "Shows Codex hooks installation"
     assert_output_contains "$output" "Installing Pi settings" "Shows Pi configuration"
     assert_output_contains "$output" "Installing global AGENTS.md" "Shows AGENTS.md installation"
 
@@ -40,7 +39,7 @@ test_config_new_files() {
     assert_file_not_exists "$SANDBOX_DIR/.codex/model-catalog.json" "Codex custom model catalog is absent"
     assert_file_not_exists "$SANDBOX_DIR/.codex/fireworks-glm52.config.toml" "Codex Fireworks profile is absent"
     assert_file_exists "$SANDBOX_DIR/.codex/rules/default.rules" "Codex default rules file was created"
-    assert_file_exists "$SANDBOX_DIR/.codex/hooks.json" "Codex hooks file was created"
+    assert_file_not_exists "$SANDBOX_DIR/.codex/hooks.json" "Codex hooks file is not managed"
     assert_file_not_exists "$SANDBOX_DIR/.codex/hooks/terraform_apply_gate.py" "Codex Terraform hard-gate hook is not installed"
     assert_file_exists "$SANDBOX_DIR/.pi/agent/settings.json" "Pi settings file was created"
     assert_file_exists "$SANDBOX_DIR/.codex/AGENTS.md" "Codex AGENTS.md was created"
@@ -106,24 +105,6 @@ test_codex_terraform_apply_rules() {
     assert_output_contains "$codex_rules" 'pattern = ["mise", ["run", "exec"], "terraform", "--", "apply"]' "Codex rules prompt for mise Terraform apply"
     assert_output_contains "$codex_rules" '-chdir=regions/us-west-2-lax-devbox' "Codex rules prompt for chdir Terraform apply"
     assert_output_contains "$codex_rules" 'decision = "prompt"' "Codex Terraform rules request prompt approval"
-}
-
-# Test: Codex Scopey hooks are installed
-test_codex_hooks_installed() {
-    log_test "Testing Codex Scopey hooks"
-    cd "$PROJECT_DIR"
-
-    rm -rf "$SANDBOX_DIR/.codex"
-
-    HOME="$SANDBOX_DIR" make install-configs >/dev/null 2>&1
-
-    local hooks_json
-    hooks_json=$(cat "$SANDBOX_DIR/.codex/hooks.json")
-
-    assert_output_contains "$hooks_json" '"command": "scopey hook user-prompt"' "Codex hooks include Scopey prompt tracking"
-    assert_output_contains "$hooks_json" '"command": "scopey hook post-tool"' "Codex hooks include Scopey tool tracking"
-    assert_output_not_contains "$hooks_json" '"PreToolUse"' "Codex hooks do not install a command guard"
-    assert_file_not_exists "$SANDBOX_DIR/.codex/hooks/terraform_apply_gate.py" "Terraform hard-gate hook script is absent"
 }
 
 # Test: Codex config preserves runtime-managed hook trust state
@@ -248,19 +229,17 @@ test_config_idempotent() {
 
     # Run install-configs twice
     HOME="$SANDBOX_DIR" make install-configs >/dev/null 2>&1
-    local amp_first codex_first codex_rules_first codex_hooks_first pi_first
+    local amp_first codex_first codex_rules_first pi_first
     amp_first=$(cat "$SANDBOX_DIR/.config/amp/settings.json")
     codex_first=$(cat "$SANDBOX_DIR/.codex/config.toml")
     codex_rules_first=$(cat "$SANDBOX_DIR/.codex/rules/default.rules")
-    codex_hooks_first=$(cat "$SANDBOX_DIR/.codex/hooks.json")
     pi_first=$(cat "$SANDBOX_DIR/.pi/agent/settings.json")
 
     HOME="$SANDBOX_DIR" make install-configs >/dev/null 2>&1
-    local amp_second codex_second codex_rules_second codex_hooks_second pi_second
+    local amp_second codex_second codex_rules_second pi_second
     amp_second=$(cat "$SANDBOX_DIR/.config/amp/settings.json")
     codex_second=$(cat "$SANDBOX_DIR/.codex/config.toml")
     codex_rules_second=$(cat "$SANDBOX_DIR/.codex/rules/default.rules")
-    codex_hooks_second=$(cat "$SANDBOX_DIR/.codex/hooks.json")
     pi_second=$(cat "$SANDBOX_DIR/.pi/agent/settings.json")
 
     # Content should be identical
@@ -275,10 +254,6 @@ test_config_idempotent() {
     fi
     if [ "$codex_rules_first" != "$codex_rules_second" ]; then
         log_error "FAIL: Codex rules differ between runs"
-        all_match=false
-    fi
-    if [ "$codex_hooks_first" != "$codex_hooks_second" ]; then
-        log_error "FAIL: Codex hooks differ between runs"
         all_match=false
     fi
     if [ "$pi_first" != "$pi_second" ]; then
@@ -384,7 +359,6 @@ main() {
     test_config_new_files
     test_codex_custom_models_removed
     test_codex_terraform_apply_rules
-    test_codex_hooks_installed
     test_codex_preserve_hook_trust
     test_amp_preserve_existing
     test_amp_trailing_commas

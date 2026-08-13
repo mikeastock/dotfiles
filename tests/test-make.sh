@@ -24,71 +24,12 @@ test_make_help() {
     assert_output_contains "$output" "Usage:" "Help shows usage"
     assert_output_contains "$output" "make install" "Help shows install command"
     assert_output_contains "$output" "make install-amp-plugins" "Help shows Amp plugin install command"
-    assert_output_contains "$output" "make install-tools" "Help shows external tool install command"
-    assert_output_contains "$output" "make setup-tools" "Help shows external tool setup command"
     assert_output_contains "$output" "make install-prompts" "Help shows install-prompts command"
     assert_output_contains "$output" "make install-themes" "Help shows install-themes command"
     assert_output_contains "$output" "make build" "Help shows build command"
     assert_output_contains "$output" "make clean" "Help shows clean command"
     assert_output_contains "$output" "Dotfiles:" "Help shows dotfiles section"
     assert_output_contains "$output" "make dot-clean" "Help shows dot-clean command"
-}
-
-# Test: make install-tools installs pinned tools without configuring agents
-test_make_install_tools() {
-    log_test "Testing 'make install-tools' (sandboxed)"
-    cd "$PROJECT_DIR"
-
-    local fake_bin fake_cargo scopey_args_log scopey_binary_args_log output
-    fake_bin="$SANDBOX_DIR/bin"
-    fake_cargo="$fake_bin/cargo"
-    scopey_args_log="$SANDBOX_DIR/scopey-install-args.log"
-    scopey_binary_args_log="$SANDBOX_DIR/scopey-binary-args.log"
-    mkdir -p "$fake_bin"
-    cat > "$fake_cargo" <<'EOF'
-#!/usr/bin/env bash
-printf '%s\n' "$@" > "$SCOPEY_TEST_ARGS_LOG"
-root=""
-while [ "$#" -gt 0 ]; do
-    if [ "$1" = "--root" ]; then
-        root="$2"
-        shift 2
-    else
-        shift
-    fi
-done
-mkdir -p "$root/bin"
-cat > "$root/bin/scopey" <<'SCRIPT'
-#!/usr/bin/env bash
-if [ -n "${SCOPEY_TEST_BINARY_ARGS_LOG:-}" ]; then
-    printf '%s\n' "$@" > "$SCOPEY_TEST_BINARY_ARGS_LOG"
-fi
-if [ "$1" = "--version" ]; then
-    echo "scopey 0.1.1"
-fi
-SCRIPT
-chmod +x "$root/bin/scopey"
-EOF
-    chmod +x "$fake_cargo"
-
-    output=$(HOME="$SANDBOX_DIR" PATH="$fake_bin:$PATH" SCOPEY_TEST_ARGS_LOG="$scopey_args_log" SCOPEY_TEST_BINARY_ARGS_LOG="$scopey_binary_args_log" make install-tools 2>&1)
-
-    assert_output_contains "$output" "Installing external tools" "Install shows external tool progress"
-    assert_file_exists "$SANDBOX_DIR/.local/bin/scopey" "scopey binary was installed"
-
-    local scopey_args
-    scopey_args=$(<"$scopey_args_log")
-    assert_output_contains "$scopey_args" "--git" "scopey installs from its Git repository"
-    assert_output_contains "$scopey_args" "https://github.com/ArchAstro/scopey.git" "scopey uses the configured repository"
-    assert_output_contains "$scopey_args" "--tag" "scopey receives a pinned tag"
-    assert_output_contains "$scopey_args" "v0.1.1" "scopey receives the configured version"
-    assert_output_contains "$scopey_args" "--root" "scopey installs under an explicit root"
-    assert_output_contains "$scopey_args" "$SANDBOX_DIR/.local" "scopey installs under the active HOME"
-    assert_output_contains "$scopey_args" "--locked" "scopey uses its locked dependency graph"
-
-    output=$(HOME="$SANDBOX_DIR" PATH="$fake_bin:$PATH" SCOPEY_TEST_BINARY_ARGS_LOG="$scopey_binary_args_log" make setup-tools 2>&1)
-    assert_output_contains "$output" "Configuring external tools" "Setup shows external tool progress"
-    assert_output_contains "$(<"$scopey_binary_args_log")" "setup" "scopey setup runs after managed config installation"
 }
 
 # Test: make build
@@ -669,10 +610,9 @@ test_make_install() {
 
     # Run full install with sandbox HOME
     local output
-    output=$(HOME="$SANDBOX_DIR" XDG_STATE_HOME="$SANDBOX_DIR/.local/state" PATH="$SANDBOX_DIR/bin:$PATH" SCOPEY_TEST_ARGS_LOG="$SANDBOX_DIR/scopey-install-args.log" make install 2>&1)
+    output=$(HOME="$SANDBOX_DIR" XDG_STATE_HOME="$SANDBOX_DIR/.local/state" PATH="$SANDBOX_DIR/bin:$PATH" make install 2>&1)
 
     assert_output_contains "$output" "All skills, prompt templates, themes, extensions, and Amp plugins installed" "Install shows completion message"
-    assert_output_contains "$output" "Configuring external tools" "Install configures external agent tools after managed configs"
     assert_file_exists "$SANDBOX_DIR/.pi/agent/prompts/refactor-pass.md" "Install includes Pi prompts"
     assert_file_exists "$SANDBOX_DIR/.pi/agent/themes/catppuccin-latte.json" "Install includes Pi themes"
     assert_file_exists "$SANDBOX_DIR/.pi/agent/settings.json" "Install includes Pi settings"
@@ -829,7 +769,6 @@ main() {
     test_plugins_toml
     test_make_build
     test_package_manager_security_config
-    test_make_install_tools
     test_make_install_skills
     test_install_skills_preserves_unmanaged_siblings
     test_install_skills_removes_previous_managed_siblings
