@@ -4,8 +4,6 @@ description: Fetch PR review comments and evaluate them before changing code
 ---
 Fetch review comments for this PR and help evaluate them before changing code: $@
 
-Use the `receiving-code-review` skill if available.
-
 Workflow:
 
 1. Fetch unresolved PR review comments, issue comments, requested changes, and failed check summaries.

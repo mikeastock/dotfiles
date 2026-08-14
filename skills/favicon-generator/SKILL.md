@@ -1,7 +1,7 @@
 ---
 name: favicon-generator
 description: Generate flat favicons from image prompts, then key out a magenta background and build PNG/ICO/WebP outputs with ImageMagick. Use when you need a reliable favicon workflow.
-compatibility: Requires ImageMagick (magick), uv, and GEMINI_API_KEY for image generation.
+compatibility: Requires ImageMagick (magick) and an image generation tool (Gemini API key or equivalent).
 ---
 
 # Favicon Generator (magenta key workflow)
@@ -10,9 +10,8 @@ Create clean, flat favicons with a transparent background. Generate a base PNG o
 
 ## Prereqs
 
-- `uv`
 - `magick` (ImageMagick)
-- `GEMINI_API_KEY` set
+- An image generation tool (Gemini or equivalent) to produce the magenta-background PNG
 
 ## Prompt template
 
@@ -24,21 +23,9 @@ Favicon icon, 1:1 square, solid magenta #FF00FF background. Simple flat vector i
 
 ## Generate the base image
 
-Use the Nano Banana Pro skill to generate the PNG. Run from your project directory so outputs land where you need them.
+Generate a 1:1 PNG with a solid magenta `#FF00FF` background using whatever image generation tool is available (Gemini, etc.). Save it in the project directory.
 
-Example (update the path for your agent):
-
-- Pi: `~/.agents/skills/nano-banana-pro/scripts/generate_image.py`
-- Claude: `~/.claude/skills/nano-banana-pro/scripts/generate_image.py`
-
-```
-uv run <nanoBananaDir>/scripts/generate_image.py \
-  --prompt "<your prompt>" \
-  --filename "yyyy-mm-dd-hh-mm-ss-favicon.png" \
-  --resolution 1K
-```
-
-Iterate at 1K, then re-run at 2K/4K only when the prompt is locked.
+Iterate at a modest resolution first, then regenerate at a higher resolution only when the prompt is locked.
 
 ## Convert to favicon outputs
 
