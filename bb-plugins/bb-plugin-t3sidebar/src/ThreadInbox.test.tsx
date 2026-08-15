@@ -368,6 +368,17 @@ describe("card metadata", () => {
     expect(await screen.findByLabelText("Claude Code")).toBeDefined();
   });
 
+  // The ACP-backed agents are keyed by their prefixed provider ids, so a typo
+  // there would silently drop them back to the unknown-provider dot.
+  it.each([
+    ["acp-cursor", "Cursor"],
+    ["acp-grok", "Grok Build"],
+    ["codex", "Codex"],
+  ])("draws the agent's own glyph for %s", async (providerId, label) => {
+    render([thread({ id: "thr_p", providerId })]);
+    expect(await screen.findByLabelText(label)).toBeDefined();
+  });
+
   it("falls back to a neutral glyph for an unknown provider", async () => {
     render([thread({ id: "thr_p", providerId: "some-new-agent" })]);
     expect(await screen.findByLabelText("some-new-agent")).toBeDefined();
