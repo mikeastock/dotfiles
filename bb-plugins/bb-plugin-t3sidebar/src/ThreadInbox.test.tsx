@@ -373,7 +373,9 @@ describe("card metadata", () => {
   it.each([
     ["acp-cursor", "Cursor"],
     ["acp-grok", "Grok Build"],
+    ["acp-opencode", "opencode"],
     ["codex", "Codex"],
+    ["pi", "Pi"],
   ])("draws the agent's own glyph for %s", async (providerId, label) => {
     render([thread({ id: "thr_p", providerId })]);
     expect(await screen.findByLabelText(label)).toBeDefined();
