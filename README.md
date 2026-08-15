@@ -61,6 +61,19 @@ make install-amp-plugins     # copy amp-plugins/*.ts into ~/.config/amp/plugins/
 
 After changing a plugin, rerun `make install-amp-plugins`, then run `plugins: reload` from Amp's command palette or restart Amp. See `amp-plugins/README.md` for the plugin development loop and example.
 
+### bb plugin development
+
+Forked bb plugins live in `bb-plugins/<plugin>/`, vendored as plain source so they can be modified in place. They are not part of `make install`; bb loads each one directly from its path in this repo.
+
+```bash
+cd bb-plugins/bb-plugin-t3sidebar
+npm install
+bb plugin install "$PWD" --yes    # register with bb (once)
+npx bb plugin dev                 # watch sources, hot-reload the frontend
+```
+
+A plugin's bb id is its `package.json` name with the `bb-plugin-` prefix stripped, and its data lives in `~/.bb/plugins/<id>/`, so renaming the package orphans that data. Backend changes (`src/server.ts`) need `npm run build && bb plugin reload <id>`. Each plugin keeps `upstream` pointing at the repo it was forked from; sync by diffing against that remote.
+
 ### Amp config
 
 Amp settings live in `amp-configs/settings.json`. `make install-configs` merges those managed settings into `~/.config/amp/settings.json` while preserving any other local Amp settings already present.
@@ -140,6 +153,7 @@ dotfiles/
 ├── pi-themes/               # Pi themes
 ├── prompts/                 # Pi prompt templates
 ├── plugins/                 # plugin submodules
+├── bb-plugins/              # forked bb plugins
 ├── scripts/build.py         # agent build/install system
 ├── tests/                   # agent tooling tests
 └── Makefile                 # dotfiles + agent commands
