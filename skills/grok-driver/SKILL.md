@@ -52,7 +52,7 @@ Grok:
 One work order = one fresh headless run:
 
 ```bash
-grok --cwd <repo> --prompt-file <spec.md> \
+grok --cwd <repo> --prompt-file <spec.md> --model grok-4.6 \
   --permission-mode bypassPermissions --no-plan --no-memory \
   --reasoning-effort high > out.md 2> err.log
 ```
@@ -65,7 +65,7 @@ grok --cwd <repo> --prompt-file <spec.md> \
   context and is cheaper than a fresh run:
 
   ```bash
-  grok --cwd <repo> --resume --prompt-file <fix.md> \
+  grok --cwd <repo> --resume --prompt-file <fix.md> --model grok-4.6 \
     --permission-mode bypassPermissions --no-plan --reasoning-effort high \
     > fix-out.md 2> fix-err.log
   ```
