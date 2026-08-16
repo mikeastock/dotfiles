@@ -354,16 +354,16 @@ require("lazy").setup({
     -- {
     --   "ggml-org/llama.vim",
     -- },
-    {
-      "supermaven-inc/supermaven-nvim",
-      config = function()
-        require("supermaven-nvim").setup({
-          keymaps = {
-            accept_suggestion = "<C-f>",
-          },
-        })
-      end,
-    },
+    -- {
+    --   "supermaven-inc/supermaven-nvim",
+    --   config = function()
+    --     require("supermaven-nvim").setup({
+    --       keymaps = {
+    --         accept_suggestion = "<C-f>",
+    --       },
+    --     })
+    --   end,
+    -- },
 
     -- Formatting
     {
