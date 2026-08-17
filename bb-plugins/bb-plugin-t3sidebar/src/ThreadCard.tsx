@@ -216,13 +216,16 @@ export function ThreadCard({
               isCompact ? "text-xs" : "text-2xs",
             )}
           >
-            {/* No branch name. bb generates one per thread from the thread's
-                own title, so the row spent its widest column restating the
-                line above it in mono — and truncation meant a screenful of
-                them shared a prefix and differed past the ellipsis.
+            {/* Neither the branch nor the machine. bb derives a branch from
+                the thread's own title, so it restated the line above it in
+                mono; the machine is the same one for nearly every thread, so
+                it read as furniture. Both spent the row's widest column on
+                something that never distinguished one row from another.
 
-                What is left is what the title cannot say: the thread this one
-                was spawned under, or the machine its work runs on. */}
+                A child still names the thread it was spawned under, because
+                that genuinely differs row to row. Everything else leaves the
+                line to the counts, the pull request, and the agent — and the
+                empty span holds the height so cards stay one size. */}
             {parentTitle !== null ? (
               <span className="flex min-w-0 flex-1 items-center gap-0.5">
                 <Icon
@@ -231,10 +234,6 @@ export function ThreadCard({
                   aria-hidden
                 />
                 <span className="truncate">{parentTitle}</span>
-              </span>
-            ) : thread.host ? (
-              <span className="min-w-0 flex-1 truncate">
-                {thread.host.name}
               </span>
             ) : (
               <span className="flex-1" />

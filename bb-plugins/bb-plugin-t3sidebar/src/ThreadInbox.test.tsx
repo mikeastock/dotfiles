@@ -470,24 +470,14 @@ describe("card metadata", () => {
     expect(await screen.findByLabelText("some-new-agent")).toBeDefined();
   });
 
-  // A personal-project thread has a machine but no worktree, so the machine
-  // takes the branch's place instead of leaving the line blank.
-  it("shows the machine when the thread has no branch", async () => {
-    render([
-      thread({
-        id: "thr_m",
-        host: { id: "host_1", name: "Sawyer's MacBook" },
-      }),
-    ]);
-    expect(await screen.findByText("Sawyer's MacBook")).toBeDefined();
-  });
-
-  // bb derives a thread's branch from its title, so the branch was the widest
-  // column on the row restating the line directly above it.
-  it("never shows the branch, even when the thread has one", async () => {
+  // bb derives a branch from the thread's own title, and the machine is the
+  // same one for nearly every thread — both spent the row's widest column on
+  // something that never told two rows apart.
+  it("shows neither the branch nor the machine", async () => {
     render([
       thread({
         id: "thr_b",
+        title: "A thread",
         host: { id: "host_1", name: "Sawyer's MacBook" },
         environment: {
           id: "env_1",
@@ -497,8 +487,9 @@ describe("card metadata", () => {
         },
       }),
     ]);
-    expect(await screen.findByText("Sawyer's MacBook")).toBeDefined();
+    await screen.findByText("A thread");
     expect(screen.queryByText("bb/feature")).toBeNull();
+    expect(screen.queryByText("Sawyer's MacBook")).toBeNull();
   });
 
   // Not exactly 3h: the card's clock is quantized to the minute, so a
@@ -888,9 +879,9 @@ describe("child threads in the list", () => {
     expect(row.parentElement?.className).toContain("bg-sidebar-accent");
   });
 
-  // The parent reference took the branch's place on line 3; with the branch
-  // gone entirely, a root thread simply has nothing to put there.
-  it("leaves a root thread's third line to the machine alone", async () => {
+  // The parent reference is the only thing left on line 3, so a root thread
+  // has nothing to put there and the line belongs to the trailing marks.
+  it("leaves a root thread's third line empty", async () => {
     render([
       thread({
         id: "thr_root",
@@ -904,7 +895,8 @@ describe("child threads in the list", () => {
         },
       }),
     ]);
-    expect(await screen.findByText("orbstack")).toBeDefined();
+    await screen.findByText("Root");
+    expect(screen.queryByText("orbstack")).toBeNull();
     expect(screen.queryByText("bb/some-branch")).toBeNull();
   });
 });
