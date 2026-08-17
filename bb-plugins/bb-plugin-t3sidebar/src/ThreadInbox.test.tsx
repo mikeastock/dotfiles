@@ -371,6 +371,7 @@ describe("row context menu", () => {
         .getAllByRole("menuitem")
         .map((item) => item.textContent),
     ).toEqual([
+      "Rename",
       "In 1 hour",
       "This evening",
       "Tomorrow",
@@ -711,5 +712,106 @@ describe("compact viewport", () => {
     expect(within(shelf).getByText("2h")).toBeDefined();
     expect(screen.queryByLabelText("Wake thread now")).toBeNull();
     expect(within(shelf).getByLabelText("Thread actions")).toBeDefined();
+  });
+});
+
+describe("renaming a thread inline", () => {
+  // jsdom gives every element a zero rect, so the anchor's "did you aim at the
+  // title line?" check needs a real one to test against.
+  function stubTitleRect(title: HTMLElement) {
+    title.getBoundingClientRect = () =>
+      ({ top: 40, bottom: 60, left: 0, right: 200 }) as DOMRect;
+  }
+
+  it("swaps the title for an input on a double-click", async () => {
+    render([thread({ id: "thr_r", title: "Old name" })]);
+    const title = await screen.findByText("Old name");
+    stubTitleRect(title);
+    fireEvent.doubleClick(screen.getByRole("link"), { clientY: 50 });
+
+    const input = await screen.findByLabelText("Rename thread");
+    expect((input as HTMLInputElement).value).toBe("Old name");
+  });
+
+  // The anchor covers the whole card, so a double-click on the branch line or
+  // the project name must not put the row into edit mode.
+  it("ignores a double-click away from the title line", async () => {
+    render([thread({ id: "thr_r", title: "Old name" })]);
+    stubTitleRect(await screen.findByText("Old name"));
+    fireEvent.doubleClick(screen.getByRole("link"), { clientY: 90 });
+    expect(screen.queryByLabelText("Rename thread")).toBeNull();
+  });
+
+  it("commits on Enter through the silent rename action", async () => {
+    const rendered = render([thread({ id: "thr_r", title: "Old name" })]);
+    stubTitleRect(await screen.findByText("Old name"));
+    fireEvent.doubleClick(screen.getByRole("link"), { clientY: 50 });
+
+    const input = await screen.findByLabelText("Rename thread");
+    fireEvent.change(input, { target: { value: "New name" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+
+    expect(rendered.sidebarActionCalls).toContainEqual({
+      method: "rename",
+      threadId: "thr_r",
+      title: "New name",
+    });
+  });
+
+  it("drops the edit on Escape", async () => {
+    const rendered = render([thread({ id: "thr_r", title: "Old name" })]);
+    stubTitleRect(await screen.findByText("Old name"));
+    fireEvent.doubleClick(screen.getByRole("link"), { clientY: 50 });
+
+    const input = await screen.findByLabelText("Rename thread");
+    fireEvent.change(input, { target: { value: "Never mind" } });
+    fireEvent.keyDown(input, { key: "Escape" });
+
+    await waitFor(() => expect(screen.getByText("Old name")).toBeDefined());
+    expect(
+      rendered.sidebarActionCalls.some((call) => call.method === "rename"),
+    ).toBe(false);
+  });
+
+  // Blank would not be "no title" — bb would answer it with a generated one,
+  // so the user would lose the name they had rather than clear it.
+  it.each([
+    ["   ", "a blank title"],
+    ["Old name", "an unchanged title"],
+  ])("renames nothing for %s", async (value) => {
+    const rendered = render([thread({ id: "thr_r", title: "Old name" })]);
+    stubTitleRect(await screen.findByText("Old name"));
+    fireEvent.doubleClick(screen.getByRole("link"), { clientY: 50 });
+
+    const input = await screen.findByLabelText("Rename thread");
+    fireEvent.change(input, { target: { value } });
+    fireEvent.keyDown(input, { key: "Enter" });
+
+    expect(
+      rendered.sidebarActionCalls.some((call) => call.method === "rename"),
+    ).toBe(false);
+  });
+
+  it("renames once when Enter is followed by the input's blur", async () => {
+    const rendered = render([thread({ id: "thr_r", title: "Old name" })]);
+    stubTitleRect(await screen.findByText("Old name"));
+    fireEvent.doubleClick(screen.getByRole("link"), { clientY: 50 });
+
+    const input = await screen.findByLabelText("Rename thread");
+    fireEvent.change(input, { target: { value: "New name" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    fireEvent.blur(input);
+
+    expect(
+      rendered.sidebarActionCalls.filter((call) => call.method === "rename"),
+    ).toHaveLength(1);
+  });
+
+  it("reaches the same editor from the row menu", async () => {
+    render([thread({ id: "thr_r", title: "Old name" })]);
+    fireEvent.contextMenu(await screen.findByText("Old name"));
+    const menu = await screen.findByRole("menu", { name: "Thread actions" });
+    fireEvent.click(within(menu).getByText("Rename"));
+    expect(await screen.findByLabelText("Rename thread")).toBeDefined();
   });
 });

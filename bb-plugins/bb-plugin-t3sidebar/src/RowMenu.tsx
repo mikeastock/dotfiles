@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import * as ContextMenu from "@radix-ui/react-context-menu";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
@@ -50,6 +50,7 @@ type MenuEntry =
 function useRowMenuEntries(
   thread: PluginSidebarThread,
   lifecycle: RowLifecycle,
+  onStartRename?: () => void,
 ): MenuEntry[] {
   const actions = useSidebarThreadActions();
   // False on compact viewports and when the user turned splits off, so this
@@ -57,6 +58,18 @@ function useRowMenuEntries(
   const { isAvailable: canSplit } = useSidebarThreadSplit(thread.id);
 
   const entries: MenuEntry[] = [];
+
+  // Double-clicking the title is the fast way in, but it is a pointer gesture
+  // on a row that also has to work under a fingertip and a keyboard.
+  if (onStartRename !== undefined) {
+    entries.push({
+      kind: "item",
+      key: "rename",
+      label: "Rename",
+      onSelect: onStartRename,
+    });
+    entries.push({ kind: "separator", key: "after-rename" });
+  }
 
   if (lifecycle?.kind === "park") {
     entries.push({ kind: "label", key: "snooze-label", text: "Snooze" });
@@ -151,6 +164,38 @@ function labelClass(isCompact: boolean): string {
 }
 
 /**
+ * Hands a closing menu's focus to the editor that menu asked for.
+ *
+ * Picking the item cannot open the editor, because a menu tears its focus
+ * down as it closes: the input would mount, focus itself, then be blurred by
+ * that teardown — and a blur is a commit, so the editor opened and closed
+ * inside one frame with nothing typed.
+ *
+ * So the item only records the intent, and the editor opens on
+ * `onCloseAutoFocus`, once the menu is done. Preventing that event's default
+ * also stops Radix returning focus to the row, leaving the input's own
+ * `autoFocus` as the last word.
+ */
+function useRenameHandoff(onStartRename?: () => void) {
+  const picked = useRef(false);
+
+  return {
+    start:
+      onStartRename === undefined
+        ? undefined
+        : () => {
+            picked.current = true;
+          },
+    onCloseAutoFocus: (event: Event) => {
+      if (!picked.current) return;
+      picked.current = false;
+      event.preventDefault();
+      onStartRename?.();
+    },
+  };
+}
+
+/**
  * This sidebar's own right-click menu.
  *
  * The plugin API ships no menu component on purpose, so a replaced sidebar
@@ -165,13 +210,16 @@ function labelClass(isCompact: boolean): string {
 export function RowContextMenu({
   thread,
   lifecycle,
+  onStartRename,
   children,
 }: {
   thread: PluginSidebarThread;
   lifecycle: RowLifecycle;
+  onStartRename?: () => void;
   children: ReactNode;
 }) {
   const isCompact = useIsCompactViewport();
+  const rename = useRenameHandoff(onStartRename);
   if (isCompact) return <>{children}</>;
 
   return (
@@ -181,8 +229,13 @@ export function RowContextMenu({
         <ContextMenu.Content
           aria-label="Thread actions"
           className={CONTENT_CLASS}
+          onCloseAutoFocus={rename.onCloseAutoFocus}
         >
-          <ContextMenuEntries thread={thread} lifecycle={lifecycle} />
+          <ContextMenuEntries
+            thread={thread}
+            lifecycle={lifecycle}
+            onStartRename={rename.start}
+          />
         </ContextMenu.Content>
       </ContextMenu.Portal>
     </ContextMenu.Root>
@@ -192,12 +245,14 @@ export function RowContextMenu({
 function ContextMenuEntries({
   thread,
   lifecycle,
+  onStartRename,
 }: {
   thread: PluginSidebarThread;
   lifecycle: RowLifecycle;
+  onStartRename?: () => void;
 }) {
   const isCompact = useIsCompactViewport();
-  const entries = useRowMenuEntries(thread, lifecycle);
+  const entries = useRowMenuEntries(thread, lifecycle, onStartRename);
 
   return (
     <>
@@ -235,10 +290,14 @@ function ContextMenuEntries({
 export function RowMenuButton({
   thread,
   lifecycle,
+  onStartRename,
 }: {
   thread: PluginSidebarThread;
   lifecycle: RowLifecycle;
+  onStartRename?: () => void;
 }) {
+  const rename = useRenameHandoff(onStartRename);
+
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
@@ -265,8 +324,13 @@ export function RowMenuButton({
           sideOffset={4}
           aria-label="Thread actions"
           className={CONTENT_CLASS}
+          onCloseAutoFocus={rename.onCloseAutoFocus}
         >
-          <DropdownMenuEntries thread={thread} lifecycle={lifecycle} />
+          <DropdownMenuEntries
+            thread={thread}
+            lifecycle={lifecycle}
+            onStartRename={rename.start}
+          />
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
     </DropdownMenu.Root>
@@ -276,12 +340,14 @@ export function RowMenuButton({
 function DropdownMenuEntries({
   thread,
   lifecycle,
+  onStartRename,
 }: {
   thread: PluginSidebarThread;
   lifecycle: RowLifecycle;
+  onStartRename?: () => void;
 }) {
   const isCompact = useIsCompactViewport();
-  const entries = useRowMenuEntries(thread, lifecycle);
+  const entries = useRowMenuEntries(thread, lifecycle, onStartRename);
 
   return (
     <>
