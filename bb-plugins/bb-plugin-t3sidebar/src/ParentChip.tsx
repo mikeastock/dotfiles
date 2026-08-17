@@ -12,8 +12,8 @@ import { TOUCH_TARGET_CLASS } from "./useCompactViewport";
 /**
  * The way back out of a child thread.
  *
- * The child's own row names its parent but cannot open it — the row belongs to
- * the child, and a second link inside it would fight the full-bleed anchor.
+ * The child's row nests under its parent but cannot open it — the row belongs
+ * to the child, and a second link inside it would fight the full-bleed anchor.
  * This chip is the one that navigates. The disc repeats the parent's colour
  * from the list, so the chip points at a thread the user can recognise.
  */

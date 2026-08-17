@@ -16,9 +16,10 @@ const MAX_DISCS = 3;
 /**
  * A chip in the thread header that opens the list of this thread's children.
  *
- * The list is flat and sorted by creation time, so a thread's children are
- * scattered through it rather than gathered under it. This chip is where they
- * are gathered, and it answers "is any of my work waiting on me" in one glyph.
+ * The list nests children under this thread already, so this is for whoever is
+ * reading the thread rather than the list: it answers "is any of my work
+ * waiting on me" in one glyph, while the sidebar may be scrolled elsewhere or
+ * that subtree folded shut.
  *
  * These are bb CHILD THREADS — forks, side chats, and plugin-spawned threads.
  * bb's in-turn subagents are activity counters on the parent, not threads, so

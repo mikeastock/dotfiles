@@ -25,6 +25,10 @@ and hold that place until you park them. Status lives inside each card instead
 of in its position, so the sidebar only moves when you act — no row slides
 away under your cursor because an agent finished something.
 
+Children nest under their parent, and a parent folds shut. Nesting is
+structural, not a ranking: siblings still sort newest-first at every level, so
+what moves a row is parentage, which does not change on its own.
+
 Three shelves:
 
 - **Inbox** — three-line cards: project and one fixed-width status slot on the
@@ -63,36 +67,54 @@ Three shelves:
   back early if it starts working or asks you something.
 - **Settled** — work you are done with, collapsed to one line each.
 
-## Child threads get a row like everything else
+## Child threads nest, and fold away
 
-Every thread is a row, children included. A child names the thread it was
-spawned under on its third line, which is otherwise empty — "who started
-this" is the one thing a child's row cannot otherwise say, and unlike a
-branch or a machine it genuinely differs from row to row.
+Every thread is a row, children included, indented 14px per level under the
+thread that spawned it. bb's own sidebar indents 24px; a card is far taller
+than bb's 28px row and its title needs the width more.
 
-Children used to leave the list and live in their parent's header chip. That
-only worked when the parent was the thread already on screen: anything spawned
-from outside the app — `bb thread spawn --parent-self`, a plugin, an agent —
-arrived while you were looking elsewhere, so its row vanished, its raised hand
-went with it, and opening it left the sidebar with nothing selected.
+A parent carries a chevron. Folding it shut hides its whole subtree — and the
+row then spends its otherwise-empty third line saying what it is hiding: "2
+threads", and "1 waiting" in orange if any descendant is blocked. Collapsing
+must never be a way to lose a thread that wants something from you.
 
-Two chips in the thread header still carry the relation, now as navigation
-rather than as the only route:
+Which rows nest is decided per shelf, and a thread is a root here when it has
+no parent **or when its parent is not in the list being folded** — deleted,
+archived, filtered out by search, or sitting on another shelf. That promotion
+is what makes nesting safe: a row can never be tucked inside a parent that is
+not on screen to be expanded. A promoted child names its parent on the third
+line, because that is the only thing explaining why it sits at the left edge;
+a nested child does not, since the row directly above it already is the parent.
 
-- On a parent: a chip with one coloured disc per child. The list is flat and
-  sorted by creation time, so a parent's children are scattered through it;
-  this gathers them and says whether any is waiting on you.
-- On a child: a chip that names the parent and opens it. The child's own row
-  names the parent but cannot open it — a second link inside the row would
-  fight the full-bleed anchor.
+Parentage arrives from the server and nothing guarantees it is acyclic, so the
+tree walk carries ancestor and visited guards, and anything a cycle keeps out
+is appended as a root rather than dropped.
+
+Collapse state lives in `localStorage`, per browser, the same choice bb makes
+for its own sidebar (`bb.sidebar.collapsedThreads`). It is a per-screen
+preference, not something to sync through the plugin's database the way
+settled and snoozed are.
+
+The snoozed and settled shelves stay flat. They are one-line rows for work you
+have already dismissed, and a hierarchy there would be structure without a job.
+
+Two chips in the thread header still carry the relation for whoever is reading
+a thread rather than the list:
+
+- On a parent: a chip with one coloured disc per child, saying whether any is
+  waiting on you — useful when the sidebar is scrolled elsewhere or that
+  subtree is folded shut.
+- On a child: a chip that names the parent and opens it. The row nests under
+  the parent but cannot open it — a second link inside the row would fight the
+  full-bleed anchor.
 
 The parent chip sits on the left of the children chip, so the header reads up
 then down. A child that has children of its own shows both. Each disc takes
 its colour from the thread id, so the same thread keeps one colour in the list
 and in both chips.
 
-An orphan — a child whose parent is deleted — gets a row with nothing to point
-at, and its header shows no parent chip.
+An orphan — a child whose parent is deleted — gets a row at the left edge, and
+its header shows no parent chip.
 
 ## What it demonstrates
 

@@ -22,6 +22,8 @@ import {
   CompactViewportProvider,
   useIsCompactViewport,
 } from "./useCompactViewport";
+import { buildThreadTree, summarizeDescendants, visibleRows } from "./tree";
+import { useCollapsedThreads } from "./useCollapsedThreads";
 import {
   filterByProject,
   parentTitlesByThreadId,
@@ -34,7 +36,8 @@ import {
 const ALL_PROJECTS = "__all__";
 
 /**
- * The sidebar's scrolling list: one flat, statically ordered stack of cards.
+ * The sidebar's scrolling list: a statically ordered stack of cards, with
+ * children nested under the thread that spawned them.
  *
  * The host owns the New-thread button and the search field above it, so this
  * ships neither. It filters by the `searchQuery` prop and keeps only the one
@@ -49,6 +52,7 @@ export function ThreadInbox({
   const { status, threads, projects } = useSidebarThreads();
   const actions = useSidebarThreadActions();
   const lifecycle = useLifecycle(threads);
+  const { collapsed, toggle } = useCollapsedThreads();
   const [scope, setScope] = useState<string>(ALL_PROJECTS);
   // One clock for every card in a render, quantized to the minute so the
   // labels do not disagree and do not churn on unrelated re-renders.
@@ -94,9 +98,13 @@ export function ThreadInbox({
       else active.push(thread);
     }
     const split = partitionPinned(active);
+    // One tree per shelf, not one for the whole list: a child whose parent
+    // sits on a different shelf has no parent HERE, so the promotion rule
+    // gives it a row of its own rather than hiding it under something the
+    // shelf does not contain.
     return {
-      pinned: sortByCreatedAtDescending(split.pinned),
-      inbox: sortByCreatedAtDescending(split.inbox),
+      pinned: buildThreadTree(split.pinned),
+      inbox: buildThreadTree(split.inbox),
       // Soonest wake first: "what comes back next" is the shelf's question.
       snoozed: [...onSnoozeShelf].sort(
         (left, right) =>
@@ -168,19 +176,33 @@ export function ThreadInbox({
             <>
               {pinned.length > 0 ? (
                 <Shelf label="Pinned">
-                  {pinned.map((thread) => (
+                  {visibleRows(pinned, collapsed).map((node) => (
                     <ThreadCard
-                      key={thread.id}
-                      thread={thread}
+                      key={node.thread.id}
+                      thread={node.thread}
                       projectName={
-                        projectNameById.get(thread.projectId) ?? null
+                        projectNameById.get(node.thread.projectId) ?? null
                       }
-                      parentTitle={parentTitleByThreadId.get(thread.id) ?? null}
-                      isActive={thread.id === activeThreadId}
-                      canPark={lifecycle.canPark(thread)}
+                      parentTitle={
+                        node.depth === 0
+                          ? (parentTitleByThreadId.get(node.thread.id) ?? null)
+                          : null
+                      }
+                      depth={node.depth}
+                      subtree={
+                        node.children.length === 0
+                          ? null
+                          : summarizeDescendants(node)
+                      }
+                      isCollapsed={collapsed.has(node.thread.id)}
+                      onToggleCollapsed={() => toggle(node.thread.id)}
+                      isActive={node.thread.id === activeThreadId}
+                      canPark={lifecycle.canPark(node.thread)}
                       onNavigate={onNavigate}
-                      onSettle={() => lifecycle.settle(thread.id)}
-                      onSnooze={(until) => lifecycle.snooze(thread.id, until)}
+                      onSettle={() => lifecycle.settle(node.thread.id)}
+                      onSnooze={(until) =>
+                        lifecycle.snooze(node.thread.id, until)
+                      }
                       now={now}
                     />
                   ))}
@@ -188,19 +210,33 @@ export function ThreadInbox({
               ) : null}
               {inbox.length > 0 ? (
                 <Shelf label={pinned.length > 0 ? "Inbox" : null}>
-                  {inbox.map((thread) => (
+                  {visibleRows(inbox, collapsed).map((node) => (
                     <ThreadCard
-                      key={thread.id}
-                      thread={thread}
+                      key={node.thread.id}
+                      thread={node.thread}
                       projectName={
-                        projectNameById.get(thread.projectId) ?? null
+                        projectNameById.get(node.thread.projectId) ?? null
                       }
-                      parentTitle={parentTitleByThreadId.get(thread.id) ?? null}
-                      isActive={thread.id === activeThreadId}
-                      canPark={lifecycle.canPark(thread)}
+                      parentTitle={
+                        node.depth === 0
+                          ? (parentTitleByThreadId.get(node.thread.id) ?? null)
+                          : null
+                      }
+                      depth={node.depth}
+                      subtree={
+                        node.children.length === 0
+                          ? null
+                          : summarizeDescendants(node)
+                      }
+                      isCollapsed={collapsed.has(node.thread.id)}
+                      onToggleCollapsed={() => toggle(node.thread.id)}
+                      isActive={node.thread.id === activeThreadId}
+                      canPark={lifecycle.canPark(node.thread)}
                       onNavigate={onNavigate}
-                      onSettle={() => lifecycle.settle(thread.id)}
-                      onSnooze={(until) => lifecycle.snooze(thread.id, until)}
+                      onSettle={() => lifecycle.settle(node.thread.id)}
+                      onSnooze={(until) =>
+                        lifecycle.snooze(node.thread.id, until)
+                      }
                       now={now}
                     />
                   ))}

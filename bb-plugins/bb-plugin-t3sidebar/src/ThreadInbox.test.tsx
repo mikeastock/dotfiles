@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   cleanup,
   fireEvent,
@@ -834,14 +834,21 @@ describe("child threads in the list", () => {
     expect(rows.some((row) => row?.includes("CLI child"))).toBe(true);
   });
 
-  it("names the parent on the child's row", async () => {
+  // Nested under its parent, the child does not repeat the parent's name —
+  // the row directly above it already is the parent.
+  it("nests a child under its parent instead of naming it", async () => {
     render([parent, child]);
-    // The row's own name carries it too: the arrow glyph is decorative.
-    expect(
-      await screen.findByRole("link", {
-        name: "CLI child, under Parent thread",
-      }),
-    ).toBeDefined();
+    const row = await screen.findByRole("link", { name: "CLI child" });
+    expect(row.closest("li")?.style.paddingLeft).toBe("14px");
+    expect(screen.queryByText("Parent thread, under")).toBeNull();
+  });
+
+  // Promoted to the left edge because its parent is not on screen, the name is
+  // the only thing that explains where the row came from.
+  it("names the parent of a child whose parent is not in the list", async () => {
+    render([{ ...child, parentThreadId: "thr_elsewhere" }]);
+    const row = await screen.findByRole("link", { name: /CLI child/ });
+    expect(row.closest("li")?.style.paddingLeft).toBe("0px");
   });
 
   // The child's raised hand is the reason the row has to exist at all.
@@ -873,9 +880,7 @@ describe("child threads in the list", () => {
         rpc: { listLifecycle: () => ({ rows: [] }) },
       },
     );
-    const row = await screen.findByRole("link", {
-      name: "CLI child, under Parent thread",
-    });
+    const row = await screen.findByRole("link", { name: "CLI child" });
     expect(row.parentElement?.className).toContain("bg-sidebar-accent");
   });
 
@@ -984,5 +989,104 @@ describe("a thread waiting on you", () => {
     const row = (await screen.findByRole("link", { name: "Calm" }))
       .parentElement!;
     expect(row.className).not.toContain("var(--warning)");
+  });
+});
+
+// Nesting, the way bb's own sidebar draws it: a child sits under its parent,
+// and a parent can be folded shut. Collapsing must never be a way to lose a
+// thread that wants something, so a shut row answers for what it hides.
+describe("nesting and collapsing", () => {
+  const parent = thread({ id: "thr_p", title: "Parent", createdAt: 1 });
+  const kid = thread({
+    id: "thr_k",
+    title: "Kid",
+    parentThreadId: "thr_p",
+    createdAt: 2,
+  });
+  const grandkid = thread({
+    id: "thr_g",
+    title: "Grandkid",
+    parentThreadId: "thr_k",
+    createdAt: 3,
+  });
+
+  const indents = () =>
+    screen.getAllByRole("listitem").map((row) => row.style.paddingLeft);
+
+  beforeEach(() => window.localStorage.clear());
+
+  it("indents each level under its parent", async () => {
+    render([parent, kid, grandkid]);
+    await screen.findByText("Parent");
+    expect(indents()).toEqual(["0px", "14px", "28px"]);
+  });
+
+  it("folds a subtree shut and back open", async () => {
+    render([parent, kid, grandkid]);
+    const toggle = await screen.findByLabelText(/Collapse 2 child threads/);
+    fireEvent.click(toggle);
+
+    await waitFor(() => expect(screen.queryByText("Kid")).toBeNull());
+    expect(screen.getByText("Parent")).toBeDefined();
+    expect(screen.queryByText("Grandkid")).toBeNull();
+
+    fireEvent.click(screen.getByLabelText(/Expand 2 child threads/));
+    await waitFor(() => expect(screen.getByText("Kid")).toBeDefined());
+  });
+
+  it("says what a collapsed row is hiding", async () => {
+    render([parent, kid, grandkid]);
+    // Two rows have children here, so name the one being folded.
+    fireEvent.click(await screen.findByLabelText(/Collapse 2 child threads/));
+    expect(await screen.findByText("2 threads")).toBeDefined();
+  });
+
+  // The whole point of the summary: a blocked descendant cannot go quiet just
+  // because someone folded its parent.
+  it("surfaces a blocked descendant on the collapsed parent", async () => {
+    render([
+      parent,
+      { ...kid, hasPendingInteraction: true, indicator: "waiting-for-input" },
+    ]);
+    fireEvent.click(await screen.findByLabelText(/Collapse/));
+    expect(await screen.findByText("1 waiting")).toBeDefined();
+  });
+
+  it("surfaces an unread descendant more quietly", async () => {
+    render([parent, { ...kid, isUnread: true }]);
+    fireEvent.click(await screen.findByLabelText(/Collapse/));
+    expect(await screen.findByText("1 unread")).toBeDefined();
+  });
+
+  it("offers no toggle on a thread with no children", async () => {
+    render([thread({ id: "thr_alone", title: "Alone" })]);
+    await screen.findByText("Alone");
+    expect(screen.queryByLabelText(/Collapse/)).toBeNull();
+  });
+
+  // bb keeps its own sidebar's collapse state per browser; this matches.
+  it("remembers what was collapsed across a remount", async () => {
+    const first = render([parent, kid]);
+    fireEvent.click(await screen.findByLabelText(/Collapse/));
+    await waitFor(() => expect(screen.queryByText("Kid")).toBeNull());
+    first.unmount();
+
+    render([parent, kid]);
+    await screen.findByText("Parent");
+    expect(screen.queryByText("Kid")).toBeNull();
+  });
+
+  // Collapsing hides rows; it must not hide them from the shortcut targets
+  // that are still on screen.
+  it("keeps every visible row a host shortcut target", async () => {
+    render([parent, kid]);
+    await screen.findByText("Kid");
+    expect(
+      screen
+        .getAllByRole("link")
+        .every((row) =>
+          row.hasAttribute("data-sidebar-thread-shortcut-target"),
+        ),
+    ).toBe(true);
   });
 });

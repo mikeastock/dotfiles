@@ -13,23 +13,25 @@ export default definePluginApp((app) => {
   app.slots.experimental_threadList({
     id: "inbox",
     title: "T3 Sidebar",
-    description: "One flat list of cards, newest first, that never re-orders.",
+    description:
+      "Cards, newest first, that never re-order. Children nest and fold away.",
     component: ThreadInbox,
   });
 
   // Registered first, so it renders on the left of the children chip: the
   // header then reads up (parent) then down (children).
   //
-  // A child has its own row now, so this is no longer its only route back to
-  // the parent — but the row names the parent while the header can open it.
+  // A child nests under its parent now, so this is no longer its only route
+  // back — but a fold or a scroll can put the parent out of sight, and this
+  // opens it either way.
   app.slots.experimental_threadHeaderAction({
     id: "parent",
     title: "Parent thread",
     component: ParentChip,
   });
 
-  // The list is flat, so a parent's children are scattered through it by
-  // creation time. This chip gathers them in one place.
+  // The list nests children under this thread, so this chip is for whoever is
+  // reading the thread rather than the list.
   app.slots.experimental_threadHeaderAction({
     id: "children",
     title: "Child threads",

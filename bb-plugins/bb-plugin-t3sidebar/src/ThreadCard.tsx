@@ -10,6 +10,7 @@ import { cn } from "./lib/utils";
 import { RowContextMenu, RowMenuButton, type RowLifecycle } from "./RowMenu";
 import { ProviderGlyph } from "./ProviderGlyph";
 import { STATUS_SLOT_CLASS, StatusOrTime, WaitingPill } from "./StatusSlot";
+import type { SubtreeSummary } from "./tree";
 import { threadDisplayTitle } from "./inbox";
 import { TitleEditor } from "./TitleEditor";
 import { resolveSnoozePresets } from "./lifecycle";
@@ -32,6 +33,10 @@ export function ThreadCard({
   thread,
   projectName,
   parentTitle,
+  depth,
+  subtree,
+  isCollapsed,
+  onToggleCollapsed,
   isActive,
   canPark,
   onNavigate,
@@ -41,8 +46,19 @@ export function ThreadCard({
 }: {
   thread: PluginSidebarThread;
   projectName: string | null;
-  /** The thread this one was spawned under; null for a root or an orphan. */
+  /**
+   * The thread this one was spawned under, named only when it is NOT the row
+   * directly above. A nested child sits under its parent, so saying the name
+   * again would be noise; a child whose parent is off screen has been promoted
+   * to the left edge, and the name is the only thing that explains why.
+   */
   parentTitle: string | null;
+  /** Nesting level; 0 sits at the list's left edge. */
+  depth: number;
+  /** What this row is hiding when collapsed; null when it has no children. */
+  subtree: SubtreeSummary | null;
+  isCollapsed: boolean;
+  onToggleCollapsed: () => void;
   isActive: boolean;
   /** False while the thread is working or blocked on the user. */
   canPark: boolean;
@@ -78,7 +94,14 @@ export function ThreadCard({
     >
       <li
         className="list-none"
-        style={isCompact ? NO_TOUCH_CALLOUT : undefined}
+        // Indent on the wrapper, not the card, so a nested card keeps its own
+        // padding, its rail, and its full-bleed anchor intact. bb indents its
+        // own rows 24px per level; a card is far taller than bb's 28px row and
+        // its title needs the width more, so this steps in 14px.
+        style={{
+          ...(isCompact ? NO_TOUCH_CALLOUT : undefined),
+          paddingLeft: depth * 14,
+        }}
       >
         <div
           className={cn(
@@ -133,6 +156,13 @@ export function ThreadCard({
             className="absolute inset-0 cursor-pointer rounded-md"
           />
           <div className="pointer-events-none relative flex h-5 items-center gap-1.5">
+            {subtree === null ? null : (
+              <CollapseToggle
+                isCollapsed={isCollapsed}
+                count={subtree.total}
+                onToggle={onToggleCollapsed}
+              />
+            )}
             <span
               className={cn(
                 "min-w-0 flex-1 truncate font-medium text-muted-foreground",
@@ -226,7 +256,25 @@ export function ThreadCard({
                 that genuinely differs row to row. Everything else leaves the
                 line to the counts, the pull request, and the agent — and the
                 empty span holds the height so cards stay one size. */}
-            {parentTitle !== null ? (
+            {subtree !== null && isCollapsed ? (
+              // The line is empty on a root thread, so a collapsed row spends
+              // it answering for what it is hiding. Without this, collapsing
+              // would be a way to lose a thread that is waiting on you.
+              <span className="flex min-w-0 flex-1 items-center gap-1.5">
+                <span className="truncate">
+                  {subtree.total} {subtree.total === 1 ? "thread" : "threads"}
+                </span>
+                {subtree.waiting > 0 ? (
+                  <span className="shrink-0 font-medium text-[color:var(--warning)]">
+                    {subtree.waiting} waiting
+                  </span>
+                ) : subtree.unread > 0 ? (
+                  <span className="shrink-0 text-[color:var(--timeline-accent)]">
+                    {subtree.unread} unread
+                  </span>
+                ) : null}
+              </span>
+            ) : parentTitle !== null ? (
               <span className="flex min-w-0 flex-1 items-center gap-0.5">
                 <Icon
                   name="ArrowTurnBackward"
@@ -286,6 +334,48 @@ export function ThreadCard({
         </div>
       </li>
     </RowContextMenu>
+  );
+}
+
+/**
+ * The one control that opens and closes a subtree.
+ *
+ * It sits above the card's full-bleed anchor, so it has to take pointer events
+ * back and stop the click reaching the row underneath — otherwise collapsing a
+ * parent would also navigate to it.
+ */
+function CollapseToggle({
+  isCollapsed,
+  count,
+  onToggle,
+}: {
+  isCollapsed: boolean;
+  count: number;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-expanded={!isCollapsed}
+      aria-label={`${isCollapsed ? "Expand" : "Collapse"} ${count} child ${
+        count === 1 ? "thread" : "threads"
+      }`}
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onToggle();
+      }}
+      className="pointer-events-auto relative -ml-1 flex size-4 shrink-0 cursor-pointer items-center justify-center rounded text-muted-foreground/70 hover:bg-sidebar-accent hover:text-foreground"
+    >
+      <Icon
+        name="ChevronDown"
+        className={cn(
+          "size-3 transition-transform",
+          isCollapsed && "-rotate-90",
+        )}
+        aria-hidden
+      />
+    </button>
   );
 }
 
