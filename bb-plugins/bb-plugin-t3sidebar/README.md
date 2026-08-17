@@ -28,9 +28,15 @@ away under your cursor because an agent finished something.
 Three shelves:
 
 - **Inbox** — three-line cards: project and one fixed-width status slot on the
-  first line; title on the second; then branch (or the machine, when a thread
-  has no worktree), activity counts, the pull-request number, and the agent
-  glyph. Pinned threads sit above.
+  first line; title on the second; then the machine the work runs on, activity
+  counts, the pull-request number, and the agent glyph. Pinned threads sit
+  above.
+
+  No branch name. bb derives one per thread from the thread's own title, so
+  the widest column on the row was restating the line directly above it in
+  mono — and once truncated, a screenful of them shared a prefix and differed
+  only past the ellipsis. The pull-request number identifies the work when it
+  matters.
 
   One slot, one marker, one width, so the whole column lines up. The slot
   shows the status glyph while a thread has something to say, and the age
@@ -60,10 +66,9 @@ Three shelves:
 ## Child threads get a row like everything else
 
 Every thread is a row, children included. A child names the thread it was
-spawned under on its third line, where a root thread shows its branch — a
-child usually shares its parent's worktree, so the branch would only repeat
-the parent's row, while "who started this" is the one thing the row cannot
-otherwise say.
+spawned under on its third line, where a root thread shows its machine —
+"who started this" is the one thing a child's row cannot otherwise say, and
+it outranks a machine the child shares with its parent anyway.
 
 Children used to leave the list and live in their parent's header chip. That
 only worked when the parent was the thread already on screen: anything spawned

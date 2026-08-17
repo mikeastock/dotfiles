@@ -482,7 +482,9 @@ describe("card metadata", () => {
     expect(await screen.findByText("Sawyer's MacBook")).toBeDefined();
   });
 
-  it("prefers the branch over the machine when both exist", async () => {
+  // bb derives a thread's branch from its title, so the branch was the widest
+  // column on the row restating the line directly above it.
+  it("never shows the branch, even when the thread has one", async () => {
     render([
       thread({
         id: "thr_b",
@@ -495,8 +497,8 @@ describe("card metadata", () => {
         },
       }),
     ]);
-    expect(await screen.findByText("bb/feature")).toBeDefined();
-    expect(screen.queryByText("Sawyer's MacBook")).toBeNull();
+    expect(await screen.findByText("Sawyer's MacBook")).toBeDefined();
+    expect(screen.queryByText("bb/feature")).toBeNull();
   });
 
   // Not exactly 3h: the card's clock is quantized to the minute, so a
@@ -886,11 +888,14 @@ describe("child threads in the list", () => {
     expect(row.parentElement?.className).toContain("bg-sidebar-accent");
   });
 
-  it("leaves a root thread showing its branch", async () => {
+  // The parent reference took the branch's place on line 3; with the branch
+  // gone entirely, a root thread simply has nothing to put there.
+  it("leaves a root thread's third line to the machine alone", async () => {
     render([
       thread({
         id: "thr_root",
         title: "Root",
+        host: { id: "host_1", name: "orbstack" },
         environment: {
           id: "env_1",
           name: null,
@@ -899,7 +904,8 @@ describe("child threads in the list", () => {
         },
       }),
     ]);
-    expect(await screen.findByText("bb/some-branch")).toBeDefined();
+    expect(await screen.findByText("orbstack")).toBeDefined();
+    expect(screen.queryByText("bb/some-branch")).toBeNull();
   });
 });
 

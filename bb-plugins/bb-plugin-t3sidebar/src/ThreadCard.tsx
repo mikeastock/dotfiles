@@ -216,14 +216,13 @@ export function ThreadCard({
               isCompact ? "text-xs" : "text-2xs",
             )}
           >
-            {/* For a child, the thread it was spawned under outranks the
-                branch: a child usually shares its parent's worktree, so the
-                branch is the parent row's line repeated, while "who started
-                this" is the one thing the row cannot otherwise say.
+            {/* No branch name. bb generates one per thread from the thread's
+                own title, so the row spent its widest column restating the
+                line above it in mono — and truncation meant a screenful of
+                them shared a prefix and differed past the ellipsis.
 
-                A thread without a worktree still runs somewhere, so the
-                machine takes the branch's place rather than leaving the line
-                blank. */}
+                What is left is what the title cannot say: the thread this one
+                was spawned under, or the machine its work runs on. */}
             {parentTitle !== null ? (
               <span className="flex min-w-0 flex-1 items-center gap-0.5">
                 <Icon
@@ -232,10 +231,6 @@ export function ThreadCard({
                   aria-hidden
                 />
                 <span className="truncate">{parentTitle}</span>
-              </span>
-            ) : thread.environment?.branchName ? (
-              <span className="min-w-0 flex-1 truncate font-mono">
-                {thread.environment.branchName}
               </span>
             ) : thread.host ? (
               <span className="min-w-0 flex-1 truncate">
