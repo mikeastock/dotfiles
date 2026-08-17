@@ -36,7 +36,7 @@ export function ParentChip({
       title={title}
       onClick={() => actions.open(parent.id)}
       className={cn(
-        "relative flex h-7 max-w-full items-center gap-1.5 rounded-full border border-border text-2xs text-muted-foreground",
+        "relative flex h-7 max-w-full cursor-pointer items-center gap-1.5 rounded-full border border-border text-2xs text-muted-foreground",
         "hover:bg-accent hover:text-foreground",
         // Icon-only on a short header row, per the slot's own guidance — so
         // the press has to reach past the chip's 28px without the header

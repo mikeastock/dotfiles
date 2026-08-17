@@ -46,7 +46,7 @@ export function SubagentsChip({
         aria-label={`${children.length} child threads`}
         onClick={() => setOpen((value) => !value)}
         className={cn(
-          "relative flex h-7 items-center gap-1.5 rounded-full border border-border px-2 text-2xs text-muted-foreground",
+          "relative flex h-7 cursor-pointer items-center gap-1.5 rounded-full border border-border px-2 text-2xs text-muted-foreground",
           "hover:bg-accent hover:text-foreground",
           open && "bg-accent text-foreground",
           isCompactViewport && TOUCH_TARGET_CLASS,
@@ -86,7 +86,7 @@ export function SubagentsChip({
                       actions.open(child.id);
                     }}
                     className={cn(
-                      "flex w-full items-center gap-2 rounded-md px-2 text-left hover:bg-accent",
+                      "flex w-full cursor-pointer items-center gap-2 rounded-md px-2 text-left hover:bg-accent",
                       isCompactViewport ? "py-2.5" : "py-1.5",
                     )}
                   >

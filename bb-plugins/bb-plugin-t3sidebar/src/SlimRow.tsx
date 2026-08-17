@@ -120,7 +120,7 @@ export function SlimRow({
                 }}
                 // Pulled right by its own padding, so the icon — not the hit
                 // area — lands on the column.
-                className="pointer-events-auto absolute -right-0.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground opacity-0 hover:text-foreground focus-visible:opacity-100 group-hover/slim:opacity-100"
+                className="pointer-events-auto absolute -right-0.5 top-1/2 -translate-y-1/2 cursor-pointer rounded p-0.5 text-muted-foreground opacity-0 hover:text-foreground focus-visible:opacity-100 group-hover/slim:opacity-100"
               >
                 <Icon
                   name={shelf === "snoozed" ? "Clock" : "ArrowTurnBackward"}

@@ -122,7 +122,7 @@ export function ThreadInbox({
               until you hover it. */}
             <SelectTrigger
               className={cn(
-                "min-w-0 flex-1 border-0 px-1.5 py-1 text-xs font-medium text-muted-foreground shadow-none hover:bg-sidebar-accent focus:ring-0",
+                "min-w-0 flex-1 cursor-pointer border-0 px-1.5 py-1 text-xs font-medium text-muted-foreground shadow-none hover:bg-sidebar-accent focus:ring-0",
                 // The trigger is a real row of chrome rather than an icon in a
                 // dense line, so it takes the 44px in the layout.
                 isCompactViewport ? "h-11" : "h-7",
@@ -271,7 +271,7 @@ function ParkedShelf({
         // every row's status and provider glyph. Full width already, so a
         // coarse pointer only needs the height.
         className={cn(
-          "mt-3 flex w-full items-center gap-2 px-2.5 text-left",
+          "mt-3 flex w-full cursor-pointer items-center gap-2 px-2.5 text-left",
           isCompact ? "min-h-11 pb-2" : "pb-1",
         )}
       >

@@ -311,7 +311,7 @@ export function RowMenuButton({
             event.stopPropagation();
           }}
           className={cn(
-            "pointer-events-auto relative flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground",
+            "pointer-events-auto relative flex size-5 shrink-0 cursor-pointer items-center justify-center rounded text-muted-foreground",
             TOUCH_TARGET_CLASS,
           )}
         >

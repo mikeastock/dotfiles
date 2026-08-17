@@ -297,7 +297,7 @@ function ParkButton({
         event.stopPropagation();
         onActivate();
       }}
-      className="rounded p-0.5 text-muted-foreground hover:text-foreground"
+      className="cursor-pointer rounded p-0.5 text-muted-foreground hover:text-foreground"
     >
       <Icon name={icon} className="size-3.5" />
     </button>
