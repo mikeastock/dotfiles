@@ -9,6 +9,7 @@ import {
 } from "@testing-library/react";
 import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
 import type { PluginSidebarThread } from "@get-bb/plugin-sdk";
+import type { ThreadLifecycleRow } from "./lifecycle";
 
 // Load through the harness so the plugin's `@get-bb/plugin-sdk/app` import binds
 // to the test runtime; importing the component directly would bind it to an
@@ -70,6 +71,27 @@ function render(
     // every thread is active, which is what these list tests are about.
     rpc: { listLifecycle: () => ({ rows: [] }) },
   });
+}
+
+/** The same list, drawn the way the host draws it on a phone. */
+function renderCompact(
+  threads: PluginSidebarThread[],
+  rpc: { listLifecycle: () => { rows: ThreadLifecycleRow[] } } = {
+    listLifecycle: () => ({ rows: [] }),
+  },
+) {
+  return renderSlot(
+    inbox,
+    { ...listProps, isCompactViewport: true },
+    {
+      sidebarThreads: {
+        status: "ready",
+        threads,
+        projects: [{ id: "proj_1", name: "bb", isPersonal: false }],
+      },
+      rpc,
+    },
+  );
 }
 
 afterEach(cleanup);
@@ -341,11 +363,71 @@ describe("row context menu", () => {
     const menu = await screen.findByRole("menu", { name: "Thread actions" });
     // The plugin builds this menu itself — the SDK ships no menu component —
     // so the items are this plugin's choice, backed by the action hook.
+    //
+    // The park actions lead because this menu is the ONLY way to reach them on
+    // a coarse pointer, where the card's hover-revealed buttons never appear.
     expect(
       within(menu)
         .getAllByRole("menuitem")
         .map((item) => item.textContent),
-    ).toEqual(["Open in split", "Mark unread", "Pin", "Archive", "Delete"]);
+    ).toEqual([
+      "In 1 hour",
+      "This evening",
+      "Tomorrow",
+      "Next week",
+      "Settle",
+      "Open in split",
+      "Mark unread",
+      "Pin",
+      "Archive",
+      "Delete",
+    ]);
+  });
+
+  // A thread that is still working must not be parkable anywhere, and the menu
+  // is a second surface that could otherwise leak the action.
+  it("omits the park actions while the thread is working", async () => {
+    render([
+      thread({ id: "thr_busy", title: "Busy thread", indicator: "runtime" }),
+    ]);
+    fireEvent.contextMenu(await screen.findByText("Busy thread"));
+    const menu = await screen.findByRole("menu", { name: "Thread actions" });
+    const labels = within(menu)
+      .getAllByRole("menuitem")
+      .map((item) => item.textContent);
+    expect(labels).not.toContain("Settle");
+    expect(labels).not.toContain("Tomorrow");
+  });
+
+  it("offers a shelved row its way back", async () => {
+    renderSlot(inbox, listProps, {
+      sidebarThreads: {
+        status: "ready",
+        threads: [thread({ id: "thr_set", title: "Settled thread" })],
+        projects: [{ id: "proj_1", name: "bb", isPersonal: false }],
+      },
+      rpc: {
+        listLifecycle: () => ({
+          rows: [
+            {
+              threadId: "thr_set",
+              settledAt: Date.now(),
+              snoozedUntil: null,
+              snoozedAt: null,
+            },
+          ],
+        }),
+      },
+    });
+    const shelf = await screen.findByRole("region", { name: "Settled" });
+    fireEvent.click(within(shelf).getByRole("button"));
+    fireEvent.contextMenu(within(shelf).getByText("Settled thread"));
+    const menu = await screen.findByRole("menu", { name: "Thread actions" });
+    expect(
+      within(menu)
+        .getAllByRole("menuitem")
+        .map((item) => item.textContent),
+    ).toContain("Un-settle");
   });
 
   it("routes deletion through the host's confirmation", async () => {
@@ -514,17 +596,23 @@ describe("pull request badge", () => {
       },
     });
 
+  // The badge draws "#412", but `title` is a hover tooltip that a touch
+  // screen never shows — so the PR's title has to live in the accessible
+  // name, which is the only copy of it a phone or a screen reader can reach.
+  const BADGE_NAME = "Pull request #412: Fix the flake";
+
   it("links the PR number out to the git host", async () => {
     withPr("none");
-    const badge = await screen.findByRole("link", { name: "#412" });
+    const badge = await screen.findByRole("link", { name: BADGE_NAME });
     expect(badge.getAttribute("href")).toBe("https://github.com/o/r/pull/412");
     expect(badge.getAttribute("title")).toBe("Fix the flake");
+    expect(badge.textContent).toBe("#412");
   });
 
   it("shows no badge when the branch has no PR", async () => {
     render([thread({ id: "thr_nopr" })]);
     await screen.findByText("A thread");
-    expect(screen.queryByRole("link", { name: /^#/ })).toBeNull();
+    expect(screen.queryByRole("link", { name: /^Pull request #/ })).toBeNull();
   });
 
   // The attention state is bb's rolled-up "does this need you" signal, so the
@@ -532,13 +620,79 @@ describe("pull request badge", () => {
   it("colors the badge from the attention state", async () => {
     const failing = withPr("checks_failed");
     expect(
-      (await screen.findByRole("link", { name: "#412" })).className,
+      (await screen.findByRole("link", { name: BADGE_NAME })).className,
     ).toContain("destructive");
     failing.unmount();
 
     withPr("ready_to_merge");
     expect(
-      (await screen.findByRole("link", { name: "#412" })).className,
+      (await screen.findByRole("link", { name: BADGE_NAME })).className,
     ).toContain("success");
+  });
+});
+
+// bb sets isCompactViewport on phone-width viewports AND on coarse pointers,
+// so these are the "no hover to reveal anything with" cases.
+describe("compact viewport", () => {
+  it("replaces the hover-only park buttons with a menu button", async () => {
+    renderCompact([thread({ id: "thr_c", title: "Tap me" })]);
+    await screen.findByText("Tap me");
+    // The hover pair never appears on a touch screen, so drawing it would
+    // strand snooze and settle behind a gesture that cannot happen.
+    expect(screen.queryByLabelText("Settle thread")).toBeNull();
+    expect(screen.queryByLabelText("Snooze until tomorrow")).toBeNull();
+    expect(screen.getByLabelText("Thread actions")).toBeDefined();
+  });
+
+  it("keeps the park actions reachable through that button", async () => {
+    renderCompact([thread({ id: "thr_c", title: "Tap me" })]);
+    fireEvent.pointerDown(await screen.findByLabelText("Thread actions"), {
+      button: 0,
+      ctrlKey: false,
+    });
+    const menu = await screen.findByRole("menu", { name: "Thread actions" });
+    const labels = within(menu)
+      .getAllByRole("menuitem")
+      .map((item) => item.textContent);
+    expect(labels).toContain("Tomorrow");
+    expect(labels).toContain("Settle");
+  });
+
+  // The status slot yields to the park buttons on hover; with no hover there
+  // is nothing to yield to, so the status has to stay put.
+  it("keeps the status visible", async () => {
+    renderCompact([
+      thread({
+        id: "thr_c",
+        title: "Tap me",
+        indicator: "runtime",
+        indicatorLabel: "Thread working",
+      }),
+    ]);
+    expect(await screen.findByLabelText("Thread working")).toBeDefined();
+  });
+
+  // A snoozed row spends its one slot on the wake time. On a pointer the
+  // restore button takes that cell on hover; on a phone it moves to the menu
+  // so the wake time survives.
+  it("keeps a snoozed row's wake time and drops its hover restore", async () => {
+    const wakeAt = Date.now() + 2 * 60 * 60 * 1000;
+    renderCompact([thread({ id: "thr_snz", title: "Parked" })], {
+      listLifecycle: () => ({
+        rows: [
+          {
+            threadId: "thr_snz",
+            settledAt: null,
+            snoozedUntil: wakeAt,
+            snoozedAt: Date.now(),
+          },
+        ],
+      }),
+    });
+    const shelf = await screen.findByRole("region", { name: "Snoozed" });
+    fireEvent.click(within(shelf).getAllByRole("button")[0]!);
+    expect(within(shelf).getByText("2h")).toBeDefined();
+    expect(screen.queryByLabelText("Wake thread now")).toBeNull();
+    expect(within(shelf).getByLabelText("Thread actions")).toBeDefined();
   });
 });

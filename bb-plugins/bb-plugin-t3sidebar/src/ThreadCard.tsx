@@ -6,11 +6,12 @@ import {
 } from "@get-bb/plugin-sdk/app";
 import { Icon, type IconName } from "./components/Icon";
 import { cn } from "./lib/utils";
-import { RowContextMenu } from "./RowContextMenu";
+import { RowContextMenu, RowMenuButton, type RowLifecycle } from "./RowMenu";
 import { ProviderGlyph } from "./ProviderGlyph";
 import { STATUS_SLOT_CLASS, StatusOrTime } from "./StatusSlot";
 import { threadDisplayTitle } from "./inbox";
 import { resolveSnoozePresets } from "./lifecycle";
+import { TOUCH_TARGET_CLASS, useIsCompactViewport } from "./useCompactViewport";
 
 /**
  * One thread as a three-line card: project and status, title, then branch and
@@ -47,9 +48,14 @@ export function ThreadCard({
   // Opt-in per row: this costs a git-host lookup, and threads sharing a
   // worktree share one.
   const { pullRequest } = useSidebarThreadPullRequest(thread.id);
+  const isCompact = useIsCompactViewport();
+
+  const lifecycle: RowLifecycle = canPark
+    ? { kind: "park", onSnooze, onSettle }
+    : null;
 
   return (
-    <RowContextMenu thread={thread}>
+    <RowContextMenu thread={thread} lifecycle={lifecycle}>
       <li className="list-none">
         <div
           className={cn(
@@ -77,12 +83,21 @@ export function ThreadCard({
             className="absolute inset-0 cursor-pointer rounded-md"
           />
           <div className="pointer-events-none relative flex h-5 items-center gap-1.5">
-            <span className="min-w-0 flex-1 truncate text-2xs font-medium text-muted-foreground">
+            <span
+              className={cn(
+                "min-w-0 flex-1 truncate font-medium text-muted-foreground",
+                isCompact ? "text-xs" : "text-2xs",
+              )}
+            >
               {projectName ?? " "}
             </span>
             {/* Status at rest, park actions on hover. Only the status yields,
-                so the project name never shifts. */}
-            {canPark ? (
+                so the project name never shifts.
+
+                A coarse pointer has no hover to reveal them with, so there the
+                menu button below carries these actions instead and the status
+                simply stays put. */}
+            {canPark && !isCompact ? (
               <span className="pointer-events-auto hidden items-center gap-0.5 group-hover/card:flex">
                 <ParkButton
                   label="Snooze until tomorrow"
@@ -101,11 +116,14 @@ export function ThreadCard({
             <span
               className={cn(
                 STATUS_SLOT_CLASS,
-                canPark && "group-hover/card:hidden",
+                canPark && !isCompact && "group-hover/card:hidden",
               )}
             >
               <StatusOrTime thread={thread} now={now} />
             </span>
+            {isCompact ? (
+              <RowMenuButton thread={thread} lifecycle={lifecycle} />
+            ) : null}
           </div>
           <div
             className={cn(
@@ -118,7 +136,12 @@ export function ThreadCard({
           >
             {threadDisplayTitle(thread)}
           </div>
-          <div className="pointer-events-none relative mt-0.5 flex h-4 items-center gap-1.5 text-2xs text-muted-foreground">
+          <div
+            className={cn(
+              "pointer-events-none relative mt-0.5 flex h-4 items-center gap-1.5 text-muted-foreground",
+              isCompact ? "text-xs" : "text-2xs",
+            )}
+          >
             {/* A thread without a worktree still runs somewhere, so the
                 machine takes the branch's place rather than leaving the line
                 blank. */}
@@ -152,8 +175,16 @@ export function ThreadCard({
                 rel="noreferrer"
                 onClick={(event) => event.stopPropagation()}
                 title={pullRequest.title}
+                // `title` is a hover tooltip and a touch screen has no hover,
+                // so the number carries the PR's title for anyone who cannot
+                // read it off the tooltip.
+                aria-label={`Pull request #${pullRequest.number}: ${pullRequest.title}`}
                 className={cn(
-                  "relative shrink-0 font-mono hover:underline",
+                  "pointer-events-auto relative shrink-0 font-mono hover:underline",
+                  // Tiny mono text sitting on top of the card's full-bleed
+                  // anchor: without a bigger target, a near miss opens the
+                  // thread instead of the pull request.
+                  isCompact && TOUCH_TARGET_CLASS,
                   pullRequest.state === "merged"
                     ? "text-[color:var(--pr-merged)]"
                     : pullRequest.attention === "checks_failed" ||

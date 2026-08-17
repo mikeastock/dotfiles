@@ -9,6 +9,7 @@ import { cn } from "./lib/utils";
 import { Disc } from "./Disc";
 import { StatusGlyph } from "./StatusGlyph";
 import { childrenOf, threadDisplayTitle } from "./inbox";
+import { TOUCH_TARGET_CLASS } from "./useCompactViewport";
 
 const MAX_DISCS = 3;
 
@@ -42,9 +43,10 @@ export function SubagentsChip({
         aria-label={`${children.length} child threads`}
         onClick={() => setOpen((value) => !value)}
         className={cn(
-          "flex h-7 items-center gap-1.5 rounded-full border border-border px-2 text-2xs text-muted-foreground",
+          "relative flex h-7 items-center gap-1.5 rounded-full border border-border px-2 text-2xs text-muted-foreground",
           "hover:bg-accent hover:text-foreground",
           open && "bg-accent text-foreground",
+          isCompactViewport && TOUCH_TARGET_CLASS,
         )}
       >
         <DiscCluster threads={children} />
@@ -80,7 +82,10 @@ export function SubagentsChip({
                       setOpen(false);
                       actions.open(child.id);
                     }}
-                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-accent"
+                    className={cn(
+                      "flex w-full items-center gap-2 rounded-md px-2 text-left hover:bg-accent",
+                      isCompactViewport ? "py-2.5" : "py-1.5",
+                    )}
                   >
                     <Disc thread={child} />
                     <span className="flex min-w-0 flex-1 flex-col">

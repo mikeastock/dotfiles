@@ -7,6 +7,7 @@ import { Icon } from "./components/Icon";
 import { cn } from "./lib/utils";
 import { Disc } from "./Disc";
 import { parentOf, threadDisplayTitle } from "./inbox";
+import { TOUCH_TARGET_CLASS } from "./useCompactViewport";
 
 /**
  * The way back out of a child thread.
@@ -35,9 +36,12 @@ export function ParentChip({
       title={title}
       onClick={() => actions.open(parent.id)}
       className={cn(
-        "flex h-7 max-w-full items-center gap-1.5 rounded-full border border-border text-2xs text-muted-foreground",
+        "relative flex h-7 max-w-full items-center gap-1.5 rounded-full border border-border text-2xs text-muted-foreground",
         "hover:bg-accent hover:text-foreground",
-        isCompactViewport ? "px-1.5" : "px-2",
+        // Icon-only on a short header row, per the slot's own guidance — so
+        // the press has to reach past the chip's 28px without the header
+        // growing to match.
+        isCompactViewport ? `px-1.5 ${TOUCH_TARGET_CLASS}` : "px-2",
       )}
     >
       <Icon name="ChevronLeft" className="size-3 shrink-0" aria-hidden />

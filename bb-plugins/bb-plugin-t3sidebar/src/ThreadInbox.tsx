@@ -19,6 +19,10 @@ import { SlimRow } from "./SlimRow";
 import { useLifecycle } from "./useLifecycle";
 import { TRAILING_GLYPH_BOX_CLASS } from "./StatusSlot";
 import {
+  CompactViewportProvider,
+  useIsCompactViewport,
+} from "./useCompactViewport";
+import {
   filterByProject,
   hideChildrenOfVisibleParents,
   partitionPinned,
@@ -38,6 +42,7 @@ const ALL_PROJECTS = "__all__";
  */
 export function ThreadInbox({
   activeThreadId,
+  isCompactViewport,
   onNavigate,
   searchQuery,
 }: PluginThreadListProps) {
@@ -105,112 +110,123 @@ export function ThreadInbox({
       : (projectNameById.get(scope) ?? "All projects");
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      {/* The one control the host has no equivalent for. Everything else in
+    <CompactViewportProvider value={isCompactViewport}>
+      <div className="flex min-h-0 flex-1 flex-col">
+        {/* The one control the host has no equivalent for. Everything else in
           the chrome above — New thread, search — is bb's and stays bb's. */}
-      <div className="flex shrink-0 items-center gap-1 px-2 pb-1">
-        <Select value={scope} onValueChange={setScope}>
-          {/* Ghost trigger: no border, no filled track — it reads as a label
+        <div className="flex shrink-0 items-center gap-1 px-2 pb-1">
+          <Select value={scope} onValueChange={setScope}>
+            {/* Ghost trigger: no border, no filled track — it reads as a label
               until you hover it. */}
-          <SelectTrigger
-            className="h-7 min-w-0 flex-1 border-0 px-1.5 py-1 text-xs font-medium text-muted-foreground shadow-none hover:bg-sidebar-accent focus:ring-0"
-            aria-label={`Project scope: ${scopeLabel}`}
-          >
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL_PROJECTS} className="text-xs">
-              All projects
-            </SelectItem>
-            {projects.map((project) => (
-              <SelectItem
-                key={project.id}
-                value={project.id}
-                className="text-xs"
-              >
-                {project.name}
+            <SelectTrigger
+              className={cn(
+                "min-w-0 flex-1 border-0 px-1.5 py-1 text-xs font-medium text-muted-foreground shadow-none hover:bg-sidebar-accent focus:ring-0",
+                // The trigger is a real row of chrome rather than an icon in a
+                // dense line, so it takes the 44px in the layout.
+                isCompactViewport ? "h-11" : "h-7",
+              )}
+              aria-label={`Project scope: ${scopeLabel}`}
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_PROJECTS} className="text-xs">
+                All projects
               </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+              {projects.map((project) => (
+                <SelectItem
+                  key={project.id}
+                  value={project.id}
+                  className="text-xs"
+                >
+                  {project.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-1.5 pb-2">
-        {status === "loading" ? null : status === "error" ? (
-          <p
-            role="status"
-            className="px-2 py-6 text-center text-xs text-muted-foreground"
-          >
-            Could not load threads.
-          </p>
-        ) : pinned.length + inbox.length + snoozed.length + settled.length ===
-          0 ? (
-          <p
-            role="status"
-            className="px-2 py-6 text-center text-xs text-muted-foreground"
-          >
-            {searchQuery.trim() ? "No threads found" : "No threads yet"}
-          </p>
-        ) : (
-          <>
-            {pinned.length > 0 ? (
-              <Shelf label="Pinned">
-                {pinned.map((thread) => (
-                  <ThreadCard
-                    key={thread.id}
-                    thread={thread}
-                    projectName={projectNameById.get(thread.projectId) ?? null}
-                    isActive={thread.id === activeThreadId}
-                    canPark={lifecycle.canPark(thread)}
-                    onNavigate={onNavigate}
-                    onSettle={() => lifecycle.settle(thread.id)}
-                    onSnooze={(until) => lifecycle.snooze(thread.id, until)}
-                    now={now}
-                  />
-                ))}
-              </Shelf>
-            ) : null}
-            {inbox.length > 0 ? (
-              <Shelf label={pinned.length > 0 ? "Inbox" : null}>
-                {inbox.map((thread) => (
-                  <ThreadCard
-                    key={thread.id}
-                    thread={thread}
-                    projectName={projectNameById.get(thread.projectId) ?? null}
-                    isActive={thread.id === activeThreadId}
-                    canPark={lifecycle.canPark(thread)}
-                    onNavigate={onNavigate}
-                    onSettle={() => lifecycle.settle(thread.id)}
-                    onSnooze={(until) => lifecycle.snooze(thread.id, until)}
-                    now={now}
-                  />
-                ))}
-              </Shelf>
-            ) : null}
-            <ParkedShelf
-              label="Snoozed"
-              threads={snoozed}
-              expanded={showSnoozed}
-              onToggle={() => setShowSnoozed((open) => !open)}
-              shelf="snoozed"
-              activeThreadId={activeThreadId}
-              lifecycle={lifecycle}
-              onNavigate={onNavigate}
-            />
-            <ParkedShelf
-              label="Settled"
-              threads={settled}
-              expanded={showSettled}
-              onToggle={() => setShowSettled((open) => !open)}
-              shelf="settled"
-              activeThreadId={activeThreadId}
-              lifecycle={lifecycle}
-              onNavigate={onNavigate}
-            />
-          </>
-        )}
+        <div className="min-h-0 flex-1 overflow-y-auto px-1.5 pb-2">
+          {status === "loading" ? null : status === "error" ? (
+            <p
+              role="status"
+              className="px-2 py-6 text-center text-xs text-muted-foreground"
+            >
+              Could not load threads.
+            </p>
+          ) : pinned.length + inbox.length + snoozed.length + settled.length ===
+            0 ? (
+            <p
+              role="status"
+              className="px-2 py-6 text-center text-xs text-muted-foreground"
+            >
+              {searchQuery.trim() ? "No threads found" : "No threads yet"}
+            </p>
+          ) : (
+            <>
+              {pinned.length > 0 ? (
+                <Shelf label="Pinned">
+                  {pinned.map((thread) => (
+                    <ThreadCard
+                      key={thread.id}
+                      thread={thread}
+                      projectName={
+                        projectNameById.get(thread.projectId) ?? null
+                      }
+                      isActive={thread.id === activeThreadId}
+                      canPark={lifecycle.canPark(thread)}
+                      onNavigate={onNavigate}
+                      onSettle={() => lifecycle.settle(thread.id)}
+                      onSnooze={(until) => lifecycle.snooze(thread.id, until)}
+                      now={now}
+                    />
+                  ))}
+                </Shelf>
+              ) : null}
+              {inbox.length > 0 ? (
+                <Shelf label={pinned.length > 0 ? "Inbox" : null}>
+                  {inbox.map((thread) => (
+                    <ThreadCard
+                      key={thread.id}
+                      thread={thread}
+                      projectName={
+                        projectNameById.get(thread.projectId) ?? null
+                      }
+                      isActive={thread.id === activeThreadId}
+                      canPark={lifecycle.canPark(thread)}
+                      onNavigate={onNavigate}
+                      onSettle={() => lifecycle.settle(thread.id)}
+                      onSnooze={(until) => lifecycle.snooze(thread.id, until)}
+                      now={now}
+                    />
+                  ))}
+                </Shelf>
+              ) : null}
+              <ParkedShelf
+                label="Snoozed"
+                threads={snoozed}
+                expanded={showSnoozed}
+                onToggle={() => setShowSnoozed((open) => !open)}
+                shelf="snoozed"
+                activeThreadId={activeThreadId}
+                lifecycle={lifecycle}
+                onNavigate={onNavigate}
+              />
+              <ParkedShelf
+                label="Settled"
+                threads={settled}
+                expanded={showSettled}
+                onToggle={() => setShowSettled((open) => !open)}
+                shelf="settled"
+                activeThreadId={activeThreadId}
+                lifecycle={lifecycle}
+                onNavigate={onNavigate}
+              />
+            </>
+          )}
+        </div>
       </div>
-    </div>
+    </CompactViewportProvider>
   );
 }
 
@@ -238,6 +254,7 @@ function ParkedShelf({
   lifecycle: ReturnType<typeof useLifecycle>;
   onNavigate: () => void;
 }) {
+  const isCompact = useIsCompactViewport();
   if (threads.length === 0) return null;
   const now = Date.now();
   return (
@@ -247,10 +264,19 @@ function ParkedShelf({
         onClick={onToggle}
         aria-expanded={expanded}
         // Padded like a card, so the chevron ends on the same right edge as
-        // every row's status and provider glyph.
-        className="mt-3 flex w-full items-center gap-2 px-2.5 pb-1 text-left"
+        // every row's status and provider glyph. Full width already, so a
+        // coarse pointer only needs the height.
+        className={cn(
+          "mt-3 flex w-full items-center gap-2 px-2.5 text-left",
+          isCompact ? "min-h-11 pb-2" : "pb-1",
+        )}
       >
-        <span className="text-2xs font-medium text-muted-foreground/70">
+        <span
+          className={cn(
+            "font-medium text-muted-foreground/70",
+            isCompact ? "text-xs" : "text-2xs",
+          )}
+        >
           {expanded ? label : `${label} (${threads.length})`}
         </span>
         <span className="h-px flex-1 bg-sidebar-border" />

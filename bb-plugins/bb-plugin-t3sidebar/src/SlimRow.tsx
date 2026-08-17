@@ -4,10 +4,11 @@ import {
 } from "@get-bb/plugin-sdk/app";
 import { Icon } from "./components/Icon";
 import { cn } from "./lib/utils";
-import { RowContextMenu } from "./RowContextMenu";
+import { RowContextMenu, RowMenuButton, type RowLifecycle } from "./RowMenu";
 import { STATUS_SLOT_CLASS, StatusOrTime } from "./StatusSlot";
 import { threadDisplayTitle } from "./inbox";
 import { snoozeWakeLabel } from "./lifecycle";
+import { useIsCompactViewport } from "./useCompactViewport";
 
 /**
  * A parked thread: one line instead of a card. Density comes from the user
@@ -35,9 +36,12 @@ export function SlimRow({
 }) {
   const actions = useSidebarThreadActions();
   const title = threadDisplayTitle(thread);
+  const isCompact = useIsCompactViewport();
+
+  const lifecycle: RowLifecycle = { kind: "restore", shelf, onRestore };
 
   return (
-    <RowContextMenu thread={thread}>
+    <RowContextMenu thread={thread} lifecycle={lifecycle}>
       <li className="list-none">
         <div
           className={cn(
@@ -80,36 +84,51 @@ export function SlimRow({
           <span
             className={cn(
               STATUS_SLOT_CLASS,
-              "pointer-events-none relative tabular-nums text-2xs text-muted-foreground/60",
+              "pointer-events-none relative tabular-nums text-muted-foreground/60",
+              isCompact ? "text-xs" : "text-2xs",
             )}
           >
-            <span className="flex items-center group-hover/slim:opacity-0">
+            <span
+              className={cn(
+                "flex items-center",
+                !isCompact && "group-hover/slim:opacity-0",
+              )}
+            >
               {shelf === "snoozed" && wakeAt !== null ? (
                 snoozeWakeLabel(wakeAt, now)
               ) : (
                 <StatusOrTime thread={thread} now={now} />
               )}
             </span>
-            <button
-              type="button"
-              aria-label={
-                shelf === "snoozed" ? "Wake thread now" : "Un-settle thread"
-              }
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                onRestore();
-              }}
-              // Pulled right by its own padding, so the icon — not the hit
-              // area — lands on the column.
-              className="pointer-events-auto absolute -right-0.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground opacity-0 hover:text-foreground focus-visible:opacity-100 group-hover/slim:opacity-100"
-            >
-              <Icon
-                name={shelf === "snoozed" ? "Clock" : "ArrowTurnBackward"}
-                className="size-3.5"
-              />
-            </button>
+            {/* Hover swaps the wake time for the restore button on a pointer.
+                A phone gets neither: the wake time stays — when a snoozed
+                thread comes back is the shelf's whole question — and restoring
+                moves into the row's menu. */}
+            {isCompact ? null : (
+              <button
+                type="button"
+                aria-label={
+                  shelf === "snoozed" ? "Wake thread now" : "Un-settle thread"
+                }
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onRestore();
+                }}
+                // Pulled right by its own padding, so the icon — not the hit
+                // area — lands on the column.
+                className="pointer-events-auto absolute -right-0.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground opacity-0 hover:text-foreground focus-visible:opacity-100 group-hover/slim:opacity-100"
+              >
+                <Icon
+                  name={shelf === "snoozed" ? "Clock" : "ArrowTurnBackward"}
+                  className="size-3.5"
+                />
+              </button>
+            )}
           </span>
+          {isCompact ? (
+            <RowMenuButton thread={thread} lifecycle={lifecycle} />
+          ) : null}
         </div>
       </li>
     </RowContextMenu>
