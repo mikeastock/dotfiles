@@ -105,12 +105,17 @@ export function StatusGlyph({
       // The notification dot, in a box the size of every other glyph, the way
       // bb centers its own trailing indicators. Right-aligned on its own, a
       // 5px dot would sit ~4px off the column the icons share.
+      //
+      // 7px with a halo rather than a bare 5px: this is the quietest thing in
+      // the list that still wants something from you, and at 5px it read as
+      // punctuation. The halo grows the mark without growing the box, so the
+      // column stays aligned.
       return (
         <span
           aria-label={aria}
           className={cn("flex items-center justify-center", shared)}
         >
-          <span className="size-[5px] rounded-full bg-timeline-accent" />
+          <span className="size-[7px] rounded-full bg-timeline-accent shadow-[0_0_0_3px_color-mix(in_oklch,var(--timeline-accent)_18%,transparent)]" />
         </span>
       );
     case "none":

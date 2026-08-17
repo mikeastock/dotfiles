@@ -9,7 +9,7 @@ import { Icon, type IconName } from "./components/Icon";
 import { cn } from "./lib/utils";
 import { RowContextMenu, RowMenuButton, type RowLifecycle } from "./RowMenu";
 import { ProviderGlyph } from "./ProviderGlyph";
-import { STATUS_SLOT_CLASS, StatusOrTime } from "./StatusSlot";
+import { STATUS_SLOT_CLASS, StatusOrTime, WaitingPill } from "./StatusSlot";
 import { threadDisplayTitle } from "./inbox";
 import { TitleEditor } from "./TitleEditor";
 import { resolveSnoozePresets } from "./lifecycle";
@@ -65,6 +65,10 @@ export function ThreadCard({
     ? { kind: "park", onSnooze, onSettle }
     : null;
   const title = threadDisplayTitle(thread);
+  // The one state this list shouts about. Keyed off the same field as
+  // `canPark`, so the rail and the park actions can never disagree about
+  // whether a thread is blocked.
+  const isWaiting = thread.hasPendingInteraction;
 
   return (
     <RowContextMenu
@@ -83,6 +87,11 @@ export function ThreadCard({
             // A thread open in another pane gets a weaker tint than the active
             // row, so the two states stay distinguishable.
             !isActive && layout !== null && "bg-sidebar-accent/30",
+            // A rail, and deliberately no background tint. Tint is how this
+            // list says "selected"; letting it also say "blocked" would make
+            // the two states cousins. The rail is a channel nothing else uses,
+            // so it survives selection instead of competing with it.
+            isWaiting && "shadow-[inset_2px_0_0_var(--warning)]",
           )}
         >
           <a
@@ -157,10 +166,17 @@ export function ThreadCard({
             <span
               className={cn(
                 STATUS_SLOT_CLASS,
+                // The pill sets its own width, so the fixed column yields for
+                // it. Nothing else in the list is allowed to.
+                isWaiting && "w-auto",
                 canPark && !isCompact && "group-hover/card:hidden",
               )}
             >
-              <StatusOrTime thread={thread} now={now} />
+              {isWaiting ? (
+                <WaitingPill thread={thread} now={now} />
+              ) : (
+                <StatusOrTime thread={thread} now={now} />
+              )}
             </span>
             {isCompact ? (
               <RowMenuButton

@@ -35,9 +35,23 @@ Three shelves:
   One slot, one marker, one width, so the whole column lines up. The slot
   shows the status glyph while a thread has something to say, and the age
   ("now", "7m") once it does not. The glyphs are bb's own: the red circle-x
-  for a failure, the circle-question for a raised hand, the spinner for live
-  work, and a blue notification dot for a thread that finished while you were
-  not looking. Both lists sit in the same window, so they speak one language.
+  for a failure, the spinner for live work, and a blue notification dot for a
+  thread that finished while you were not looking. Both lists sit in the same
+  window, so they speak one language.
+
+  **A thread waiting on you is the exception.** It takes an orange rail down
+  the card's left edge and spends the slot on a pill saying how long it has
+  been stuck — the one row allowed to break the fixed width, because it is the
+  only row that cannot make progress without you. The rank matters more than
+  the volume: before this, a raised hand drew a muted glyph that read _quieter_
+  than the blue dot of a thread that had merely finished.
+
+  Deliberately no background tint. Tint is how this list says "selected", and
+  letting it also say "blocked" would make the two states cousins; the rail is
+  a channel nothing else uses, so it survives selection rather than competing
+  with it. The pill's clock reads `latestAttentionAt` — bb's own "newest thing
+  you have not seen" — which for a thread that is asking is the moment it
+  started asking.
 
 - **Snoozed** — hidden until a wake time you chose. A snoozed thread comes
   back early if it starts working or asks you something.

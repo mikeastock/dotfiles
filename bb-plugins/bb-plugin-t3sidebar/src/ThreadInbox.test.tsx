@@ -863,7 +863,7 @@ describe("child threads in the list", () => {
       },
     ]);
     expect(
-      await screen.findByLabelText("Thread needs user input"),
+      await screen.findByLabelText(/Thread needs user input, waiting/),
     ).toBeDefined();
   });
 
@@ -900,5 +900,91 @@ describe("child threads in the list", () => {
       }),
     ]);
     expect(await screen.findByText("bb/some-branch")).toBeDefined();
+  });
+});
+
+// The list's loudest state. A blocked thread is the only row that cannot make
+// progress without the user, and until now it drew a muted glyph that ranked
+// visually BELOW the blue unread dot.
+describe("a thread waiting on you", () => {
+  const waiting = (over: Partial<PluginSidebarThread> = {}) =>
+    thread({
+      id: "thr_wait",
+      title: "Deploy the release candidate",
+      hasPendingInteraction: true,
+      indicator: "waiting-for-input",
+      indicatorLabel: "Thread needs user input",
+      latestAttentionAt: Date.now() - 12 * 60_000,
+      ...over,
+    });
+
+  // The card's clock is floored to the minute, so a "12m ago" timestamp reads
+  // 11m for most of any given minute (relative-time.ts:11 documents the
+  // trade). The bucket is that module's test; this one is about composition.
+  it("says how long it has been waiting", async () => {
+    render([waiting()]);
+    const pill = await screen.findByLabelText(
+      /^Thread needs user input, waiting (now|\d+[mhdw])$/,
+    );
+    expect(pill.textContent).toMatch(/^(now|\d+[mhdw])$/);
+  });
+
+  it("marks the row with a rail and no background tint", async () => {
+    render([waiting()]);
+    const row = (await screen.findByRole("link", { name: /Deploy/ }))
+      .parentElement!;
+    expect(row.className).toContain("shadow-[inset_2px_0_0_var(--warning)]");
+    // Tint is how this list says "selected". Blocked must not borrow it.
+    expect(row.className).not.toContain("bg-sidebar-accent ");
+  });
+
+  // The rail is a channel selection does not use, so the two compose instead
+  // of one hiding the other.
+  it("keeps the rail when the row is also the open thread", async () => {
+    renderSlot(
+      inbox,
+      { ...listProps, activeThreadId: "thr_wait" },
+      {
+        sidebarThreads: {
+          status: "ready",
+          threads: [waiting()],
+          projects: [{ id: "proj_1", name: "bb", isPersonal: false }],
+        },
+        rpc: { listLifecycle: () => ({ rows: [] }) },
+      },
+    );
+    const row = (await screen.findByRole("link", { name: /Deploy/ }))
+      .parentElement!;
+    expect(row.className).toContain("shadow-[inset_2px_0_0_var(--warning)]");
+    expect(row.className).toContain("bg-sidebar-accent");
+  });
+
+  it("replaces the age label rather than sitting beside it", async () => {
+    render([waiting({ latestAttentionAt: Date.now() - 3 * 60 * 60_000 })]);
+    const pill = await screen.findByLabelText(/waiting/);
+    // The pill owns the whole trailing slot — an age label alongside it would
+    // give the row two clocks saying different things.
+    expect(pill.parentElement?.textContent).toBe(pill.textContent);
+  });
+
+  // canPark is false while blocked, so the hover park buttons never fire on
+  // these rows and cannot fight the pill for the slot.
+  it("offers no park actions while blocked", async () => {
+    render([waiting()]);
+    fireEvent.contextMenu(
+      await screen.findByText("Deploy the release candidate"),
+    );
+    const menu = await screen.findByRole("menu", { name: "Thread actions" });
+    const labels = within(menu)
+      .getAllByRole("menuitem")
+      .map((item) => item.textContent);
+    expect(labels).not.toContain("Settle");
+  });
+
+  it("leaves an ordinary row's fixed status column alone", async () => {
+    render([thread({ id: "thr_calm", title: "Calm", updatedAt: Date.now() })]);
+    const row = (await screen.findByRole("link", { name: "Calm" }))
+      .parentElement!;
+    expect(row.className).not.toContain("var(--warning)");
   });
 });
