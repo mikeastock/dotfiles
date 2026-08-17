@@ -9,7 +9,7 @@ import {
 } from "@testing-library/react";
 import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
 import type { PluginSidebarThread } from "@get-bb/plugin-sdk";
-import type { ThreadLifecycleRow } from "./lifecycle";
+import { resolveSnoozePresets, type ThreadLifecycleRow } from "./lifecycle";
 
 // Load through the harness so the plugin's `@get-bb/plugin-sdk/app` import binds
 // to the test runtime; importing the component directly would bind it to an
@@ -370,12 +370,13 @@ describe("row context menu", () => {
       within(menu)
         .getAllByRole("menuitem")
         .map((item) => item.textContent),
+    // Read the presets rather than listing them: "This evening" drops out once
+    // the evening is less than an hour away, so a hard-coded list here passes
+    // all morning and fails after five. Their contents are lifecycle's own
+    // tests; what this asserts is the menu's composition and order.
     ).toEqual([
       "Rename",
-      "In 1 hour",
-      "This evening",
-      "Tomorrow",
-      "Next week",
+      ...resolveSnoozePresets(new Date()).map((preset) => preset.label),
       "Settle",
       "Open in split",
       "Mark unread",
