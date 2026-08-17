@@ -43,24 +43,37 @@ Three shelves:
   back early if it starts working or asks you something.
 - **Settled** — work you are done with, collapsed to one line each.
 
-## Child threads live in the header
+## Child threads get a row like everything else
 
-A flat inbox has nowhere to nest a child thread, so the list hides a child
-while its parent is on screen. Two chips in the thread header carry that
-relation instead:
+Every thread is a row, children included. A child names the thread it was
+spawned under on its third line, where a root thread shows its branch — a
+child usually shares its parent's worktree, so the branch would only repeat
+the parent's row, while "who started this" is the one thing the row cannot
+otherwise say.
 
-- On a parent: a chip with one coloured disc per child. It opens the list of
-  children.
-- On a child: a chip that names the parent and opens it. Without it the child
-  is a dead end, because it is not in the list.
+Children used to leave the list and live in their parent's header chip. That
+only worked when the parent was the thread already on screen: anything spawned
+from outside the app — `bb thread spawn --parent-self`, a plugin, an agent —
+arrived while you were looking elsewhere, so its row vanished, its raised hand
+went with it, and opening it left the sidebar with nothing selected.
+
+Two chips in the thread header still carry the relation, now as navigation
+rather than as the only route:
+
+- On a parent: a chip with one coloured disc per child. The list is flat and
+  sorted by creation time, so a parent's children are scattered through it;
+  this gathers them and says whether any is waiting on you.
+- On a child: a chip that names the parent and opens it. The child's own row
+  names the parent but cannot open it — a second link inside the row would
+  fight the full-bleed anchor.
 
 The parent chip sits on the left of the children chip, so the header reads up
 then down. A child that has children of its own shows both. Each disc takes
 its colour from the thread id, so the same thread keeps one colour in the list
 and in both chips.
 
-An orphan — a child whose parent is deleted — stays in the list, and its
-header shows no parent chip.
+An orphan — a child whose parent is deleted — gets a row with nothing to point
+at, and its header shows no parent chip.
 
 ## What it demonstrates
 

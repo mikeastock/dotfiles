@@ -3,7 +3,7 @@ import type { PluginSidebarThread } from "@get-bb/plugin-sdk";
 import {
   childrenOf,
   filterByProject,
-  hideChildrenOfVisibleParents,
+  parentTitlesByThreadId,
   parentOf,
   partitionPinned,
   searchThreadsByTitle,
@@ -156,21 +156,35 @@ describe("filtering", () => {
 });
 
 describe("child threads", () => {
-  it("hides a child whose parent is on screen", () => {
-    const visible = hideChildrenOfVisibleParents([
-      thread({ id: "parent" }),
+  it("names the parent a child was spawned under", () => {
+    const titles = parentTitlesByThreadId([
+      thread({ id: "parent", title: "The parent" }),
       thread({ id: "child", parentThreadId: "parent" }),
     ]);
-    expect(visible.map((t) => t.id)).toEqual(["parent"]);
+    expect(titles.get("child")).toBe("The parent");
   });
 
-  // An orphan must stay visible: hidden here AND absent from any header chip
-  // would make it unreachable everywhere.
-  it("keeps a child whose parent is not on screen", () => {
-    const visible = hideChildrenOfVisibleParents([
-      thread({ id: "child", parentThreadId: "archived-parent" }),
+  it("leaves a root thread with no parent to name", () => {
+    const titles = parentTitlesByThreadId([thread({ id: "root" })]);
+    expect(titles.has("root")).toBe(false);
+  });
+
+  // An orphan still gets a row; it just has nothing to point at.
+  it("names nothing when the parent row is gone", () => {
+    const titles = parentTitlesByThreadId([
+      thread({ id: "child", parentThreadId: "deleted-parent" }),
     ]);
-    expect(visible.map((t) => t.id)).toEqual(["child"]);
+    expect(titles.has("child")).toBe(false);
+  });
+
+  // Resolved off the full list, so the scope hiding the parent's row does not
+  // also take the child's only clue about where it came from.
+  it("names a parent that the visible list has filtered out", () => {
+    const titles = parentTitlesByThreadId([
+      thread({ id: "parent", title: "Elsewhere", projectId: "other" }),
+      thread({ id: "child", parentThreadId: "parent" }),
+    ]);
+    expect(titles.get("child")).toBe("Elsewhere");
   });
 
   it("lists a thread's children oldest first", () => {

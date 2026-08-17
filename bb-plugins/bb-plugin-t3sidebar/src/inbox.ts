@@ -72,21 +72,33 @@ export function partitionPinned(threads: readonly PluginSidebarThread[]): {
 }
 
 /**
- * Child threads leave the flat list and live in their parent's header chip
- * instead — a flat inbox has nowhere to nest them.
+ * Every thread's parent, by thread id, for the ones that have a visible parent
+ * to name.
  *
- * A child is only hidden when its parent is actually on screen. An orphan
- * (parent archived, deleted, or filtered out by the project scope) stays in
- * the list, because hiding it would make it unreachable everywhere.
+ * Children used to leave the list for their parent's header chip, which only
+ * works when the parent is the thread you are already looking at. Anything
+ * spawned from outside the app — `bb thread spawn --parent-self`, a plugin,
+ * an agent — arrives while you are looking elsewhere, so the row vanished, its
+ * raised hand with it, and opening it left the sidebar with nothing selected.
+ *
+ * Now every thread gets a row and a child names its parent instead. Resolved
+ * against the FULL thread list, not the filtered one, so a child still names a
+ * parent that the project scope or the archive is hiding.
  */
-export function hideChildrenOfVisibleParents(
+export function parentTitlesByThreadId(
   threads: readonly PluginSidebarThread[],
-): PluginSidebarThread[] {
-  const visibleIds = new Set(threads.map((thread) => thread.id));
-  return threads.filter(
-    (thread) =>
-      thread.parentThreadId === null || !visibleIds.has(thread.parentThreadId),
-  );
+): Map<string, string> {
+  const byId = new Map(threads.map((thread) => [thread.id, thread]));
+  const titles = new Map<string, string>();
+  for (const thread of threads) {
+    if (thread.parentThreadId === null) continue;
+    const parent = byId.get(thread.parentThreadId);
+    // A deleted parent leaves an orphan: it still gets a row, it just has
+    // nothing to point at.
+    if (parent === undefined) continue;
+    titles.set(thread.id, threadDisplayTitle(parent));
+  }
+  return titles;
 }
 
 /**

@@ -370,10 +370,10 @@ describe("row context menu", () => {
       within(menu)
         .getAllByRole("menuitem")
         .map((item) => item.textContent),
-    // Read the presets rather than listing them: "This evening" drops out once
-    // the evening is less than an hour away, so a hard-coded list here passes
-    // all morning and fails after five. Their contents are lifecycle's own
-    // tests; what this asserts is the menu's composition and order.
+      // Read the presets rather than listing them: "This evening" drops out once
+      // the evening is less than an hour away, so a hard-coded list here passes
+      // all morning and fails after five. Their contents are lifecycle's own
+      // tests; what this asserts is the menu's composition and order.
     ).toEqual([
       "Rename",
       ...resolveSnoozePresets(new Date()).map((preset) => preset.label),
@@ -814,5 +814,91 @@ describe("renaming a thread inline", () => {
     const menu = await screen.findByRole("menu", { name: "Thread actions" });
     fireEvent.click(within(menu).getByText("Rename"));
     expect(await screen.findByLabelText("Rename thread")).toBeDefined();
+  });
+});
+
+// Regression: children used to leave the list for their parent's header chip,
+// which only worked when the parent was the thread already on screen. Anything
+// spawned from outside the app — `bb thread spawn --parent-self`, a plugin, an
+// agent — arrived while the user was elsewhere and left no trace in the list.
+describe("child threads in the list", () => {
+  const parent = thread({
+    id: "thr_parent",
+    title: "Parent thread",
+    createdAt: 1,
+  });
+  const child = thread({
+    id: "thr_child",
+    title: "CLI child",
+    parentThreadId: "thr_parent",
+    createdAt: 2,
+  });
+
+  it("gives a child its own row", () => {
+    render([parent, child]);
+    const rows = screen.getAllByRole("listitem").map((row) => row.textContent);
+    expect(rows).toHaveLength(2);
+    expect(rows.some((row) => row?.includes("CLI child"))).toBe(true);
+  });
+
+  it("names the parent on the child's row", async () => {
+    render([parent, child]);
+    // The row's own name carries it too: the arrow glyph is decorative.
+    expect(
+      await screen.findByRole("link", {
+        name: "CLI child, under Parent thread",
+      }),
+    ).toBeDefined();
+  });
+
+  // The child's raised hand is the reason the row has to exist at all.
+  it("shows a child's pending interaction in the list", async () => {
+    render([
+      parent,
+      {
+        ...child,
+        hasPendingInteraction: true,
+        indicator: "waiting-for-input" as const,
+        indicatorLabel: "Thread needs user input",
+      },
+    ]);
+    expect(
+      await screen.findByLabelText("Thread needs user input"),
+    ).toBeDefined();
+  });
+
+  it("marks the row active when the child is the open thread", async () => {
+    renderSlot(
+      inbox,
+      { ...listProps, activeThreadId: "thr_child" },
+      {
+        sidebarThreads: {
+          status: "ready",
+          threads: [parent, child],
+          projects: [{ id: "proj_1", name: "bb", isPersonal: false }],
+        },
+        rpc: { listLifecycle: () => ({ rows: [] }) },
+      },
+    );
+    const row = await screen.findByRole("link", {
+      name: "CLI child, under Parent thread",
+    });
+    expect(row.parentElement?.className).toContain("bg-sidebar-accent");
+  });
+
+  it("leaves a root thread showing its branch", async () => {
+    render([
+      thread({
+        id: "thr_root",
+        title: "Root",
+        environment: {
+          id: "env_1",
+          name: null,
+          branchName: "bb/some-branch",
+          workspaceDisplayKind: "managed-worktree",
+        },
+      }),
+    ]);
+    expect(await screen.findByText("bb/some-branch")).toBeDefined();
   });
 });

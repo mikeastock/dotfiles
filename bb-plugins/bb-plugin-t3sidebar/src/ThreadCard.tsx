@@ -31,6 +31,7 @@ import {
 export function ThreadCard({
   thread,
   projectName,
+  parentTitle,
   isActive,
   canPark,
   onNavigate,
@@ -40,6 +41,8 @@ export function ThreadCard({
 }: {
   thread: PluginSidebarThread;
   projectName: string | null;
+  /** The thread this one was spawned under; null for a root or an orphan. */
+  parentTitle: string | null;
   isActive: boolean;
   /** False while the thread is working or blocked on the user. */
   canPark: boolean;
@@ -87,7 +90,11 @@ export function ThreadCard({
             data-sidebar-thread-shortcut-target=""
             data-sidebar-thread-id={thread.id}
             href="#"
-            aria-label={title}
+            // The arrow glyph naming the parent is decorative, so the row's
+            // own name is where that relationship has to be readable.
+            aria-label={
+              parentTitle === null ? title : `${title}, under ${parentTitle}`
+            }
             {...splitProps}
             onClick={(event) => {
               event.preventDefault();
@@ -193,10 +200,24 @@ export function ThreadCard({
               isCompact ? "text-xs" : "text-2xs",
             )}
           >
-            {/* A thread without a worktree still runs somewhere, so the
+            {/* For a child, the thread it was spawned under outranks the
+                branch: a child usually shares its parent's worktree, so the
+                branch is the parent row's line repeated, while "who started
+                this" is the one thing the row cannot otherwise say.
+
+                A thread without a worktree still runs somewhere, so the
                 machine takes the branch's place rather than leaving the line
                 blank. */}
-            {thread.environment?.branchName ? (
+            {parentTitle !== null ? (
+              <span className="flex min-w-0 flex-1 items-center gap-0.5">
+                <Icon
+                  name="ArrowTurnBackward"
+                  className="size-3 shrink-0 -scale-x-100 text-muted-foreground/60"
+                  aria-hidden
+                />
+                <span className="truncate">{parentTitle}</span>
+              </span>
+            ) : thread.environment?.branchName ? (
               <span className="min-w-0 flex-1 truncate font-mono">
                 {thread.environment.branchName}
               </span>

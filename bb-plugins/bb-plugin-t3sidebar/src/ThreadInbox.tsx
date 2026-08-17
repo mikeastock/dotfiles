@@ -24,7 +24,7 @@ import {
 } from "./useCompactViewport";
 import {
   filterByProject,
-  hideChildrenOfVisibleParents,
+  parentTitlesByThreadId,
   partitionPinned,
   searchThreadsByTitle,
   sortByCreatedAtDescending,
@@ -71,17 +71,19 @@ export function ThreadInbox({
     [projects],
   );
 
+  // Off the unfiltered list on purpose: a child still names its parent when
+  // the project scope, a search, or the archive has taken the parent's row.
+  const parentTitleByThreadId = useMemo(
+    () => parentTitlesByThreadId(threads),
+    [threads],
+  );
+
   const { pinned, inbox, snoozed, settled } = useMemo(() => {
     const scoped = filterByProject(
       visibleInboxThreads(threads),
       scope === ALL_PROJECTS ? null : scope,
     );
-    // Children live in their parent's header chip instead of the flat list;
-    // an orphan whose parent is not on screen stays here.
-    const matched = searchThreadsByTitle(
-      hideChildrenOfVisibleParents(scoped),
-      searchQuery,
-    );
+    const matched = searchThreadsByTitle(scoped, searchQuery);
     const active: typeof matched = [];
     const onSnoozeShelf: typeof matched = [];
     const onSettledShelf: typeof matched = [];
@@ -173,6 +175,7 @@ export function ThreadInbox({
                       projectName={
                         projectNameById.get(thread.projectId) ?? null
                       }
+                      parentTitle={parentTitleByThreadId.get(thread.id) ?? null}
                       isActive={thread.id === activeThreadId}
                       canPark={lifecycle.canPark(thread)}
                       onNavigate={onNavigate}
@@ -192,6 +195,7 @@ export function ThreadInbox({
                       projectName={
                         projectNameById.get(thread.projectId) ?? null
                       }
+                      parentTitle={parentTitleByThreadId.get(thread.id) ?? null}
                       isActive={thread.id === activeThreadId}
                       canPark={lifecycle.canPark(thread)}
                       onNavigate={onNavigate}
