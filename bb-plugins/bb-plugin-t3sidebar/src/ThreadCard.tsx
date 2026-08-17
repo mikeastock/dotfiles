@@ -11,7 +11,11 @@ import { ProviderGlyph } from "./ProviderGlyph";
 import { STATUS_SLOT_CLASS, StatusOrTime } from "./StatusSlot";
 import { threadDisplayTitle } from "./inbox";
 import { resolveSnoozePresets } from "./lifecycle";
-import { TOUCH_TARGET_CLASS, useIsCompactViewport } from "./useCompactViewport";
+import {
+  NO_TOUCH_CALLOUT,
+  TOUCH_TARGET_CLASS,
+  useIsCompactViewport,
+} from "./useCompactViewport";
 
 /**
  * One thread as a three-line card: project and status, title, then branch and
@@ -56,7 +60,10 @@ export function ThreadCard({
 
   return (
     <RowContextMenu thread={thread} lifecycle={lifecycle}>
-      <li className="list-none">
+      <li
+        className="list-none"
+        style={isCompact ? NO_TOUCH_CALLOUT : undefined}
+      >
         <div
           className={cn(
             "group/card relative rounded-md px-2.5 py-2 transition-colors",

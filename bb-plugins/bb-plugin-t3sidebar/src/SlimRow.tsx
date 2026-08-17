@@ -8,7 +8,7 @@ import { RowContextMenu, RowMenuButton, type RowLifecycle } from "./RowMenu";
 import { STATUS_SLOT_CLASS, StatusOrTime } from "./StatusSlot";
 import { threadDisplayTitle } from "./inbox";
 import { snoozeWakeLabel } from "./lifecycle";
-import { useIsCompactViewport } from "./useCompactViewport";
+import { NO_TOUCH_CALLOUT, useIsCompactViewport } from "./useCompactViewport";
 
 /**
  * A parked thread: one line instead of a card. Density comes from the user
@@ -42,7 +42,10 @@ export function SlimRow({
 
   return (
     <RowContextMenu thread={thread} lifecycle={lifecycle}>
-      <li className="list-none">
+      <li
+        className="list-none"
+        style={isCompact ? NO_TOUCH_CALLOUT : undefined}
+      >
         <div
           className={cn(
             "group/slim relative flex h-8 items-center gap-2 rounded-md px-2.5 text-xs",

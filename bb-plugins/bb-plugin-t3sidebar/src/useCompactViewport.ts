@@ -1,4 +1,4 @@
-import { createContext, useContext } from "react";
+import { createContext, useContext, type CSSProperties } from "react";
 
 /**
  * Whether the host is drawing this sidebar on a phone-width viewport or a
@@ -30,3 +30,13 @@ export function useIsCompactViewport(): boolean {
  */
 export const TOUCH_TARGET_CLASS =
   "before:absolute before:left-1/2 before:top-1/2 before:size-11 before:-translate-x-1/2 before:-translate-y-1/2 before:content-['']";
+
+/**
+ * Stops iOS raising its own link callout over a row's full-bleed anchor.
+ *
+ * Radix's context-menu trigger sets exactly this, and used to cover the rows
+ * for free. That trigger is not mounted on a compact viewport any more, so a
+ * row holding a link has to say it itself or a press lands on the system
+ * sheet instead of the row.
+ */
+export const NO_TOUCH_CALLOUT: CSSProperties = { WebkitTouchCallout: "none" };

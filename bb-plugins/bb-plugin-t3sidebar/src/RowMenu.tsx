@@ -151,11 +151,16 @@ function labelClass(isCompact: boolean): string {
 }
 
 /**
- * This sidebar's own right-click menu, and — because Radix opens the same
- * trigger on a 700ms press — its touch menu.
+ * This sidebar's own right-click menu.
  *
  * The plugin API ships no menu component on purpose, so a replaced sidebar
  * owns this surface.
+ *
+ * Not mounted on a compact viewport. Radix also opens this trigger on a 700ms
+ * press, and the trigger is the whole row — including the menu button drawn
+ * inside it. Both surfaces would then answer the same press and stack two
+ * copies of the same menu on screen. The button is the one that survives,
+ * because it is the one a touch screen can see.
  */
 export function RowContextMenu({
   thread,
@@ -166,6 +171,9 @@ export function RowContextMenu({
   lifecycle: RowLifecycle;
   children: ReactNode;
 }) {
+  const isCompact = useIsCompactViewport();
+  if (isCompact) return <>{children}</>;
+
   return (
     <ContextMenu.Root>
       <ContextMenu.Trigger asChild>{children}</ContextMenu.Trigger>

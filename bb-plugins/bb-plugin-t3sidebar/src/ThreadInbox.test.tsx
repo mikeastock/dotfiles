@@ -644,6 +644,23 @@ describe("compact viewport", () => {
     expect(screen.getByLabelText("Thread actions")).toBeDefined();
   });
 
+  // The context menu's trigger is the whole row, menu button included, so
+  // leaving it mounted let one press open the dropdown AND the context menu
+  // and stack two copies of the same menu.
+  it("leaves the row's long-press menu to the button alone", async () => {
+    renderCompact([thread({ id: "thr_c", title: "Tap me" })]);
+    fireEvent.contextMenu(await screen.findByText("Tap me"));
+    expect(screen.queryByRole("menu", { name: "Thread actions" })).toBeNull();
+
+    fireEvent.pointerDown(screen.getByLabelText("Thread actions"), {
+      button: 0,
+      ctrlKey: false,
+    });
+    expect(
+      await screen.findAllByRole("menu", { name: "Thread actions" }),
+    ).toHaveLength(1);
+  });
+
   it("keeps the park actions reachable through that button", async () => {
     renderCompact([thread({ id: "thr_c", title: "Tap me" })]);
     fireEvent.pointerDown(await screen.findByLabelText("Thread actions"), {
