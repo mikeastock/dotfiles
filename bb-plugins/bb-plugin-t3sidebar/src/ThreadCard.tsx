@@ -105,7 +105,7 @@ export function ThreadCard({
       >
         <div
           className={cn(
-            "group/card relative rounded-md px-2 py-1.5 transition-colors",
+            "group/card relative rounded-md px-2.5 py-2 transition-colors",
             isActive ? "bg-sidebar-accent" : "hover:bg-sidebar-accent/60",
             // A thread open in another pane gets a weaker tint than the active
             // row, so the two states stay distinguishable.
@@ -234,7 +234,7 @@ export function ThreadCard({
           </div>
           <div
             className={cn(
-              "pointer-events-none relative mt-px flex h-3.5 items-center gap-1.5 text-muted-foreground",
+              "pointer-events-none relative mt-0.5 flex h-3.5 items-center gap-1.5 text-muted-foreground",
               isCompact ? "text-xs" : "text-2xs",
             )}
           >
