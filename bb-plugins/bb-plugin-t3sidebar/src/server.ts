@@ -6,7 +6,7 @@
 // understands. Here, uninstalling the plugin removes its state with it.
 import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
 import { z } from "zod";
-import { runSweep } from "./auto-settle";
+import { runSweep, type OpenPrBranchLister } from "./auto-settle";
 
 const migrations = [
   `CREATE TABLE IF NOT EXISTS thread_lifecycle (
@@ -29,6 +29,9 @@ const migrations = [
      auto_settled_at INTEGER,
      last_checked_at INTEGER NOT NULL
    )`,
+  // The overrule marker is scoped to the PR that triggered the settle, so a
+  // serial-PR thread can be settled again when its NEXT PR merges.
+  `ALTER TABLE pr_watch ADD COLUMN auto_settled_pr_url TEXT`,
 ];
 
 export interface StoredLifecycleRow {
@@ -77,7 +80,12 @@ export const t3sidebarRpcContract = defineRpcContract({
 /** Channel the frontend re-reads on. */
 export const LIFECYCLE_CHANNEL = "lifecycle";
 
-export default function plugin(bb: BbPluginApi) {
+export interface PluginOverrides {
+  /** Test seam: replaces the gh-based open-PR verification in the sweep. */
+  listOpenPrBranches?: OpenPrBranchLister;
+}
+
+function plugin(bb: BbPluginApi, overrides: PluginOverrides = {}) {
   const db = bb.storage.database();
   bb.storage.migrate(db, migrations);
 
@@ -199,6 +207,13 @@ export default function plugin(bb: BbPluginApi) {
       log: bb.log,
       listParkedThreadIds,
       settle: settleThread,
+      listOpenPrBranches: overrides.listOpenPrBranches,
     });
   });
 }
+
+export function createPlugin(overrides: PluginOverrides = {}) {
+  return (bb: BbPluginApi) => plugin(bb, overrides);
+}
+
+export default createPlugin();

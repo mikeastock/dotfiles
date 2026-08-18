@@ -7,17 +7,25 @@
  * a thread that starts working or gains new attention after the settle comes
  * straight back to the inbox.
  *
- * Two rules are load-bearing, both inherited from earlier incarnations of
+ * Three rules are load-bearing, all inherited from earlier incarnations of
  * this idea (wiki pr-manager, pr-status):
  *
  * - A failed lookup is not information. `unavailable` (gh missing, host
- *   unreachable, timeout) leaves every table untouched.
- * - Once auto-settled, never auto-settle again (`auto_settled_at`). A manual
- *   un-settle is the user overruling the sweep, and merged is terminal, so no
- *   later PR state should re-trigger parking.
+ *   unreachable, timeout) leaves every table untouched. The same applies to
+ *   the open-PR verification: if it cannot run, the settle does not happen.
+ * - One merged PR does not make the thread terminal. Threads that produce a
+ *   series of PRs from one environment (each on its own `bb/<slug>-<threadId>`
+ *   branch) must not be parked while any sibling PR is still open.
+ * - Overrule is per PR, not per thread (`auto_settled_pr_url`). A manual
+ *   un-settle vetoes re-settling for the PR that triggered it, but when the
+ *   thread's NEXT pull request merges the sweep may park it again.
  */
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import type Database from "better-sqlite3";
 import type { BbPluginApi } from "@get-bb/plugin-sdk";
+
+const execFileAsync = promisify(execFile);
 
 /** Re-probe "no PR" environments at most once a day — a PR may appear later. */
 export const NONE_RECHECK_MS = 24 * 60 * 60 * 1000;
@@ -48,6 +56,8 @@ export interface PrWatchRow {
   prUrl: string | null;
   prState: PrWatchState;
   autoSettledAt: number | null;
+  /** The PR the auto-settle was for; a manual un-settle vetoes only this PR. */
+  autoSettledPrUrl: string | null;
   lastCheckedAt: number;
 }
 
@@ -99,16 +109,18 @@ export function isSweepCandidate(thread: SweepThreadRow): boolean {
   );
 }
 
-/** Whether a prior watch row excuses a thread from this tick entirely. */
+/**
+ * Whether a prior "no PR" observation excuses a thread from this tick. The
+ * user-overrule check is NOT here: it needs the current PR url, so it runs in
+ * the planner after the lookup.
+ */
 function isHandledByPriorRow(prior: PrWatchRow | undefined, now: number): boolean {
-  if (prior === undefined) return false;
-  // User-overrule rule: once auto-settled, never auto-settle again.
-  if (prior.autoSettledAt !== null) return true;
   // "No PR" answers are sticky for a day: don't re-probe every tick.
-  if (prior.prState === "none" && now - prior.lastCheckedAt < NONE_RECHECK_MS) {
-    return true;
-  }
-  return false;
+  return (
+    prior !== undefined &&
+    prior.prState === "none" &&
+    now - prior.lastCheckedAt < NONE_RECHECK_MS
+  );
 }
 
 export interface SweepPlan {
@@ -129,6 +141,8 @@ export function planSweep(args: {
   lookups: Map<string, PrLookup>;
   /** Prior watch rows, keyed by threadId. */
   watchRows: Map<string, PrWatchRow>;
+  /** Threads with open sibling PRs (or unverifiable ones) — never settled. */
+  blockedThreads?: Set<string>;
   settings: AutoSettleSettings;
   now: number;
 }): SweepPlan {
@@ -136,9 +150,8 @@ export function planSweep(args: {
   const record: PrWatchRow[] = [];
 
   for (const candidate of args.candidates) {
-    if (isHandledByPriorRow(args.watchRows.get(candidate.threadId), args.now)) {
-      continue;
-    }
+    const prior = args.watchRows.get(candidate.threadId);
+    if (isHandledByPriorRow(prior, args.now)) continue;
 
     const lookup = args.lookups.get(candidate.environmentId);
     // Beyond the tick cap — deferred to a later tick.
@@ -146,28 +159,45 @@ export function planSweep(args: {
     // A failed lookup is not information: leave every table untouched.
     if (lookup.outcome === "unavailable") continue;
 
+    // User-overrule rule, scoped to the PR that triggered it: the user
+    // un-settled after this exact PR settled the thread, so this exact PR
+    // must never settle it again. A different PR may.
+    if (
+      lookup.outcome === "available" &&
+      prior?.autoSettledPrUrl != null &&
+      lookup.url === prior.autoSettledPrUrl
+    ) {
+      continue;
+    }
+
     if (lookup.outcome === "absent") {
       record.push({
         threadId: candidate.threadId,
         environmentId: candidate.environmentId,
         prUrl: null,
         prState: "none",
-        autoSettledAt: null,
+        autoSettledAt: prior?.autoSettledAt ?? null,
+        autoSettledPrUrl: prior?.autoSettledPrUrl ?? null,
         lastCheckedAt: args.now,
       });
       continue;
     }
 
-    const shouldSettle =
+    const terminal =
       lookup.state === "merged" ||
       (lookup.state === "closed" && args.settings.settleClosed);
+    const shouldSettle =
+      terminal && !(args.blockedThreads?.has(candidate.threadId) ?? false);
 
     record.push({
       threadId: candidate.threadId,
       environmentId: candidate.environmentId,
       prUrl: lookup.url,
       prState: lookup.state,
-      autoSettledAt: shouldSettle ? args.now : null,
+      autoSettledAt: shouldSettle ? args.now : (prior?.autoSettledAt ?? null),
+      autoSettledPrUrl: shouldSettle
+        ? lookup.url
+        : (prior?.autoSettledPrUrl ?? null),
       lastCheckedAt: args.now,
     });
     if (shouldSettle) settle.push(candidate.threadId);
@@ -182,6 +212,7 @@ interface PrWatchDbRow {
   pr_url: string | null;
   pr_state: string;
   auto_settled_at: number | null;
+  auto_settled_pr_url: string | null;
   last_checked_at: number;
 }
 
@@ -189,7 +220,7 @@ export function readWatchRows(db: Database.Database): Map<string, PrWatchRow> {
   const rows = db
     .prepare(
       `SELECT thread_id, environment_id, pr_url, pr_state,
-              auto_settled_at, last_checked_at
+              auto_settled_at, auto_settled_pr_url, last_checked_at
          FROM pr_watch`,
     )
     .all() as PrWatchDbRow[];
@@ -202,6 +233,7 @@ export function readWatchRows(db: Database.Database): Map<string, PrWatchRow> {
         prUrl: row.pr_url,
         prState: row.pr_state as PrWatchState,
         autoSettledAt: row.auto_settled_at,
+        autoSettledPrUrl: row.auto_settled_pr_url,
         lastCheckedAt: row.last_checked_at,
       },
     ]),
@@ -211,23 +243,69 @@ export function readWatchRows(db: Database.Database): Map<string, PrWatchRow> {
 function upsertWatchRow(db: Database.Database, row: PrWatchRow): void {
   db.prepare(
     `INSERT INTO pr_watch
-       (thread_id, environment_id, pr_url, pr_state, auto_settled_at, last_checked_at)
-     VALUES (?, ?, ?, ?, ?, ?)
+       (thread_id, environment_id, pr_url, pr_state,
+        auto_settled_at, auto_settled_pr_url, last_checked_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(thread_id) DO UPDATE SET
-       environment_id  = excluded.environment_id,
-       pr_url          = excluded.pr_url,
-       pr_state        = excluded.pr_state,
-       auto_settled_at = excluded.auto_settled_at,
-       last_checked_at = excluded.last_checked_at`,
+       environment_id      = excluded.environment_id,
+       pr_url              = excluded.pr_url,
+       pr_state            = excluded.pr_state,
+       auto_settled_at     = excluded.auto_settled_at,
+       auto_settled_pr_url = excluded.auto_settled_pr_url,
+       last_checked_at     = excluded.last_checked_at`,
   ).run(
     row.threadId,
     row.environmentId,
     row.prUrl,
     row.prState,
     row.autoSettledAt,
+    row.autoSettledPrUrl,
     row.lastCheckedAt,
   );
 }
+
+/** "owner/repo" from a github.com PR url; null for anything else. */
+export function repoFromPrUrl(url: string): string | null {
+  const match = /^https:\/\/github\.com\/([^/]+\/[^/]+)\/pull\/\d+/.exec(url);
+  return match?.[1] ?? null;
+}
+
+/**
+ * Lists the head branches of a repo's open PRs. Returns null when the check
+ * cannot run — callers must treat null as "unknown" and fail closed.
+ */
+export type OpenPrBranchLister = (repo: string) => Promise<Set<string> | null>;
+
+const listOpenPrBranchesWithGh: (log: BbPluginApi["log"], repo: string) => Promise<Set<string> | null> =
+  async (log, repo) => {
+    try {
+      const { stdout } = await execFileAsync(
+        "gh",
+        [
+          "pr",
+          "list",
+          "--repo",
+          repo,
+          "--state",
+          "open",
+          "--json",
+          "headRefName",
+          "--limit",
+          "200",
+        ],
+        { timeout: 15_000 },
+      );
+      const rows = JSON.parse(stdout) as { headRefName: string }[];
+      return new Set(rows.map((row) => row.headRefName));
+    } catch (error) {
+      log.debug(
+        `pr-merge-sweep: open-PR listing failed for ${repo}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      return null;
+    }
+  };
 
 async function lookupPullRequest(
   sdk: BbPluginApi["sdk"],
@@ -267,6 +345,8 @@ export interface SweepDeps {
   listParkedThreadIds(): Set<string>;
   /** The shared lifecycle write — the same path the manual settle RPC uses. */
   settle(threadId: string): void;
+  /** Open-PR verification; defaults to `gh pr list` on the server host. */
+  listOpenPrBranches?: OpenPrBranchLister;
   now?: number;
 }
 
@@ -320,10 +400,62 @@ export async function runSweep(deps: SweepDeps): Promise<void> {
     );
   }
 
+  // One merged PR does not make the thread terminal. A thread can produce a
+  // series of PRs from one environment — bb names those branches
+  // bb/<slug>-<threadId>, so any open PR whose head branch carries the
+  // thread id is unfinished work from the same thread, and it blocks the
+  // settle. Verification failing closes the door too: no settle on
+  // uncertain evidence.
+  const blockedThreads = new Set<string>();
+  const listBranches =
+    deps.listOpenPrBranches ??
+    ((repo: string) => listOpenPrBranchesWithGh(deps.log, repo));
+  const branchesByRepo = new Map<string, Promise<Set<string> | null>>();
+  for (const candidate of candidates) {
+    const lookup = lookups.get(candidate.environmentId);
+    if (lookup?.outcome !== "available") continue;
+    const terminal =
+      lookup.state === "merged" ||
+      (lookup.state === "closed" && deps.settings.settleClosed);
+    if (!terminal) continue;
+
+    const repo = repoFromPrUrl(lookup.url);
+    if (repo === null) {
+      deps.log.debug(
+        `pr-merge-sweep: not settling ${candidate.threadId}: unrecognized PR url ${lookup.url}`,
+      );
+      blockedThreads.add(candidate.threadId);
+      continue;
+    }
+    let branchesPromise = branchesByRepo.get(repo);
+    if (branchesPromise === undefined) {
+      branchesPromise = listBranches(repo);
+      branchesByRepo.set(repo, branchesPromise);
+    }
+    const branches = await branchesPromise;
+    if (branches === null) {
+      deps.log.info(
+        `pr-merge-sweep: not settling ${candidate.threadId}: could not verify open PRs for ${repo}`,
+      );
+      blockedThreads.add(candidate.threadId);
+      continue;
+    }
+    const open = [...branches].filter((branch) =>
+      branch.includes(candidate.threadId),
+    );
+    if (open.length > 0) {
+      deps.log.debug(
+        `pr-merge-sweep: not settling ${candidate.threadId}: ${open.length} open PR(s) still in flight (${open.join(", ")})`,
+      );
+      blockedThreads.add(candidate.threadId);
+    }
+  }
+
   const plan = planSweep({
     candidates,
     lookups,
     watchRows,
+    blockedThreads,
     settings: deps.settings,
     now,
   });

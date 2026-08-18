@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   isSweepCandidate,
   planSweep,
+  repoFromPrUrl,
   NONE_RECHECK_MS,
   type AutoSettleSettings,
   type PrLookup,
@@ -24,12 +25,15 @@ const candidate = (threadId = "thr_1", environmentId = "env_1") => ({
   environmentId,
 });
 
+const PR_URL = "https://github.com/acme/app/pull/42";
+
 const watchRow = (overrides: Partial<PrWatchRow> = {}): PrWatchRow => ({
   threadId: "thr_1",
   environmentId: "env_1",
   prUrl: null,
   prState: "open",
   autoSettledAt: null,
+  autoSettledPrUrl: null,
   lastCheckedAt: NOW - 1_000,
   ...overrides,
 });
@@ -80,9 +84,10 @@ describe("planSweep", () => {
       {
         threadId: "thr_1",
         environmentId: "env_1",
-        prUrl: "https://github.com/acme/app/pull/42",
+        prUrl: PR_URL,
         prState: "merged",
         autoSettledAt: NOW,
+        autoSettledPrUrl: PR_URL,
         lastCheckedAt: NOW,
       },
     ]);
@@ -145,6 +150,7 @@ describe("planSweep", () => {
         prUrl: null,
         prState: "none",
         autoSettledAt: null,
+        autoSettledPrUrl: null,
         lastCheckedAt: NOW,
       },
     ]);
@@ -162,18 +168,89 @@ describe("planSweep", () => {
     expect(plan.record).toEqual([]);
   });
 
-  it("never auto-settles a thread twice (the user-overrule rule)", () => {
+  it("never re-settles for the PR a manual un-settle overruled", () => {
     const plan = planSweep({
       candidates: [candidate()],
       lookups: lookupsFor(available("merged")),
       watchRows: new Map([
-        ["thr_1", watchRow({ prState: "merged", autoSettledAt: NOW - 60_000 })],
+        [
+          "thr_1",
+          watchRow({
+            prState: "merged",
+            autoSettledAt: NOW - 60_000,
+            autoSettledPrUrl: PR_URL,
+          }),
+        ],
       ]),
       settings: settings(),
       now: NOW,
     });
     expect(plan.settle).toEqual([]);
     expect(plan.record).toEqual([]);
+  });
+
+  it("settles again for a DIFFERENT PR — the overrule is per PR, not per thread", () => {
+    const plan = planSweep({
+      candidates: [candidate()],
+      lookups: lookupsFor(available("merged")), // url: PR_URL
+      watchRows: new Map([
+        [
+          "thr_1",
+          watchRow({
+            prState: "merged",
+            autoSettledAt: NOW - 60_000,
+            autoSettledPrUrl: "https://github.com/acme/app/pull/7",
+          }),
+        ],
+      ]),
+      settings: settings(),
+      now: NOW,
+    });
+    expect(plan.settle).toEqual(["thr_1"]);
+  });
+
+  it("preserves the overrule marker across later non-settling observations", () => {
+    const plan = planSweep({
+      candidates: [candidate()],
+      lookups: lookupsFor(available("open")),
+      watchRows: new Map([
+        [
+          "thr_1",
+          watchRow({
+            prState: "merged",
+            autoSettledAt: NOW - 60_000,
+            autoSettledPrUrl: "https://github.com/acme/app/pull/7",
+          }),
+        ],
+      ]),
+      settings: settings(),
+      now: NOW,
+    });
+    expect(plan.settle).toEqual([]);
+    expect(plan.record[0]).toMatchObject({
+      prState: "open",
+      autoSettledAt: NOW - 60_000,
+      autoSettledPrUrl: "https://github.com/acme/app/pull/7",
+    });
+  });
+
+  it("does not settle a thread blocked by open sibling PRs", () => {
+    const plan = planSweep({
+      candidates: [candidate()],
+      lookups: lookupsFor(available("merged")),
+      watchRows: new Map(),
+      blockedThreads: new Set(["thr_1"]),
+      settings: settings(),
+      now: NOW,
+    });
+    expect(plan.settle).toEqual([]);
+    // The observation is still recorded — with no marker, so a later tick
+    // can settle once the siblings are done.
+    expect(plan.record[0]).toMatchObject({
+      prState: "merged",
+      autoSettledAt: null,
+      autoSettledPrUrl: null,
+    });
   });
 
   it("does not re-probe a fresh 'none' row", () => {
@@ -226,7 +303,14 @@ describe("planSweep", () => {
       candidates: [candidate("thr_1"), candidate("thr_2")],
       lookups: lookupsFor(available("merged")),
       watchRows: new Map([
-        ["thr_1", watchRow({ prState: "merged", autoSettledAt: NOW - 60_000 })],
+        [
+          "thr_1",
+          watchRow({
+            prState: "merged",
+            autoSettledAt: NOW - 60_000,
+            autoSettledPrUrl: PR_URL,
+          }),
+        ],
       ]),
       settings: settings(),
       now: NOW,
@@ -291,5 +375,18 @@ describe("isSweepCandidate", () => {
 
   it("refuses a thread with no environment", () => {
     expect(isSweepCandidate(quietThread({ environmentId: null }))).toBe(false);
+  });
+});
+
+describe("repoFromPrUrl", () => {
+  it("extracts owner/repo from a github.com PR url", () => {
+    expect(repoFromPrUrl("https://github.com/buildrtech/app/pull/12183")).toBe(
+      "buildrtech/app",
+    );
+  });
+
+  it("rejects non-github urls and non-PR paths", () => {
+    expect(repoFromPrUrl("https://git.example.com/acme/app/pull/1")).toBeNull();
+    expect(repoFromPrUrl("https://github.com/acme/app/issues/1")).toBeNull();
   });
 });

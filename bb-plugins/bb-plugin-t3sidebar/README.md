@@ -177,19 +177,24 @@ workspaces need no extra machinery. Decisions follow one policy table:
 
 | PR lookup result | Sweep action |
 | --- | --- |
-| `merged` | Settle the thread |
+| `merged`, thread has no other open PRs | Settle the thread |
+| `merged`, but sibling `bb/<slug>-<threadId>` PRs are still open | Nothing — one merged PR does not make a serial-PR thread terminal |
 | `closed` (unmerged) | Settle only when the `settleClosed` setting is on (default off) |
 | `open` / `draft` | Nothing |
 | `absent` (branch has no PR) | Nothing; remember for a day before re-probing |
 | `unavailable` (gh or host failure) | Nothing — a failed lookup is not information |
+| open-PR verification fails | Nothing — never settle on uncertain evidence |
 
-Two rules keep the sweep polite. Decisions key on **stable fields only**
+Three rules keep the sweep polite. Decisions key on **stable fields only**
 (`state`, `mergedAt`) — never on volatile check or mergeability fields, which
-churn and would re-fire on the same user-visible state. And **once
-auto-settled, never auto-settled again**: a `pr_watch` table records
-`auto_settled_at` per thread, so if you pull a thread back out of the settled
-shelf, the sweep respects that call forever (merged is terminal; there is no
-later PR transition that should re-park it).
+churn and would re-fire on the same user-visible state. **One merged PR does
+not make the thread terminal**: a thread can produce a series of PRs from one
+environment, and bb names those branches `bb/<slug>-<threadId>`, so before
+settling, the sweep lists the repo's open PRs and refuses to park a thread
+that still has any in flight. And the overrule is **per PR, not per thread**:
+a `pr_watch` table records `auto_settled_pr_url`, so if you pull a thread back
+out of the settled shelf the sweep never re-settles it for that same PR — but
+when its NEXT pull request merges, it may park the thread again.
 
 Two settings control it, editable in Extensions → Plugins or via `bb plugin
 config t3sidebar set <key> <value>`; both take effect on the next tick without

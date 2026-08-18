@@ -207,6 +207,22 @@ Live loop:
   the settled shelf within one tick, with one log line; un-settle it by hand
   and confirm it stays un-settled across the next tick.
 
+## Post-ship bug (fixed 2026-08-18, same day)
+
+The first production settle was wrong: `thr_4pbu6ua7ut` was parked at 04:10
+because its environment's recorded branch had merged PR #12183 — while the
+thread had already opened four more open PRs from sibling
+`bb/…-thr_4pbu6ua7ut` branches. The plan's assumption that an environment
+maps to one PR was false for serial-PR threads: `environments.pullRequest`
+resolves only the environment's recorded branch. Two fixes shipped:
+
+1. **Open-sibling guard** — before settling, list the repo's open PRs and
+   refuse to park a thread whose head branches (which carry the thread id by
+   bb's naming convention) are still open. Verification failure fails closed.
+2. **Per-PR overrule** — `auto_settled_pr_url` (migration index 3) scopes the
+   never-settle-twice marker to the PR that triggered it, so a serial thread
+   can be settled again when its NEXT PR merges.
+
 ## Resolved questions
 
 - **List DTO richness (verified against `threadListResponseSchema` in the

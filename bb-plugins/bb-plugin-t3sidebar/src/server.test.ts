@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
-import plugin from "./server";
+import { createPlugin } from "./server";
 
 type Host = ReturnType<typeof createFakePluginHost>;
 
@@ -51,6 +51,8 @@ async function setup(options: {
   threads?: unknown[];
   pullRequest?: (args: { environmentId: string }) => unknown;
   settings?: Record<string, boolean>;
+  /** What the open-PR verification returns; undefined branches = no open PRs. */
+  openPrBranches?: (repo: string) => Promise<Set<string> | null>;
 }): Promise<Host> {
   const host = createFakePluginHost({
     pluginId: "t3sidebar",
@@ -65,6 +67,10 @@ async function setup(options: {
     },
   });
   hosts.push(host);
+  const plugin = createPlugin({
+    listOpenPrBranches:
+      options.openPrBranches ?? (async () => new Set<string>()),
+  });
   await plugin(host.bb);
   return host;
 }
@@ -134,14 +140,15 @@ describe("pr-merge-sweep", () => {
     await host.harness.behavior.callRpc("unsettle", { threadId: "thr_1" });
     expect(await lifecycleRows(host)).toHaveLength(0);
 
-    // The PR is still merged, but auto_settled_at stands: the sweep must not
-    // undo the user's call, and must not even re-probe the environment.
+    // The PR is still merged, but the overrule marker names this exact PR
+    // url: the sweep must not undo the user's call. (It does re-probe — the
+    // overrule check needs the current url, which only the lookup provides.)
     await host.harness.behavior.runSchedule("pr-merge-sweep");
 
     expect(await lifecycleRows(host)).toHaveLength(0);
     expect(
       host.harness.inspection.sdk.callsTo("environments.pullRequest"),
-    ).toHaveLength(1);
+    ).toHaveLength(2);
   });
 
   it("treats an unavailable lookup as no information", async () => {
@@ -238,6 +245,47 @@ describe("pr-merge-sweep", () => {
     expect(
       host.harness.inspection.sdk.callsTo("environments.pullRequest"),
     ).toHaveLength(1);
+  });
+
+  it("does not settle while the thread has other open PRs, then settles once they clear", async () => {
+    // The serial-PR workflow: the environment's recorded branch merged, but
+    // the thread has already pushed bb/<slug>-<threadId> branches with open
+    // PRs. One merged PR does not make the thread terminal.
+    let openBranches: Set<string> = new Set([
+      "bb/kit-plan-operation-domain-thr_1",
+      "bb/kit-speech-state-domain-thr_1",
+    ]);
+    const host = await setup({
+      threads: [listThread("thr_1")],
+      pullRequest: async () => MERGED_PR,
+      openPrBranches: async () => openBranches,
+    });
+
+    await host.harness.behavior.runSchedule("pr-merge-sweep");
+
+    expect(await lifecycleRows(host)).toHaveLength(0);
+    expect(lifecycleSignals(host)).toHaveLength(0);
+
+    // The observation was recorded without a marker, so once the siblings
+    // merge or close, the next tick settles the thread.
+    openBranches = new Set();
+    await host.harness.behavior.runSchedule("pr-merge-sweep");
+
+    const rows = await lifecycleRows(host);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.threadId).toBe("thr_1");
+  });
+
+  it("fails closed when open-PR verification cannot run", async () => {
+    const host = await setup({
+      threads: [listThread("thr_1")],
+      pullRequest: async () => MERGED_PR,
+      openPrBranches: async () => null,
+    });
+
+    await host.harness.behavior.runSchedule("pr-merge-sweep");
+
+    expect(await lifecycleRows(host)).toHaveLength(0);
   });
 
   it("leaves manually settled rows intact across the added migration", async () => {
