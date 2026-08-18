@@ -864,7 +864,6 @@ describe("child threads in the list", () => {
     const row = await screen.findByRole("link", { name: "CLI child" });
     expect(row.parentElement?.className).toContain("bg-sidebar-accent");
   });
-
 });
 
 // The list's loudest state. A blocked thread is the only row that cannot make
@@ -1097,5 +1096,84 @@ describe("card layout", () => {
     fireEvent.click(await screen.findByLabelText(/Collapse/));
     expect(await screen.findByText("1 thread")).toBeDefined();
     expect(screen.queryByText("bb")).toBeNull();
+  });
+});
+
+// The meta line grows on a coarse pointer so its prose stays readable. Mono
+// numerals gain far more width per step than words do, so the PR badge sat
+// oversized next to activity counts, which pin their own size.
+describe("the pull request badge's size", () => {
+  const withPr = (compact: boolean) => {
+    const props = compact
+      ? { ...listProps, isCompactViewport: true }
+      : listProps;
+    return renderSlot(inbox, props, {
+      sidebarThreads: {
+        status: "ready",
+        threads: [thread({ id: "thr_pr" })],
+        projects: [{ id: "proj_1", name: "bb", isPersonal: false }],
+      },
+      rpc: { listLifecycle: () => ({ rows: [] }) },
+      sidebarPullRequests: {
+        thr_pr: {
+          number: 12071,
+          title: "Fix the flake",
+          url: "https://github.com/o/r/pull/12071",
+          state: "open",
+          attention: "none",
+        } as never,
+      },
+    });
+  };
+
+  it.each([
+    ["a pointer", false],
+    ["a coarse pointer", true],
+  ])("stays the small size on %s", async (_label, compact) => {
+    withPr(compact);
+    const badge = await screen.findByRole("link", { name: /Pull request/ });
+    expect(badge.className).toContain("text-2xs");
+    expect(badge.className).not.toContain("text-xs ");
+  });
+
+  // It shares a line with the counts, so the two have to agree.
+  it("matches the activity counts it sits beside", async () => {
+    renderSlot(
+      inbox,
+      { ...listProps, isCompactViewport: true },
+      {
+        sidebarThreads: {
+          status: "ready",
+          threads: [
+            thread({
+              id: "thr_pr",
+              activity: {
+                workflows: 2,
+                backgroundAgents: 0,
+                backgroundCommands: 0,
+                planMode: 0,
+                goals: 0,
+              },
+            }),
+          ],
+          projects: [{ id: "proj_1", name: "bb", isPersonal: false }],
+        },
+        rpc: { listLifecycle: () => ({ rows: [] }) },
+        sidebarPullRequests: {
+          thr_pr: {
+            number: 12071,
+            title: "Fix the flake",
+            url: "https://github.com/o/r/pull/12071",
+            state: "open",
+            attention: "none",
+          } as never,
+        },
+      },
+    );
+    const badge = await screen.findByRole("link", { name: /Pull request/ });
+    const count = screen.getByLabelText("2 workflows");
+    const size = (el: Element) =>
+      (el.className.match(/text-\dxs|text-xs/) ?? [])[0];
+    expect(size(badge)).toBe(size(count));
   });
 });

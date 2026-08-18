@@ -303,7 +303,13 @@ export function ThreadCard({
                 // read it off the tooltip.
                 aria-label={`Pull request #${pullRequest.number}: ${pullRequest.title}`}
                 className={cn(
-                  "pointer-events-auto relative shrink-0 font-mono hover:underline",
+                  // Pinned to the small size rather than following the line.
+                  // The line grows on a coarse pointer so the prose on it
+                  // stays readable, but mono numerals gain far more width per
+                  // step than words do, and this one sat next to activity
+                  // counts that are pinned already — so it was the only mark
+                  // on the row that inflated.
+                  "pointer-events-auto relative shrink-0 font-mono text-2xs hover:underline",
                   // Tiny mono text sitting on top of the card's full-bleed
                   // anchor: without a bigger target, a near miss opens the
                   // thread instead of the pull request.
