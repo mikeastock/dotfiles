@@ -105,7 +105,7 @@ export function ThreadCard({
       >
         <div
           className={cn(
-            "group/card relative rounded-md px-2.5 py-2 transition-colors",
+            "group/card relative rounded-md px-2 py-1.5 transition-colors",
             isActive ? "bg-sidebar-accent" : "hover:bg-sidebar-accent/60",
             // A thread open in another pane gets a weaker tint than the active
             // row, so the two states stay distinguishable.
@@ -163,16 +163,32 @@ export function ThreadCard({
                 onToggle={onToggleCollapsed}
               />
             )}
-            <span
-              className={cn(
-                "min-w-0 flex-1 truncate font-medium text-muted-foreground",
-                isCompact ? "text-xs" : "text-2xs",
-              )}
-            >
-              {projectName ?? " "}
-            </span>
+            {isRenaming ? (
+              <TitleEditor
+                initialTitle={title}
+                className="text-sm text-foreground"
+                onCommit={(next) => {
+                  setIsRenaming(false);
+                  void actions.rename(thread.id, next);
+                }}
+                onCancel={() => setIsRenaming(false)}
+              />
+            ) : (
+              <span
+                ref={titleRef}
+                className={cn(
+                  // Weight alone carries unread. Fading the title — or the
+                  // whole card — makes a thread at rest read as disabled, and
+                  // at rest is what most of the list is most of the time.
+                  "min-w-0 flex-1 truncate text-sm text-foreground",
+                  thread.isUnread && "font-medium",
+                )}
+              >
+                {title}
+              </span>
+            )}
             {/* Status at rest, park actions on hover. Only the status yields,
-                so the project name never shifts.
+                so the title never shifts.
 
                 A coarse pointer has no hover to reveal them with, so there the
                 menu button below carries these actions instead and the status
@@ -216,50 +232,25 @@ export function ThreadCard({
               />
             ) : null}
           </div>
-          {isRenaming ? (
-            <TitleEditor
-              initialTitle={title}
-              className="mt-0.5 text-sm text-foreground"
-              onCommit={(next) => {
-                setIsRenaming(false);
-                void actions.rename(thread.id, next);
-              }}
-              onCancel={() => setIsRenaming(false)}
-            />
-          ) : (
-            <div
-              ref={titleRef}
-              className={cn(
-                // Weight alone carries unread. Fading the title — or the whole
-                // card — makes a thread at rest read as disabled, and at rest
-                // is what most of the list is most of the time.
-                "pointer-events-none relative mt-0.5 truncate text-sm text-foreground",
-                thread.isUnread && "font-medium",
-              )}
-            >
-              {title}
-            </div>
-          )}
           <div
             className={cn(
-              "pointer-events-none relative mt-0.5 flex h-4 items-center gap-1.5 text-muted-foreground",
+              "pointer-events-none relative mt-px flex h-3.5 items-center gap-1.5 text-muted-foreground",
               isCompact ? "text-xs" : "text-2xs",
             )}
           >
-            {/* Neither the branch nor the machine. bb derives a branch from
-                the thread's own title, so it restated the line above it in
-                mono; the machine is the same one for nearly every thread, so
-                it read as furniture. Both spent the row's widest column on
-                something that never distinguished one row from another.
+            {/* Two lines, not three. The title leads and takes the status
+                beside it; the project comes down here, where it costs nothing
+                — it repeats down the whole column, so it was never worth a
+                line of its own, and reading it before the title had the
+                hierarchy backwards.
 
-                A child still names the thread it was spawned under, because
-                that genuinely differs row to row. Everything else leaves the
-                line to the counts, the pull request, and the agent — and the
-                empty span holds the height so cards stay one size. */}
+                One leading slot, filled by whichever of these the row has,
+                most specific first. A collapsed summary and a promoted
+                child's parent both say more than a project name that the
+                scope picker above already implies. */}
             {subtree !== null && isCollapsed ? (
-              // The line is empty on a root thread, so a collapsed row spends
-              // it answering for what it is hiding. Without this, collapsing
-              // would be a way to lose a thread that is waiting on you.
+              // A collapsed row answers for what it is hiding. Without this,
+              // collapsing would be a way to lose a thread waiting on you.
               <span className="flex min-w-0 flex-1 items-center gap-1.5">
                 <span className="truncate">
                   {subtree.total} {subtree.total === 1 ? "thread" : "threads"}
@@ -284,7 +275,9 @@ export function ThreadCard({
                 <span className="truncate">{parentTitle}</span>
               </span>
             ) : (
-              <span className="flex-1" />
+              <span className="min-w-0 flex-1 truncate">
+                {projectName ?? " "}
+              </span>
             )}
             {thread.activity.workflows > 0 ? (
               <ActivityCount

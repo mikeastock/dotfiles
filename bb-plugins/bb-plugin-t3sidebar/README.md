@@ -31,16 +31,25 @@ what moves a row is parentage, which does not change on its own.
 
 Three shelves:
 
-- **Inbox** — three-line cards: project and one fixed-width status slot on the
-  first line; title on the second; then activity counts, the pull-request
-  number, and the agent glyph. Pinned threads sit above.
+- **Inbox** — two-line cards: the title and one fixed-width status slot on the
+  first line; the project, activity counts, the pull-request number and the
+  agent glyph on the second. Pinned threads sit above. A row is ~48px against
+  bb's own 28px, and against the ~77px this card used to take.
 
-  No branch and no machine. bb derives a branch from the thread's own title,
-  so the row's widest column restated the line directly above it in mono, and
-  once truncated a screenful of them shared a prefix and differed only past
-  the ellipsis. The machine is the same one for nearly every thread. Both
-  spent the widest column on something that never told two rows apart; the
+  The project had a line of its own above the title once. It repeats down the
+  whole column and the scope picker above already implies it, so it was never
+  worth a line — and reading it before the title had the hierarchy backwards.
+
+  No branch and no machine either. bb derives a branch from the thread's own
+  title, so the row's widest column restated the line directly above it in
+  mono, and once truncated a screenful of them shared a prefix and differed
+  only past the ellipsis. The machine is the same one for nearly every thread.
+  Both spent that column on something that never told two rows apart; the
   pull-request number identifies the work when it matters.
+
+  The second line has one leading slot, filled by whichever the row has, most
+  specific first: a collapsed row's summary of what it hides, then a promoted
+  child's parent, then the project.
 
   One slot, one marker, one width, so the whole column lines up. The slot
   shows the status glyph while a thread has something to say, and the age

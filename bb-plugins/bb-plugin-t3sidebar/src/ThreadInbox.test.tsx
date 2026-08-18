@@ -1090,3 +1090,51 @@ describe("nesting and collapsing", () => {
     ).toBe(true);
   });
 });
+
+// Two lines, not three. The project used to have a line of its own above the
+// title, which read the hierarchy backwards and cost ~30px on every row.
+describe("card layout", () => {
+  it("puts the title first and the project under it", async () => {
+    render([thread({ id: "thr_l", title: "Migrate the billing schema" })]);
+    const row = await screen.findByRole("listitem");
+    const text = row.textContent ?? "";
+    expect(text.indexOf("Migrate the billing schema")).toBeLessThan(
+      text.indexOf("bb"),
+    );
+  });
+
+  it("gives the title and the project a line each", async () => {
+    render([thread({ id: "thr_l", title: "Migrate the billing schema" })]);
+    const title = await screen.findByText("Migrate the billing schema");
+    const project = screen.getByText("bb");
+    expect(title.closest("div")).not.toBe(project.closest("div"));
+  });
+
+  // The status shares the title's line now, so it must not have been pushed
+  // down to the project's.
+  it("keeps the status beside the title", async () => {
+    render([
+      thread({
+        id: "thr_l",
+        title: "Working thread",
+        indicator: "runtime",
+        indicatorLabel: "Thread working",
+      }),
+    ]);
+    const title = await screen.findByText("Working thread");
+    const status = screen.getByLabelText("Thread working");
+    expect(title.parentElement?.contains(status)).toBe(true);
+  });
+
+  // A collapsed summary and a promoted child's parent both outrank the
+  // project name for the one leading slot on the second line.
+  it("gives the second line's slot to the collapsed summary", async () => {
+    render([
+      thread({ id: "p", title: "Parent", createdAt: 1 }),
+      thread({ id: "k", title: "Kid", parentThreadId: "p", createdAt: 2 }),
+    ]);
+    fireEvent.click(await screen.findByLabelText(/Collapse/));
+    expect(await screen.findByText("1 thread")).toBeDefined();
+    expect(screen.queryByText("bb")).toBeNull();
+  });
+});
