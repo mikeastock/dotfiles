@@ -21,6 +21,15 @@ import {
 } from "./useCompactViewport";
 
 /**
+ * The collapse chevron's footprint.
+ *
+ * Shared with a spacer on the second line so the project name lines up under
+ * the title instead of sitting 18px to its left. Two lines of one card
+ * disagreeing about their left edge is the kind of thing you cannot unsee.
+ */
+const COLLAPSE_SLOT_CLASS = "-ml-1 flex size-4 shrink-0";
+
+/**
  * One thread as a three-line card: project and status, title, then branch and
  * activity. The card is the whole point of this sidebar — status lives in the
  * row instead of in its position, which is what lets the list stay still.
@@ -238,6 +247,15 @@ export function ThreadCard({
               isCompact ? "text-xs" : "text-2xs",
             )}
           >
+            {/* Reserve the chevron's width so this line starts where the title
+                does. Only parents draw a chevron, so only parents reserve. */}
+            {subtree === null ? null : (
+              <span
+                className={COLLAPSE_SLOT_CLASS}
+                data-collapse-spacer
+                aria-hidden
+              />
+            )}
             {/* Two lines, not three. The title leads and takes the status
                 beside it; the project comes down here, where it costs nothing
                 — it repeats down the whole column, so it was never worth a
@@ -364,7 +382,10 @@ function CollapseToggle({
         event.stopPropagation();
         onToggle();
       }}
-      className="pointer-events-auto relative -ml-1 flex size-4 shrink-0 cursor-pointer items-center justify-center rounded text-muted-foreground/70 hover:bg-sidebar-accent hover:text-foreground"
+      className={cn(
+        COLLAPSE_SLOT_CLASS,
+        "pointer-events-auto relative cursor-pointer items-center justify-center rounded text-muted-foreground/70 hover:bg-sidebar-accent hover:text-foreground",
+      )}
     >
       <Icon
         name="ChevronDown"

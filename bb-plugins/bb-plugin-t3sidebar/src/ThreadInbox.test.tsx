@@ -1177,3 +1177,60 @@ describe("the pull request badge's size", () => {
     expect(size(badge)).toBe(size(count));
   });
 });
+
+// The chevron only exists on parents, so only parents' second line has to
+// reserve room for it. Without that, the project name sat 18px to the left of
+// the title it belongs under.
+describe("the card's two lines share a left edge", () => {
+  // Collapse state persists to localStorage, so a parent collapsed by an
+  // earlier test would come back expanded-or-not at random and flip the
+  // toggle's label between "Collapse" and "Expand".
+  beforeEach(() => window.localStorage.clear());
+
+  const metaLineOf = (row: HTMLElement) =>
+    row.querySelector<HTMLElement>(".h-3\\.5");
+
+  it("reserves the chevron's width on a parent's second line", async () => {
+    render([
+      thread({ id: "p", title: "Parent", createdAt: 1 }),
+      thread({ id: "k", title: "Kid", parentThreadId: "p", createdAt: 2 }),
+    ]);
+    const parentRow = (
+      await screen.findByRole("link", { name: "Parent" })
+    ).closest("li")!;
+    expect(
+      metaLineOf(parentRow)?.querySelector("[data-collapse-spacer]"),
+    ).not.toBeNull();
+  });
+
+  it("reserves nothing on a row with no children", async () => {
+    render([thread({ id: "alone", title: "Alone" })]);
+    const row = (await screen.findByRole("link", { name: "Alone" })).closest(
+      "li",
+    )!;
+    expect(row.querySelector("[data-collapse-spacer]")).toBeNull();
+  });
+
+  // The spacer and the chevron must stay the same size, so they share one
+  // class string rather than two numbers that can drift.
+  it("gives the spacer the chevron's exact footprint", async () => {
+    render([
+      thread({ id: "p", title: "Parent", createdAt: 1 }),
+      thread({ id: "k", title: "Kid", parentThreadId: "p", createdAt: 2 }),
+    ]);
+    // Scope to the row: a document-wide query can pick up another render's
+    // leftovers when the whole file runs.
+    const parentRow = (
+      await screen.findByRole("link", { name: "Parent" })
+    ).closest("li")!;
+    const toggle = within(parentRow).getByLabelText(/Collapse/);
+    const spacer = parentRow.querySelector("[data-collapse-spacer]")!;
+    const footprint = (el: Element) =>
+      el.className
+        .split(/\s+/)
+        .filter((c) => ["-ml-1", "size-4", "shrink-0"].includes(c))
+        .sort();
+    expect(footprint(spacer)).toEqual(footprint(toggle));
+    expect(footprint(spacer)).toHaveLength(3);
+  });
+});
