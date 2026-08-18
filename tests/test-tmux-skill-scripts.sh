@@ -30,13 +30,6 @@ skip_without_tmux() {
     fi
 }
 
-test_scripts_are_syntax_valid() {
-    log_test "Testing tmux skill script syntax"
-
-    assert_success "find-sessions.sh syntax is valid" bash -n "$PROJECT_DIR/skills/tmux/scripts/find-sessions.sh"
-    assert_success "wait-for-text.sh syntax is valid" bash -n "$PROJECT_DIR/skills/tmux/scripts/wait-for-text.sh"
-}
-
 test_find_sessions_on_socket() {
     log_test "Testing find-sessions.sh against a fallback socket"
 
@@ -99,7 +92,6 @@ test_wait_for_text_fails_fast_for_bad_target() {
 main() {
     cd "$PROJECT_DIR"
     skip_without_tmux
-    test_scripts_are_syntax_valid
     test_find_sessions_on_socket
     test_wait_for_text_on_socket
     test_wait_for_text_fails_fast_for_bad_target

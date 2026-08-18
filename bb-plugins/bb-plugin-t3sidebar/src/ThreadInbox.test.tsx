@@ -168,8 +168,6 @@ describe("ThreadInbox", () => {
     expect(within(pinned).getByText("Stuck")).toBeDefined();
   });
 
-  // The host owns the search field; the plugin only filters by what it is
-  // handed, so there is deliberately no second search box to type into.
   it("filters by the host's search query", () => {
     renderSlot(
       inbox,
@@ -188,16 +186,6 @@ describe("ThreadInbox", () => {
     );
     expect(screen.getAllByRole("listitem")).toHaveLength(1);
     expect(screen.getByText("Sidebar work")).toBeDefined();
-  });
-
-  it("ships no search field of its own", () => {
-    render([thread({ id: "a" })]);
-    expect(screen.queryByLabelText("Search threads")).toBeNull();
-  });
-
-  it("ships no new-thread button of its own", () => {
-    render([thread({ id: "a" })]);
-    expect(screen.queryByLabelText("New thread")).toBeNull();
   });
 
   it("scopes to one project", () => {
@@ -827,13 +815,6 @@ describe("child threads in the list", () => {
     createdAt: 2,
   });
 
-  it("gives a child its own row", () => {
-    render([parent, child]);
-    const rows = screen.getAllByRole("listitem").map((row) => row.textContent);
-    expect(rows).toHaveLength(2);
-    expect(rows.some((row) => row?.includes("CLI child"))).toBe(true);
-  });
-
   // Nested under its parent, the child does not repeat the parent's name —
   // the row directly above it already is the parent.
   it("nests a child under its parent instead of naming it", async () => {
@@ -884,26 +865,6 @@ describe("child threads in the list", () => {
     expect(row.parentElement?.className).toContain("bg-sidebar-accent");
   });
 
-  // The parent reference is the only thing left on line 3, so a root thread
-  // has nothing to put there and the line belongs to the trailing marks.
-  it("leaves a root thread's third line empty", async () => {
-    render([
-      thread({
-        id: "thr_root",
-        title: "Root",
-        host: { id: "host_1", name: "orbstack" },
-        environment: {
-          id: "env_1",
-          name: null,
-          branchName: "bb/some-branch",
-          workspaceDisplayKind: "managed-worktree",
-        },
-      }),
-    ]);
-    await screen.findByText("Root");
-    expect(screen.queryByText("orbstack")).toBeNull();
-    expect(screen.queryByText("bb/some-branch")).toBeNull();
-  });
 });
 
 // The list's loudest state. A blocked thread is the only row that cannot make

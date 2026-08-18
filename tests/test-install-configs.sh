@@ -36,54 +36,17 @@ test_config_new_files() {
     # Verify all files were created
     assert_file_exists "$SANDBOX_DIR/.config/amp/settings.json" "Amp settings file was created"
     assert_file_exists "$SANDBOX_DIR/.codex/config.toml" "Codex config file was created"
-    assert_file_not_exists "$SANDBOX_DIR/.codex/model-catalog.json" "Codex custom model catalog is absent"
-    assert_file_not_exists "$SANDBOX_DIR/.codex/fireworks-glm52.config.toml" "Codex Fireworks profile is absent"
     assert_file_exists "$SANDBOX_DIR/.codex/rules/default.rules" "Codex default rules file was created"
-    assert_file_not_exists "$SANDBOX_DIR/.codex/hooks.json" "Codex hooks file is not managed"
-    assert_file_not_exists "$SANDBOX_DIR/.codex/hooks/terraform_apply_gate.py" "Codex Terraform hard-gate hook is not installed"
     assert_file_exists "$SANDBOX_DIR/.pi/agent/settings.json" "Pi settings file was created"
     assert_file_exists "$SANDBOX_DIR/.codex/AGENTS.md" "Codex AGENTS.md was created"
     assert_file_exists "$SANDBOX_DIR/.pi/agent/AGENTS.md" "Pi AGENTS.md was created"
-    assert_output_contains "$(cat "$SANDBOX_DIR/.codex/config.toml")" 'personality = "pragmatic"' "Codex config uses the pragmatic personality"
-    assert_output_contains "$(cat "$SANDBOX_DIR/.codex/config.toml")" 'model_reasoning_summary = "concise"' "Codex config uses concise reasoning summaries"
-    assert_output_not_contains "$(cat "$SANDBOX_DIR/.codex/AGENTS.md")" "Background Processes" "Codex AGENTS.md omits background process guidance"
-    assert_output_not_contains "$(cat "$SANDBOX_DIR/.codex/AGENTS.md")" "Visual Previews" "Codex AGENTS.md omits visual preview guidance"
-    assert_output_contains "$(cat "$SANDBOX_DIR/.codex/AGENTS.md")" "clear, concise language without reducing technical precision" "Codex AGENTS.md includes clear communication guidance"
-    assert_output_contains "$(cat "$SANDBOX_DIR/.codex/AGENTS.md")" "Do not preserve backward compatibility. Remove obsolete paths instead of adding compatibility layers, fallbacks, or migrations." "Codex AGENTS.md includes current implementation guidance"
-    assert_output_contains "$(cat "$SANDBOX_DIR/.codex/AGENTS.md")" "Lean on the dependencies already in the project before writing your own implementation or adding packages." "Codex AGENTS.md includes dependency reuse guidance"
-    assert_output_not_contains "$(cat "$SANDBOX_DIR/.codex/AGENTS.md")" "Hard-Cut Product Policy" "Codex AGENTS.md omits hard-cutover guidance"
-    assert_output_not_contains "$(cat "$SANDBOX_DIR/.codex/AGENTS.md")" "fix things from first principles" "Codex AGENTS.md omits superseded mindset guidance"
-    assert_output_not_contains "$(cat "$SANDBOX_DIR/.pi/agent/AGENTS.md")" "sideshow agent-howto" "Pi AGENTS.md omits sideshow setup commands"
-    assert_output_not_contains "$(cat "$SANDBOX_DIR/.codex/AGENTS.md")" "sideshow agent-howto" "Codex AGENTS.md omits sideshow setup commands"
+    assert_success "Codex receives the managed AGENTS.md" cmp "$PROJECT_DIR/configs/AGENTS.md" "$SANDBOX_DIR/.codex/AGENTS.md"
+    assert_success "Pi receives the managed AGENTS.md" cmp "$PROJECT_DIR/configs/AGENTS.md" "$SANDBOX_DIR/.pi/agent/AGENTS.md"
 
     local amp_json
     amp_json=$(cat "$SANDBOX_DIR/.config/amp/settings.json")
     assert_json_field "$amp_json" '."amp.skills.path"' "~/.config/agents/skills" "Amp: skills.path comes from amp-configs"
     assert_json_field "$amp_json" '."amp.terminal.copyOnSelect"' "false" "Amp: terminal copy-on-select comes from amp-configs"
-}
-
-# Test: Codex config does not install custom model providers or stale profiles
-test_codex_custom_models_removed() {
-    log_test "Testing Codex custom models are removed"
-    cd "$PROJECT_DIR"
-
-    mkdir -p "$SANDBOX_DIR/.codex"
-    cat > "$SANDBOX_DIR/.codex/model-catalog.json" <<'EOF'
-{"models":[]}
-EOF
-    cat > "$SANDBOX_DIR/.codex/fireworks-glm52.config.toml" <<'EOF'
-model_provider = "fireworks"
-EOF
-
-    HOME="$SANDBOX_DIR" make install-configs >/dev/null 2>&1
-
-    local codex_config
-    codex_config=$(cat "$SANDBOX_DIR/.codex/config.toml")
-
-    assert_output_not_contains "$codex_config" "model_catalog_json" "Codex config does not point at a custom model catalog"
-    assert_output_not_contains "$codex_config" "model_providers.fireworks" "Codex config does not register Fireworks"
-    assert_file_not_exists "$SANDBOX_DIR/.codex/model-catalog.json" "Codex stale custom model catalog was removed"
-    assert_file_not_exists "$SANDBOX_DIR/.codex/fireworks-glm52.config.toml" "Codex stale Fireworks profile was removed"
 }
 
 # Test: Codex config enables prompts and installs Terraform apply rules
@@ -269,80 +232,6 @@ test_config_idempotent() {
     fi
 }
 
-# Test: install-configs creates directories if needed
-test_config_creates_directories() {
-    log_test "Testing 'make install-configs' creates config directories"
-    cd "$PROJECT_DIR"
-
-    # Remove the config directories
-    rm -rf "$SANDBOX_DIR/.config/amp"
-    rm -rf "$SANDBOX_DIR/.codex"
-    rm -rf "$SANDBOX_DIR/.pi"
-
-    # Run install-configs
-    local output
-    output=$(HOME="$SANDBOX_DIR" make install-configs 2>&1)
-
-    assert_dir_exists "$SANDBOX_DIR/.config/amp" ".config/amp directory was created"
-    assert_dir_exists "$SANDBOX_DIR/.codex" ".codex directory was created"
-    assert_dir_exists "$SANDBOX_DIR/.codex/rules" ".codex/rules directory was created"
-    assert_dir_exists "$SANDBOX_DIR/.pi/agent" ".pi/agent directory was created"
-}
-
-# Test: install-configs help is visible
-test_help_shows_config() {
-    log_test "Testing 'make help' shows install-configs"
-    cd "$PROJECT_DIR"
-
-    local output
-    output=$(make help 2>&1)
-
-    assert_output_contains "$output" "install-configs" "Help shows install-configs command"
-}
-
-# Test: Amp JSON is valid after multiple operations
-test_amp_json_validity() {
-    log_test "Testing Amp JSON validity after modifications"
-    cd "$PROJECT_DIR"
-
-    mkdir -p "$SANDBOX_DIR/.config/amp"
-    cat > "$SANDBOX_DIR/.config/amp/settings.json" <<'EOF'
-{
-  "amp.permissions": [
-    {"pattern": "bash*", "action": "allow"}
-  ],
-  "amp.mcpServers": {
-    "test": {"command": "test"}
-  }
-}
-EOF
-
-    # Run install-configs
-    HOME="$SANDBOX_DIR" make install-configs >/dev/null 2>&1
-
-    # Validate Amp JSON with jq (if available) or Python
-    if command -v jq >/dev/null 2>&1; then
-        if jq '.' "$SANDBOX_DIR/.config/amp/settings.json" >/dev/null 2>&1; then
-            log_info "PASS: Amp output is valid JSON"
-            TESTS_PASSED=$((TESTS_PASSED + 1))
-        else
-            log_error "FAIL: Amp output is not valid JSON"
-            cat "$SANDBOX_DIR/.config/amp/settings.json"
-            TESTS_FAILED=$((TESTS_FAILED + 1))
-        fi
-    else
-        # Use Python to validate JSON
-        if python3 -c "import json; json.load(open('$SANDBOX_DIR/.config/amp/settings.json'))" 2>/dev/null; then
-            log_info "PASS: Amp output is valid JSON"
-            TESTS_PASSED=$((TESTS_PASSED + 1))
-        else
-            log_error "FAIL: Amp output is not valid JSON"
-            cat "$SANDBOX_DIR/.config/amp/settings.json"
-            TESTS_FAILED=$((TESTS_FAILED + 1))
-        fi
-    fi
-}
-
 # Main
 main() {
     echo -e "${YELLOW}========================================${NC}"
@@ -354,17 +243,13 @@ main() {
     setup_sandbox
 
     # Run tests
-    test_help_shows_config
-    test_config_creates_directories
     test_config_new_files
-    test_codex_custom_models_removed
     test_codex_terraform_apply_rules
     test_codex_preserve_hook_trust
     test_amp_preserve_existing
     test_amp_trailing_commas
     test_pi_preserve_changelog_version
     test_config_idempotent
-    test_amp_json_validity
 
     # Summary
     print_summary

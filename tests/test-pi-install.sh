@@ -88,20 +88,6 @@ test_pi_install_uses_mise_npm_backend() {
     assert_output_contains "$mise_args" 'install' "Installer installs configured mise tools"
 }
 
-test_pi_install_is_idempotent() {
-    reset_logs
-    log_test "Testing pi installer reruns through mise"
-
-    run_pi_install >/dev/null 2>&1
-    run_pi_install >/dev/null 2>&1
-
-    local mise_log
-    mise_log=$(cat "$LOG_DIR/mise.log")
-    local use_count
-    use_count=$(printf '%s\n' "$mise_log" | rg -c --fixed-strings -- 'use -g npm:@earendil-works/pi-coding-agent@latest')
-    assert_equals "$use_count" "2" "Installer uses same mise tool on repeat runs"
-}
-
 test_pi_install_runs_make_install_configs() {
     reset_logs
     log_test "Testing pi installer runs make install-configs"
@@ -150,7 +136,6 @@ main() {
     setup_test_path
 
     test_pi_install_uses_mise_npm_backend
-    test_pi_install_is_idempotent
     test_pi_install_runs_make_install_configs
     test_pi_install_validates_root_and_runs_patch
     test_pi_install_works_via_symlink

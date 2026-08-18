@@ -7,6 +7,13 @@ on:
     branches: [main, master]
   workflow_dispatch:
 
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -32,7 +39,19 @@ jobs:
           sudo apt-get install -y ripgrep
 
       - name: Install dependencies
-        run: pnpm install
+        run: |
+          pnpm install --frozen-lockfile
+          npm ci --prefix bb-plugins/bb-plugin-t3sidebar
 
-      - name: Run all tests
+      - name: Run shell tests
         run: ./tests/run-all.sh
+
+      - name: Run TypeScript tests
+        run: |
+          pnpm test
+          npm test --prefix bb-plugins/bb-plugin-t3sidebar
+
+      - name: Typecheck
+        run: |
+          pnpm typecheck
+          npm run typecheck --prefix bb-plugins/bb-plugin-t3sidebar

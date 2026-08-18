@@ -151,25 +151,6 @@ assert_output_not_contains() {
     fi
 }
 
-# Assert two strings are equal
-# Usage: assert_equals "actual" "expected" "optional description"
-assert_equals() {
-    local actual="$1"
-    local expected="$2"
-    local description="${3:-Values are equal}"
-    if [ "$actual" = "$expected" ]; then
-        log_info "PASS: $description"
-        TESTS_PASSED=$((TESTS_PASSED + 1))
-        return 0
-    else
-        log_error "FAIL: $description"
-        log_error "  Expected: '$expected'"
-        log_error "  Actual:   '$actual'"
-        TESTS_FAILED=$((TESTS_FAILED + 1))
-        return 1
-    fi
-}
-
 # Assert JSON field has expected value (requires jq)
 # Usage: assert_json_field "$json" ".field.path" "expected_value" "optional description"
 assert_json_field() {
@@ -223,7 +204,7 @@ init_submodules() {
     cd "$PROJECT_DIR"
 
     # Check if any submodules are uninitialized
-    if git submodule status --recursive | grep -q '^-'; then
+    if git submodule status --recursive | rg --quiet '^-'; then
         log_info "Initializing git submodules..."
         git submodule update --init --recursive
     else
@@ -260,5 +241,4 @@ export -f assert_file_not_exists
 export -f assert_dir_exists
 export -f assert_output_contains
 export -f assert_output_not_contains
-export -f assert_equals
 export -f assert_json_field

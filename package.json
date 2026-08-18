@@ -4,8 +4,8 @@
   "description": "Reusable skills and extensions for AI coding agents",
   "packageManager": "pnpm@10.0.0",
   "scripts": {
+    "test": "node --import tsx --test pi-extensions/*/index.test.ts tests/*.test.ts",
     "typecheck": "tsc --noEmit",
-    "test:extensions": "node --import tsx --test pi-extensions/handoff/index.test.ts pi-extensions/openai-fast/index.test.ts",
     "amp:plugin-types": "python3 scripts/update_amp_plugin_types.py",
     "amp:plugin-check": "pnpm amp:plugin-types && tsc --noEmit --pretty false"
   },
