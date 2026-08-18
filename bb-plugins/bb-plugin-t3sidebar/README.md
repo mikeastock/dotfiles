@@ -137,6 +137,8 @@ its header shows no parent chip.
 | `experimental_useSidebarThreadPullRequest`         | the `#412` badge, coloured by bb's attention state                                          |
 | `@radix-ui/react-context-menu` (shimmed)           | this plugin's own right-click menu, built on the action hook                                |
 | `bb.storage.database()` + `bb.rpc` + `bb.realtime` | the settled/snoozed store                                                                   |
+| `bb.background.schedule` + `bb.settings`           | the `pr-merge-sweep` auto-settle tick and its two toggles                                   |
+| `bb.sdk.environments.pullRequest`                  | per-environment PR state, routed to the right host by bb                                    |
 
 The plugin API ships **no components**. Status glyphs and the right-click menu
 are both this plugin's own: `indicator` arrives as data, and every menu item is
@@ -158,3 +160,44 @@ parked.** bb has more kinds of live work than a session status — workflows,
 background agents, background commands, plan mode, goals — and every one of
 them blocks parking and wakes a parked thread. Hiding running work is the one
 failure this feature cannot afford. See `canPark` in `src/lifecycle.ts`.
+
+## Auto-settle on merged PRs
+
+A `*/10 * * * *` background schedule (`pr-merge-sweep`) parks threads whose
+pull request has merged, so the inbox empties itself of finished work. The
+sweep only writes the same lifecycle rows the right-click **Settle** writes,
+through the same code path — every guard above applies to it unchanged, and a
+settled thread that starts working or gains new attention comes straight back.
+
+Each tick enumerates quiet threads (idle status, no pending interaction, all
+five activity counters at zero, unpinned, visible), dedupes them by
+environment, and calls bb's own `environments.pullRequest` once per
+environment — bb routes the lookup to the right host, so multi-machine
+workspaces need no extra machinery. Decisions follow one policy table:
+
+| PR lookup result | Sweep action |
+| --- | --- |
+| `merged` | Settle the thread |
+| `closed` (unmerged) | Settle only when the `settleClosed` setting is on (default off) |
+| `open` / `draft` | Nothing |
+| `absent` (branch has no PR) | Nothing; remember for a day before re-probing |
+| `unavailable` (gh or host failure) | Nothing — a failed lookup is not information |
+
+Two rules keep the sweep polite. Decisions key on **stable fields only**
+(`state`, `mergedAt`) — never on volatile check or mergeability fields, which
+churn and would re-fire on the same user-visible state. And **once
+auto-settled, never auto-settled again**: a `pr_watch` table records
+`auto_settled_at` per thread, so if you pull a thread back out of the settled
+shelf, the sweep respects that call forever (merged is terminal; there is no
+later PR transition that should re-park it).
+
+Two settings control it, editable in Extensions → Plugins or via `bb plugin
+config t3sidebar set <key> <value>`; both take effect on the next tick without
+a reload:
+
+- `autoSettle` (default on) — the master switch.
+- `settleClosed` (default off) — also park threads whose PR closed unmerged.
+
+One `bb.log.info` line per settle is the only explanation surface; the thread
+simply settles and disappears from the inbox. The plan this implemented is in
+`PLAN-auto-settle.md`.

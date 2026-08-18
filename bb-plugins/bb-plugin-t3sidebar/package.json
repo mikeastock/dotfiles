@@ -48,6 +48,8 @@
     "@types/react": "^19.0.0",
     "bb-app": "0.37.0",
     "better-sqlite3": "12.10.0",
+    "cron-parser": "^5.10.0",
+    "hono": "^4.13.2",
     "jsdom": "^29.0.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

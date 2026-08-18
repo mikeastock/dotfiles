@@ -6,6 +6,7 @@
 // understands. Here, uninstalling the plugin removes its state with it.
 import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
 import { z } from "zod";
+import { runSweep } from "./auto-settle";
 
 const migrations = [
   `CREATE TABLE IF NOT EXISTS thread_lifecycle (
@@ -13,6 +14,20 @@ const migrations = [
      settled_at     INTEGER,
      snoozed_until  INTEGER,
      snoozed_at     INTEGER
+   )`,
+  // Placeholder occupying index 1. Databases installed from the original
+  // GitHub release already carry a migration id 1 (a statement since squashed
+  // into the thread_lifecycle CREATE TABLE above), and the host keys
+  // migrations by statement index — a real statement at index 1 is silently
+  // skipped on those databases. Index 1 must stay a no-op forever.
+  `SELECT 1`,
+  `CREATE TABLE IF NOT EXISTS pr_watch (
+     thread_id       TEXT PRIMARY KEY,
+     environment_id  TEXT NOT NULL,
+     pr_url          TEXT,
+     pr_state        TEXT,
+     auto_settled_at INTEGER,
+     last_checked_at INTEGER NOT NULL
    )`,
 ];
 
@@ -65,6 +80,19 @@ export const LIFECYCLE_CHANNEL = "lifecycle";
 export default function plugin(bb: BbPluginApi) {
   const db = bb.storage.database();
   bb.storage.migrate(db, migrations);
+
+  const settings = bb.settings.define({
+    autoSettle: {
+      type: "boolean",
+      label: "Auto-settle merged PRs",
+      default: true,
+    },
+    settleClosed: {
+      type: "boolean",
+      label: "Auto-settle closed PRs",
+      default: false,
+    },
+  });
 
   const readAll = (): StoredLifecycleRow[] =>
     (
@@ -140,5 +168,37 @@ export default function plugin(bb: BbPluginApi) {
   // thread reusing the id, and stale rows accumulate otherwise.
   bb.events.on("thread.deleted", ({ thread }) => {
     clear(thread.id);
+    db.prepare(`DELETE FROM pr_watch WHERE thread_id = ?`).run(thread.id);
+  });
+
+  const listParkedThreadIds = (): Set<string> =>
+    new Set(
+      readAll()
+        .filter((row) => row.settledAt !== null || row.snoozedUntil !== null)
+        .map((row) => row.threadId),
+    );
+
+  // The sweep parks threads through the exact path a manual settle takes, so
+  // the sidebar's realtime re-read and every resolveShelf guard apply to both.
+  const settleThread = (threadId: string): void => {
+    write({
+      threadId,
+      settledAt: Date.now(),
+      snoozedUntil: null,
+      snoozedAt: null,
+    });
+  };
+
+  bb.background.schedule("pr-merge-sweep", "*/10 * * * *", async () => {
+    const current = await settings.get();
+    if (!current.autoSettle) return;
+    await runSweep({
+      sdk: bb.sdk,
+      db,
+      settings: current,
+      log: bb.log,
+      listParkedThreadIds,
+      settle: settleThread,
+    });
   });
 }
