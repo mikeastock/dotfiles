@@ -12,7 +12,6 @@
     "xai/grok-4.6"
   ],
   "packages": [
-    "npm:pi-autoresearch",
     "npm:pi-verbosity-control"
   ],
   "theme": "catppuccin-mocha",
