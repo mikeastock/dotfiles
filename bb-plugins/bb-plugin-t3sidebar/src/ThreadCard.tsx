@@ -14,6 +14,7 @@ import type { SubtreeSummary } from "./tree";
 import { threadDisplayTitle } from "./inbox";
 import { TitleEditor } from "./TitleEditor";
 import { resolveSnoozePresets } from "./lifecycle";
+import { isWorking } from "./useLifecycle";
 import {
   NO_TOUCH_CALLOUT,
   TOUCH_TARGET_CLASS,
@@ -94,6 +95,10 @@ export function ThreadCard({
   // `canPark`, so the rail and the park actions can never disagree about
   // whether a thread is blocked.
   const isWaiting = thread.hasPendingInteraction;
+  // A running agent is the one thing on this list that wants nothing from you,
+  // so it steps back. Waiting wins outright — a thread can be working AND
+  // holding a question, and the question is what matters.
+  const isRunning = !isWaiting && isWorking(thread);
 
   return (
     <RowContextMenu
@@ -123,7 +128,12 @@ export function ThreadCard({
             // list says "selected"; letting it also say "blocked" would make
             // the two states cousins. The rail is a channel nothing else uses,
             // so it survives selection instead of competing with it.
-            isWaiting && "shadow-[inset_2px_0_0_var(--warning)]",
+            //
+            // Drawn as a positioned bar rather than an inset shadow: a shadow
+            // follows the card's radius, which bows both ends of what is
+            // supposed to be a straight line.
+            isWaiting &&
+              "before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-[color:var(--warning)] before:content-['']",
           )}
         >
           <a
@@ -189,7 +199,18 @@ export function ThreadCard({
                   // Weight alone carries unread. Fading the title — or the
                   // whole card — makes a thread at rest read as disabled, and
                   // at rest is what most of the list is most of the time.
-                  "min-w-0 flex-1 truncate text-sm text-foreground",
+                  //
+                  // A running thread is the exception, and it recedes by INK
+                  // rather than by opacity: a translucent row dims its own
+                  // selection tint and hover with it, and reads as disabled.
+                  // Dropping the text colour leaves the row solid, and hover
+                  // brings it straight back.
+                  "min-w-0 flex-1 truncate text-sm transition-colors",
+                  isRunning && !thread.isUnread
+                    ? "text-foreground/60 group-hover/card:text-foreground"
+                    : "text-foreground",
+                  // Unread outranks running: a thread that finished something
+                  // while it worked still has something to tell you.
                   thread.isUnread && "font-medium",
                 )}
               >

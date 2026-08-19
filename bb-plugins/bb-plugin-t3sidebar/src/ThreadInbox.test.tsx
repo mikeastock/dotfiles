@@ -892,11 +892,13 @@ describe("a thread waiting on you", () => {
     expect(pill.textContent).toMatch(/^(now|\d+[mhdw])$/);
   });
 
+  // A positioned bar, not an inset shadow: a shadow follows the card's radius
+  // and bows the ends of a line that should be straight.
   it("marks the row with a rail and no background tint", async () => {
     render([waiting()]);
     const row = (await screen.findByRole("link", { name: /Deploy/ }))
       .parentElement!;
-    expect(row.className).toContain("shadow-[inset_2px_0_0_var(--warning)]");
+    expect(row.className).toContain("before:bg-[color:var(--warning)]");
     // Tint is how this list says "selected". Blocked must not borrow it.
     expect(row.className).not.toContain("bg-sidebar-accent ");
   });
@@ -918,7 +920,7 @@ describe("a thread waiting on you", () => {
     );
     const row = (await screen.findByRole("link", { name: /Deploy/ }))
       .parentElement!;
-    expect(row.className).toContain("shadow-[inset_2px_0_0_var(--warning)]");
+    expect(row.className).toContain("before:bg-[color:var(--warning)]");
     expect(row.className).toContain("bg-sidebar-accent");
   });
 
@@ -1232,5 +1234,90 @@ describe("the card's two lines share a left edge", () => {
         .sort();
     expect(footprint(spacer)).toEqual(footprint(toggle));
     expect(footprint(spacer)).toHaveLength(3);
+  });
+});
+
+// A running agent wants nothing from you, so its row steps back — by ink, not
+// by opacity, so the row stays solid and hover brings it straight back.
+describe("a running thread recedes", () => {
+  const titleOf = async (name: string | RegExp) =>
+    within(
+      (await screen.findByRole("link", { name })).closest("li")!,
+    ).getByText(typeof name === "string" ? name : /./);
+
+  const working = (over: Partial<PluginSidebarThread> = {}) =>
+    thread({
+      id: "thr_run",
+      title: "Migrate the billing schema",
+      indicator: "runtime",
+      indicatorLabel: "Thread working",
+      ...over,
+    });
+
+  it("drops the title's ink while it works", async () => {
+    render([working()]);
+    const title = await screen.findByText("Migrate the billing schema");
+    expect(title.className).toContain("text-foreground/60");
+  });
+
+  it("brings the title back on hover rather than leaving it dim", async () => {
+    render([working()]);
+    const title = await screen.findByText("Migrate the billing schema");
+    expect(title.className).toContain("group-hover/card:text-foreground");
+  });
+
+  // Opacity would dim the row's own selection tint and hover with it.
+  it("never fades the row itself", async () => {
+    render([working()]);
+    const row = (await screen.findByRole("link", { name: /Migrate/ }))
+      .parentElement!;
+    expect(row.className).not.toMatch(/\bopacity-/);
+  });
+
+  it("leaves a quiet thread at full strength", async () => {
+    render([thread({ id: "thr_calm", title: "Calm thread" })]);
+    const title = await screen.findByText("Calm thread");
+    expect(title.className).toContain("text-foreground");
+    expect(title.className).not.toContain("text-foreground/60");
+  });
+
+  // The two rules that decide this, and the order they resolve in.
+  it("does not recede a thread that is also waiting on you", async () => {
+    render([
+      working({
+        hasPendingInteraction: true,
+        indicator: "waiting-for-input",
+        indicatorLabel: "Thread needs user input",
+      }),
+    ]);
+    const title = await screen.findByText("Migrate the billing schema");
+    expect(title.className).not.toContain("text-foreground/60");
+  });
+
+  it("does not recede an unread thread that is still working", async () => {
+    render([working({ isUnread: true })]);
+    const title = await screen.findByText("Migrate the billing schema");
+    expect(title.className).not.toContain("text-foreground/60");
+    expect(title.className).toContain("font-medium");
+  });
+
+  // isWorking counts background activity, not just the runtime indicator.
+  it("recedes a thread running a workflow with no runtime indicator", async () => {
+    render([
+      thread({
+        id: "thr_wf",
+        title: "Workflow thread",
+        indicator: "workflow",
+        activity: {
+          workflows: 1,
+          backgroundAgents: 0,
+          backgroundCommands: 0,
+          planMode: 0,
+          goals: 0,
+        },
+      }),
+    ]);
+    const title = await screen.findByText("Workflow thread");
+    expect(title.className).toContain("text-foreground/60");
   });
 });
