@@ -16,7 +16,7 @@ HOME_LINKS := .gitconfig .ideavimrc .psqlrc .tmux.conf .tmuxinator .vscode
 CONFIG_DIRS := alacritty stylua lvim zellij direnv atuin ghostty hypr
 
 .PHONY: all install install-non-interactive install-skills install-amp-plugins install-extensions install-prompts install-themes install-configs amp-plugin-types amp-plugin-check package-manager-security-config build clean help submodule-init plugin-update check-python \
-	dot-all dot-install dot-home-symlinks dot-config-symlinks dot-platform-defaults dot-macos-defaults dot-clean
+	dot-all dot-install dot-omarchy dot-home-symlinks dot-config-symlinks dot-platform-defaults dot-macos-defaults dot-clean
 
 all: help
 
@@ -42,6 +42,7 @@ help:
 	@echo ""
 	@echo "Dotfiles:"
 	@echo "  make dot-all                Run all dotfile setup tasks"
+	@echo "  make dot-omarchy            Install dotfiles on Omarchy Linux"
 	@echo "  make dot-install            Install required Homebrew/Linuxbrew packages and tmux plugins"
 	@echo "  make dot-home-symlinks      Symlink dotfiles to home directory"
 	@echo "  make dot-config-symlinks    Symlink .config files and directories"
@@ -123,6 +124,10 @@ endef
 # Dotfiles targets
 
 dot-all: dot-install dot-home-symlinks dot-config-symlinks dot-platform-defaults
+
+# Install personal dotfiles on Omarchy without Homebrew or Omarchy terminal configs
+dot-omarchy:
+	@$(CURDIR)/scripts/dot-omarchy.sh
 
 # Install required Homebrew/Linuxbrew packages from Brewfile and tmux plugins
 dot-install:
@@ -275,6 +280,7 @@ dot-clean:
 	@# Single-file configs
 	@[ -L $(HOME)/.config/starship.toml ] && rm $(HOME)/.config/starship.toml || true
 	@[ -L $(HOME)/.config/herdr/config.toml ] && rm $(HOME)/.config/herdr/config.toml || true
+	@[ -L $(HOME)/.config/omarchy/hooks/post-update.d/drop-omarchy-tmux.hook ] && rm $(HOME)/.config/omarchy/hooks/post-update.d/drop-omarchy-tmux.hook || true
 	@echo "✓ Dotfile symlinks removed"
 
 # Set macOS defaults

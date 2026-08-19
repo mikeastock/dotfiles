@@ -1,6 +1,6 @@
 # dotfiles
 
-Personal dotfiles for macOS, with Ubuntu 24.x/Linuxbrew support for the shell, tmux, Herdr, and agent-tooling setup.
+Personal dotfiles for macOS, Omarchy, and Ubuntu 24.x. Omarchy setup does not use Homebrew and leaves Omarchy-owned terminal/theme files alone.
 
 ## Quick Start
 
@@ -11,6 +11,18 @@ git clone https://github.com/mikeastock/dotfiles.git ~/code/personal/dotfiles
 cd ~/code/personal/dotfiles
 make dot-all
 ```
+
+### Omarchy
+
+```bash
+git clone https://github.com/mikeastock/dotfiles.git ~/code/personal/dotfiles
+cd ~/code/personal/dotfiles
+make dot-omarchy
+```
+
+`make dot-omarchy` claims home/config links around existing Omarchy files, installs `fish` and `atuin` with `omarchy pkg add`, switches the login shell to fish, and installs TPM. It leaves Ghostty, Alacritty, and Starship on Omarchy's copies, and removes `~/.config/tmux/tmux.conf` so `~/.tmux.conf` is the only tmux config. A post-update hook drops that XDG file again if `omarchy update` puts it back.
+
+Do not run **Update → Config → Tmux** in the Omarchy menu. Log out once after the first install so the fish login shell applies. Then `make install` for agent skills.
 
 ### Ubuntu 24.x
 
@@ -168,12 +180,18 @@ sudo apt update
 sudo apt install -y fish tmux ripgrep fd-find xclip wl-clipboard xsel fonts-firacode
 ```
 
-- Omarchy Hyprland config lives in `.config/hypr` and is symlinked to `~/.config/hypr` by `make dot-config-symlinks`
 - Linux clipboard integration in tmux uses the first available tool from: `wl-copy`, `xclip`, `xsel`
 - Herdr config is symlinked to `~/.config/herdr/config.toml` and uses tmux-like `Ctrl-a` prefix bindings
 - `tmux-mem-cpu-load` is optional; the tmux status bar falls back to `uptime`
 - Install the configured fonts (`Fira Code` / `FiraCode Nerd Font`) if you want terminal rendering to match macOS
 - If you prefer one package manager across macOS and Linux, install Homebrew/Linuxbrew and use `make dot-install`
+
+## Omarchy notes
+
+- Hyprland config lives in `.config/hypr` and is claimed by `make dot-omarchy`
+- Ghostty, Alacritty, and Starship stay on Omarchy so theme switches keep working
+- tmux is only `~/.tmux.conf`; the installer removes `~/.config/tmux/tmux.conf` and installs `configs/omarchy/hooks/post-update.d/drop-omarchy-tmux.hook`
+- Existing Omarchy files that get replaced are copied to `~/.config/dotfiles-setup-backup-<timestamp>`
 
 ## Notes
 

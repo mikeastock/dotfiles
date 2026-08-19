@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# tmux loads ~/.tmux.conf then ~/.config/tmux/tmux.conf. Omarchy's XDG copy
+# would override the dotfiles config, so drop it if an update put it back.
+removed=0
+if [[ -e "$HOME/.config/tmux/tmux.conf" ]]; then
+  rm -f "$HOME/.config/tmux/tmux.conf" "$HOME/.config/tmux"/tmux.conf.bak.*
+  rmdir "$HOME/.config/tmux" 2>/dev/null || true
+  removed=1
+fi
+
+if (( removed )) && tmux has-session 2>/dev/null; then
+  tmux source-file "$HOME/.tmux.conf"
+fi
