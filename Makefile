@@ -13,7 +13,7 @@ UNAME_S := $(shell uname -s)
 HOME_LINKS := .gitconfig .ideavimrc .psqlrc .tmux.conf .tmuxinator .vscode
 
 # .config directories to symlink entirely
-CONFIG_DIRS := alacritty stylua lvim zellij direnv atuin ghostty
+CONFIG_DIRS := alacritty stylua lvim zellij direnv atuin ghostty hypr
 
 .PHONY: all install install-non-interactive install-skills install-amp-plugins install-extensions install-prompts install-themes install-configs amp-plugin-types amp-plugin-check package-manager-security-config build clean help submodule-init plugin-update check-python \
 	dot-all dot-install dot-home-symlinks dot-config-symlinks dot-platform-defaults dot-macos-defaults dot-clean

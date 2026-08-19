@@ -168,6 +168,7 @@ sudo apt update
 sudo apt install -y fish tmux ripgrep fd-find xclip wl-clipboard xsel fonts-firacode
 ```
 
+- Omarchy Hyprland config lives in `.config/hypr` and is symlinked to `~/.config/hypr` by `make dot-config-symlinks`
 - Linux clipboard integration in tmux uses the first available tool from: `wl-copy`, `xclip`, `xsel`
 - Herdr config is symlinked to `~/.config/herdr/config.toml` and uses tmux-like `Ctrl-a` prefix bindings
 - `tmux-mem-cpu-load` is optional; the tmux status bar falls back to `uptime`
