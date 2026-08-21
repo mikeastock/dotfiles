@@ -1,0 +1,4 @@
+interface:
+  display_name: "Unslop"
+  short_description: "Remove AI tells and add human voice"
+  default_prompt: "Edit the specified writing to remove AI patterns while preserving its meaning and intended tone."
