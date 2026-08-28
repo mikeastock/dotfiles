@@ -114,6 +114,15 @@ GitHub Actions runs `./tests/run-all.sh` on push/PR to main/master branches.
   ---
   ```
   The `agents` field is stripped from the built skill.
+- Use `metadata.user-invocable-only: true` to prevent auto-triggering. The build emits `disable-model-invocation: true` for Claude and Pi, plus `policy.allow_implicit_invocation: false` for Codex:
+  ```yaml
+  ---
+  name: my-skill
+  description: Only when the user explicitly asks
+  metadata:
+    user-invocable-only: "true"
+  ---
+  ```
 
 ### Skill Scripts (Python)
 When skills include Python scripts, use [uv inline script metadata](https://docs.astral.sh/uv/guides/scripts/) for dependency management. This allows scripts to declare their dependencies directly in the file, and uv automatically manages the virtual environment.

@@ -1,6 +1,8 @@
 ---
 name: unslop
-description: Cut AI tells from any writing. Must always apply.
+description: Cut AI tells from any writing and add human voice. Use only when the user explicitly asks to unslop, destylize, or remove AI writing patterns.
+metadata:
+  user-invocable-only: "true"
 ---
 
 # Unslop

@@ -94,7 +94,7 @@ Amp settings live in `amp-configs/settings.json`. `make install-configs` merges 
 
 `make install` preserves manually installed skills, Amp plugins, Pi extensions, prompts, and themes that live beside dotfiles-managed artifacts. The installer tracks top-level managed names in `~/.local/state/dotfiles/agent-install-manifest.json`, overwrites those managed artifacts on each install, and removes managed artifacts that are no longer built. If a built artifact conflicts with an existing unmanaged path, the install fails; rerun the underlying build script with `--force` only when you want dotfiles to claim that path.
 
-Plugin skills can be restricted to explicit user invocation with `skills_user_invocable_only` in `plugins.toml`. The build emits `disable-model-invocation: true` for Claude and Pi, plus `policy.allow_implicit_invocation: false` in `agents/openai.yaml` for Codex. The Codex metadata is included in the Pi/shared build because Codex also scans `~/.agents/skills`.
+Plugin skills can be restricted to explicit user invocation with `skills_user_invocable_only` in `plugins.toml`. Custom skills use `metadata.user-invocable-only: true` in `SKILL.md`. The build emits `disable-model-invocation: true` for Claude and Pi, plus `policy.allow_implicit_invocation: false` in `agents/openai.yaml` for Codex. The Codex metadata is included in the Pi/shared build because Codex also scans `~/.agents/skills`.
 
 ### Canonical Pi install
 
@@ -119,7 +119,7 @@ pi
 - `writing-mike-ruby-style` — Mike's personal Ruby/Rails style (mirrors his canonical style rules)
 - `prepare-branch-context` — read-only branch diff, commit, and PR context gathering skill vendored from `jnsahaj/skills`
 - `simplify` — behavior-preserving code and comment simplification skill vendored from `bholmesdev/skills`
-- `unslop` — AI-writing cleanup and human-voice editing skill vendored from `cursor/plugins` commit `99559f2`
+- `unslop` — AI-writing cleanup and human-voice editing skill vendored from `cursor/plugins` commit `99559f2` (explicit invocation only)
 - `zmx` — guidance for managing persistent background terminal work
 - `tmux` — remote control tmux sessions through the active server, with an agent-neutral fallback socket when no server is running
 - `buildr-artifacts` — publish browser-viewable Buildr artifacts as static S3-hosted HTML/assets or stateful Vite apps served from Codexbox with `bld.run` URLs
