@@ -1,6 +1,8 @@
 ---
 name: simplify
-description: Use this skill automatically when you feel your code is ready for human review, and whenever writing or reviewing code comments. Ready means the code works and achieves a stated goal, verified by your own tests and/or, if you deem it necessary, human testing.
+description: Behavior-preserving simplification of code and comments in the current branch or a given scope. Use only when the user explicitly asks to simplify code or comments.
+metadata:
+  user-invocable-only: "true"
 ---
 Review changes in the current branch, or in the scope the user specifies. Apply these criteria without changing behavior. Only touch code in that scope, and run the relevant existing checks after changes.
 

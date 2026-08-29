@@ -90,6 +90,10 @@ A plugin's bb id is its `package.json` name with the `bb-plugin-` prefix strippe
 
 Amp settings live in `amp-configs/settings.json`. `make install-configs` merges those managed settings into `~/.config/amp/settings.json` while preserving any other local Amp settings already present.
 
+### OpenCode config
+
+OpenCode config lives in `configs/opencode/opencode.jsonc`. `make install-configs` overlays the managed RunInfra provider, default model, and small model onto `~/.config/opencode/opencode.jsonc` (or `opencode.json` if that file already exists) while preserving any other local providers. A locally hardcoded `provider.runinfra.options.apiKey` is kept; the tracked file uses `{env:RUNINFRA_GATEWAY_KEY}` so the secret is not in git.
+
 ### Managed install behavior
 
 `make install` preserves manually installed skills, Amp plugins, Pi extensions, prompts, and themes that live beside dotfiles-managed artifacts. The installer tracks top-level managed names in `~/.local/state/dotfiles/agent-install-manifest.json`, overwrites those managed artifacts on each install, and removes managed artifacts that are no longer built. If a built artifact conflicts with an existing unmanaged path, the install fails; rerun the underlying build script with `--force` only when you want dotfiles to claim that path.
@@ -118,7 +122,7 @@ pi
 - `review-gauntlet` — multi-model review → Fable triage → fix loop via the Grok `review-gauntlet` workflow / `code-review-loop` CLI (replaces review-council)
 - `writing-mike-ruby-style` — Mike's personal Ruby/Rails style (mirrors his canonical style rules)
 - `prepare-branch-context` — read-only branch diff, commit, and PR context gathering skill vendored from `jnsahaj/skills`
-- `simplify` — behavior-preserving code and comment simplification skill vendored from `bholmesdev/skills`
+- `simplify` — behavior-preserving code and comment simplification skill vendored from `bholmesdev/skills` (explicit invocation only)
 - `unslop` — AI-writing cleanup and human-voice editing skill vendored from `cursor/plugins` commit `99559f2` (explicit invocation only)
 - `zmx` — guidance for managing persistent background terminal work
 - `tmux` — remote control tmux sessions through the active server, with an agent-neutral fallback socket when no server is running
@@ -164,6 +168,7 @@ dotfiles/
 ├── .config/                 # shell/editor/terminal configs
 ├── skills/                  # custom agent skills
 ├── amp-configs/             # managed Amp settings
+├── configs/                 # managed agent configs (Codex, OpenCode, Grok)
 ├── amp-plugins/             # custom Amp plugins
 ├── pi-extensions/           # Pi extensions
 ├── pi-themes/               # Pi themes
