@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Test script for install-configs command
-# Tests installation of all agent configurations (Amp, Codex, Pi, AGENTS.md)
+# Tests installation of all agent configurations (Amp, Codex, OpenCode, Pi, AGENTS.md)
 #
 # Usage: ./tests/test-install-configs.sh
 #
@@ -20,6 +20,7 @@ test_config_new_files() {
 
     # Ensure the settings files don't exist
     rm -rf "$SANDBOX_DIR/.config/amp"
+    rm -rf "$SANDBOX_DIR/.config/opencode"
     rm -rf "$SANDBOX_DIR/.codex"
     rm -rf "$SANDBOX_DIR/.pi"
 
@@ -30,16 +31,24 @@ test_config_new_files() {
     assert_output_contains "$output" "Installing Amp config" "Shows Amp configuration"
     assert_output_contains "$output" "Installing Codex config" "Shows Codex configuration"
     assert_output_contains "$output" "Installing Codex rules" "Shows Codex rules installation"
+    assert_output_contains "$output" "Installing OpenCode config" "Shows OpenCode configuration"
     assert_output_contains "$output" "Installing Pi settings" "Shows Pi configuration"
     assert_output_contains "$output" "Installing global AGENTS.md" "Shows AGENTS.md installation"
 
     # Verify all files were created
     assert_file_exists "$SANDBOX_DIR/.config/amp/settings.json" "Amp settings file was created"
+    assert_file_exists "$SANDBOX_DIR/.config/opencode/opencode.jsonc" "OpenCode config file was created"
     assert_file_exists "$SANDBOX_DIR/.codex/config.toml" "Codex config file was created"
     assert_file_exists "$SANDBOX_DIR/.codex/rules/default.rules" "Codex default rules file was created"
     assert_file_exists "$SANDBOX_DIR/.pi/agent/settings.json" "Pi settings file was created"
     assert_file_exists "$SANDBOX_DIR/.codex/AGENTS.md" "Codex AGENTS.md was created"
     assert_file_exists "$SANDBOX_DIR/.pi/agent/AGENTS.md" "Pi AGENTS.md was created"
+
+    local opencode_json
+    opencode_json=$(cat "$SANDBOX_DIR/.config/opencode/opencode.jsonc")
+    assert_json_field "$opencode_json" '.model' "runinfra/deepseek-v4-flash" "OpenCode: default model is RunInfra DeepSeek V4 Flash"
+    assert_json_field "$opencode_json" '.small_model' "runinfra/nemotron-3-5-lightning-30b" "OpenCode: small model is RunInfra Nemotron"
+    assert_json_field "$opencode_json" '.provider.runinfra.options.baseURL' "https://api.runinfra.ai/v1" "OpenCode: RunInfra base URL is set"
     assert_success "Codex receives the managed AGENTS.md" cmp "$PROJECT_DIR/configs/AGENTS.md" "$SANDBOX_DIR/.codex/AGENTS.md"
     assert_success "Pi receives the managed AGENTS.md" cmp "$PROJECT_DIR/configs/AGENTS.md" "$SANDBOX_DIR/.pi/agent/AGENTS.md"
 
@@ -180,6 +189,66 @@ EOF
     assert_json_field "$pi_json" '.customSetting' "true" "Pi: custom unmanaged settings preserved"
 }
 
+# Test: OpenCode config overlays RunInfra while preserving other providers
+test_opencode_preserve_existing_providers() {
+    log_test "Testing 'make install-configs' preserves existing OpenCode providers"
+    cd "$PROJECT_DIR"
+
+    mkdir -p "$SANDBOX_DIR/.config/opencode"
+    cat > "$SANDBOX_DIR/.config/opencode/opencode.jsonc" <<'EOF'
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "modal/existing-endpoint",
+  "provider": {
+    "modal": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Modal",
+      "options": {
+        "baseURL": "https://inference.example.modal.direct/v1"
+      }
+    }
+  }
+}
+EOF
+
+    HOME="$SANDBOX_DIR" make install-configs >/dev/null 2>&1
+
+    local opencode_json
+    opencode_json=$(cat "$SANDBOX_DIR/.config/opencode/opencode.jsonc")
+    assert_json_field "$opencode_json" '.model' "runinfra/deepseek-v4-flash" "OpenCode: managed default model wins"
+    assert_json_field "$opencode_json" '.provider.runinfra.name' "RunInfra" "OpenCode: RunInfra provider is installed"
+    assert_json_field "$opencode_json" '.provider.modal.name' "Modal" "OpenCode: existing Modal provider is preserved"
+    assert_json_field "$opencode_json" '.provider.modal.options.baseURL' "https://inference.example.modal.direct/v1" "OpenCode: existing provider options are preserved"
+}
+
+# Test: OpenCode keeps a locally hardcoded RunInfra apiKey across install
+test_opencode_preserve_runinfra_api_key() {
+    log_test "Testing 'make install-configs' preserves a hardcoded OpenCode RunInfra apiKey"
+    cd "$PROJECT_DIR"
+
+    mkdir -p "$SANDBOX_DIR/.config/opencode"
+    cat > "$SANDBOX_DIR/.config/opencode/opencode.jsonc" <<'EOF'
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "runinfra": {
+      "options": {
+        "apiKey": "rp_localhardcodedkey000000000000000000000"
+      }
+    }
+  }
+}
+EOF
+
+    HOME="$SANDBOX_DIR" make install-configs >/dev/null 2>&1
+
+    local opencode_json
+    opencode_json=$(cat "$SANDBOX_DIR/.config/opencode/opencode.jsonc")
+    assert_json_field "$opencode_json" '.provider.runinfra.options.apiKey' "rp_localhardcodedkey000000000000000000000" "OpenCode: hardcoded RunInfra apiKey is preserved"
+    assert_json_field "$opencode_json" '.provider.runinfra.options.baseURL' "https://api.runinfra.ai/v1" "OpenCode: managed RunInfra options are still merged"
+    assert_json_field "$opencode_json" '.provider.runinfra.name' "RunInfra" "OpenCode: managed RunInfra provider metadata is installed"
+}
+
 # Test: install-configs is idempotent (running twice has same result)
 test_config_idempotent() {
     log_test "Testing 'make install-configs' is idempotent"
@@ -187,22 +256,25 @@ test_config_idempotent() {
 
     # Ensure fresh start
     rm -rf "$SANDBOX_DIR/.config/amp"
+    rm -rf "$SANDBOX_DIR/.config/opencode"
     rm -rf "$SANDBOX_DIR/.codex"
     rm -rf "$SANDBOX_DIR/.pi"
 
     # Run install-configs twice
     HOME="$SANDBOX_DIR" make install-configs >/dev/null 2>&1
-    local amp_first codex_first codex_rules_first pi_first
+    local amp_first codex_first codex_rules_first opencode_first pi_first
     amp_first=$(cat "$SANDBOX_DIR/.config/amp/settings.json")
     codex_first=$(cat "$SANDBOX_DIR/.codex/config.toml")
     codex_rules_first=$(cat "$SANDBOX_DIR/.codex/rules/default.rules")
+    opencode_first=$(cat "$SANDBOX_DIR/.config/opencode/opencode.jsonc")
     pi_first=$(cat "$SANDBOX_DIR/.pi/agent/settings.json")
 
     HOME="$SANDBOX_DIR" make install-configs >/dev/null 2>&1
-    local amp_second codex_second codex_rules_second pi_second
+    local amp_second codex_second codex_rules_second opencode_second pi_second
     amp_second=$(cat "$SANDBOX_DIR/.config/amp/settings.json")
     codex_second=$(cat "$SANDBOX_DIR/.codex/config.toml")
     codex_rules_second=$(cat "$SANDBOX_DIR/.codex/rules/default.rules")
+    opencode_second=$(cat "$SANDBOX_DIR/.config/opencode/opencode.jsonc")
     pi_second=$(cat "$SANDBOX_DIR/.pi/agent/settings.json")
 
     # Content should be identical
@@ -217,6 +289,10 @@ test_config_idempotent() {
     fi
     if [ "$codex_rules_first" != "$codex_rules_second" ]; then
         log_error "FAIL: Codex rules differ between runs"
+        all_match=false
+    fi
+    if [ "$opencode_first" != "$opencode_second" ]; then
+        log_error "FAIL: OpenCode results differ between runs"
         all_match=false
     fi
     if [ "$pi_first" != "$pi_second" ]; then
@@ -249,6 +325,8 @@ main() {
     test_amp_preserve_existing
     test_amp_trailing_commas
     test_pi_preserve_changelog_version
+    test_opencode_preserve_existing_providers
+    test_opencode_preserve_runinfra_api_key
     test_config_idempotent
 
     # Summary

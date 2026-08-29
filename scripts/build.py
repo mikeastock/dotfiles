@@ -92,6 +92,7 @@ CONFIG_FILE = ROOT / "plugins.toml"
 CONFIGS_DIR = ROOT / "configs"
 CODEX_CONFIG_FILE = CONFIGS_DIR / "codex-config.toml"
 CODEX_RULES_DIR = CONFIGS_DIR / "codex" / "rules"
+OPENCODE_CONFIG_FILE = CONFIGS_DIR / "opencode" / "opencode.jsonc"
 PI_CONFIGS_DIR = ROOT / "pi-configs"
 PI_SETTINGS_FILE = PI_CONFIGS_DIR / "pi-settings.json"
 PI_MODELS_FILE = PI_CONFIGS_DIR / "pi-models.json"
@@ -1554,6 +1555,72 @@ def install_pi_models():
     print(f"  Installed to {dest}")
 
 
+def _opencode_config_dest() -> Path:
+    """Prefer an existing OpenCode config file, otherwise write JSONC."""
+    config_dir = HOME / ".config" / "opencode"
+    jsonc = config_dir / "opencode.jsonc"
+    json_file = config_dir / "opencode.json"
+    if jsonc.exists():
+        return jsonc
+    if json_file.exists():
+        return json_file
+    return jsonc
+
+
+def _is_literal_api_key(value) -> bool:
+    """True when apiKey is a real secret rather than an {env:} or {file:} template."""
+    if not isinstance(value, str) or not value:
+        return False
+    return not value.startswith("{env:") and not value.startswith("{file:")
+
+
+def _overlay_opencode_providers(existing_providers: dict, managed_providers: dict) -> None:
+    """Replace managed providers but keep a locally hardcoded apiKey."""
+    for name, managed_provider in managed_providers.items():
+        current = existing_providers.get(name, {})
+        current_key = None
+        if isinstance(current, dict):
+            current_key = current.get("options", {}).get("apiKey")
+
+        merged = json.loads(json.dumps(managed_provider))
+        if _is_literal_api_key(current_key):
+            merged.setdefault("options", {})["apiKey"] = current_key
+        existing_providers[name] = merged
+
+
+def install_opencode_config():
+    """Install OpenCode config, overlaying managed providers onto the existing file."""
+    print("Installing OpenCode config...")
+
+    if not OPENCODE_CONFIG_FILE.exists():
+        print("  No opencode config found, skipping")
+        return
+
+    dest = _opencode_config_dest()
+    dest.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(OPENCODE_CONFIG_FILE) as f:
+        managed = json.load(f)
+
+    if dest.exists():
+        existing = load_json_with_trailing_commas(dest)
+    else:
+        existing = {}
+
+    existing_providers = existing.setdefault("provider", {})
+    _overlay_opencode_providers(existing_providers, managed.get("provider", {}))
+
+    for key, value in managed.items():
+        if key != "provider":
+            existing[key] = value
+
+    with open(dest, "w") as f:
+        json.dump(existing, f, indent=2)
+        f.write("\n")
+
+    print(f"  Installed to {dest}")
+
+
 def install_global_agents_md():
     """Install global AGENTS.md for codex and pi."""
     print("Installing global AGENTS.md...")
@@ -1579,6 +1646,7 @@ def install_configs():
     install_amp_config()
     install_codex_config()
     install_codex_rules()
+    install_opencode_config()
     install_pi_settings()
     install_pi_models()
     install_global_agents_md()

@@ -173,11 +173,12 @@ Extensions use the unified `ExtensionAPI` which provides:
 
 ## Installation Locations
 
-| Agent | Skills | Extensions |
-|-------|--------|------------|
-| Amp | `~/.config/agents/skills/` | N/A |
-| Claude Code | `~/.claude/skills/` | N/A |
-| Pi Agent | `~/.agents/skills/` | `~/.pi/agent/extensions/` |
+| Agent | Skills | Extensions | Config |
+|-------|--------|------------|--------|
+| Amp | `~/.config/agents/skills/` | N/A | `~/.config/amp/settings.json` |
+| Claude Code | `~/.claude/skills/` | N/A | N/A |
+| OpenCode | N/A | N/A | `~/.config/opencode/opencode.jsonc` |
+| Pi Agent | `~/.agents/skills/` | `~/.pi/agent/extensions/` | `~/.pi/agent/settings.json` |
 
 ## Adding New Content
 

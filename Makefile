@@ -32,7 +32,7 @@ help:
 	@echo "  make install-extensions      Install extensions only (Pi agent)"
 	@echo "  make install-prompts         Install prompt templates only (Pi agent)"
 	@echo "  make install-themes          Install themes only (Pi agent)"
-	@echo "  make install-configs         Install all agent configs (Amp, Codex, Pi)"
+	@echo "  make install-configs         Install all agent configs (Amp, Codex, OpenCode, Pi)"
 	@echo "  make amp-plugin-types        Refresh local Amp plugin TypeScript declarations"
 	@echo "  make amp-plugin-check        Refresh Amp plugin declarations and typecheck plugins"
 	@echo "  make package-manager-security-config Configure global npm/pnpm/bun/uv package security settings"
