@@ -126,6 +126,7 @@ pi
 - `socratic-quiz` — guided Socratic questioning for deep understanding, vendored from `pchalasani/claude-code-tools` commit `29ae733`
 - `eli5` — dead-simple HTML picture explainer for any topic, vendored from `anthropics/claude-plugins-community` (`eli5@claude-community`) commit `863e70d`
 - `bro` — restate the last message in plain human language, vendored from `dmmulroy/skills` commit `cbd1929` (explicit invocation only)
+- `product-description` — outside-in, feature-by-feature behavior spec of a product from its code and tests, vendored from `steveruizok` gist `83ae5c53` revision `f9435a3`
 
 ### Notable plugin skills
 
