@@ -61,17 +61,11 @@ Given two equally short options, take the one correct under concurrency, retries
 
 ### Production code that exists only for tests
 
-If a line exists so a test can reach, replace, or observe something, delete it and fix the test:
+If a line exists so a test can reach, replace, or observe something, delete it and fix the test. Three themes:
 
-- A parameter with one production value: an injected clock that is always `Time`, a "strategy" with one real implementation.
-- An interface or base class that exists so a test can mock it.
-- A public method or accessor only tests call.
-- `if test?` / `ENV["RAILS_ENV"]` branches or test-only flags in application code. Environment config files are fine.
-- Hooks or events emitted so a test can assert they fired.
-- A module-level variable or registry so a test can swap it out.
-- Abstractions added "to make it testable."
-
-A parameter is test-only only if every production construction uses the default; check `config/`, engines, packs, jobs, rake, `bin/`, initializers. A configured logger or HTTP client (retry, auth, tagging) is wiring: keep it. You may replace an injected logger with the process logger, not drop log calls.
+- **A seam with one production value.** An injected clock that is always `Time`, an interface that exists so a test can mock it, a module-level registry so a test can swap it out. Test-only means every production construction uses the default; check `config/`, engines, packs, jobs, rake, `bin/`, initializers. A configured logger or HTTP client (retry, auth, tagging) is wiring, keep it. You may replace an injected logger with the process logger, not drop log calls.
+- **A window for the suite.** A public method or accessor only tests call, an event emitted so a test can assert it fired, an `if test?` branch or test-only flag in application code. Environment config files are fine.
+- **Structure added "to make it testable."**
 
 Test through the entry point a production caller uses (HTTP action, job `perform`, public method), stubbing time, randomness, and network with the framework's tools. Code still hard to test is a design problem or a case for a coarser test, not a reason to warp production code.
 
