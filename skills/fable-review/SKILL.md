@@ -88,11 +88,23 @@ zmx list --short
 tail -n 20 "$ERR"
 ```
 
-When the run finishes, read only the final result event first:
+`zmx wait` is the completion and failure gate: it returns when the wrapped
+`claude` process exits and reports a nonzero exit status. Do not replace it
+with a hand-rolled loop over `zmx list` — the session and its detached client
+linger after completion, so a loop that waits for the session to disappear
+spins forever.
 
 ```bash
 zmx wait "$(cat "$RUN_DIR/zmx-session")"
-rg -n '"type":"result"' "$STREAM" | tail -n 1
+rg -n '^\{"type":"result"' "$STREAM" | tail -n 1
+```
+
+A finished session with no result line means `claude` failed; read `$ERR`.
+Once the result line is present, remove the lingering session:
+
+```bash
+[ -f "$STREAM" ] && rg -q '^\{"type":"result"' "$STREAM" \
+  && zmx kill "$(cat "$RUN_DIR/zmx-session")"
 ```
 
 If the installed Claude CLI behaves unexpectedly, first probe with:
