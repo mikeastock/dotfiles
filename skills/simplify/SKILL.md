@@ -1,6 +1,6 @@
 ---
 name: simplify
-description: Simplify code and comments in the current branch or a given scope - cut over-engineering, speculative structure, and needless defensiveness; tighten names and comments. Use only when the user explicitly asks to simplify code or comments.
+description: Cut over-engineering, speculative structure, and needless defensiveness from the current branch or a given scope, then tighten names and comments. Use only when the user explicitly asks to simplify code or comments.
 metadata:
   user-invocable-only: "true"
 ---
@@ -12,21 +12,21 @@ Cut over-engineering, needless defensiveness, and production code that exists on
 2. Cut dead guards, speculative structure, and test-only seams. Fix the tests they pinned.
 3. Replace hand-rolled code with stdlib, platform, or an installed dependency, only where behavior and error mapping match.
 4. Names and comments, if asked.
-5. Run the tests for every public surface you changed. Report.
+5. Run the tests for every public method, endpoint, or job you changed. Report.
 
 ## Behavior
 
-Behavior is the same return values, side effects, status codes, exception classes and message shapes, response body keys and headers, enqueued job names and arguments, emails, and log fields that alerts use, for every input that currently has a defined response. Inputs that cannot reach the code are not behavior; guards for them are the target of this skill.
+Behavior is what the code does today for every input that has a defined response. That covers return values, side effects, status codes, exception classes and message shapes, response body keys and headers, enqueued job names and arguments, emails, and any log field an alert reads. Inputs that cannot reach the code are not behavior. Guards for them are what this skill deletes.
 
-Unreachable means no runtime entry point can supply the input: not a caller, job, retry, mailer, rake task, CLI, webhook, other package, persisted row you cannot see, or a second thread mutating the record after load. "No caller in this file" and "callers check first" are not proof. A race or a retry is an input.
+Unreachable means no runtime entry point can supply the input. Callers, jobs, retries, mailers, rake tasks, CLIs, webhooks, other packages, persisted rows you cannot see, and a second thread mutating the record after load all count as entry points. "No caller in this file" and "callers check first" are not proof. A race or a retry is an input.
 
-Proof is: search the whole repo for the constant or method, including string and `send` forms, across `app/`, `config/`, `lib/`, engines, packs, jobs, rake, `bin/`, initializers, and tests; open every hit; name them in the report. Treat old persisted data as an open entry point unless a migration and a deploy gate already rewrote it. If you did not open a hit, you did not search it.
+Proof means you searched the whole repo for the constant or method, including string and `send` forms, across `app/`, `config/`, `lib/`, engines, packs, jobs, rake, `bin/`, initializers, and tests, opened every hit, and named them in the report. Treat old persisted data as an open entry point unless a migration and a deploy gate already rewrote it. If you did not open a hit, you did not search it.
 
 When a test fails after a cut:
 
-- It pins accepted behavior (public return values, side effects, status codes, exception classes): revert the cut, not the test.
-- It only reached a deleted seam or a state you proved unreachable: replace it with one public-surface test, then delete it.
-- You did not touch it, or it was already red: stop and report. It is not proof the cut was wrong, and not a reason to delete it.
+- If it pins accepted behavior (public return values, side effects, status codes, exception classes), revert the cut, not the test.
+- If it only reached a deleted seam or a state you proved unreachable, replace it with one test through the public entry point, then delete it.
+- If you did not touch it, or it was already red, stop and report. That failure is not proof the cut was wrong, and not a reason to delete the test.
 
 ## Word choice in code and comments
 
@@ -46,19 +46,16 @@ Latinate vocabulary (reconcile, coalesce, normalize, reconciliation) sounds tech
 
 1. **One word per concept, one concept per word.** Keep a vocabulary. If `sync` names "pulling remote changes," it cannot also name "flushing edits to disk;" rename one of them.
 2. **Cut words the context already carries.** A module named `workspaceWatcher` does not need `startNativeWorkspaceWatcher`; `watchWorkspace` says the same thing.
-3. **A compound name is usually a hedge:**
-
-- ❌ `lastObservedDiskContent` is a specification to defend
-- ✅ `baseline` is a readable description
+3. **A compound name is usually a hedge.** `lastObservedDiskContent` is a specification to defend; `baseline` is a description a reader can hold.
 
 ### Comments
 
-State, in plain English, the constraint the code cannot show: why the **non-obvious** exists.
+A comment states, in plain English, the constraint the code cannot show. It explains why the non-obvious exists.
 
-- ✅ If code is complex and the implementation is non-obvious, add a comment.
-- ✅ If a function contains complex behaviors or side effects, add a doc comment.
-- 🗑️ If a comment narrates change history from the conversation, delete it.
-- 🗑️ If a comment restates code whose behavior is self-evident, delete it.
+- Add a comment when the implementation is non-obvious.
+- Add a doc comment when a function has complex behavior or side effects.
+- Delete a comment that narrates change history from the conversation.
+- Delete a comment that restates code whose behavior is self-evident.
 
 ## Code structure
 
@@ -72,7 +69,7 @@ State, in plain English, the constraint the code cannot show: why the **non-obvi
 Code must stand on its own. If a change only makes sense to someone who watched it happen (this conversation, this PR), it is overfitted. Write for the reader who arrives with no history.
 
 - If a name or comment needs the conversation to be understood, rewrite it against the codebase's own vocabulary.
-- **No backwards compatibility with unshipped code.** Supporting an old signature, alias, or data shape that only existed earlier in the same branch is compatibility with something that was never deployed. Delete the old path and update its callers. This applies only when both shapes were introduced in this branch; if a deployed client, flag, or migration still needs the old one, that is a rollout, not leftovers.
+- **No backwards compatibility with unshipped code.** Supporting an old signature, alias, or data shape that only existed earlier in the same branch is compatibility with something that was never deployed. Delete the old path and update its callers. This applies only when this branch introduced both shapes. If a deployed client, flag, or migration still needs the old one, that is a rollout, not leftovers.
 
 ## Over-engineering
 
@@ -84,10 +81,10 @@ Before keeping custom code, look in this order:
 
 1. Already in this codebase.
 2. The standard library.
-3. A native platform feature: CSS over JS, a platform primitive over a library.
+3. A native platform feature, such as CSS over JS or a built-in element over a library.
 4. A dependency that is already installed.
 
-Take the first hit only after showing the same return values and the same exception class and message shape on the inputs the current tests and callers use, including blanks and already-parsed values. If the replacement is looser, keep the custom code. Never add a dependency, a migration, or a new production file; a DB constraint is a rollout, not a simplify cut, and one that already exists is still not proof old rows are clean.
+Take the first hit only after showing the same return values and the same exception class and message shape on the inputs the current tests and callers use, blanks and already-parsed values included. If the replacement is looser, keep the custom code. Never add a dependency, a migration, or a new production file. A DB constraint is a rollout, not a simplify cut, and one that already exists is still not proof that old rows are clean.
 
 ### Speculative structure
 
@@ -102,7 +99,7 @@ Delete:
 
 ### Defensiveness
 
-Most defensive code guards against states that cannot happen. It hides the real contract, doubles the branches a reader must hold, and turns bugs into silent fallbacks. Cut it:
+Most defensive code guards against states that cannot happen. It hides the real contract and turns bugs into silent fallbacks, and every extra branch is one more thing the reader has to carry. Cut it:
 
 - Nil/undefined checks on a binding that a runtime check in this function, after the last assignment, already rejected. A check in a caller does not cover a helper.
 - A repeated check on the same already-narrowed value in the same function, such as `return if x.nil?` after `x = find!(...)`. Controller, model, job, and console are different entry points, not duplicates of each other.
@@ -112,20 +109,20 @@ Most defensive code guards against states that cannot happen. It hides the real 
 
 Every deleted guard needs the proof above. If you searched and cannot prove it, keep it and report it under `kept:`.
 
-Not defensiveness, never delete because another layer also has one:
+These are not defensiveness. Never delete them because another layer also checks:
 
 - Authentication, authorization, tenancy scoping (`Current.account.users.find`, not `User.find`), strong params, CSRF, rate limits, idempotency, money, uniqueness, encryption, PII handling, audit logs.
 - Best-effort side effects that log and continue (notify, cache, metrics), and record-and-rethrow.
-- Fallbacks that are product behavior: a `rescue NotFound` that renders 404, a missing asset that becomes `nil`.
+- Fallbacks that are product behavior, such as a `rescue NotFound` that renders 404 or a missing asset that becomes `nil`.
 - Language-mandated handling: Go `if err != nil`, Swift `guard let`, Rust `Result`, checked exceptions.
-- Observability: metric, log, trace, and instrumentation calls. Their subscribers register elsewhere; that is not evidence they are unused.
-- Contracts outside this repo: OpenAPI/GraphQL fields, Sidekiq class names already in Redis, cache keys, webhook signatures, metric names, log fields dashboards scrape. "No in-repo reader" is not proof.
+- Metric, log, trace, and instrumentation calls. Their subscribers register elsewhere. That is not evidence they are unused.
+- Contracts outside this repo, such as OpenAPI/GraphQL fields, Sidekiq class names already in Redis, cache keys, webhook signatures, metric names, and log fields that dashboards scrape. "No in-repo reader" is not proof.
 
 ### Production code that exists only for tests
 
 Never. Production code serves production. If a line exists so a test can reach, replace, or observe something, delete it and fix the test. Signs:
 
-- A constructor or function parameter with one production value: an injected clock whose only production value is `Time`, or a "strategy" with one real implementation.
+- A constructor or function parameter with one production value, such as an injected clock that is always `Time` in production, or a "strategy" with one real implementation.
 - An interface, protocol, or base class created so a test can mock it.
 - A public method, accessor, or `attr_reader` that only tests call.
 - `if test?` / `ENV["RAILS_ENV"]` branches, test-only config keys, or flags that only the suite sets, in application code (environment config files are fine).
@@ -133,13 +130,13 @@ Never. Production code serves production. If a line exists so a test can reach, 
 - Indirection through a module-level variable or registry so a test can swap it out.
 - Abstractions added under the cover of "making it testable."
 
-A parameter is test-only only if every production construction uses the same default after searching `config/`, engines, packs, jobs, rake, `bin/`, and initializers, not just `app/` and the tests. If production passes a configured logger or HTTP client (retry, auth, tagging), that is wiring: keep it. Replacing an injected logger with the process logger is allowed; dropping log calls is not.
+A parameter is test-only only if every production construction uses the same default. Check `config/`, engines, packs, jobs, rake, `bin/`, and initializers, not just `app/` and the tests. If production passes a configured logger or HTTP client (retry, auth, tagging), that is wiring. Keep it. You may replace an injected logger with the process logger; you may not drop log calls.
 
-Then test the behavior through the public surface a production caller already uses (HTTP action, job `perform`, public library method), not a new accessor and not a private method the suite used to reach. Stub time, randomness, and network with the test framework's tools. If code is still hard to test, that is a design problem in the code itself, or a case for a coarser test, not a reason to warp production code into a test fixture.
+Then test the behavior through the entry point a production caller already uses (HTTP action, job `perform`, public library method), not a new accessor and not a private method the suite used to reach. Stub time, randomness, and network with the test framework's tools. If code is still hard to test, that is a design problem in the code itself, or a case for a coarser test. It is not a reason to warp production code into a test fixture.
 
 ### Tests
 
-Tests are in scope. Test code longer or more complex than the implementation it covers is over-engineering: snapshot matrices, parametrized grids over one branch, mocks of mocks, assertions on implementation details.
+Tests are in scope. Test code longer or more complex than the implementation it covers is over-engineering. Snapshot matrices, parametrized grids over one branch, mocks of mocks, and assertions on implementation details all qualify.
 
 Keep one test for every production branch you kept, including each kept guard. Drop tests that only pin internals of a deleted seam, or that re-exercise the same branch with different dummy data. A replacement test must fail if you revert the production cut. Never weaken a type or delete a test to make a cut look legal.
 
@@ -150,7 +147,7 @@ Keep one test for every production branch you kept, including each kept guard. D
 - Everything under "Not defensiveness."
 - A type, flag, or path the producing PR or issue asked for by name. A TODO or speculative interface in the diff is not that, and the `/simplify` request itself is not that.
 
-Two equally short options: take the one that is correct on edge cases, including concurrency, retries, and partial deploys. Less code, not a flimsier algorithm.
+Given two equally short options, take the one that is correct on edge cases, including concurrency, retries, and partial deploys. The goal is less code, not a flimsier algorithm.
 
 ### Known ceilings
 
@@ -169,7 +166,7 @@ One line per change, one tag per change. If several apply, pick the first in thi
 - `stdlib:` / `native:` / `dep:` hand-rolled code the standard library, platform, or an installed dependency already ships. Name the function.
 - `test:` test code cut or replaced.
 
-Then `kept:` for every candidate you left in. Not counted against the prose cap, but a `kept:` line is not a substitute for finishing the search.
+Then `kept:` for every candidate you left in. These do not count against the prose cap, but a `kept:` line is not a substitute for finishing the search.
 
 ```
 app/models/invoice.rb: guard: drop `return if user.nil?`. Opened: InvoicesController#show, ChargeJob#perform (both `User.find`).
@@ -179,13 +176,13 @@ app/models/invoice.rb: kept: `rescue Stripe::CardError` unproven: opened app/ an
 net: -24 lines (prod), -12 lines (tests)
 ```
 
-End with `net:` from `git diff --numstat` on the files you touched, prod and tests separately. A positive number is fine when the replacement is clearer; a negative number earned by deleting comments or a replacement test is a failed simplify. If there was nothing to cut: `Lean already. Ship.` If the tests for a changed surface did not run, say so; that is not a finished simplify.
+End with `net:` from `git diff --numstat` on the files you touched, prod and tests separately. A positive number is fine when the replacement is clearer. A negative number earned by deleting comments or a replacement test is a failed simplify. If there was nothing to cut, write `Lean already. Ship.` If the tests for a changed entry point did not run, say so. That is not a finished simplify.
 
-Then at most three lines of prose, in the form `skipped: <X>, add when <Y>`, only for a known ceiling you left in production. It is not a backlog for cuts you did not make. No essays, no design notes; if the explanation is longer than the diff, cut the explanation.
+Then at most three lines of prose, in the form `skipped: <X>, add when <Y>`, only for a known ceiling you left in production. It is not a backlog for cuts you did not make. No essays, no design notes. If the explanation is longer than the diff, cut the explanation.
 
 ## Before finishing
 
 - Every deleted guard has a named, opened entry-point set.
-- Every deleted seam has a replacement test through the public surface that fails if the cut is reverted, and it ran.
-- No new dependency, migration, or production file. A new test file is fine if the public surface had no test.
+- Every deleted seam has a replacement test through the public entry point, that test fails if you revert the cut, and it ran.
+- No new dependency, migration, or production file. A new test file is fine if the entry point had no test.
 - No leftover debug code. No renames or reorders unless the user asked for names.
