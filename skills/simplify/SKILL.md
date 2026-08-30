@@ -34,26 +34,14 @@ When a test fails after a cut:
 
 In order: this codebase, the standard library, the platform (CSS over JS, a built-in element over a library), an installed dependency. Take a hit only if it matches return values, exception class, and message on the inputs current tests and callers use, blanks included. Never add a dependency, migration, or production file.
 
-### Speculative structure
+### What to cut
 
-Delete:
+Four themes. Judge the case, not the bullet.
 
-- An interface or base class with one implementation, unless it is the API of a gem, pack, process, or third-party SDK. A second in-repo class is not a boundary.
-- A factory for one product.
-- Config or parameters every caller sets to the same value.
-- A wrapper whose methods are one-liners to a single object and is not a boundary above.
-- A second implementation beside the new one (compat layer, dual path, old signature or alias this branch replaced), unless a live flag, migration, or deployed client selects it.
-- Unused types, commented-out code, and unused parameters not required by a public contract or parent signature.
-
-### Defensiveness
-
-Cut:
-
-- Nil checks on a binding this function already rejected after its last assignment. A check in a caller does not cover a helper.
-- A repeated check on the same narrowed value in the same function (`return if x.nil?` after `x = find!(...)`). Controller, model, job, and console are different entry points, not duplicates.
-- Empty `catch`/`rescue`, or catch-and-return-default, on a write, charge, enqueue, or response.
-- Defaults for parameters every caller passes.
-- Early returns for conditions every entry point rules out, retries and concurrent writers included. `return if order.refunded?` before a charge is idempotency, not a dead return.
+- **Structure with one real user.** An interface, factory, wrapper, strategy, or parameter with one production implementation or one caller; config every caller sets to the same value. A gem, pack, process, or third-party SDK boundary is the exception; a second in-repo class is not a boundary.
+- **A guard for a state no entry point can produce.** A nil check after `find!`, a repeated check on a value this function already narrowed, an early return every entry point already made, an empty `rescue` on a write. A check in a caller does not cover a helper, and controller, model, job, and console are different entry points, not duplicates. `return if order.refunded?` before a charge is idempotency, not a dead return.
+- **Two ways to do one thing.** A compat layer, dual path, old alias beside the new name, or copy with one tweak, unless a live flag, migration, or deployed client still selects the old one.
+- **Leftovers.** Unused types, commented-out code, unused parameters no public contract or parent signature requires.
 
 Every deleted guard needs the proof above. Cannot prove it: keep it, report it under `kept:`.
 
