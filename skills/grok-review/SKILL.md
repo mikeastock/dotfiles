@@ -68,10 +68,15 @@ in one executable contract. The launcher uses the installed Grok CLI without a
 version gate. Runtime compatibility fails closed through the native-skill
 check, enforced read-only sandbox evidence, and structured result validation.
 It passes the prompt with `--prompt-file`, disables plan mode, memory, web
-search, edit/write tools, and MCP calls, and requests `--sandbox read-only`
-without auto-approving shell commands. It leaves Grok's default
-read/search/list/shell/agent/background machinery intact because native
-`/review` needs a reviewer subagent and shell background support.
+search, the built-in edit/write tools, and MCP calls, and requests
+`--sandbox read-only` without auto-approving shell commands. It leaves Grok's
+default read/search/list/shell/agent/background machinery intact because
+native `/review` needs a reviewer subagent and shell background support. It
+deliberately passes no `Edit`/`Write` permission deny rule: Grok classifies
+`spawn_subagent` as an edit, so any such rule (even path-scoped) blocks the
+reviewer subagent and the run ends with a failure narrative instead of
+findings. Repository writes are blocked by the kernel-enforced sandbox
+instead, which the launcher verifies before it reports success.
 
 Create a unique run directory and write the task-specific prompt before
 starting the launcher:
@@ -120,9 +125,15 @@ Wait for the recorded session and validate the result when it finishes:
 ```
 
 The wrapper requires one valid JSON object with non-empty `text`, `sessionId`,
-and `requestId`, exact `stopReason=EndTurn`, and the preassigned session ID. It
-writes the validated review text to `review.md`. Read `review.md` for triage;
-retain `result.json` as the authoritative raw response and usage record.
+and `requestId`, a terminal `stopReason` (`end_turn`), and the preassigned
+session ID. It writes the orchestrator's text to `review.md`, then requires the
+native findings file: the text must name the `grok-review-<id>.md` file that
+the reviewer subagent wrote, that file must exist and contain a `## Summary`
+section, and the wrapper copies it to `findings.md` (and the native summary to
+`summary.md` when present) and prints the issue count. A run whose reviewer
+subagent never launched fails here instead of returning exit 0. Read
+`findings.md` for triage; retain `result.json` as the authoritative raw
+response and usage record.
 
 If the session is quiet, inspect `zmx list`, the result tail, and stderr before
 acting. If it exceeds the caller's approved wall-clock bound, use the wrapper's
@@ -158,14 +169,15 @@ same `read-only` profile on resume so a recovery cannot widen it.
 
 ## Read and validate the result
 
-After the wrapper validates completion, inspect `review.md` and confirm:
+After the wrapper validates completion, inspect `findings.md` and confirm:
 
-- the review text is non-empty and contains findings or an explicit no-findings
-  statement;
+- the findings file contains `### Issue N -- Severity: ...` entries or an
+  explicit empty `## Issues` section;
 - the output is for the recorded scope and not a stale resumed session.
 
 The wrapper already rejects malformed JSON, missing fields, blank text,
-nonterminal stop reasons, turn exhaustion, and mismatched sessions. Treat
+nonterminal stop reasons, turn exhaustion, mismatched sessions, and a missing
+or malformed native findings file. Treat
 interruption, timeout, unavailable Grok, or review text that does not address the
 recorded scope as a failed review. Report the exact run directory and failure;
 never present partial output as a completed review.
@@ -196,16 +208,18 @@ separate implementation request after the finding has been verified.
 - Grok documents a residual startup race for built-in profiles: if OS
   enforcement fails, Grok can continue briefly while the wrapper observes the
   failure and kills it. The launcher removes mutating and external built-in
-  tools, denies edit/write/MCP tools, and does not use `--always-approve` to
+  tools, denies MCP tools, and does not use `--always-approve` to
   reduce that exposure. A custom profile would refuse natively, but requires persistent
   Grok configuration this skill does not own. Do not treat a rejected run or
   partial artifact as a review.
 - The sandbox intentionally permits Grok session/config writes under
   `~/.grok/` and temporary review artifacts. The launcher removes edit, write,
-  web, and MCP operations through a combination of `--disallowed-tools`,
-  `--deny`, and dedicated disabling flags. Native `/review` retains
-  agent/background machinery for its reviewer subagent and can create its
-  protected scratch artifacts through sandboxed shell commands. On Linux, the
+  web, and MCP operations through `--disallowed-tools`, `--deny MCPTool`, and
+  dedicated disabling flags; `--disallowed-tools` also strips the built-in
+  edit/write tools from spawned subagents. Native `/review` retains
+  agent/background machinery for its reviewer subagent and creates its
+  protected scratch artifacts under `${TMPDIR:-/tmp}` through sandboxed shell
+  commands. Do not reintroduce `--deny Edit` or `--deny Write`; see above. On Linux, the
   sandbox blocks child-process network access; on macOS, Grok documents
   child-network restriction as a no-op.
 - Detached Linux runs can report `ApplyFailed` when Landlock cannot open

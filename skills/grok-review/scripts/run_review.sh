@@ -39,7 +39,7 @@ validate_result() {
         length == 1 and
         .[0].type == null and
         (.[0].text | type == "string" and length > 0) and
-        (.[0].stopReason == "EndTurn") and
+        (.[0].stopReason == "end_turn" or .[0].stopReason == "EndTurn") and
         (.[0].sessionId == $session_id) and
         (.[0].requestId | type == "string" and length > 0)
     ' "$result" >/dev/null; then
@@ -47,7 +47,37 @@ validate_result() {
     fi
 
     jq -r '.text' "$result" > "$run_dir/review.md"
+    validate_findings "$run_dir"
     printf 'Validated review: %s\n' "$run_dir/review.md"
+}
+
+# Native /review only produces findings through its reviewer subagent, which
+# writes ${scratch_dir}/grok-review-<8 hex>.md and the orchestrator then
+# reports that path. A run whose orchestrator never launched the reviewer
+# (or whose reviewer never wrote the file) still ends with stopReason=end_turn
+# and non-empty text, so require the findings file itself.
+validate_findings() {
+    local run_dir="$1"
+    local review_text="$run_dir/review.md"
+    local findings_path summary_path issue_count pattern
+    pattern=$'/[^[:space:]`\'"()<>]*grok-review-[0-9a-f]{8}\\.md'
+
+    findings_path="$(grep -oE "$pattern" "$review_text" | tail -n 1 || true)"
+    [[ -n "$findings_path" ]] \
+        || fail "review text does not name a native findings file (grok-review-<id>.md); the reviewer subagent likely never ran: $review_text"
+    [[ -s "$findings_path" ]] \
+        || fail "native findings file is missing or empty: $findings_path"
+    grep -qE '^## Summary' "$findings_path" \
+        || fail "native findings file has no '## Summary' section: $findings_path"
+    cp "$findings_path" "$run_dir/findings.md"
+
+    summary_path="${findings_path%grok-review-*}grok-review-summary-${findings_path##*grok-review-}"
+    if [[ -s "$summary_path" ]]; then
+        cp "$summary_path" "$run_dir/summary.md"
+    fi
+
+    issue_count="$(grep -cE '^### Issue [0-9]+ -- Severity: (bug|suggestion|nit)$' "$findings_path" || true)"
+    printf 'Validated findings: %s (%s issues)\n' "$run_dir/findings.md" "$issue_count"
 }
 
 session_is_active() {
@@ -65,7 +95,10 @@ release_workspace_lock() {
     [[ "$(<"$lock_owner")" == "$expected_owner" ]] || return 1
     rm -f "$lock_owner"
     if ! rmdir "$lock_dir" 2>/dev/null; then
-        printf '%s\n' "$expected_owner" > "$lock_owner"
+        # The zmx child's exit trap releases the same lock; if it won the
+        # race and the directory is already gone, the lock is released.
+        [[ -d "$lock_dir" ]] || return 0
+        printf '%s\n' "$expected_owner" > "$lock_owner" 2>/dev/null || return 0
         return 1
     fi
 }
@@ -180,7 +213,7 @@ RUN_PARENT="$(dirname "$3")"
 mkdir -p "$RUN_PARENT"
 RUN_DIR="$(cd "$RUN_PARENT" && pwd -P)/$(basename "$3")"
 mkdir -p "$RUN_DIR"
-for artifact in result.json review.md stderr.log zmx-start.log zmx-session grok-session mode sandbox-enforced workspace-lock; do
+for artifact in result.json review.md findings.md summary.md stderr.log zmx-start.log zmx-session grok-session mode sandbox-enforced workspace-lock; do
     [[ ! -e "$RUN_DIR/$artifact" ]] || fail "run artifact already exists: $RUN_DIR/$artifact"
 done
 
@@ -280,12 +313,16 @@ if ! zmx run "$ZMX_SESSION" -d bash -lc '
     if [[ "$MODE" == "resume" ]]; then
         session_args=(--resume "$GROK_SESSION_ID")
     fi
+    # Repository writes are blocked by the kernel-enforced read-only sandbox,
+    # which the launcher verifies below. Do not add an Edit/Write deny rule:
+    # Grok classifies spawn_subagent as an edit, so any Edit rule (even a
+    # path-scoped one) blocks the reviewer subagent that native /review needs.
     "$GROK_BIN" --cwd "$REPO" --prompt-file "$PROMPT_FILE" \
       "${session_args[@]}" \
       --sandbox read-only --no-plan --no-memory \
       --disable-web-search \
       --disallowed-tools "search_replace,write,web_search,web_fetch" \
-      --deny Edit --deny Write --deny MCPTool \
+      --deny MCPTool \
       --output-format json --max-turns "$MAX_TURNS" \
       > "$RESULT" 2> "$ERR"
 ' >"$START_LOG" 2>&1; then
