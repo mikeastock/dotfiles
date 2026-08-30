@@ -25,6 +25,7 @@ VERSION_CHECKED_MARKER="$TMP_DIR/version-checked"
 GROK_SESSION_ID="019f4d7b-7517-7021-9dbf-9b9dcd20bd43"
 OTHER_SESSION_ID="019f4d7b-7517-7021-9dbf-9b9dcd20bd44"
 TEST_HOME="$TMP_DIR/home"
+FINDINGS_FILE="$TMP_DIR/scratch/grok-review-0123abcd.md"
 
 mkdir -p "$FAKE_BIN" "$REPO" "$TEST_HOME/.grok/bundled/skills/review"
 git -C "$REPO" init -q
@@ -58,9 +59,23 @@ if [[ "${FAKE_RESULT_TYPE:-result}" == "error" ]]; then
 fi
 
 session_id="${FAKE_RESULT_SESSION:-$session_id}"
-printf '{"text":"PROBE_OK","stopReason":"%s","sessionId":"%s","requestId":"test-request"}\n' \
-  "${FAKE_STOP_REASON:-EndTurn}" "$session_id" \
-  | sed "s/PROBE_OK/${FAKE_RESULT_TEXT-PROBE_OK}/"
+mkdir -p "$(dirname "$FAKE_FINDINGS_FILE")"
+if [[ "${FAKE_FINDINGS:-written}" == written ]]; then
+    printf '%s\n' '## Summary' 'Looks mostly fine.' '' '## Issues' '' \
+      '### Issue 1 -- Severity: bug' '- File: src/app.py:3' '- Description: FAKE_FINDING' \
+      '- Suggestion: fix it' '- Status: open' > "$FAKE_FINDINGS_FILE"
+elif [[ "${FAKE_FINDINGS:-written}" == malformed ]]; then
+    printf '%s\n' 'Reviewer crashed before writing findings.' > "$FAKE_FINDINGS_FILE"
+else
+    rm -f "$FAKE_FINDINGS_FILE"
+fi
+if [[ "${FAKE_TEXT_NAMES_FINDINGS:-1}" == 1 ]]; then
+    text="${FAKE_RESULT_TEXT-PROBE_OK} Full review at: \`$FAKE_FINDINGS_FILE\`"
+else
+    text="${FAKE_RESULT_TEXT-PROBE_OK}"
+fi
+jq -cn --arg text "$text" --arg stop "${FAKE_STOP_REASON:-end_turn}" --arg session "$session_id" \
+  '{text: $text, stopReason: $stop, sessionId: $session, requestId: "test-request"}'
 EOF
 
 cat > "$FAKE_BIN/zmx" <<'EOF'
@@ -127,7 +142,10 @@ run_launcher() {
       FAKE_RESULT_TYPE="${FAKE_RESULT_TYPE:-result}" \
       FAKE_RESULT_SESSION="${FAKE_RESULT_SESSION:-}" \
       FAKE_RESULT_TEXT="${FAKE_RESULT_TEXT-PROBE_OK}" \
-      FAKE_STOP_REASON="${FAKE_STOP_REASON:-EndTurn}" \
+      FAKE_STOP_REASON="${FAKE_STOP_REASON:-end_turn}" \
+      FAKE_FINDINGS_FILE="$FINDINGS_FILE" \
+      FAKE_FINDINGS="${FAKE_FINDINGS:-written}" \
+      FAKE_TEXT_NAMES_FINDINGS="${FAKE_TEXT_NAMES_FINDINGS:-1}" \
       FAKE_SANDBOX_EVENT="${FAKE_SANDBOX_EVENT:-applied}" \
       FAKE_ZMX_RUN_STATUS="${FAKE_ZMX_RUN_STATUS:-0}" \
       "$PROJECT_DIR/skills/grok-review/scripts/run_review.sh" start "$REPO" "$PROMPT" "$1"
@@ -141,6 +159,7 @@ resume_launcher() {
       FAKE_ZMX_COMMAND_LOG="$COMMAND_LOG" \
       FAKE_ZMX_KILLED="$KILLED_MARKER" \
       FAKE_ZMX_ACTIVE_FILE="$ACTIVE_SESSION" \
+      FAKE_FINDINGS_FILE="$FINDINGS_FILE" \
       "$PROJECT_DIR/skills/grok-review/scripts/run_review.sh" resume \
         "$REPO" "$PROMPT" "$1" "$GROK_SESSION_ID"
 }
@@ -184,6 +203,8 @@ assert_file_not_exists "$VERSION_CHECKED_MARKER" "Launcher does not gate on the 
 assert_output_contains "$(<"$COMMAND_LOG")" '--disable-web-search' "Launcher disables web search"
 assert_output_contains "$(<"$COMMAND_LOG")" '--disallowed-tools "search_replace,write,web_search,web_fetch"' "Launcher removes mutating and external built-in tools"
 assert_output_contains "$(<"$COMMAND_LOG")" '--deny MCPTool' "Launcher denies MCP calls"
+assert_output_not_contains "$(<"$COMMAND_LOG")" '--deny Edit' "Launcher has no Edit deny rule (it would block spawn_subagent)"
+assert_output_not_contains "$(<"$COMMAND_LOG")" '--deny Write' "Launcher has no Write deny rule (it would block spawn_subagent)"
 assert_output_not_contains "$(<"$COMMAND_LOG")" '--tools' "Launcher avoids narrowing native review tools"
 assert_output_not_contains "$(<"$COMMAND_LOG")" '--no-subagents' "Launcher preserves native reviewer subagents"
 assert_output_contains "$(<"$RUN_DIR/grok-session")" "$GROK_SESSION_ID" "Launcher records the Grok session"
@@ -192,6 +213,9 @@ log_test "Testing structured result validation"
 output=$(wait_for_launcher "$RUN_DIR" 2>&1)
 assert_output_contains "$output" "Validated review" "Wait validates a completed review"
 assert_output_contains "$(<"$RUN_DIR/review.md")" "PROBE_OK" "Wait extracts validated review text"
+assert_output_contains "$output" "Validated findings" "Wait validates the native findings file"
+assert_output_contains "$output" "(1 issues)" "Wait counts native issue headings"
+assert_output_contains "$(<"$RUN_DIR/findings.md")" "FAKE_FINDING" "Wait copies the native findings file into the run"
 assert_file_not_exists "$(<"$RUN_DIR/workspace-lock")" "Successful review releases the workspace lock"
 
 log_test "Testing canonical stop accepts an already-exited session"
@@ -275,7 +299,7 @@ assert_file_not_exists "$TMP_DIR/run-error/review.md" "Error result does not pro
 
 log_test "Testing result validation rejects a nonterminal stop reason"
 : > "$EVENTS"
-FAKE_STOP_REASON=MaxTurns run_launcher "$TMP_DIR/run-max-turns" >/dev/null
+FAKE_STOP_REASON=max_turns run_launcher "$TMP_DIR/run-max-turns" >/dev/null
 if wait_for_launcher "$TMP_DIR/run-max-turns" >"$TMP_DIR/max-turns.log" 2>&1; then
     log_error "FAIL: Wait accepted a turn-limited result"
     TESTS_FAILED=$((TESTS_FAILED + 1))
@@ -287,7 +311,7 @@ assert_file_not_exists "$TMP_DIR/run-max-turns/review.md" "Nonterminal result do
 
 log_test "Testing result validation rejects blank review text"
 : > "$EVENTS"
-FAKE_RESULT_TEXT='' run_launcher "$TMP_DIR/run-blank" >/dev/null
+FAKE_RESULT_TEXT='' FAKE_TEXT_NAMES_FINDINGS=0 run_launcher "$TMP_DIR/run-blank" >/dev/null
 if wait_for_launcher "$TMP_DIR/run-blank" >"$TMP_DIR/blank.log" 2>&1; then
     log_error "FAIL: Wait accepted blank review text"
     TESTS_FAILED=$((TESTS_FAILED + 1))
@@ -296,6 +320,44 @@ else
     TESTS_PASSED=$((TESTS_PASSED + 1))
 fi
 assert_file_not_exists "$TMP_DIR/run-blank/review.md" "Blank result does not produce review text"
+
+log_test "Testing result validation rejects a run whose reviewer never ran"
+: > "$EVENTS"
+FAKE_FINDINGS=none FAKE_TEXT_NAMES_FINDINGS=0 \
+  FAKE_RESULT_TEXT='Launching the reviewer subagent was blocked. No review file was written.' \
+  run_launcher "$TMP_DIR/run-no-reviewer" >/dev/null
+if wait_for_launcher "$TMP_DIR/run-no-reviewer" >"$TMP_DIR/no-reviewer.log" 2>&1; then
+    log_error "FAIL: Wait accepted a run with no native findings file"
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+else
+    log_info "PASS: Wait rejects a run with no native findings file"
+    TESTS_PASSED=$((TESTS_PASSED + 1))
+fi
+assert_output_contains "$(<"$TMP_DIR/no-reviewer.log")" "reviewer subagent likely never ran" "Missing findings failure names the likely cause"
+assert_file_not_exists "$TMP_DIR/run-no-reviewer/findings.md" "Missing findings produce no findings artifact"
+
+log_test "Testing result validation rejects a named but missing findings file"
+: > "$EVENTS"
+FAKE_FINDINGS=none run_launcher "$TMP_DIR/run-missing-findings" >/dev/null
+if wait_for_launcher "$TMP_DIR/run-missing-findings" >"$TMP_DIR/missing-findings.log" 2>&1; then
+    log_error "FAIL: Wait accepted a findings path that does not exist"
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+else
+    log_info "PASS: Wait rejects a findings path that does not exist"
+    TESTS_PASSED=$((TESTS_PASSED + 1))
+fi
+
+log_test "Testing result validation rejects a findings file without a summary"
+: > "$EVENTS"
+FAKE_FINDINGS=malformed run_launcher "$TMP_DIR/run-malformed-findings" >/dev/null
+if wait_for_launcher "$TMP_DIR/run-malformed-findings" >"$TMP_DIR/malformed-findings.log" 2>&1; then
+    log_error "FAIL: Wait accepted a findings file without '## Summary'"
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+else
+    log_info "PASS: Wait rejects a findings file without '## Summary'"
+    TESTS_PASSED=$((TESTS_PASSED + 1))
+fi
+assert_file_not_exists "$TMP_DIR/run-malformed-findings/findings.md" "Malformed findings produce no findings artifact"
 
 log_test "Testing one active review per workspace"
 lock_key="$(printf '%s\n' "$REPO" | git hash-object --stdin)"
