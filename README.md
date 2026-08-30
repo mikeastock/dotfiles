@@ -122,7 +122,7 @@ pi
 - `review-gauntlet` — multi-model review → Fable triage → fix loop via the Grok `review-gauntlet` workflow / `code-review-loop` CLI (replaces review-council)
 - `writing-mike-ruby-style` — Mike's personal Ruby/Rails style (mirrors his canonical style rules)
 - `prepare-branch-context` — read-only branch diff, commit, and PR context gathering skill vendored from `jnsahaj/skills`
-- `simplify` — behavior-preserving code and comment simplification skill vendored from `bholmesdev/skills` (explicit invocation only)
+- `simplify` — code and comment simplification skill vendored from `bholmesdev/skills`, extended to cut over-engineering and needless defensiveness (explicit invocation only)
 - `unslop` — AI-writing cleanup and human-voice editing skill vendored from `cursor/plugins` commit `99559f2` (explicit invocation only)
 - `zmx` — guidance for managing persistent background terminal work
 - `tmux` — remote control tmux sessions through the active server, with an agent-neutral fallback socket when no server is running
