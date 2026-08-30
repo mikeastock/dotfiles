@@ -29,12 +29,13 @@ agents/
 │   └── <extension-name>/index.ts
 ├── scripts/
 │   └── build.py                    # Python build system (requires Python 3.11+)
-├── tests/                          # Test suite
+├── tests/                          # Test suite (shell + node --test)
 │   ├── test-helpers.sh             # Shared test utilities
 │   ├── test-make.sh                # Makefile tests
-│   ├── test-pi-skills-config.sh    # Pi config tests
-│   ├── test-pi-extensions.sh       # Pi extensions type-check tests
-│   └── run-all.sh                  # Run all tests
+│   ├── test-install-configs.sh     # Agent config install tests
+│   ├── test-skill-doctor.sh        # skill-doctor collector/renderer tests
+│   ├── *.test.ts                   # TypeScript tests (pnpm test)
+│   └── run-all.sh                  # Run all shell suites
 ├── build/                          # Generated during build (gitignored)
 │   ├── claude/                     # Skills built for Claude Code
 │   └── pi/                         # Skills built for Pi
@@ -87,10 +88,10 @@ make install
 
 ### Testing
 ```bash
-./tests/run-all.sh          # Run all tests
+./tests/run-all.sh          # Run all shell suites
 ./tests/test-make.sh        # Test Makefile commands
-./tests/test-pi-skills-config.sh  # Test Pi config command
-./tests/test-pi-extensions.sh     # Test Pi extensions type-checking
+pnpm test                   # TypeScript tests (pi-extensions, tests/*.test.ts)
+pnpm typecheck
 ```
 
 Tests use a sandbox environment (temporary HOME directory) to avoid affecting real agent installations. The test framework provides assertion helpers in `tests/test-helpers.sh`.
@@ -187,8 +188,9 @@ Extensions use the unified `ExtensionAPI` which provides:
 2. Create `skills/<skill-name>/SKILL.md` following the specification
 3. Optionally add `agents: [claude, pi]` to frontmatter to limit installation to specific agents
 4. Add any supporting files to the same directory
-5. Run `make install` to build and install
-6. Update README.md: add to "Custom Skills" table and directory structure
+5. When vendoring an upstream skill, read its `description` before copying it verbatim. A description that claims every turn ("must always apply", "use on any task") will auto-trigger on unrelated work; narrow it to the explicit ask or add `metadata.user-invocable-only: "true"`.
+6. Run `make install` to build and install
+7. Update README.md: add to "Custom Skills" table and directory structure
 
 ### Adding a Skill Override
 1. Create `skill-overrides/<skill-name>-<agent>.md` (agent: `claude` or `pi`)
@@ -217,4 +219,5 @@ Extensions use the unified `ExtensionAPI` which provides:
 - Running `make clean` removes both installed files and build artifacts
 - Use `make pi-skills-config` after installation to prevent duplicate skill warnings in Pi when using Claude skill directories
 - **Keep README.md up to date**: When adding, removing, or renaming skills or extensions, update the corresponding tables and directory structure in README.md
+- **Keep this file's test list current**: When adding, removing, or renaming a test script or CI step, update the `tests/` tree and Testing section above in the same change
 - **Requires Python 3.11+** for the build system (uses `tomllib` from stdlib)
