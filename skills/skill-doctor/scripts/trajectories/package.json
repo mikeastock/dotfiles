@@ -1,0 +1,9 @@
+{
+  "name": "skill-doctor-trajectories",
+  "private": true,
+  "description": "Local Letta trajectory data root for skill-doctor. Copied into the per-run data root by ingest.sh.",
+  "type": "module",
+  "dependencies": {
+    "@letta-ai/trajectory": "0.3.0"
+  }
+}

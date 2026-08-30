@@ -1,0 +1,565 @@
+diff --git a/dist/adapters/grok-build/README.md b/dist/adapters/grok-build/README.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..d25ef3a1437b71c812987c3264c70b9e40ee17f2
+--- /dev/null
++++ b/dist/adapters/grok-build/README.md
+@@ -0,0 +1,57 @@
++# grok-build
++
++Grok Build stores one session per directory under
++`~/.grok/sessions/<escaped-cwd>/<sessionId>/`. Pass either the complete
++`chat_history.jsonl` file contents, or a JSON envelope:
++
++```json
++{ "chat_history": "<jsonl>", "updates": "<jsonl>" }
++```
++
++to `normalizeTranscript({ source: "grok-build", transcript })`.
++
++The adapter does not read the filesystem. Locating `updates.jsonl` and
++assembling the envelope remains caller work. `events.jsonl` and
++`summary.json` are harness telemetry and are not part of the contract.
++
++## Decoding
++
++- `user` rows use a content-block array (`text`, `image`). Image blocks become
++  `[image]`.
++- `user` rows with `synthetic_reason` (project instructions, system reminders,
++  compaction meta, and similar injected context) are dropped with
++  `injected_context_dropped`.
++- `reasoning` rows keep plaintext `summary` blocks. Encrypted reasoning blobs
++  are not emitted.
++- `assistant` rows emit prose when `content` is nonempty, then each
++  `{id, name, arguments}` tool call. `arguments` is a JSON-object string in
++  native files; valid objects are re-serialized, and the shared core reshapes
++  anything else.
++- `tool_result` rows link to the matching call by `tool_call_id`. Optional
++  `images` append `[image]` markers. The source does not expose a structured
++  success/failure flag, so `ok` is omitted.
++- `backend_tool_call` rows (for example `web_search` / `x_search`) become
++  tool-call records using `kind.call_id` or `kind.id` and `kind.name` or
++  `kind.tool_type`.
++- `system` rows are the session system prompt and are dropped as transport.
++- Unsupported row types produce `noise_record_dropped`.
++- When `chat_history.jsonl` has no assistant or tool-call rows, an optional
++  `updates` JSONL is replayed: `agent_thought_chunk` / `agent_message_chunk`
++  coalesce into reasoning and assistant prose, `tool_call` /
++  `tool_call_update` become linked calls and results, and
++  `subagent_finished.output` or `turn_completed.agent_result` fill a missing
++  assistant turn. Hook and workflow updates are ignored.
++
++Never-started plan stubs (`system` plus an injected `system_reminder` user,
++no assistant) cannot form a trajectory. Listing skips them.
++
++`chat_history.jsonl` has no per-row timestamps and no working-directory field.
++The shared core synthesizes timestamps. `model_id` from the first assistant
++row is recorded on session metadata when present.
++
++## Listing
++
++`listTrajectories({ source: "grok-build" })` scans
++`~/.grok/sessions/*/*/chat_history.jsonl` and skips empty files and
++never-started stubs. The listing id is the session directory name. Listing is
++separate from normalization; the adapter itself never reads the filesystem.
+diff --git a/dist/adapters/grok-build/index.d.ts b/dist/adapters/grok-build/index.d.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..93a972aea4b1c4b61be791a1a3750ae830faceb6
+--- /dev/null
++++ b/dist/adapters/grok-build/index.d.ts
+@@ -0,0 +1,4 @@
++import type { SourceAdapter } from "../../internal.js";
++/** Decode Grok Build `chat_history.jsonl`, or a `{chat_history, updates}` envelope. */
++export declare const grokBuildAdapter: SourceAdapter;
++//# sourceMappingURL=index.d.ts.map
+\ No newline at end of file
+diff --git a/dist/adapters/grok-build/index.js b/dist/adapters/grok-build/index.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..82cf06af4e25d3f59d6986af52c09b5806b0dde7
+--- /dev/null
++++ b/dist/adapters/grok-build/index.js
+@@ -0,0 +1,347 @@
++import { blocksText, isObject, jsonString, parseJsonLines, parseTimestamp, } from "../shared.js";
++const TRANSPORT_TYPES = new Set(["system"]);
++/** Decode Grok Build `chat_history.jsonl`, or a `{chat_history, updates}` envelope. */
++export const grokBuildAdapter = {
++    source: "grok-build",
++    decode(transcript) {
++        const diagnostics = [];
++        const events = [];
++        let model;
++        const parts = splitTranscript(transcript);
++        decodeChatHistory(parts.chat, events, diagnostics, (value) => {
++            if (model === undefined)
++                model = value;
++        });
++        const hasAssistantRole = events.some((event) => (event.type === "message" && event.role === "assistant") ||
++            event.type === "tool_call");
++        if (!hasAssistantRole && parts.updates) {
++            decodeUpdates(parts.updates, events, diagnostics, (value) => {
++                if (model === undefined)
++                    model = value;
++            });
++        }
++        return {
++            events,
++            context: {
++                source: "grok-build",
++                ...(model ? { model } : {}),
++            },
++            diagnostics,
++        };
++    },
++};
++function splitTranscript(transcript) {
++    const trimmed = transcript.trim();
++    if (trimmed.startsWith("{")) {
++        try {
++            const parsed = JSON.parse(trimmed);
++            if (isObject(parsed) && typeof parsed.chat_history === "string") {
++                return {
++                    chat: parsed.chat_history,
++                    ...(typeof parsed.updates === "string" ? { updates: parsed.updates } : {}),
++                };
++            }
++        }
++        catch {
++            // Native chat_history.jsonl is multi-value JSONL, not one JSON document.
++        }
++    }
++    return { chat: transcript };
++}
++function decodeChatHistory(transcript, events, diagnostics, noteModel) {
++    for (const { value: row, line, byteOffset } of parseJsonLines(transcript, diagnostics)) {
++        const recordType = row.type;
++        if (typeof recordType === "string" && TRANSPORT_TYPES.has(recordType)) {
++            continue;
++        }
++        let componentIndex = 0;
++        const emit = (event) => {
++            events.push({
++                ...event,
++                sourceOffset: byteOffset,
++                sourceAnchorKind: "byte",
++                sourceSequence: line - 1,
++                componentIndex: componentIndex++,
++                inputLine: line,
++            });
++        };
++        if (recordType === "user") {
++            if (typeof row.synthetic_reason === "string" && row.synthetic_reason) {
++                diagnostics.push({
++                    code: "injected_context_dropped",
++                    message: `Dropped Grok Build injected user content on line ${line}.`,
++                    inputLine: line,
++                });
++                continue;
++            }
++            emit({
++                type: "message",
++                role: "user",
++                content: blocksText(row.content),
++            });
++            continue;
++        }
++        if (recordType === "reasoning") {
++            const content = blocksText(row.summary);
++            if (!content)
++                continue;
++            emit({
++                type: "reasoning",
++                content,
++                ...(typeof row.id === "string" && row.id
++                    ? { sourceRecordId: row.id }
++                    : {}),
++            });
++            continue;
++        }
++        if (recordType === "assistant") {
++            const rowModel = nonemptyString(row.model_id);
++            if (rowModel)
++                noteModel(rowModel);
++            const content = typeof row.content === "string" ? row.content : "";
++            if (content) {
++                emit({
++                    type: "message",
++                    role: "assistant",
++                    content,
++                    ...(rowModel ? { model: rowModel } : {}),
++                });
++            }
++            const toolCalls = Array.isArray(row.tool_calls) ? row.tool_calls : [];
++            for (const call of toolCalls) {
++                if (!isObject(call))
++                    continue;
++                emit({
++                    type: "tool_call",
++                    args: toolArgs(call.arguments),
++                    ...(typeof call.id === "string" && call.id ? { id: call.id } : {}),
++                    ...(typeof call.name === "string" && call.name
++                        ? { name: call.name }
++                        : {}),
++                    ...(rowModel ? { model: rowModel } : {}),
++                });
++            }
++            continue;
++        }
++        if (recordType === "tool_result") {
++            emit({
++                type: "tool_result",
++                content: toolResultContent(row.content, row.images),
++                ...(typeof row.tool_call_id === "string" && row.tool_call_id
++                    ? { callId: row.tool_call_id }
++                    : {}),
++            });
++            continue;
++        }
++        if (recordType === "backend_tool_call") {
++            const kind = isObject(row.kind) ? row.kind : {};
++            const id = nonemptyString(kind.call_id) ?? nonemptyString(kind.id);
++            const name = nonemptyString(kind.name) ?? nonemptyString(kind.tool_type);
++            const args = kind.input !== undefined ? toolArgs(kind.input) : jsonString(kind.action);
++            emit({
++                type: "tool_call",
++                args,
++                ...(id ? { id } : {}),
++                ...(name ? { name } : {}),
++            });
++            continue;
++        }
++        diagnostics.push({
++            code: "noise_record_dropped",
++            message: `Skipped unsupported Grok Build row on line ${line}.`,
++            inputLine: line,
++        });
++    }
++}
++function decodeUpdates(transcript, events, diagnostics, noteModel) {
++    let ordinal = 0;
++    let producedAssistant = false;
++    let pending;
++    const lastAgentResult = [];
++    const emit = (event) => {
++        events.push({
++            ...event,
++            sourceOffset: ordinal,
++            sourceAnchorKind: "ordinal",
++            sourceSequence: ordinal,
++            componentIndex: 0,
++        });
++        ordinal += 1;
++        if ((event.type === "message" && event.role === "assistant") ||
++            event.type === "tool_call") {
++            producedAssistant = true;
++        }
++    };
++    const flushPending = () => {
++        if (!pending || !pending.text.trim()) {
++            pending = undefined;
++            return;
++        }
++        if (pending.kind === "thought") {
++            emit({
++                type: "reasoning",
++                content: pending.text,
++                ...(pending.timestamp ? { timestamp: pending.timestamp } : {}),
++            });
++        }
++        else {
++            emit({
++                type: "message",
++                role: "assistant",
++                content: pending.text,
++                ...(pending.timestamp ? { timestamp: pending.timestamp } : {}),
++            });
++        }
++        pending = undefined;
++    };
++    const appendChunk = (kind, text, timestamp) => {
++        if (!text)
++            return;
++        if (pending && pending.kind === kind) {
++            pending.text += text;
++            return;
++        }
++        flushPending();
++        pending = { kind, text, ...(timestamp ? { timestamp } : {}) };
++    };
++    for (const { value: row, line } of parseJsonLines(transcript, diagnostics)) {
++        const params = isObject(row.params) ? row.params : {};
++        const update = isObject(params.update) ? params.update : undefined;
++        if (!update) {
++            diagnostics.push({
++                code: "noise_record_dropped",
++                message: `Skipped unsupported Grok Build update on line ${line}.`,
++                inputLine: line,
++            });
++            continue;
++        }
++        const kind = update.sessionUpdate;
++        const timestamp = parseTimestamp(row.timestamp);
++        const meta = isObject(update._meta) ? update._meta : {};
++        const rowModel = nonemptyString(meta.modelId) ?? nonemptyString(update.model);
++        if (rowModel)
++            noteModel(rowModel);
++        if (kind === "agent_thought_chunk") {
++            appendChunk("thought", chunkText(update.content), timestamp);
++            continue;
++        }
++        if (kind === "agent_message_chunk") {
++            appendChunk("message", chunkText(update.content), timestamp);
++            continue;
++        }
++        flushPending();
++        if (kind === "tool_call" || kind === "tool_call_update") {
++            const id = nonemptyString(update.toolCallId);
++            if (kind === "tool_call") {
++                emit({
++                    type: "tool_call",
++                    args: toolArgs(update.rawInput ?? {}),
++                    ...(id ? { id } : {}),
++                    name: toolName(update),
++                    ...(timestamp ? { timestamp } : {}),
++                });
++            }
++            if (update.rawOutput !== undefined) {
++                emit({
++                    type: "tool_result",
++                    content: rawOutputText(update.rawOutput),
++                    ...(id ? { callId: id } : {}),
++                    ...(update.status === "failed" ? { ok: false } : {}),
++                    ...(update.status === "completed" ? { ok: true } : {}),
++                    ...(timestamp ? { timestamp } : {}),
++                });
++            }
++            continue;
++        }
++        if (kind === "subagent_finished") {
++            const output = nonemptyString(update.output);
++            if (output) {
++                emit({
++                    type: "message",
++                    role: "assistant",
++                    content: output,
++                    ...(timestamp ? { timestamp } : {}),
++                });
++            }
++            continue;
++        }
++        if (kind === "turn_completed") {
++            const result = nonemptyString(update.agent_result);
++            if (result)
++                lastAgentResult.push({ text: result, ...(timestamp ? { timestamp } : {}) });
++            continue;
++        }
++    }
++    flushPending();
++    if (!producedAssistant) {
++        for (const result of lastAgentResult) {
++            emit({
++                type: "message",
++                role: "assistant",
++                content: result.text,
++                ...(result.timestamp ? { timestamp: result.timestamp } : {}),
++            });
++        }
++    }
++}
++function chunkText(content) {
++    if (isObject(content) && typeof content.text === "string")
++        return content.text;
++    return blocksText(content);
++}
++function toolName(update) {
++    const meta = isObject(update._meta) ? update._meta : {};
++    return (nonemptyString(meta["x.ai/tool"]) ??
++        nonemptyString(update.kind) ??
++        nonemptyString(update.title) ??
++        "tool");
++}
++function rawOutputText(raw) {
++    if (typeof raw === "string")
++        return raw;
++    if (!isObject(raw))
++        return jsonString(raw);
++    for (const key of [
++        "output",
++        "FileContent",
++        "stdout",
++        "text",
++        "Content",
++        "message",
++        "error",
++    ]) {
++        const value = raw[key];
++        if (typeof value === "string" && value)
++            return value;
++    }
++    return jsonString(raw);
++}
++function nonemptyString(value) {
++    return typeof value === "string" && value.length > 0 ? value : undefined;
++}
++function toolArgs(value) {
++    if (typeof value === "string") {
++        try {
++            const parsed = JSON.parse(value);
++            if (isObject(parsed))
++                return jsonString(parsed);
++        }
++        catch {
++            // Keep the raw string for the shared core to reshape.
++        }
++        return value;
++    }
++    return jsonString(value);
++}
++function toolResultContent(content, images) {
++    const text = typeof content === "string" ? content : blocksText(content);
++    if (!Array.isArray(images) || images.length === 0)
++        return text;
++    const markers = images
++        .filter((image) => isObject(image) && image.type === "image")
++        .map(() => "[image]");
++    if (markers.length === 0)
++        return text;
++    return text ? `${text}\n${markers.join("\n")}` : markers.join("\n");
++}
++//# sourceMappingURL=index.js.map
+\ No newline at end of file
+diff --git a/dist/adapters/grok-build/list.d.ts b/dist/adapters/grok-build/list.d.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..aa8d4d2f53c2b9e0c7f5791f95624cd4290856e1
+--- /dev/null
++++ b/dist/adapters/grok-build/list.d.ts
+@@ -0,0 +1,8 @@
++import type { TrajectoryListing } from "../../listing.js";
++/**
++ * Grok Build sessions: `~/.grok/sessions/<escaped-cwd>/<sessionId>/chat_history.jsonl`.
++ * Empty logs and never-started plan stubs (system + injected reminder only)
++ * are skipped because they cannot form a trajectory.
++ */
++export declare function listGrokBuildTrajectories(root: string | undefined): Promise<TrajectoryListing[]>;
++//# sourceMappingURL=list.d.ts.map
+\ No newline at end of file
+diff --git a/dist/adapters/grok-build/list.js b/dist/adapters/grok-build/list.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..805f63d04b53fd19935a3255235ef561919edb4b
+--- /dev/null
++++ b/dist/adapters/grok-build/list.js
+@@ -0,0 +1,63 @@
++import { readFileSync } from "node:fs";
++import { homedir } from "node:os";
++import { join } from "node:path";
++import { listingFromFile, safeReadDir, sortListings } from "../listing-shared.js";
++/**
++ * Grok Build sessions: `~/.grok/sessions/<escaped-cwd>/<sessionId>/chat_history.jsonl`.
++ * Empty logs and never-started plan stubs (system + injected reminder only)
++ * are skipped because they cannot form a trajectory.
++ */
++export async function listGrokBuildTrajectories(root) {
++    const base = root ?? join(homedir(), ".grok", "sessions");
++    const items = [];
++    for (const project of safeReadDir(base)) {
++        if (!project.isDirectory)
++            continue;
++        const projectPath = join(base, project.name);
++        for (const session of safeReadDir(projectPath)) {
++            if (!session.isDirectory)
++                continue;
++            const path = join(projectPath, session.name, "chat_history.jsonl");
++            const listing = listingFromFile(session.name, path);
++            if (!listing || (listing.sizeBytes ?? 0) === 0)
++                continue;
++            if (isUnstartedStub(path))
++                continue;
++            items.push(listing);
++        }
++    }
++    return sortListings(items);
++}
++function isUnstartedStub(path) {
++    let text;
++    try {
++        text = readFileSync(path, "utf8");
++    }
++    catch {
++        return false;
++    }
++    let hasRealUser = false;
++    let hasAssistant = false;
++    for (const line of text.split("\n")) {
++        if (!line.trim())
++            continue;
++        let row;
++        try {
++            row = JSON.parse(line);
++        }
++        catch {
++            continue;
++        }
++        if (!row || typeof row !== "object" || Array.isArray(row))
++            continue;
++        const record = row;
++        if (record.type === "assistant")
++            hasAssistant = true;
++        if (record.type === "user" &&
++            !(typeof record.synthetic_reason === "string" && record.synthetic_reason)) {
++            hasRealUser = true;
++        }
++    }
++    return !hasRealUser && !hasAssistant;
++}
++//# sourceMappingURL=list.js.map
+\ No newline at end of file
+diff --git a/dist/index.js b/dist/index.js
+index 1de27e096018cb45c5f3ff678e7640be9c9bf693..20ee7a90cab1f814f3cb92d7a02b8a78fb0b2ced 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -5,6 +5,7 @@ import { copilotCliAdapter } from "./adapters/copilot-cli/index.js";
+ import { cursorAdapter } from "./adapters/cursor/index.js";
+ import { droidAdapter } from "./adapters/droid/index.js";
+ import { geminiCliAdapter } from "./adapters/gemini-cli/index.js";
++import { grokBuildAdapter } from "./adapters/grok-build/index.js";
+ import { hermesAdapter } from "./adapters/hermes/index.js";
+ import { lettaCodeAdapter } from "./adapters/letta-code/index.js";
+ import { openClawAdapter } from "./adapters/openclaw/index.js";
+@@ -25,6 +26,7 @@ const ADAPTERS = {
+     cursor: cursorAdapter,
+     droid: droidAdapter,
+     "gemini-cli": geminiCliAdapter,
++    "grok-build": grokBuildAdapter,
+     hermes: hermesAdapter,
+     "letta-code": lettaCodeAdapter,
+     openclaw: openClawAdapter,
+diff --git a/dist/listing.js b/dist/listing.js
+index 27cf9bfa89323a9c5e82b61a10451701e938f0fa..fc3f631698c558dd9dea87fb51cc1488b09354a6 100644
+--- a/dist/listing.js
++++ b/dist/listing.js
+@@ -12,6 +12,7 @@
+ import { listClaudeCodeTrajectories } from "./adapters/claude-code/list.js";
+ import { listCodexTrajectories } from "./adapters/codex/list.js";
+ import { listDroidTrajectories } from "./adapters/droid/list.js";
++import { listGrokBuildTrajectories } from "./adapters/grok-build/list.js";
+ import { listDeepAgentsTrajectories } from "./adapters/deepagents/list.js";
+ import { listHermesTrajectories } from "./adapters/hermes/list.js";
+ import { listLettaCodeTrajectories } from "./adapters/letta-code/list.js";
+@@ -26,6 +27,7 @@ const LISTERS = {
+     "claude-code": listClaudeCodeTrajectories,
+     codex: listCodexTrajectories,
+     droid: listDroidTrajectories,
++    "grok-build": listGrokBuildTrajectories,
+     deepagents: listDeepAgentsTrajectories,
+     hermes: listHermesTrajectories,
+     "letta-code": listLettaCodeTrajectories,
+diff --git a/dist/types.d.ts b/dist/types.d.ts
+index 37802788a4467e0d18620b2792c539822479a652..85d4e7fc3992c0afa8304133223bfb2f2480f4c0 100644
+--- a/dist/types.d.ts
++++ b/dist/types.d.ts
+@@ -1,6 +1,6 @@
+ import type { ResolvedNormalizationBounds } from "./bounds.js";
+ import type { ResolvedNormalizationFilters } from "./filters.js";
+-export type TrajectorySource = "atif" | "claude-code" | "codex" | "copilot-cli" | "cursor" | "droid" | "gemini-cli" | "hermes" | "letta-code" | "omp" | "openclaw" | "opencode" | "openhands" | "pi";
++export type TrajectorySource = "atif" | "claude-code" | "codex" | "copilot-cli" | "cursor" | "droid" | "gemini-cli" | "grok-build" | "hermes" | "letta-code" | "omp" | "openclaw" | "opencode" | "openhands" | "pi";
+ export type TranscriptTrajectorySource = TrajectorySource;
+ export type CheckpointTrajectorySource = "deepagents";
+ export type AnyTrajectorySource = TranscriptTrajectorySource | CheckpointTrajectorySource;

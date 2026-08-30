@@ -1,0 +1,2 @@
+patchedDependencies:
+  '@letta-ai/trajectory@0.3.0': patches/@letta-ai__trajectory@0.3.0.patch
