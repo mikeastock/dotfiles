@@ -1,4 +1,4 @@
 interface:
   display_name: "Simplify"
-  short_description: "Simplify code without changing behavior"
-  default_prompt: "Review the specified code and simplify its wording and structure without changing behavior."
+  short_description: "Cut over-engineering, defensiveness, and test-only production code"
+  default_prompt: "Review the specified code and cut over-engineering, needless defensive guards, and production code that exists only for tests, following the skill: prove each guard unreachable before deleting it, replace test-only seams with public-surface tests, then report with the tagged one-line format."
