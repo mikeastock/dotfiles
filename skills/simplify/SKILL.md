@@ -30,7 +30,7 @@ When a test fails after a cut:
 
 ## Word choice in code and comments
 
-Variable names, function names, and comments are all prose. Apply Orwell's rules ("Politics and the English Language") to each:
+Comments are prose; names are search keys. Orwell's rules ("Politics and the English Language") apply to prose. Apply them to comments:
 
 > Never use a long word where a short one will do.
 >
@@ -40,13 +40,16 @@ Variable names, function names, and comments are all prose. Apply Orwell's rules
 >
 > Never use a foreign phrase, a scientific word, or a jargon word if you can think of an everyday English equivalent.
 
-Latinate vocabulary (reconcile, coalesce, normalize, reconciliation) sounds technical and abstract; Anglo-Saxon words (prune, run, watch, stop, drop, walk) are short and physical. Prefer the Saxon word for new local names and comments. Do not rename a public API, job class, metric, cache key, or term the codebase already uses; shipped words stay.
+Agents and humans both find code by searching for its name. A name earns its keep by being unique in the repo and saying what the thing is.
 
 ### Names
 
-1. **One word per concept, one concept per word.** Keep a vocabulary. If `sync` names "pulling remote changes," it cannot also name "flushing edits to disk;" rename one of them.
-2. **Cut words the context already carries.** A module named `workspaceWatcher` does not need `startNativeWorkspaceWatcher`; `watchWorkspace` says the same thing.
-3. **A compound name is usually a hedge.** `lastObservedDiskContent` is a specification to defend; `baseline` is a description a reader can hold.
+1. **One word per concept, one concept per word.** Keep a vocabulary. If `sync` names "pulling remote changes," it cannot also name "flushing edits to disk;" rename one of them. Never alternate synonyms (`organization`, `customer`, `account`) for one thing.
+2. **Exported and public names carry a domain word.** `createStripeClient`, not `create`; `diffUserObjects`, not `diff`. Two or three words is the norm. One-word public names collide with everything; a search for `run` or `handle` returns the whole repo.
+3. **Locals can be short.** Inside one function, `user` and `i` are fine; nobody searches for them.
+4. **Prefer the concrete word over the abstract one.** `pruneStaleSessions` over `reconcileSessions`. The fix for a vague Latinate verb is a specific verb plus the noun it acts on, not a bare Saxon verb.
+5. **Do not shorten a name below uniqueness.** A compound name that reads as a specification (`lastObservedDiskContent`) is still a better search key than a generic one (`baseline`). Cut words only when the remaining name still searches to one concept.
+6. **Do not rename shipped words.** Public APIs, job classes, metric names, cache keys, and terms the codebase already uses stay. A rename breaks the trail for every reader and every agent that follows it.
 
 ### Comments
 
