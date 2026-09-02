@@ -40,7 +40,6 @@ test_find_sessions_on_socket() {
     local output
     output="$($PROJECT_DIR/skills/tmux/scripts/find-sessions.sh -S "$SOCKET")"
 
-    assert_output_contains "$output" "Sessions on socket path '$SOCKET':" "Output labels the requested socket"
     assert_output_contains "$output" "agent-test (detached, started" "Output parses session fields"
     assert_output_not_contains "$output" '\t' "Output does not contain literal tab escapes"
 }

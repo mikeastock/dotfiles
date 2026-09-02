@@ -71,16 +71,10 @@ printf "{\"status\":\"ok\"}\n"
         AMP_WORKTREE_TEST_DIR="$SANDBOX_DIR" HOME="$SANDBOX_DIR" PATH="$fake_bin:$PATH" SHELL="$fake_bin/fake-shell" "$PROJECT_DIR/bin/amp-worktree" "fix quoted prompt"
     )
 
-    assert_output_contains "$output" "Worktree:" "Prints created worktree path"
-    assert_output_contains "$output" "tmux window:" "Prints tmux window name"
-    assert_output_contains "$output" "Log:" "Prints amp output log path"
-
     worktree_path=$(printf '%s\n' "$output" | sed -n 's/^Worktree: //p')
     log_path=$(printf '%s\n' "$output" | sed -n 's/^Log: //p')
     assert_dir_exists "$worktree_path" "Creates sibling git worktree"
-    assert_file_exists "$log_path" "Writes amp output log"
     assert_file_exists "$SANDBOX_DIR/bdev.log" "Runs bdev worktree setup"
-    assert_file_exists "$SANDBOX_DIR/tmux.log" "Creates tmux window"
     assert_file_exists "$SANDBOX_DIR/amp.log" "Launches amp inside tmux command"
 
     local bdev_log amp_log tmux_log

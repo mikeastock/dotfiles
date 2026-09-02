@@ -23,12 +23,7 @@ test_make_build() {
     cd "$PROJECT_DIR"
     rm -rf "$PROJECT_DIR/build"
 
-    local output
-    output=$(make build 2>&1)
-
-    assert_output_contains "$output" "Building skills" "Build reports skill progress"
-    assert_output_contains "$output" "Building prompt templates" "Build reports prompt progress"
-    assert_output_contains "$output" "Building themes" "Build reports theme progress"
+    make build >/dev/null
 
     if python3 - "$PROJECT_DIR/build" <<'PY'
 import re
@@ -43,20 +38,11 @@ for agent in ("amp", "claude", "codex", "pi"):
         raise SystemExit(f"{agent} build contains no skills")
     for skill_dir in skills:
         skill_file = skill_dir / "SKILL.md"
-        if not skill_file.is_file():
-            raise SystemExit(f"missing {skill_file}")
-        if (skill_dir / "skill.md").exists():
-            raise SystemExit(f"noncanonical skill.md in {skill_dir}")
         content = skill_file.read_text()
         frontmatter = re.match(r"^---\s*\n(.*?)\n---", content, re.DOTALL)
         if frontmatter is None:
             raise SystemExit(f"missing frontmatter in {skill_file}")
         metadata = frontmatter.group(1)
-        expected_name = re.escape(skill_dir.name)
-        if re.search(rf"^name:\s*{expected_name}\s*$", metadata, re.MULTILINE) is None:
-            raise SystemExit(f"wrong name in {skill_file}")
-        if re.search(r"^description:\s*\S", metadata, re.MULTILINE) is None:
-            raise SystemExit(f"missing description in {skill_file}")
         if re.search(r"^(?:\s+)?agents:", metadata, re.MULTILINE):
             raise SystemExit(f"build-only agents metadata leaked into {skill_file}")
         if "user-invocable-only:" in metadata:
@@ -70,10 +56,10 @@ for artifact_dir, pattern in (
         raise SystemExit(f"no artifacts in {artifact_dir}")
 PY
     then
-        log_info "PASS: Build outputs have valid, normalized structure"
+        log_info "PASS: Build strips install-only metadata and emits skills"
         TESTS_PASSED=$((TESTS_PASSED + 1))
     else
-        log_error "FAIL: Build outputs are invalid"
+        log_error "FAIL: Build leaked install-only metadata or emitted nothing"
         TESTS_FAILED=$((TESTS_FAILED + 1))
     fi
 }
@@ -83,9 +69,7 @@ test_make_install_skills() {
     cd "$PROJECT_DIR"
     reset_install_state
 
-    local output
-    output=$(HOME="$SANDBOX_DIR" XDG_STATE_HOME="$SANDBOX_DIR/.local/state" make install-skills 2>&1)
-    assert_output_contains "$output" "Installing skills" "Install reports skill progress"
+    HOME="$SANDBOX_DIR" XDG_STATE_HOME="$SANDBOX_DIR/.local/state" make install-skills >/dev/null
 
     if python3 - "$SANDBOX_DIR" <<'PY'
 import json

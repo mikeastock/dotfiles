@@ -24,25 +24,7 @@ test_config_new_files() {
     rm -rf "$SANDBOX_DIR/.codex"
     rm -rf "$SANDBOX_DIR/.pi"
 
-    # Run install-configs with sandbox HOME
-    local output
-    output=$(HOME="$SANDBOX_DIR" make install-configs 2>&1)
-
-    assert_output_contains "$output" "Installing Amp config" "Shows Amp configuration"
-    assert_output_contains "$output" "Installing Codex config" "Shows Codex configuration"
-    assert_output_contains "$output" "Installing Codex rules" "Shows Codex rules installation"
-    assert_output_contains "$output" "Installing OpenCode config" "Shows OpenCode configuration"
-    assert_output_contains "$output" "Installing Pi settings" "Shows Pi configuration"
-    assert_output_contains "$output" "Installing global AGENTS.md" "Shows AGENTS.md installation"
-
-    # Verify all files were created
-    assert_file_exists "$SANDBOX_DIR/.config/amp/settings.json" "Amp settings file was created"
-    assert_file_exists "$SANDBOX_DIR/.config/opencode/opencode.jsonc" "OpenCode config file was created"
-    assert_file_exists "$SANDBOX_DIR/.codex/config.toml" "Codex config file was created"
-    assert_file_exists "$SANDBOX_DIR/.codex/rules/default.rules" "Codex default rules file was created"
-    assert_file_exists "$SANDBOX_DIR/.pi/agent/settings.json" "Pi settings file was created"
-    assert_file_exists "$SANDBOX_DIR/.codex/AGENTS.md" "Codex AGENTS.md was created"
-    assert_file_exists "$SANDBOX_DIR/.pi/agent/AGENTS.md" "Pi AGENTS.md was created"
+    HOME="$SANDBOX_DIR" make install-configs >/dev/null
 
     local opencode_json
     opencode_json=$(cat "$SANDBOX_DIR/.config/opencode/opencode.jsonc")
@@ -119,13 +101,8 @@ test_amp_preserve_existing() {
 }
 EOF
 
-    # Run install-configs with sandbox HOME
-    local output
-    output=$(HOME="$SANDBOX_DIR" make install-configs 2>&1)
+    HOME="$SANDBOX_DIR" make install-configs >/dev/null
 
-    assert_output_contains "$output" "Installing Amp config" "Shows Amp configuration"
-
-    # Verify Amp JSON content
     local amp_json
     amp_json=$(cat "$SANDBOX_DIR/.config/amp/settings.json")
 

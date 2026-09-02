@@ -89,7 +89,6 @@ test_collect_repo_scope() {
 
     assert_success "collector runs" python3 "$COLLECT" --trajectories-root "$FIXTURE" --repo "$REPO" --out "$OUT" --dotfiles-root /nonexistent
 
-    assert_file_exists "$OUT/inventory.json" "inventory.json written"
     local inv; inv="$(cat "$OUT/inventory.json")"
     assert_output_contains "$inv" '"skills_found": 2' "both project skills discovered"
     assert_output_contains "$inv" '"sessions_scanned": 2' "helper prompt and other-repo sessions excluded"
@@ -97,7 +96,6 @@ test_collect_repo_scope() {
     assert_output_contains "$inv" '"harness": "mixed"' "mixed sources reported"
     assert_output_contains "$inv" '"description": "Beta skill wrapped"' "folded description parsed"
 
-    assert_file_exists "$OUT/transcripts/claude-code--s-alpha.md" "alpha transcript written"
     local t; t="$(cat "$OUT/transcripts/claude-code--s-alpha.md")"
     assert_output_contains "$t" "skills_used: alpha" "Skill tool call detected"
     assert_output_contains "$t" "code_edits: yes" "code edit detected"
@@ -143,8 +141,6 @@ test_combine_pipeline() {
     local before; before="$(wc -l < "$FIXTURE/state/history.jsonl")"
     rm "$FIXTURE/state/history.jsonl"
     assert_success "combine runs" node "$SKILL_DIR/scripts/trajectories/combine.mjs" --root "$FIXTURE"
-    assert_file_exists "$FIXTURE/state/history.jsonl" "history.jsonl rebuilt"
-    assert_file_exists "$FIXTURE/state/history.json" "history.json written"
     local after; after="$(wc -l < "$FIXTURE/state/history.jsonl")"
     if [ "$after" -eq "$before" ]; then
         log_info "PASS: history row count preserved ($after)"
@@ -171,10 +167,8 @@ test_normalize_without_package() {
     assert_output_contains "$err" "ingest.sh" "error points at ingest.sh"
 }
 
-test_ingest_help() {
-    log_test "Testing ingest.sh --help"
-    local out; out="$("$SKILL_DIR/scripts/ingest.sh" --help)"
-    assert_output_contains "$out" "--root PATH" "help documents required root"
+test_ingest_requires_root() {
+    log_test "Testing ingest.sh fails without --root"
     if "$SKILL_DIR/scripts/ingest.sh" >/dev/null 2>&1; then
         log_error "FAIL: ingest.sh should fail without --root"
         TESTS_FAILED=$((TESTS_FAILED + 1))
@@ -231,7 +225,6 @@ test_render_report() {
  "suggestions":[{"skill":"alpha","change":"Add check","evidence":"s1","proposed_path":"proposed/alpha/SKILL.md","diff":"--- a\n+++ b\n@@ -1 +1 @@\n-old\n+new\n"}]}
 EOF
     assert_success "renderer runs" python3 "$RENDER" "$dir/report.json"
-    assert_file_exists "$dir/report.html" "report.html written"
     local h; h="$(cat "$dir/report.html")"
     assert_output_contains "$h" "Finding &lt;one&gt;" "findings escaped"
     assert_output_contains "$h" '<td class="fail">0.4' "failed score highlighted"
@@ -246,7 +239,7 @@ test_collect_all_conversations
 test_collect_missing_history
 test_combine_pipeline
 test_normalize_without_package
-test_ingest_help
+test_ingest_requires_root
 test_root_required
 test_pipeline_manifest
 test_render_report

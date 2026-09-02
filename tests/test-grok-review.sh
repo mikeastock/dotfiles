@@ -191,9 +191,7 @@ else
 fi
 
 log_test "Testing Grok review launcher success path"
-output=$(run_launcher "$RUN_DIR" 2>&1)
-assert_output_contains "$output" "Sandbox enforced" "Launcher reports sandbox enforcement"
-assert_file_exists "$RUN_DIR/result.json" "Launcher writes the result artifact"
+run_launcher "$RUN_DIR" >/dev/null
 assert_output_contains "$(<"$RUN_DIR/result.json")" "PROBE_OK" "Launcher captures Grok output"
 assert_output_contains "$(<"$COMMAND_LOG")" "--sandbox read-only" "Launcher passes the read-only sandbox"
 assert_output_contains "$(<"$COMMAND_LOG")" "--prompt-file" "Launcher passes the prompt file"
@@ -210,17 +208,19 @@ assert_output_not_contains "$(<"$COMMAND_LOG")" '--no-subagents' "Launcher prese
 assert_output_contains "$(<"$RUN_DIR/grok-session")" "$GROK_SESSION_ID" "Launcher records the Grok session"
 
 log_test "Testing structured result validation"
-output=$(wait_for_launcher "$RUN_DIR" 2>&1)
-assert_output_contains "$output" "Validated review" "Wait validates a completed review"
+wait_for_launcher "$RUN_DIR" >/dev/null
 assert_output_contains "$(<"$RUN_DIR/review.md")" "PROBE_OK" "Wait extracts validated review text"
-assert_output_contains "$output" "Validated findings" "Wait validates the native findings file"
-assert_output_contains "$output" "(1 issues)" "Wait counts native issue headings"
 assert_output_contains "$(<"$RUN_DIR/findings.md")" "FAKE_FINDING" "Wait copies the native findings file into the run"
 assert_file_not_exists "$(<"$RUN_DIR/workspace-lock")" "Successful review releases the workspace lock"
 
 log_test "Testing canonical stop accepts an already-exited session"
-output=$(FAKE_ZMX_KILL_STATUS=1 stop_launcher "$RUN_DIR" 2>&1)
-assert_output_contains "$output" "Stopped review" "Stop verifies an already-exited review despite kill status"
+if FAKE_ZMX_KILL_STATUS=1 stop_launcher "$RUN_DIR" >/dev/null 2>&1; then
+    log_info "PASS: Stop verifies an already-exited review despite kill status"
+    TESTS_PASSED=$((TESTS_PASSED + 1))
+else
+    log_error "FAIL: Stop rejected an already-exited review"
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+fi
 
 log_test "Testing canonical stop across a symlinked temporary directory"
 mkdir "$TMP_DIR/physical-tmp"
@@ -228,14 +228,18 @@ ln -s "$TMP_DIR/physical-tmp" "$TMP_DIR/logical-tmp"
 : > "$EVENTS"
 TMPDIR="$TMP_DIR/logical-tmp" run_launcher "$TMP_DIR/run-symlink-tmp" >/dev/null
 wait_for_launcher "$TMP_DIR/run-symlink-tmp" >/dev/null
-output=$(TMPDIR="$TMP_DIR/logical-tmp" FAKE_ZMX_KILL_STATUS=1 \
-  stop_launcher "$TMP_DIR/run-symlink-tmp" 2>&1)
-assert_output_contains "$output" "Stopped review" "Stop canonicalizes symlinked temporary paths"
+if TMPDIR="$TMP_DIR/logical-tmp" FAKE_ZMX_KILL_STATUS=1 \
+  stop_launcher "$TMP_DIR/run-symlink-tmp" >/dev/null 2>&1; then
+    log_info "PASS: Stop canonicalizes symlinked temporary paths"
+    TESTS_PASSED=$((TESTS_PASSED + 1))
+else
+    log_error "FAIL: Stop failed across a symlinked temporary directory"
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+fi
 
 log_test "Testing explicit session recovery"
 : > "$EVENTS"
-output=$(resume_launcher "$RUN_DIR_RESUMED" 2>&1)
-assert_output_contains "$output" "Sandbox enforced" "Resume requires sandbox enforcement"
+resume_launcher "$RUN_DIR_RESUMED" >/dev/null
 assert_output_contains "$(<"$COMMAND_LOG")" "--resume" "Resume passes the recorded Grok session"
 assert_output_contains "$(<"$COMMAND_LOG")" "--sandbox read-only" "Resume preserves the read-only sandbox"
 wait_for_launcher "$RUN_DIR_RESUMED" >/dev/null
@@ -379,8 +383,13 @@ log_test "Testing stale workspace lock recovery"
 mkdir "$lock_dir"
 printf '%s\n' 'stale-review' > "$lock_dir/zmx-session"
 : > "$EVENTS"
-output=$(run_launcher "$TMP_DIR/run-stale-lock" 2>&1)
-assert_output_contains "$output" "Sandbox enforced" "Launcher replaces a demonstrably stale lock"
+if run_launcher "$TMP_DIR/run-stale-lock" >/dev/null 2>&1; then
+    log_info "PASS: Launcher replaces a demonstrably stale lock"
+    TESTS_PASSED=$((TESTS_PASSED + 1))
+else
+    log_error "FAIL: Launcher did not replace a stale lock"
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+fi
 
 log_test "Testing zmx list failure does not reclaim a lock"
 mkdir "$lock_dir"

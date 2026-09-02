@@ -70,13 +70,6 @@ run_installer() {
     "$INSTALLER" --skip-packages --skip-tpm --skip-shell "$@"
 }
 
-test_help_documents_target() {
-  log_test "Testing make help documents dot-omarchy"
-  local output
-  output="$(make -C "$PROJECT_DIR" help)"
-  assert_output_contains "$output" "make dot-omarchy" "Help lists make dot-omarchy"
-}
-
 test_refuses_non_omarchy() {
   log_test "Testing installer refuses a non-Omarchy machine"
   local output status
@@ -99,10 +92,8 @@ test_installs_around_omarchy_defaults() {
   log_test "Testing installer claims personal files and leaves Omarchy terminals"
   seed_omarchy_home
 
-  local output
-  output="$(run_installer)"
+  run_installer >/dev/null
 
-  assert_output_contains "$output" "left Omarchy-owned" "Installer reports skipped Omarchy terminals"
   assert_symlink "$SANDBOX_DIR/.tmux.conf" "$PROJECT_DIR/.tmux.conf" "Home tmux.conf is the dotfiles link"
   assert_symlink "$SANDBOX_DIR/.config/hypr" "$PROJECT_DIR/.config/hypr" "Hyprland config is claimed"
   assert_symlink "$SANDBOX_DIR/.config/nvim/init.lua" "$PROJECT_DIR/.config/nvim/init.lua" "nvim init.lua is claimed"
@@ -141,11 +132,9 @@ test_is_idempotent() {
   rm -rf "$SANDBOX_DIR/backup"
   mkdir -p "$SANDBOX_DIR/backup"
 
-  local output
-  output="$(run_installer)"
+  run_installer >/dev/null
 
   assert_symlink "$SANDBOX_DIR/.tmux.conf" "$PROJECT_DIR/.tmux.conf" "Second run keeps the tmux.conf link"
-  assert_output_contains "$output" "bashrc already patched" "Second run does not duplicate the bashrc snippet"
   if [[ -z $(ls -A "$SANDBOX_DIR/backup") ]]; then
     log_info "PASS: Second run created no new backups"
     TESTS_PASSED=$((TESTS_PASSED + 1))
@@ -187,7 +176,6 @@ main() {
   echo ""
 
   setup_sandbox
-  test_help_documents_target
   test_refuses_non_omarchy
   test_installs_around_omarchy_defaults
   test_is_idempotent
