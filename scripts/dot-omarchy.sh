@@ -151,6 +151,10 @@ link_home() {
       cp -f "$workflow" "$HOME/.grok/workflows/$(basename "$workflow")"
     done
   fi
+  rm -f "$HOME/.grok/workflows/review-gauntlet.rhai"
+  if [[ -L $HOME/.local/bin/code-review-loop ]]; then
+    rm "$HOME/.local/bin/code-review-loop"
+  fi
 
   echo "✓ Home links created"
 }

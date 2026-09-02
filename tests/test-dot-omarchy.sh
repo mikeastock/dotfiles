@@ -98,6 +98,9 @@ test_refuses_non_omarchy() {
 test_installs_around_omarchy_defaults() {
   log_test "Testing installer claims personal files and leaves Omarchy terminals"
   seed_omarchy_home
+  mkdir -p "$SANDBOX_DIR/.grok/workflows" "$SANDBOX_DIR/.local/bin"
+  printf '%s\n' "retired" >"$SANDBOX_DIR/.grok/workflows/review-gauntlet.rhai"
+  ln -s /tmp/missing "$SANDBOX_DIR/.local/bin/code-review-loop"
 
   local output
   output="$(run_installer)"
@@ -109,7 +112,9 @@ test_installs_around_omarchy_defaults() {
   assert_symlink "$SANDBOX_DIR/.config/fish/config.fish" "$PROJECT_DIR/.config/fish/config.fish" "fish config is claimed"
   assert_symlink "$SANDBOX_DIR/.config/herdr/config.toml" "$PROJECT_DIR/.config/herdr/config.toml" "herdr config is claimed"
   assert_symlink "$SANDBOX_DIR/.local/bin/clipboard-copy" "$PROJECT_DIR/bin/clipboard-copy" "local bin scripts are linked"
-  assert_file_exists "$SANDBOX_DIR/.grok/workflows/review-gauntlet.rhai" "Grok workflow is copied"
+  assert_dir_exists "$SANDBOX_DIR/.grok/workflows" "Grok workflows dir is created"
+  assert_file_not_exists "$SANDBOX_DIR/.grok/workflows/review-gauntlet.rhai" "Retired Grok workflow is removed"
+  assert_file_not_exists "$SANDBOX_DIR/.local/bin/code-review-loop" "Retired code-review-loop symlink is removed"
 
   assert_file_not_exists "$SANDBOX_DIR/.config/tmux/tmux.conf" "Omarchy XDG tmux.conf is removed"
   assert_symlink \

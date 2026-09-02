@@ -191,6 +191,8 @@ dot-home-symlinks:
 			cp -f "$$wf" "$(HOME)/.grok/workflows/$$name"; \
 		done; \
 	fi
+	@rm -f $(HOME)/.grok/workflows/review-gauntlet.rhai
+	@if [ -L $(HOME)/.local/bin/code-review-loop ]; then rm $(HOME)/.local/bin/code-review-loop; fi
 	@echo "✓ Home symlinks created"
 
 # Symlink .config files and directories
@@ -267,6 +269,8 @@ dot-clean:
 			rm -f $(HOME)/.grok/workflows/$$name; \
 		done; \
 	fi
+	@rm -f $(HOME)/.grok/workflows/review-gauntlet.rhai
+	@if [ -L $(HOME)/.local/bin/code-review-loop ]; then rm $(HOME)/.local/bin/code-review-loop; fi
 	@# Config directories
 	@for dir in $(CONFIG_DIRS); do \
 		[ -L $(HOME)/.config/$$dir ] && rm $(HOME)/.config/$$dir || true; \

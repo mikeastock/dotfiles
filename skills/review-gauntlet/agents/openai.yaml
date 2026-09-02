@@ -1,6 +1,0 @@
-interface:
-  display_name: "Review Gauntlet"
-  short_description: "Multi-model review → Fable triage → fix loop"
-  default_prompt: "Use $review-gauntlet to run the multi-model review and fix loop on this PR or branch."
-policy:
-  allow_implicit_invocation: false
