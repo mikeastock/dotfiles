@@ -116,7 +116,7 @@ pi
 - `babysit-pr` — GitHub PR monitoring/babysitting workflow imported from `openai/codex` commit `7e569f1`
 - `editorial-sketches` — editorial article illustration skill vendored from `helloianneo/ian-xiaohei-illustrations` commit `91b5608`
 - `technical-explainer-comic` — evidence-backed technical comic workflow with editorial panels, expandable traces, responsive HTML, browser QA, and static publication
-- `fable-review` — trusted Claude Fable code review workflow using `claude -p --model claude-fable-5`
+- `fable-review` — trusted Claude Fable code review workflow using `claude -p --model claude-fable-5-1`
 - `grok-review` — safe Grok Build review workflow delegating branch and explicit dirty-tree reviews to Grok's native `/review` skill
 - `grok-driver` — headless Grok as implementation driver for frozen work orders, with the host agent as coordinator (complement of `grok-review`)
 - `review-gauntlet` — multi-model review → Fable triage → fix loop via the Grok `review-gauntlet` workflow / `code-review-loop` CLI (replaces review-council)

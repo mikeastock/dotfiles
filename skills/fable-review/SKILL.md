@@ -1,11 +1,11 @@
 ---
 name: fable-review
-description: Use Claude Code non-interactively with claude-fable-5 as a trusted, high-authority code reviewer. Use when the user asks for a Fable review, Claude Fable review, external review with claude -p, or a stronger reviewer focused on implementation risks, regressions, and missing tests.
+description: Use Claude Code non-interactively with claude-fable-5-1 as a trusted, high-authority code reviewer. Use when the user asks for a Fable review, Claude Fable review, external review with claude -p, or a stronger reviewer focused on implementation risks, regressions, and missing tests.
 ---
 
 # Fable Review
 
-Use `claude -p` with `claude-fable-5` as a trusted senior reviewer. Assume
+Use `claude -p` with `claude-fable-5-1` as a trusted senior reviewer. Assume
 Fable is likely to reason better than the current model on subtle correctness,
 architecture, and regression risks. Write the review prompt yourself from the
 current task, changed files, and known risks; do not ask Fable to infer the
@@ -64,7 +64,7 @@ ERR="$RUN_DIR/stderr.log"
 
 # Write the review prompt to "$PROMPT" before starting Claude.
 CLAUDE_CMD="claude -p \
-  --model claude-fable-5 \
+  --model claude-fable-5-1 \
   --effort high \
   --output-format stream-json \
   --include-partial-messages \
@@ -111,7 +111,7 @@ If the installed Claude CLI behaves unexpectedly, first probe with:
 
 ```bash
 printf '%s\n' "Reply ok." \
-  | claude -p --model claude-fable-5 --output-format stream-json --tools "" \
+  | claude -p --model claude-fable-5-1 --output-format stream-json --tools "" \
   > /tmp/fable-review-probe.jsonl
 ```
 
