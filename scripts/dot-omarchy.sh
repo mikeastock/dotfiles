@@ -143,19 +143,6 @@ link_home() {
     replace_with_symlink "$script" "$HOME/.local/bin/$name"
   done
 
-  mkdir -p "$HOME/.grok/workflows"
-  if [[ -d $REPO_ROOT/configs/grok/workflows ]]; then
-    local workflow
-    for workflow in "$REPO_ROOT"/configs/grok/workflows/*; do
-      [[ -f $workflow ]] || continue
-      cp -f "$workflow" "$HOME/.grok/workflows/$(basename "$workflow")"
-    done
-  fi
-  rm -f "$HOME/.grok/workflows/review-gauntlet.rhai"
-  if [[ -L $HOME/.local/bin/code-review-loop ]]; then
-    rm "$HOME/.local/bin/code-review-loop"
-  fi
-
   echo "✓ Home links created"
 }
 

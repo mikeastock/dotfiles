@@ -182,17 +182,6 @@ dot-home-symlinks:
 			ln -s $$script $(HOME)/.local/bin/$$name; \
 		fi; \
 	done
-	@# Copy Grok user workflows into ~/.grok/workflows/ (Grok cannot load symlink manifests)
-	@mkdir -p $(HOME)/.grok/workflows
-	@if [ -d $(CURDIR)/configs/grok/workflows ]; then \
-		for wf in $(CURDIR)/configs/grok/workflows/*; do \
-			[ -f "$$wf" ] || continue; \
-			name=$$(basename $$wf); \
-			cp -f "$$wf" "$(HOME)/.grok/workflows/$$name"; \
-		done; \
-	fi
-	@rm -f $(HOME)/.grok/workflows/review-gauntlet.rhai
-	@if [ -L $(HOME)/.local/bin/code-review-loop ]; then rm $(HOME)/.local/bin/code-review-loop; fi
 	@echo "✓ Home symlinks created"
 
 # Symlink .config files and directories
@@ -256,21 +245,10 @@ dot-clean:
 		[ -L $(HOME)/$$link ] && rm $(HOME)/$$link || true; \
 	done
 	@# ~/.local/bin scripts
-	@[ -L $(HOME)/.local/bin/tmux-status-load ] && rm $(HOME)/.local/bin/tmux-status-load || true
 	@for script in $(CURDIR)/bin/*; do \
 		name=$$(basename $$script); \
 		[ -L $(HOME)/.local/bin/$$name ] && rm $(HOME)/.local/bin/$$name || true; \
 	done
-	@# ~/.grok/workflows (managed copies — remove by known basename)
-	@if [ -d $(CURDIR)/configs/grok/workflows ]; then \
-		for wf in $(CURDIR)/configs/grok/workflows/*; do \
-			[ -f "$$wf" ] || continue; \
-			name=$$(basename $$wf); \
-			rm -f $(HOME)/.grok/workflows/$$name; \
-		done; \
-	fi
-	@rm -f $(HOME)/.grok/workflows/review-gauntlet.rhai
-	@if [ -L $(HOME)/.local/bin/code-review-loop ]; then rm $(HOME)/.local/bin/code-review-loop; fi
 	@# Config directories
 	@for dir in $(CONFIG_DIRS); do \
 		[ -L $(HOME)/.config/$$dir ] && rm $(HOME)/.config/$$dir || true; \

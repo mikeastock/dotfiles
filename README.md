@@ -150,14 +150,14 @@ pi
 - `/merge-main` - merge the latest base branch into the current branch with conflict and verification guardrails
 - `/open-pr` - push the current branch and open a PR with summary and verification
 - `/pr-comments` - fetch PR review comments and evaluate them before changing code
-- `/review-loop` - run a parent-orchestrated adversarial review loop
+- `/refactor-pass` - simplify recent changes
+- `/simplify` - design a simplification plan before implementation
 
 ### Notable custom Pi extensions
 
 - `handoff` and `session-query` — vendored from `buildrtech/dotagents` commit `a484ad4`
 - `openai-fast` — mirrors `calesennett/pi-codex-fast`; `/codex-fast` toggles priority service-tier requests for supported OpenAI Codex models, shows an inline `⚡` beside the model without adding a status line, and stores state under `pi-codex-fast.enabled` in Pi settings
 - `pi-prompt-shelf` — local copy of `tanishqkancharla/pi-prompt-shelf`; shelves editor prompts per session with shortcuts and `/shelf`
-- `pi-codex-conversion` — local copy of `IgorWarzocha/pi-codex-conversion`; adds Codex-style tools and prompt adaptation for OpenAI/Codex models in Pi
 - `full-read-for-paths` — upgrades partial `read` calls to full reads for configured resource-file paths
 - `revdiff` — adds `/revdiff` to launch the revdiff TUI and send captured annotations back to Pi
 
@@ -168,7 +168,7 @@ dotfiles/
 ├── .config/                 # shell/editor/terminal configs
 ├── skills/                  # custom agent skills
 ├── amp-configs/             # managed Amp settings
-├── configs/                 # managed agent configs (Codex, OpenCode, Grok)
+├── configs/                 # managed agent configs (Codex, OpenCode, Omarchy)
 ├── amp-plugins/             # custom Amp plugins
 ├── pi-extensions/           # Pi extensions
 ├── pi-themes/               # Pi themes

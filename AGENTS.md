@@ -13,19 +13,14 @@ Skills are specialized instruction sets that guide AI agents through specific ta
 ## Repository Structure
 
 ```
-agents/
 ├── plugins.toml                    # Plugin configuration (URLs, enabled items, paths)
 ├── plugins/                        # Git submodules (skill sources, owner-repo format)
-│   ├── anthropics-skills/          # github.com/anthropics/skills
-│   └── mitsuhiko-agent-stuff/      # github.com/mitsuhiko/agent-stuff
+│   └── <owner>-<repo>/
 ├── skills/                         # Custom skills (local)
 │   └── <skill-name>/
 │       ├── SKILL.md                # Skill definition (YAML frontmatter + markdown)
 │       └── <additional files>      # Supporting scripts/resources
-├── skill-overrides/                # Agent-specific appends
-│   └── <skill>-<agent>.md          # Appended to SKILL.md during build
 ├── pi-extensions/                  # Custom Pi extensions (local)
-│   ├── protected-paths/
 │   └── <extension-name>/index.ts
 ├── scripts/
 │   └── build.py                    # Python build system (requires Python 3.11+)
@@ -34,11 +29,19 @@ agents/
 │   ├── test-make.sh                # Makefile tests
 │   ├── test-install-configs.sh     # Agent config install tests
 │   ├── test-skill-doctor.sh        # skill-doctor collector/renderer tests
+│   ├── test-dot-omarchy.sh         # Omarchy installer tests
+│   ├── test-grok-review.sh         # grok-review launcher tests
+│   ├── test-amp-worktree.sh        # amp-worktree tests
+│   ├── test-pi-install.sh          # pi-install tests
+│   ├── test-technical-explainer-comic.sh
+│   ├── test-tmux-skill-scripts.sh
 │   ├── *.test.ts                   # TypeScript tests (pnpm test)
 │   └── run-all.sh                  # Run all shell suites
 ├── build/                          # Generated during build (gitignored)
-│   ├── claude/                     # Skills built for Claude Code
-│   └── pi/                         # Skills built for Pi
+│   ├── amp/
+│   ├── claude/
+│   ├── codex/
+│   └── pi/
 ├── Makefile                        # Build and install automation
 └── README.md                       # User documentation
 ```
@@ -84,7 +87,6 @@ make install
 | `make install-extensions` | Install Pi extensions only |
 | `make clean` | Remove all installed artifacts and build directory |
 | `make plugin-update` | Update all plugin submodules to latest |
-| `make agents-config` | Configure all agents to use their own skills directories (avoid duplicates) |
 
 ### Testing
 ```bash
@@ -97,7 +99,7 @@ pnpm typecheck
 Tests use a sandbox environment (temporary HOME directory) to avoid affecting real agent installations. The test framework provides assertion helpers in `tests/test-helpers.sh`.
 
 ### CI/CD
-GitHub Actions runs `./tests/run-all.sh` on push/PR to main/master branches.
+GitHub Actions (`.github/workflows/test.yml`) runs `./tests/run-all.sh`, `pnpm test`, `pnpm typecheck`, and the bb-plugin-t3sidebar tests/typecheck on push/PR to main/master.
 
 ## Code Conventions
 
@@ -178,6 +180,7 @@ Extensions use the unified `ExtensionAPI` which provides:
 |-------|--------|------------|--------|
 | Amp | `~/.config/agents/skills/` | N/A | `~/.config/amp/settings.json` |
 | Claude Code | `~/.claude/skills/` | N/A | N/A |
+| Codex | `~/.codex/skills/` | N/A | `~/.codex/config.toml` |
 | OpenCode | N/A | N/A | `~/.config/opencode/opencode.jsonc` |
 | Pi Agent | `~/.agents/skills/` | `~/.pi/agent/extensions/` | `~/.pi/agent/settings.json` |
 
@@ -190,7 +193,7 @@ Extensions use the unified `ExtensionAPI` which provides:
 4. Add any supporting files to the same directory
 5. When vendoring an upstream skill, read its `description` before copying it verbatim. A description that claims every turn ("must always apply", "use on any task") will auto-trigger on unrelated work; narrow it to the explicit ask or add `metadata.user-invocable-only: "true"`.
 6. Run `make install` to build and install
-7. Update README.md: add to "Custom Skills" table and directory structure
+7. Update README.md: add to "Notable custom skills" and directory structure
 
 ### Adding a Skill Override
 1. Create `skill-overrides/<skill-name>-<agent>.md` (agent: `claude` or `pi`)
@@ -200,7 +203,7 @@ Extensions use the unified `ExtensionAPI` which provides:
 1. Fetch the [Pi Coding Agent extensions documentation](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/extensions.md) for the current API
 2. Create `pi-extensions/<extension-name>/index.ts` following the documentation
 3. Run `make install-extensions`
-4. Update README.md: add to "Available Extensions" table and directory structure
+4. Update README.md: add to "Notable custom Pi extensions" and directory structure
 
 ### Adding a New Plugin
 1. Add submodule: `git submodule add <url> plugins/<owner>-<repo>`
@@ -217,7 +220,6 @@ Extensions use the unified `ExtensionAPI` which provides:
 - Skills are **copied** (not symlinked) during installation
 - The `build/` directory is regenerated on each build
 - Running `make clean` removes both installed files and build artifacts
-- Use `make pi-skills-config` after installation to prevent duplicate skill warnings in Pi when using Claude skill directories
-- **Keep README.md up to date**: When adding, removing, or renaming skills or extensions, update the corresponding tables and directory structure in README.md
+- **Keep README.md up to date**: When adding, removing, or renaming skills or extensions, update the corresponding README lists and directory structure
 - **Keep this file's test list current**: When adding, removing, or renaming a test script or CI step, update the `tests/` tree and Testing section above in the same change
 - **Requires Python 3.11+** for the build system (uses `tomllib` from stdlib)
