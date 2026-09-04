@@ -28,8 +28,12 @@ test_config_new_files() {
 
     local opencode_json
     opencode_json=$(cat "$SANDBOX_DIR/.config/opencode/opencode.jsonc")
-    assert_json_field "$opencode_json" '.model' "runinfra/deepseek-v4-flash" "OpenCode: default model is RunInfra DeepSeek V4 Flash"
+    assert_json_field "$opencode_json" '.model' "meta/muse-spark-1.2" "OpenCode: default model is Muse Spark 1.2"
     assert_json_field "$opencode_json" '.small_model' "runinfra/nemotron-3-5-lightning-30b" "OpenCode: small model is RunInfra Nemotron"
+    assert_json_field "$opencode_json" '.provider.meta.options.baseURL' "https://api.meta.ai/v1" "OpenCode: Meta Model API base URL is set"
+    assert_json_field "$opencode_json" '.provider.meta.options.apiKey' "{env:MODEL_API_KEY}" "OpenCode: Meta apiKey reads MODEL_API_KEY"
+    assert_json_field "$opencode_json" '.provider.meta.models["muse-spark-1.3"].name' "Muse Spark 1.3" "OpenCode: Muse Spark 1.3 model is registered"
+    assert_json_field "$opencode_json" '.provider.meta.models["muse-spark-1.2"].name' "Muse Spark 1.2" "OpenCode: Muse Spark 1.2 model is registered"
     assert_json_field "$opencode_json" '.provider.runinfra.options.baseURL' "https://api.runinfra.ai/v1" "OpenCode: RunInfra base URL is set"
     assert_success "Codex receives the managed AGENTS.md" cmp "$PROJECT_DIR/configs/AGENTS.md" "$SANDBOX_DIR/.codex/AGENTS.md"
     assert_success "Pi receives the managed AGENTS.md" cmp "$PROJECT_DIR/configs/AGENTS.md" "$SANDBOX_DIR/.pi/agent/AGENTS.md"
@@ -192,7 +196,8 @@ EOF
 
     local opencode_json
     opencode_json=$(cat "$SANDBOX_DIR/.config/opencode/opencode.jsonc")
-    assert_json_field "$opencode_json" '.model' "runinfra/deepseek-v4-flash" "OpenCode: managed default model wins"
+    assert_json_field "$opencode_json" '.model' "meta/muse-spark-1.2" "OpenCode: managed default model wins"
+    assert_json_field "$opencode_json" '.provider.meta.name' "Meta Model API" "OpenCode: Meta Model API provider is installed"
     assert_json_field "$opencode_json" '.provider.runinfra.name' "RunInfra" "OpenCode: RunInfra provider is installed"
     assert_json_field "$opencode_json" '.provider.modal.name' "Modal" "OpenCode: existing Modal provider is preserved"
     assert_json_field "$opencode_json" '.provider.modal.options.baseURL' "https://inference.example.modal.direct/v1" "OpenCode: existing provider options are preserved"

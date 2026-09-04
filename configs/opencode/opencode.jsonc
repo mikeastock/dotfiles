@@ -1,8 +1,64 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "model": "runinfra/deepseek-v4-flash",
+  "model": "meta/muse-spark-1.2",
   "small_model": "runinfra/nemotron-3-5-lightning-30b",
   "provider": {
+    "meta": {
+      "npm": "@ai-sdk/openai",
+      "name": "Meta Model API",
+      "env": ["MODEL_API_KEY"],
+      "options": {
+        "baseURL": "https://api.meta.ai/v1",
+        "apiKey": "{env:MODEL_API_KEY}",
+        "timeout": 240000
+      },
+      "models": {
+        "muse-spark-1.3": {
+          "name": "Muse Spark 1.3",
+          "reasoning": true,
+          "limit": {
+            "context": 1048576,
+            "output": 131072
+          },
+          "cost": {
+            "input": 1.25,
+            "output": 4.25,
+            "cache_read": 0.15
+          },
+          "modalities": {
+            "input": ["text", "image", "pdf", "video"],
+            "output": ["text"]
+          },
+          "options": {
+            "reasoningEffort": "high",
+            "reasoningSummary": "auto",
+            "include": ["reasoning.encrypted_content"]
+          }
+        },
+        "muse-spark-1.2": {
+          "name": "Muse Spark 1.2",
+          "reasoning": true,
+          "limit": {
+            "context": 1048576,
+            "output": 131072
+          },
+          "cost": {
+            "input": 1.25,
+            "output": 4.25,
+            "cache_read": 0.15
+          },
+          "modalities": {
+            "input": ["text", "image", "pdf", "video"],
+            "output": ["text"]
+          },
+          "options": {
+            "reasoningEffort": "high",
+            "reasoningSummary": "auto",
+            "include": ["reasoning.encrypted_content"]
+          }
+        }
+      }
+    },
     "runinfra": {
       "npm": "@ai-sdk/openai-compatible",
       "name": "RunInfra",

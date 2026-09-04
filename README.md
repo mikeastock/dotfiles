@@ -92,7 +92,7 @@ Amp settings live in `amp-configs/settings.json`. `make install-configs` merges 
 
 ### OpenCode config
 
-OpenCode config lives in `configs/opencode/opencode.jsonc`. `make install-configs` overlays the managed RunInfra provider, default model, and small model onto `~/.config/opencode/opencode.jsonc` (or `opencode.json` if that file already exists) while preserving any other local providers. A locally hardcoded `provider.runinfra.options.apiKey` is kept; the tracked file uses `{env:RUNINFRA_GATEWAY_KEY}` so the secret is not in git.
+OpenCode config lives in `configs/opencode/opencode.jsonc`. `make install-configs` overlays the managed Meta and RunInfra providers, default model, and small model onto `~/.config/opencode/opencode.jsonc` (or `opencode.json` if that file already exists) while preserving any other local providers. Locally hardcoded provider `apiKey` values are kept; the tracked file uses `{env:MODEL_API_KEY}` and `{env:RUNINFRA_GATEWAY_KEY}` so secrets are not in git. The default model is `meta/muse-spark-1.2` (Meta Model API via the Responses adapter). `muse-spark-1.3` is also registered for when the account has access.
 
 ### Managed install behavior
 
