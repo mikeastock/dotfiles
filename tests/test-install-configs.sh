@@ -44,6 +44,10 @@ test_config_new_files() {
     assert_json_field "$pi_models_json" '.providers.google.models[0].name' "Gemini 3.8 Flash" "Pi: Gemini 3.8 Flash model is registered"
     assert_json_field "$pi_models_json" '.providers["novita-ai"].models[0].name' "Kimi K2.7 Code (Novita)" "Pi: Kimi K2.7 Code model is registered"
 
+    local pi_settings_json
+    pi_settings_json=$(cat "$SANDBOX_DIR/.pi/agent/settings.json")
+    assert_json_field "$pi_settings_json" '.enabledModels[4]' "google/gemini-3.8-flash" "Pi: Gemini 3.8 Flash is in enabledModels"
+
     local amp_json
     amp_json=$(cat "$SANDBOX_DIR/.config/amp/settings.json")
     assert_json_field "$amp_json" '."amp.skills.path"' "~/.config/agents/skills" "Amp: skills.path comes from amp-configs"
