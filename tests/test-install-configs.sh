@@ -38,6 +38,12 @@ test_config_new_files() {
     assert_success "Codex receives the managed AGENTS.md" cmp "$PROJECT_DIR/configs/AGENTS.md" "$SANDBOX_DIR/.codex/AGENTS.md"
     assert_success "Pi receives the managed AGENTS.md" cmp "$PROJECT_DIR/configs/AGENTS.md" "$SANDBOX_DIR/.pi/agent/AGENTS.md"
 
+    local pi_models_json
+    pi_models_json=$(cat "$SANDBOX_DIR/.pi/agent/models.json")
+    assert_json_field "$pi_models_json" '.providers.meta.models[0].name' "Muse Spark 1.3" "Pi: Muse Spark 1.3 model is registered"
+    assert_json_field "$pi_models_json" '.providers.google.models[0].name' "Gemini 3.8 Flash" "Pi: Gemini 3.8 Flash model is registered"
+    assert_json_field "$pi_models_json" '.providers["novita-ai"].models[0].name' "Kimi K2.7 Code (Novita)" "Pi: Kimi K2.7 Code model is registered"
+
     local amp_json
     amp_json=$(cat "$SANDBOX_DIR/.config/amp/settings.json")
     assert_json_field "$amp_json" '."amp.skills.path"' "~/.config/agents/skills" "Amp: skills.path comes from amp-configs"

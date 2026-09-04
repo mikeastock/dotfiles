@@ -1,67 +1,97 @@
 {
   "providers": {
-    "fireworks": {
+    "google": {
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta",
+      "api": "google-generative-ai",
+      "apiKey": "$GEMINI_API_KEY",
       "models": [
         {
-          "id": "accounts/fireworks/routers/kimi-k2p6-turbo",
-          "name": "Kimi K2.6 Turbo",
-          "api": "anthropic-messages",
+          "id": "gemini-3.8-flash",
+          "name": "Gemini 3.8 Flash",
           "reasoning": true,
-          "input": ["text", "image"],
-          "contextWindow": 262000,
-          "maxTokens": 262000,
+          "thinkingLevelMap": {
+            "off": null
+          },
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 1048576,
+          "maxTokens": 65536,
           "cost": {
-            "input": 0,
-            "output": 0,
-            "cacheRead": 0,
-            "cacheWrite": 0
-          }
-        },
-        {
-          "id": "accounts/fireworks/models/glm-5p2",
-          "name": "GLM 5.2",
-          "api": "openai-completions",
-          "baseUrl": "https://api.fireworks.ai/inference/v1",
-          "reasoning": true,
-          "input": ["text"],
-          "contextWindow": 1000000,
-          "maxTokens": 131072,
-          "cost": {
-            "input": 1.4,
-            "output": 4.4,
-            "cacheRead": 0.26,
+            "input": 0.75,
+            "output": 3.75,
+            "cacheRead": 0.075,
             "cacheWrite": 0
           }
         }
       ]
     },
-    "baseten": {
-      "name": "Baseten",
-      "baseUrl": "https://inference.baseten.co/v1",
-      "api": "openai-completions",
-      "apiKey": "$BASETEN_API_KEY",
-      "headers": {
-        "Authorization": "Api-Key $BASETEN_API_KEY"
+    "meta": {
+      "name": "Meta Model API",
+      "baseUrl": "https://api.meta.ai/v1",
+      "api": "openai-responses",
+      "apiKey": "$MODEL_API_KEY",
+      "compat": {
+        "supportsDeveloperRole": true,
+        "supportsStrictMode": true,
+        "supportsLongCacheRetention": true
       },
+      "models": [
+        {
+          "id": "muse-spark-1.3",
+          "name": "Muse Spark 1.3",
+          "reasoning": true,
+          "thinkingLevelMap": {
+            "off": null,
+            "minimal": "minimal",
+            "low": "low",
+            "medium": "medium",
+            "high": "high",
+            "xhigh": "xhigh"
+          },
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 1048576,
+          "maxTokens": 131072,
+          "cost": {
+            "input": 1.25,
+            "output": 4.25,
+            "cacheRead": 0.15,
+            "cacheWrite": 0
+          }
+        }
+      ]
+    },
+    "novita-ai": {
+      "baseUrl": "https://api.novita.ai/openai/v1",
+      "api": "openai-completions",
+      "apiKey": "$NOVITA_API_KEY",
       "compat": {
         "supportsStore": false,
         "supportsDeveloperRole": false,
         "supportsReasoningEffort": false,
         "maxTokensField": "max_tokens",
-        "supportsStrictMode": false
+        "supportsStrictMode": false,
+        "thinkingFormat": "deepseek"
       },
       "models": [
         {
-          "id": "zai-org/GLM-5.2",
-          "name": "GLM 5.2 (Baseten)",
+          "id": "moonshotai/kimi-k2.7-code",
+          "name": "Kimi K2.7 Code (Novita)",
           "reasoning": true,
-          "input": ["text"],
-          "contextWindow": 1000000,
-          "maxTokens": 131072,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 262144,
+          "maxTokens": 262144,
           "cost": {
-            "input": 1.5,
-            "output": 4.5,
-            "cacheRead": 0.3,
+            "input": 0.95,
+            "output": 4,
+            "cacheRead": 0.19,
             "cacheWrite": 0
           }
         }
@@ -104,6 +134,80 @@
             "input": 0,
             "output": 0,
             "cacheRead": 0,
+            "cacheWrite": 0
+          }
+        }
+      ]
+    },
+    "fireworks": {
+      "models": [
+        {
+          "id": "accounts/fireworks/routers/kimi-k2p6-turbo",
+          "name": "Kimi K2.6 Turbo",
+          "api": "anthropic-messages",
+          "reasoning": true,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 262000,
+          "maxTokens": 262000,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          }
+        },
+        {
+          "id": "accounts/fireworks/models/glm-5p2",
+          "name": "GLM 5.2",
+          "api": "openai-completions",
+          "baseUrl": "https://api.fireworks.ai/inference/v1",
+          "reasoning": true,
+          "input": [
+            "text"
+          ],
+          "contextWindow": 1000000,
+          "maxTokens": 131072,
+          "cost": {
+            "input": 1.4,
+            "output": 4.4,
+            "cacheRead": 0.26,
+            "cacheWrite": 0
+          }
+        }
+      ]
+    },
+    "baseten": {
+      "name": "Baseten",
+      "baseUrl": "https://inference.baseten.co/v1",
+      "api": "openai-completions",
+      "apiKey": "$BASETEN_API_KEY",
+      "headers": {
+        "Authorization": "Api-Key $BASETEN_API_KEY"
+      },
+      "compat": {
+        "supportsStore": false,
+        "supportsDeveloperRole": false,
+        "supportsReasoningEffort": false,
+        "maxTokensField": "max_tokens",
+        "supportsStrictMode": false
+      },
+      "models": [
+        {
+          "id": "zai-org/GLM-5.2",
+          "name": "GLM 5.2 (Baseten)",
+          "reasoning": true,
+          "input": [
+            "text"
+          ],
+          "contextWindow": 1000000,
+          "maxTokens": 131072,
+          "cost": {
+            "input": 1.5,
+            "output": 4.5,
+            "cacheRead": 0.3,
             "cacheWrite": 0
           }
         }
