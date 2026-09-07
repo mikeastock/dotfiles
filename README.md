@@ -120,6 +120,7 @@ pi
 - `grok-review` — safe Grok Build review workflow delegating branch and explicit dirty-tree reviews to Grok's native `/review` skill
 - `grok-driver` — headless Grok as implementation driver for frozen work orders, with the host agent as coordinator (complement of `grok-review`)
 - `writing-mike-ruby-style` — Mike's personal Ruby/Rails style (mirrors his canonical style rules)
+- `writing-pr` — concise PR titles and bodies with diagrams, code examples, and before/after evidence
 - `prepare-branch-context` — read-only branch diff, commit, and PR context gathering skill vendored from `jnsahaj/skills`
 - `simplify` — code and comment simplification skill vendored from `bholmesdev/skills`, extended to cut over-engineering and needless defensiveness (explicit invocation only)
 - `unslop` — AI-writing cleanup and human-voice editing skill vendored from `cursor/plugins` commit `99559f2` (explicit invocation only)
@@ -167,6 +168,7 @@ pi
 dotfiles/
 ├── .config/                 # shell/editor/terminal configs
 ├── skills/                  # custom agent skills
+│   └── writing-pr/          # PR title and body guidance
 ├── amp-configs/             # managed Amp settings
 ├── configs/                 # managed agent configs (Codex, OpenCode, Omarchy)
 ├── amp-plugins/             # custom Amp plugins
