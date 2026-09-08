@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PATCH_FILE="$SCRIPT_DIR/pi-ghostty-tmux-image.patch"
 PLACEHOLDER_SRC="$SCRIPT_DIR/kitty-unicode-placeholder-diacritics.js"
-NODE_INSTALLS_DIR="$HOME/.local/share/mise/installs/node"
+MANAGED_INSTALL_DIR="${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}/install"
 
 require_file() {
   local path="$1"
@@ -25,27 +25,21 @@ resolve_pi_root() {
       return
     fi
 
-    local by_version="$NODE_INSTALLS_DIR/$arg/lib/node_modules/@earendil-works/pi-coding-agent"
-    if [[ -d "$by_version" ]]; then
-      echo "$by_version"
-      return
-    fi
-
     echo "Could not resolve pi install from argument: $arg" >&2
     exit 1
   fi
 
-  local latest_version
-  latest_version="$(fd . "$NODE_INSTALLS_DIR" --max-depth 1 --type d | xargs -n1 basename | sort -V | tail -n 1)"
-
-  if [[ -z "$latest_version" ]]; then
-    echo "No Node installs found under: $NODE_INSTALLS_DIR" >&2
+  local current_file="$MANAGED_INSTALL_DIR/current-version"
+  if [[ ! -f "$current_file" ]]; then
+    echo "No managed Pi install found at: $MANAGED_INSTALL_DIR" >&2
     exit 1
   fi
 
-  local root="$NODE_INSTALLS_DIR/$latest_version/lib/node_modules/@earendil-works/pi-coding-agent"
+  local version
+  version="$(tr -d '[:space:]' < "$current_file")"
+  local root="$MANAGED_INSTALL_DIR/releases/$version"
   if [[ ! -d "$root" ]]; then
-    echo "Install found but pi package path missing: $root" >&2
+    echo "Managed Pi release missing: $root" >&2
     exit 1
   fi
 
@@ -55,7 +49,7 @@ resolve_pi_root() {
 extract_version() {
   local pi_root="$1"
 
-  if [[ "$pi_root" =~ /installs/node/([^/]+)/ ]]; then
+  if [[ "$pi_root" =~ /releases/([^/]+) ]]; then
     echo "${BASH_REMATCH[1]}"
     return
   fi

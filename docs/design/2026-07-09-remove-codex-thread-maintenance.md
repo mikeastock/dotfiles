@@ -38,5 +38,5 @@ If a managed block is malformed or lacks either boundary marker, stop without ch
 - Confirm the deleted repository paths are absent.
 - Search the repository, excluding this design record, for command and helper references.
 - Run `./tests/test-make.sh` and `./tests/test-install-configs.sh`.
-- As a one-time deletion verification, run `make dot-home-symlinks` with `HOME` set to a temporary sandbox. Confirm an unrelated command such as `pi-install` is installed as a symlink, and confirm neither removed command exists as a path or symlink. No permanent regression test is needed because the removed files cannot re-enter the generic `bin/*` installer without being added to the repository again.
+- As a one-time deletion verification, run `make dot-home-symlinks` with `HOME` set to a temporary sandbox. Confirm an unrelated command such as `amp-worktree` is installed as a symlink, and confirm neither removed command exists as a path or symlink. No permanent regression test is needed because the removed files cannot re-enter the generic `bin/*` installer without being added to the repository again.
 - Leave `/tmp/codex-archive-old-threads*` and `/tmp/codex-prefix-thread-projects*` untouched.

@@ -32,7 +32,6 @@ Skills are specialized instruction sets that guide AI agents through specific ta
 │   ├── test-dot-omarchy.sh         # Omarchy installer tests
 │   ├── test-grok-review.sh         # grok-review launcher tests
 │   ├── test-amp-worktree.sh        # amp-worktree tests
-│   ├── test-pi-install.sh          # pi-install tests
 │   ├── test-technical-explainer-comic.sh
 │   ├── test-tmux-skill-scripts.sh
 │   ├── *.test.ts                   # TypeScript tests (pnpm test)

@@ -100,16 +100,16 @@ OpenCode config lives in `configs/opencode/opencode.jsonc`. `make install-config
 
 Plugin skills can be restricted to explicit user invocation with `skills_user_invocable_only` in `plugins.toml`. Custom skills use `metadata.user-invocable-only: true` in `SKILL.md`. The build emits `disable-model-invocation: true` for Claude and Pi, plus `policy.allow_implicit_invocation: false` in `agents/openai.yaml` for Codex. The Codex metadata is included in the Pi/shared build because Codex also scans `~/.agents/skills`.
 
-### Canonical Pi install
+### Pi
+
+Pi itself is the official experimental managed install under `~/.pi`:
 
 ```bash
-pi-install
-pi
+curl -fsSL https://pi.dev/install.sh | PI_EXPERIMENTAL=1 sh
+pi update
 ```
 
-- Canonical Pi tool: `npm:@earendil-works/pi-coding-agent@latest` in global mise config
-- `pi-install` installs or updates Pi through mise, runs `make install-configs`, and applies `pi-configs/pi-patch/` to the mise-managed package root
-- `pi` is provided by mise after installation/reshim
+This repo still installs Pi configs, extensions, prompts, and themes with `make install`. `pi-configs/pi-patch/` is an optional Ghostty/tmux image patch for that managed install.
 
 ### Notable custom skills
 

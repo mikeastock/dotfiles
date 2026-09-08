@@ -125,7 +125,6 @@ function tf -d "Run Terraform, preferring a repo-specific mise terraform task"
   end
 end
 alias n="corepack pnpm"
-alias piu="npm install -g @mariozechner/pi-coding-agent"
 
 # app checkouts
 function __buildr_app_cd --argument-names app_name
