@@ -49,23 +49,72 @@ export const BOT_AVATAR_EXPRESSIONS = [
   "shy",
   "unimpressed",
 ] as const;
+export const BOT_AVATAR_MOTIONS = ["calm", "playful", "still"] as const;
 export type BotAvatarShape = (typeof BOT_AVATAR_SHAPES)[number];
 export type BotAvatarExpression = (typeof BOT_AVATAR_EXPRESSIONS)[number];
+export type BotAvatarMotion = (typeof BOT_AVATAR_MOTIONS)[number];
+
+/** The bots plugin's chromatic palette, offered as swatches in the editor. */
+export const BOT_AVATAR_COLORS = [
+  "#6d5efc",
+  "#e44f67",
+  "#168b75",
+  "#cb7428",
+  "#2f6dcc",
+  "#8b5e3c",
+  "#e8483f",
+  "#f08a24",
+  "#f0b429",
+  "#3ecf8e",
+  "#2fbfa0",
+  "#3b93f0",
+  "#8b5cf6",
+  "#e152b0",
+] as const;
 
 const id = z.string().min(1);
+const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/);
+
+/** An avatar as this plugin sends one: every field checked, nothing forgiven. */
+export const botAvatarInputSchema = z
+  .object({
+    color: hexColor,
+    shape: z.enum(BOT_AVATAR_SHAPES),
+    expression: z.enum(BOT_AVATAR_EXPRESSIONS),
+    motion: z.enum(BOT_AVATAR_MOTIONS),
+  })
+  .strict();
 
 // `.catch()` throughout: the bots plugin is somebody else's, and a shape or
 // expression it ships tomorrow must degrade to a default here, not take the
 // whole shelf down with a validation error.
 export const botAvatarSchema = z.object({
-  color: z
-    .string()
-    .regex(/^#[0-9a-fA-F]{6}$/)
-    .catch("#6d5efc"),
+  color: hexColor.catch("#6d5efc"),
   shape: z.enum(BOT_AVATAR_SHAPES).catch("round"),
   expression: z.enum(BOT_AVATAR_EXPRESSIONS).catch("curious"),
+  // Not drawn here — this plugin's faces hold still — but sent back on an
+  // edit, so a bot keeps the motion it had.
+  motion: z.enum(BOT_AVATAR_MOTIONS).catch("calm"),
 });
 export type BotAvatar = z.infer<typeof botAvatarSchema>;
+
+function pick<T>(items: readonly T[], random: () => number): T {
+  const index = Math.min(
+    items.length - 1,
+    Math.max(0, Math.floor(random() * items.length)),
+  );
+  return items[index]!;
+}
+
+/** One roll of colour, silhouette and face for a new bot. */
+export function randomAvatar(random: () => number = Math.random): BotAvatar {
+  return {
+    color: pick(BOT_AVATAR_COLORS, random),
+    shape: pick(BOT_AVATAR_SHAPES, random),
+    expression: pick(BOT_AVATAR_EXPRESSIONS, random),
+    motion: "calm",
+  };
+}
 
 /**
  * One bot, narrowed to what a sidebar row needs. Unknown keys are dropped at
@@ -77,6 +126,8 @@ export const sidebarBotSchema = z.object({
   name: z.string(),
   role: z.string().catch(""),
   avatar: botAvatarSchema,
+  /** The bot's default machine; where a projectless chat with it runs. */
+  hostId: z.string().catch(""),
   mainThreadId: z.string().nullable().catch(null),
   hiddenUntilActivity: z.boolean().catch(false),
   hiddenAt: z.number().nullable().catch(null),
@@ -96,13 +147,61 @@ export type BotSection = z.infer<typeof botSectionSchema>;
 export const botBindingSchema = z.object({ threadId: id, botId: id });
 export type BotBinding = z.infer<typeof botBindingSchema>;
 
+export const botHostSchema = z.object({
+  id,
+  name: z.string(),
+  connected: z.boolean().catch(false),
+});
+export type BotHost = z.infer<typeof botHostSchema>;
+
 /** The part of `bots_list`'s answer this sidebar reads. */
 export const botsListSchema = z.object({
   bots: z.array(sidebarBotSchema),
   sections: z.array(botSectionSchema).catch([]),
   threadBindings: z.array(botBindingSchema).catch([]),
+  // For the editor's machine picker and a projectless conversation.
+  hosts: z.array(botHostSchema).catch([]),
+  personalProjectId: z.string().nullable().catch(null),
 });
 export type BotsList = z.infer<typeof botsListSchema>;
+
+const stateHashesSchema = z.object({
+  "SOUL.md": z.string().nullable().catch(null),
+  "AGENTS.md": z.string().nullable().catch(null),
+  "MEMORY.md": z.string().nullable().catch(null),
+  "settings.json": z.string().nullable().catch(null),
+});
+
+/**
+ * What the editor needs to change a bot, read fresh when it opens: the
+ * identity fields, plus the revision and hashes the bots plugin checks so a
+ * save cannot overwrite an edit made elsewhere. Memory and settings stay out.
+ */
+export const editorBotSchema = z.object({
+  id,
+  name: z.string(),
+  role: z.string().catch(""),
+  avatar: botAvatarSchema,
+  hostId: z.string().catch(""),
+  sectionId: z.string().nullable().catch(null),
+  linkedProjectIds: z.array(z.string()).catch([]),
+  soul: z.string().catch(""),
+  updatedAt: z.number(),
+  stateHashes: stateHashesSchema,
+});
+export type EditorBot = z.infer<typeof editorBotSchema>;
+
+/** The fields the editor writes, for a new bot and an existing one alike. */
+export const botDraftSchema = z
+  .object({
+    name: z.string().trim().min(1).max(120),
+    role: z.string().trim().max(80),
+    hostId: id,
+    avatar: botAvatarInputSchema,
+    soul: z.string().max(4096),
+  })
+  .strict();
+export type BotDraft = z.infer<typeof botDraftSchema>;
 
 /**
  * What this plugin's own `listBots` answers with. "Unavailable" is a normal
@@ -115,6 +214,8 @@ export const botsSnapshotSchema = z.discriminatedUnion("available", [
     bots: z.array(sidebarBotSchema),
     sections: z.array(botSectionSchema),
     bindings: z.array(botBindingSchema),
+    hosts: z.array(botHostSchema),
+    personalProjectId: z.string().nullable(),
   }),
   z.object({ available: z.literal(false), reason: z.string() }),
 ]);
@@ -126,6 +227,8 @@ export function snapshotFromList(list: BotsList): BotsSnapshot {
     bots: list.bots,
     sections: list.sections,
     bindings: list.threadBindings,
+    hosts: list.hosts,
+    personalProjectId: list.personalProjectId,
   };
 }
 

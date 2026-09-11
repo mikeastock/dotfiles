@@ -64,16 +64,35 @@ Inactive, Snoozed and Settled stay flat, project scope applies to bots (a
 scoped list shows the bots linked to or working in that project), and search
 keeps its flat results.
 
-Nothing here writes to the bots plugin. Creating, editing, assigning and
-hiding bots stay in Bots Sidebar; switch to it under **Settings > Appearance
-> Sidebar** for those, and back again.
+Bots are managed from here too, so there is no need to switch sidebars:
+
+- **New bot** — the `+` in the Bots shelf header, or the "Create your first
+  bot" row while there are none. Name, role, machine, a face (colour,
+  silhouette, expression, or Randomize) and instructions; Save is explicit.
+  The bot's first conversation opens straight after, in bb's own composer,
+  and becomes its main one.
+- **New conversation with a bot** — the `+` that appears on hover over the
+  bot row, or right-click → New conversation…. bb's composer, seeded
+  projectless on the bot's machine; the project picker stays editable. The
+  thread is spawned and bound by the bots plugin, so it lands under the bot.
+- **Edit bot…** and **Hide until activity** — right-click the bot row. Edits
+  carry the revision and hashes the bots plugin checks, so a save cannot
+  overwrite a change made elsewhere.
+- **Assign to bot** — right-click any thread no bot owns yet. A binding never
+  moves once made, so an owned thread does not offer it.
+
+Every one of these is the bots plugin's own RPC (`bot_create`, `bot_update`,
+`conversation_create`, `conversation_assign`, `visibility_set`), proxied by
+this plugin's server and followed by a `bots` signal so every client
+re-reads. Sections, project roles, memory and settings are still edited in
+Bots Sidebar; this fork covers the everyday flow.
 
 How it reads them: a plugin frontend can only call its own backend, so this
 plugin's server asks bb to call the bots plugin's `bots_list` RPC on its
 behalf (`bb.sdk.plugins.callRpc`) and re-serves the answer as `listBots`,
-narrowed on the way to what a row needs. A bot's private state — its
-instructions, memory, settings — is dropped at the parse and never reaches
-this plugin's frontend. The bots plugin publishes its changes on its own
+narrowed on the way to what a row needs. A bot's memory and settings are
+dropped at the parse and never reach this plugin's frontend; its
+instructions are read only when the editor opens. The bots plugin publishes its changes on its own
 realtime channel, which this plugin cannot hear, so freshness comes from this
 plugin's own signal after a thread is created (delayed 1.5s, so the bots
 plugin has bound the thread first), a change in the thread list, a reconnect,

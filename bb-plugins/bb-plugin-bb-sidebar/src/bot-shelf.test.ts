@@ -44,7 +44,13 @@ function bot(overrides: Partial<SidebarBot> = {}): SidebarBot {
     id: "bot_1",
     name: "Reviewer",
     role: "Code review",
-    avatar: { color: "#6d5efc", shape: "round", expression: "curious" },
+    avatar: {
+      color: "#6d5efc",
+      shape: "round",
+      expression: "curious",
+      motion: "calm",
+    },
+    hostId: "host_1",
     mainThreadId: "thr_main",
     hiddenUntilActivity: false,
     hiddenAt: null,
@@ -59,7 +65,14 @@ function snapshot(
   bots: SidebarBot[],
   bindings: { threadId: string; botId: string }[],
 ): Extract<BotsSnapshot, { available: true }> {
-  return { available: true, bots, sections: [], bindings };
+  return {
+    available: true,
+    bots,
+    sections: [],
+    bindings,
+    hosts: [],
+    personalProjectId: null,
+  };
 }
 
 function shelf(
