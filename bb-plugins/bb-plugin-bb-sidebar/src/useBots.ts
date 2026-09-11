@@ -14,23 +14,26 @@ import { BOTS_CHANNEL, type BotsSnapshot } from "./bots";
  * plugin cannot hear: a plugin's `useRealtime` only receives its own
  * signals. So the sources of freshness are this plugin's own `bots` signal
  * (published after a thread is created, once the bots plugin has had a
- * moment to bind it), a change in the thread list itself, a reconnect, and
- * this slow tick for everything else — a bot renamed or hidden over there.
+ * moment to bind it, and after every write this sidebar makes), a change in
+ * the thread list itself, a reconnect, and this slow tick for everything
+ * else — a bot renamed or hidden over there.
  */
 const REFRESH_INTERVAL_MS = 60_000;
 
+export interface BotsState {
+  /** The bots snapshot, or null before the first answer. */
+  snapshot: BotsSnapshot | null;
+  /** Re-read now; resolves once the newest answer has landed. */
+  refresh: () => Promise<void>;
+}
+
 /**
- * The bots snapshot, or null before the first answer.
- *
  * `threadIdsKey` is the thread list reduced to its ids: a new id means a new
  * thread the bots plugin may have just bound, so the list re-reads. Nothing
  * is read while `enabled` is false — the user turned the shelf off, and an
  * off switch that still costs a request would not be off.
  */
-export function useBots(
-  threadIdsKey: string,
-  enabled: boolean,
-): BotsSnapshot | null {
+export function useBots(threadIdsKey: string, enabled: boolean): BotsState {
   const rpc = useRpc<typeof bbSidebarRpcContract>();
   const [snapshot, setSnapshot] = useState<BotsSnapshot | null>(null);
 
@@ -83,5 +86,5 @@ export function useBots(
     return () => clearInterval(timer);
   }, [enabled, refresh]);
 
-  return snapshot;
+  return { snapshot, refresh };
 }

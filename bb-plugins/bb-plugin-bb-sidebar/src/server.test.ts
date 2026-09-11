@@ -1095,17 +1095,25 @@ describe("listBots", () => {
           id: "bot_1",
           name: "Reviewer",
           role: "Code review",
-          avatar: { color: "#6d5efc", shape: "blob", expression: "focused" },
           mainThreadId: "thr_main",
           hiddenUntilActivity: false,
           hiddenAt: null,
           sectionId: null,
           order: 0,
           linkedProjectIds: ["proj_1"],
+          avatar: {
+            color: "#6d5efc",
+            shape: "blob",
+            expression: "focused",
+            motion: "playful",
+          },
+          hostId: "host_1",
         },
       ],
       sections: [{ id: "sec_1", name: "Ops", order: 0 }],
       bindings: [{ threadId: "thr_main", botId: "bot_1" }],
+      hosts: [{ id: "host_1", name: "laptop", connected: true }],
+      personalProjectId: "proj_personal",
     });
     expect(JSON.stringify(result)).not.toContain("careful reviewer");
 
@@ -1188,5 +1196,167 @@ describe("bots re-read signal", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe("bot writes, proxied to the bots plugin", () => {
+  const createdBot = {
+    id: "bot_new",
+    name: "Deployer",
+    role: "Release",
+    avatar: { color: "#e44f67", shape: "round", expression: "happy", motion: "calm" },
+    hostId: "host_1",
+    mainThreadId: null,
+    hiddenUntilActivity: false,
+    hiddenAt: null,
+    sectionId: null,
+    order: 1,
+    linkedProjectIds: [],
+    soul: "Ship it.",
+  };
+
+  async function loadRecording(answer: (method: string) => unknown) {
+    const calls: Array<{ method: string; input: unknown }> = [];
+    const { bb, harness } = createFakePluginHost({
+      pluginId: "bb-sidebar",
+      sdk: {
+        threads: { list: async () => [] },
+        plugins: {
+          callRpc: async (args: {
+            method: string;
+            input?: unknown;
+            outputSchema: { parse(value: unknown): unknown };
+          }) => {
+            calls.push({ method: args.method, input: args.input });
+            return args.outputSchema.parse(answer(args.method));
+          },
+        },
+      },
+    });
+    await plugin(bb);
+    disposers.push(() => harness.lifecycle.dispose());
+    return { harness, calls };
+  }
+
+  const botsSignals = (harness: Awaited<ReturnType<typeof loadPlugin>>) =>
+    harness.inspection.realtimeSignals.filter(
+      (signal) => signal.channel === "bots",
+    );
+
+  it("creates a bot in the main section with no projects, then tells clients", async () => {
+    const { harness, calls } = await loadRecording(() => createdBot);
+    const draft = {
+      name: "Deployer",
+      role: "Release",
+      hostId: "host_1",
+      avatar: createdBot.avatar,
+      soul: "Ship it.",
+    };
+
+    const result = await harness.behavior.callRpc("createBot", draft);
+
+    expect(calls).toEqual([
+      {
+        method: "bot_create",
+        input: { ...draft, sectionId: null, linkedProjectIds: [] },
+      },
+    ]);
+    expect(result).toMatchObject({ id: "bot_new", name: "Deployer" });
+    expect(JSON.stringify(result)).not.toContain("Ship it");
+    expect(botsSignals(harness)).toHaveLength(1);
+  });
+
+  it("refuses a draft the bots plugin would refuse, before calling it", async () => {
+    const { harness, calls } = await loadRecording(() => createdBot);
+    await expect(
+      harness.behavior.callRpc("createBot", {
+        name: "   ",
+        role: "",
+        hostId: "host_1",
+        avatar: createdBot.avatar,
+        soul: "",
+      }),
+    ).rejects.toThrow();
+    expect(calls).toHaveLength(0);
+  });
+
+  it("reads the editor fields fresh and drops the bot's memory", async () => {
+    const { harness, calls } = await loadRecording(() => ({
+      ...createdBot,
+      updatedAt: 42,
+      stateHashes: { "SOUL.md": "a", "AGENTS.md": null, "MEMORY.md": "b", "settings.json": null },
+      memory: "The user prefers terse feedback.",
+      settings: { tone: "dry" },
+    }));
+
+    const result = await harness.behavior.callRpc("getBotEditor", {
+      botId: "bot_new",
+    });
+
+    expect(calls).toEqual([{ method: "bot_prepare", input: { botId: "bot_new" } }]);
+    expect(result).toEqual({
+      id: "bot_new",
+      name: "Deployer",
+      role: "Release",
+      avatar: createdBot.avatar,
+      hostId: "host_1",
+      sectionId: null,
+      linkedProjectIds: [],
+      soul: "Ship it.",
+      updatedAt: 42,
+      stateHashes: { "SOUL.md": "a", "AGENTS.md": null, "MEMORY.md": "b", "settings.json": null },
+    });
+    expect(JSON.stringify(result)).not.toContain("terse");
+  });
+
+  it("assigns a conversation and hides a bot through the bots plugin", async () => {
+    const { harness, calls } = await loadRecording(() => ({ ok: true }));
+
+    await expect(
+      harness.behavior.callRpc("assignConversation", {
+        botId: "bot_new",
+        threadId: "thr_9",
+      }),
+    ).resolves.toEqual({ ok: true });
+    await expect(
+      harness.behavior.callRpc("setBotVisibility", {
+        botId: "bot_new",
+        hiddenUntilActivity: true,
+      }),
+    ).resolves.toEqual({ ok: true });
+
+    expect(calls).toEqual([
+      { method: "conversation_assign", input: { botId: "bot_new", threadId: "thr_9" } },
+      { method: "visibility_set", input: { botId: "bot_new", hiddenUntilActivity: true } },
+    ]);
+    expect(botsSignals(harness)).toHaveLength(2);
+  });
+
+  it("starts a bot conversation with the composer's own request", async () => {
+    const { harness, calls } = await loadRecording(() => ({ threadId: "thr_new" }));
+    const request = {
+      projectId: "proj_personal",
+      providerId: "codex",
+      model: "gpt",
+      reasoningLevel: "medium",
+      permissionMode: "auto",
+      executionInputSources: {},
+      environment: { type: "host", hostId: "host_1", workspace: { type: "personal" } },
+      input: [{ type: "text", text: "Hello", mentions: [] }],
+    };
+
+    await expect(
+      harness.behavior.callRpc("createBotConversation", {
+        botId: "bot_new",
+        request,
+      }),
+    ).resolves.toEqual({ threadId: "thr_new" });
+
+    expect(calls).toEqual([
+      {
+        method: "conversation_create",
+        input: { botId: "bot_new", request, makeMain: false },
+      },
+    ]);
   });
 });

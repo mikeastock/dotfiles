@@ -8,6 +8,12 @@ import { Icon } from "./components/Icon";
 import { cn } from "./lib/utils";
 import type { ConfiguredSnoozePreset } from "./lifecycle";
 
+/** Bots a thread can be handed to, when the Bots Sidebar plugin is there. */
+export interface AssignToBot {
+  bots: readonly { id: string; name: string }[];
+  onAssign: (botId: string) => void;
+}
+
 /**
  * This sidebar's own right-click menu.
  *
@@ -28,6 +34,7 @@ export function RowContextMenu({
   onUnsettle,
   onWake,
   onRename,
+  assign,
 }: {
   thread: PluginSidebarThread;
   children: ReactNode;
@@ -39,6 +46,8 @@ export function RowContextMenu({
   onUnsettle?: () => void;
   onWake?: () => void;
   onRename?: () => void;
+  /** Offered only for a thread no bot owns yet; a binding never moves. */
+  assign?: AssignToBot;
 }) {
   const actions = useSidebarThreadActions();
 
@@ -65,6 +74,7 @@ export function RowContextMenu({
             <SnoozeSubmenu presets={snoozePresets} onSnooze={onSnooze} />
           ) : null}
           {onWake ? <Item onSelect={onWake}>Wake now</Item> : null}
+          {assign ? <AssignSubmenu assign={assign} /> : null}
           <Separator />
           {onRename ? (
             <Item onSelect={() => globalThis.setTimeout(onRename, 0)}>
@@ -91,6 +101,41 @@ export function RowContextMenu({
         </ContextMenu.Content>
       </ContextMenu.Portal>
     </ContextMenu.Root>
+  );
+}
+
+function AssignSubmenu({ assign }: { assign: AssignToBot }) {
+  return (
+    <ContextMenu.Sub>
+      <ContextMenu.SubTrigger
+        className={cn(
+          "flex cursor-pointer items-center rounded-md px-2 py-1.5 text-sm outline-none",
+          "data-[state=open]:bg-accent data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground",
+        )}
+      >
+        Assign to bot
+        <Icon name="ChevronRight" className="ml-auto size-4 opacity-60" />
+      </ContextMenu.SubTrigger>
+      <ContextMenu.Portal>
+        <ContextMenu.SubContent
+          aria-label="Assign to bot"
+          sideOffset={4}
+          className="z-50 min-w-40 rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-md"
+        >
+          {assign.bots.length === 0 ? (
+            <Item disabled onSelect={() => {}}>
+              No bots yet
+            </Item>
+          ) : (
+            assign.bots.map((bot) => (
+              <Item key={bot.id} onSelect={() => assign.onAssign(bot.id)}>
+                {bot.name}
+              </Item>
+            ))
+          )}
+        </ContextMenu.SubContent>
+      </ContextMenu.Portal>
+    </ContextMenu.Sub>
   );
 }
 

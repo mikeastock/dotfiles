@@ -4,14 +4,22 @@
 // Putting it on the thread would mean a schema change, a wire change, and a
 // HOST_DAEMON_PROTOCOL_VERSION bump for something only this sidebar
 // understands. Here, uninstalling the plugin removes its state with it.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import {
+  defineRpcContract,
+  type BbPluginApi,
+  type JsonValue,
+  type NewThreadRequest,
+} from "@get-bb/plugin-sdk";
 import { z } from "zod";
 import {
   BOTS_CHANNEL,
   BOTS_LIST_METHOD,
   BOTS_PLUGIN_ID,
+  botDraftSchema,
   botsListSchema,
   botsSnapshotSchema,
+  editorBotSchema,
+  sidebarBotSchema,
   snapshotFromList,
   type BotsSnapshot,
 } from "./bots";
@@ -325,6 +333,60 @@ export const bbSidebarRpcContract = defineRpcContract({
   // plugin's own RPC: a frontend can only call its own backend, so the server
   // is where the cross-plugin read has to happen.
   listBots: { input: z.object({}).strict(), output: botsSnapshotSchema },
+  // The rest of the bots plugin's surface this sidebar needs, proxied the
+  // same way. Each write publishes `bots` so every client re-reads.
+  getBotEditor: {
+    input: z.object({ botId: z.string().min(1) }).strict(),
+    output: editorBotSchema,
+  },
+  createBot: { input: botDraftSchema, output: sidebarBotSchema },
+  updateBot: {
+    input: botDraftSchema
+      .safeExtend({
+        botId: z.string().min(1),
+        sectionId: z.string().nullable(),
+        linkedProjectIds: z.array(z.string()),
+        expectedUpdatedAt: z.number(),
+        expectedStateHashes: z.object({
+          "SOUL.md": z.string().nullable(),
+          "AGENTS.md": z.string().nullable(),
+          "MEMORY.md": z.string().nullable(),
+          "settings.json": z.string().nullable(),
+        }),
+      })
+      .strict(),
+    output: sidebarBotSchema,
+  },
+  assignConversation: {
+    input: z
+      .object({ botId: z.string().min(1), threadId: z.string().min(1) })
+      .strict(),
+    output: z.object({ ok: z.literal(true) }).strict(),
+  },
+  setBotVisibility: {
+    input: z
+      .object({ botId: z.string().min(1), hiddenUntilActivity: z.boolean() })
+      .strict(),
+    output: z.object({ ok: z.literal(true) }).strict(),
+  },
+  createBotConversation: {
+    input: z
+      .object({
+        botId: z.string().min(1),
+        // The composer's own request, forwarded whole. The bots plugin
+        // validates it strictly against the SDK shape on its side.
+        request: z.custom<NewThreadRequest>(
+          (value) =>
+            typeof value === "object" &&
+            value !== null &&
+            typeof (value as { projectId?: unknown }).projectId === "string",
+          "Expected a new-thread request",
+        ),
+        makeMain: z.boolean().optional(),
+      })
+      .strict(),
+    output: z.object({ threadId: z.string() }).strict(),
+  },
 });
 
 /** Channel the frontend re-reads on. */
@@ -1042,9 +1104,61 @@ export default async function plugin(bb: BbPluginApi) {
     rebindTimers.clear();
   });
 
+  /** One call on the bots plugin, parsed with the schema given. */
+  const callBots = <T>(
+    method: string,
+    input: unknown,
+    outputSchema: z.ZodType<T>,
+  ): Promise<T> =>
+    bb.sdk.plugins.callRpc({
+      pluginId: BOTS_PLUGIN_ID,
+      method,
+      input: input as JsonValue,
+      outputSchema,
+    });
+  const publishBots = () => bb.realtime.publish(BOTS_CHANNEL, {});
+
   bb.rpc.register(bbSidebarRpcContract, {
     async listBots() {
       return loadBots();
+    },
+    async getBotEditor({ botId }) {
+      return callBots("bot_prepare", { botId }, editorBotSchema);
+    },
+    async createBot(draft) {
+      // A new bot starts in the main section with no linked projects; the
+      // bots plugin links projects as conversations join them.
+      const bot = await callBots(
+        "bot_create",
+        { ...draft, sectionId: null, linkedProjectIds: [] },
+        sidebarBotSchema,
+      );
+      publishBots();
+      return bot;
+    },
+    async updateBot(input) {
+      const bot = await callBots("bot_update", input, sidebarBotSchema);
+      publishBots();
+      return bot;
+    },
+    async assignConversation(input) {
+      await callBots("conversation_assign", input, z.looseObject({}));
+      publishBots();
+      return { ok: true as const };
+    },
+    async setBotVisibility(input) {
+      await callBots("visibility_set", input, z.looseObject({}));
+      publishBots();
+      return { ok: true as const };
+    },
+    async createBotConversation({ botId, request, makeMain }) {
+      const result = await callBots(
+        "conversation_create",
+        { botId, request, makeMain: makeMain ?? false },
+        z.object({ threadId: z.string() }),
+      );
+      publishBots();
+      return result;
     },
     async getSidebarSettings() {
       return readSidebarSettings();

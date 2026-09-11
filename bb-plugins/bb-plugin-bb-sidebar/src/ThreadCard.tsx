@@ -21,7 +21,7 @@ import { Icon } from "./components/Icon";
 import { Tooltip } from "./components/Tooltip";
 import { SnoozeSelect } from "./SnoozeSelect";
 import { cn } from "./lib/utils";
-import { RowContextMenu } from "./RowContextMenu";
+import { RowContextMenu, type AssignToBot } from "./RowContextMenu";
 import { ProviderGlyph, type SidebarProvider } from "./ProviderGlyph";
 import { STATUS_SLOT_CLASS, StatusOrTime } from "./StatusSlot";
 import { threadDisplayTitle } from "./inbox";
@@ -66,6 +66,7 @@ export function ThreadCard({
   childrenExpanded,
   onToggleChildren,
   reorder,
+  assign,
   now,
 }: {
   thread: PluginSidebarThread;
@@ -90,6 +91,8 @@ export function ThreadCard({
   childrenExpanded: boolean;
   onToggleChildren: () => void;
   reorder?: ThreadReorderControls;
+  /** Bots this thread can be handed to; absent when it already has one. */
+  assign?: AssignToBot;
   /** Quantized clock, so every card in one render agrees on "now". */
   now: number;
 }) {
@@ -118,6 +121,7 @@ export function ThreadCard({
       onSnooze={onSnooze}
       onSettle={canPark ? onSettle : undefined}
       onRename={() => setIsRenaming(true)}
+      assign={assign}
     >
       <li
         className={cn(

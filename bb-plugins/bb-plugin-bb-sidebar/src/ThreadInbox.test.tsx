@@ -356,7 +356,9 @@ describe("sidebar settings", () => {
     });
 
     expect(await screen.findByText("Projects")).toBeDefined();
-    fireEvent.click(screen.getByRole("button", { name: "Remove..." }));
+    // The project list arrives on its own request after the heading; wait
+    // for it rather than racing it.
+    fireEvent.click(await screen.findByRole("button", { name: "Remove..." }));
     expect(screen.queryByRole("alertdialog")).toBeNull();
     const confirmation = screen.getByRole("group", {
       name: "Confirm removal of Sidebar",
@@ -3337,7 +3339,13 @@ describe("bots shelf", () => {
       id: "bot_1",
       name: "Reviewer",
       role: "Code review",
-      avatar: { color: "#6d5efc", shape: "round", expression: "curious" },
+      avatar: {
+        color: "#6d5efc",
+        shape: "round",
+        expression: "curious",
+        motion: "calm",
+      },
+      hostId: "host_1",
       mainThreadId: "thr_main",
       hiddenUntilActivity: false,
       hiddenAt: null,
@@ -3353,7 +3361,14 @@ describe("bots shelf", () => {
     bindings: { threadId: string; botId: string }[],
     sections: { id: string; name: string; order: number }[] = [],
   ) {
-    return { available: true, bots, sections, bindings };
+    return {
+      available: true,
+      bots,
+      sections,
+      bindings,
+      hosts: [{ id: "host_1", name: "laptop", connected: true }],
+      personalProjectId: "proj_personal",
+    };
   }
 
   // Fresh timestamps, or the Inactive shelf claims the rows before the Bots
@@ -3380,6 +3395,7 @@ describe("bots shelf", () => {
     options: {
       props?: Partial<PluginThreadListProps>;
       settings?: Partial<typeof defaultSidebarSettings>;
+      rpc?: Record<string, (input: unknown) => unknown>;
     } = {},
   ) {
     return renderSlot(
@@ -3399,6 +3415,7 @@ describe("bots shelf", () => {
             ...options.settings,
           }),
           listBots: () => snapshot,
+          ...options.rpc,
         },
       },
     );
@@ -3514,6 +3531,141 @@ describe("bots shelf", () => {
     expect(await screen.findByText("Main chat")).toBeDefined();
     expect(screen.queryByRole("region", { name: "Bots" })).toBeNull();
     expect(screen.queryByText("Reviewer")).toBeNull();
+  });
+
+  it("offers to create the first bot when there are none", async () => {
+    const rendered = renderWithBots(botThreads(), available([], []), {
+      rpc: {
+        createBot: (input) => ({
+          ...bot({ id: "bot_new", name: "Deployer", mainThreadId: null }),
+          ...(input as object),
+        }),
+      },
+    });
+    const bots = await screen.findByRole("region", { name: "Bots" });
+    fireEvent.click(within(bots).getByText("Create your first bot"));
+
+    const dialog = await screen.findByRole("dialog", { name: "New bot" });
+    fireEvent.change(within(dialog).getByLabelText("Name"), {
+      target: { value: "Deployer" },
+    });
+    fireEvent.change(within(dialog).getByLabelText("Role"), {
+      target: { value: "Release" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Create bot" }));
+
+    await waitFor(() =>
+      expect(
+        rendered.inspection.rpcCalls.find((call) => call.method === "createBot"),
+      ).toBeDefined(),
+    );
+    const call = rendered.inspection.rpcCalls.find(
+      (call) => call.method === "createBot",
+    )!;
+    expect(call.input).toMatchObject({
+      name: "Deployer",
+      role: "Release",
+      hostId: "host_1",
+      soul: "",
+    });
+    expect(
+      (call.input as { avatar: { color: string; motion: string } }).avatar,
+    ).toMatchObject({ motion: "calm" });
+    // The bot's first conversation follows straight away, as its main one.
+    expect(
+      await screen.findByRole("dialog", { name: "Start Deployer" }),
+    ).toBeDefined();
+  });
+
+  it("keeps a New bot control in the shelf header", async () => {
+    renderWithBots(
+      botThreads(),
+      available([bot()], [{ threadId: "thr_main", botId: "bot_1" }]),
+    );
+    const bots = await screen.findByRole("region", { name: "Bots" });
+    fireEvent.click(within(bots).getByRole("button", { name: "New bot" }));
+    expect(await screen.findByRole("dialog", { name: "New bot" })).toBeDefined();
+  });
+
+  it("edits a bot from its row menu with the fresh revision", async () => {
+    const rendered = renderWithBots(
+      botThreads(),
+      available([bot()], [{ threadId: "thr_main", botId: "bot_1" }]),
+      {
+        rpc: {
+          getBotEditor: () => ({
+            ...bot(),
+            soul: "Review carefully.",
+            updatedAt: 7,
+            stateHashes: {
+              "SOUL.md": "abc",
+              "AGENTS.md": null,
+              "MEMORY.md": null,
+              "settings.json": null,
+            },
+          }),
+          updateBot: () => bot({ name: "Reviewer 2" }),
+        },
+      },
+    );
+    const bots = await screen.findByRole("region", { name: "Bots" });
+    fireEvent.contextMenu(within(bots).getByText("Reviewer"));
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Edit bot…" }));
+
+    const dialog = await screen.findByRole("dialog", { name: "Edit Reviewer" });
+    expect(
+      (within(dialog).getByLabelText("Instructions") as HTMLTextAreaElement)
+        .value,
+    ).toBe("Review carefully.");
+    fireEvent.change(within(dialog).getByLabelText("Name"), {
+      target: { value: "Reviewer 2" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save bot" }));
+
+    await waitFor(() =>
+      expect(
+        rendered.inspection.rpcCalls.find((call) => call.method === "updateBot")
+          ?.input,
+      ).toMatchObject({
+        botId: "bot_1",
+        name: "Reviewer 2",
+        expectedUpdatedAt: 7,
+        expectedStateHashes: { "SOUL.md": "abc" },
+      }),
+    );
+  });
+
+  it("assigns an unowned thread to a bot from its context menu", async () => {
+    const rendered = renderWithBots(
+      botThreads(),
+      available([bot()], [{ threadId: "thr_main", botId: "bot_1" }]),
+      { rpc: { assignConversation: () => ({ ok: true }) } },
+    );
+    await screen.findByRole("region", { name: "Bots" });
+    fireEvent.contextMenu(screen.getByText("Free thread"));
+    const trigger = await screen.findByText("Assign to bot");
+    fireEvent.pointerMove(trigger);
+    fireEvent.click(trigger);
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Reviewer" }));
+
+    await waitFor(() =>
+      expect(
+        rendered.inspection.rpcCalls.find(
+          (call) => call.method === "assignConversation",
+        )?.input,
+      ).toEqual({ botId: "bot_1", threadId: "thr_free" }),
+    );
+  });
+
+  it("does not offer to assign a thread a bot already owns", async () => {
+    renderWithBots(
+      botThreads(),
+      available([bot()], [{ threadId: "thr_main", botId: "bot_1" }]),
+    );
+    const bots = await screen.findByRole("region", { name: "Bots" });
+    fireEvent.contextMenu(within(bots).getByText("Main chat"));
+    await screen.findByRole("menu", { name: "Thread actions" });
+    expect(screen.queryByText("Assign to bot")).toBeNull();
   });
 
   it("draws the plain list when the bots plugin is unavailable", async () => {

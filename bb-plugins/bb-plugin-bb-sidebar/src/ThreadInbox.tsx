@@ -13,6 +13,7 @@ import {
   experimental_useProviders as useProviders,
   type PluginSidebarThread,
   type PluginThreadListProps,
+  useBbNavigate,
   useRealtime,
   useRpc,
   useSettings,
@@ -34,8 +35,10 @@ import { SearchResults } from "./SearchResults";
 import { BulkSelectionBar } from "./BulkSelectionBar";
 import { childThreadsByParent } from "./ChildThreadList";
 import { BotRow } from "./BotRow";
+import { BotEditorDialog, type BotEditorTarget } from "./BotEditorDialog";
+import { BotConversationDialog } from "./BotConversationDialog";
 import { buildBotShelf, type BotShelf } from "./bot-shelf";
-import { resolveBotOwners } from "./bots";
+import { resolveBotOwners, type BotDraft, type SidebarBot } from "./bots";
 import { useBots } from "./useBots";
 import { BOT_EXPANSION_STORAGE_KEY, useCollapsedIds } from "./useCollapsedIds";
 import { runBulkAction, type BulkActionResult } from "./bulk-actions";
@@ -346,11 +349,83 @@ export function ThreadInbox({
     () => threads.map((thread) => thread.id).join("\n"),
     [threads],
   );
-  const botsSnapshot = useBots(threadIdsKey, showBots);
+  const { snapshot: botsSnapshot, refresh: refreshBots } = useBots(
+    threadIdsKey,
+    showBots,
+  );
   const bots =
     showBots && botsSnapshot !== null && botsSnapshot.available
       ? botsSnapshot
       : null;
+  const navigate = useBbNavigate();
+  const [botEditor, setBotEditor] = useState<BotEditorTarget | null>(null);
+  const [botConversation, setBotConversation] = useState<{
+    bot: SidebarBot;
+    makeMain: boolean;
+  } | null>(null);
+  const botNamesById = useMemo(
+    () => new Map((bots?.bots ?? []).map((bot) => [bot.id, bot.name])),
+    [bots],
+  );
+  // Every write goes to the bots plugin through this plugin's server, then
+  // the list re-reads. Failures surface as toasts, the way bulk actions do.
+  const editBot = async (botId: string) => {
+    try {
+      const bot = await rpc.call("getBotEditor", { botId });
+      setBotEditor({ kind: "edit", bot });
+    } catch (error) {
+      toast.error("Could not open the bot", {
+        description: error instanceof Error ? error.message : undefined,
+      });
+    }
+  };
+  const saveBot = async (draft: BotDraft) => {
+    if (botEditor === null) return;
+    if (botEditor.kind === "create") {
+      const created = await rpc.call("createBot", draft);
+      await refreshBots();
+      // Creation is saved; close the editor before anything else can fail,
+      // so a retry cannot create a duplicate. The bot's first conversation
+      // becomes its main one.
+      setBotEditor(null);
+      toast.success(`Created ${created.name}`);
+      setBotConversation({ bot: created, makeMain: true });
+      return;
+    }
+    const { bot } = botEditor;
+    await rpc.call("updateBot", {
+      ...draft,
+      botId: bot.id,
+      sectionId: bot.sectionId,
+      linkedProjectIds: bot.linkedProjectIds,
+      expectedUpdatedAt: bot.updatedAt,
+      expectedStateHashes: bot.stateHashes,
+    });
+    await refreshBots();
+    setBotEditor(null);
+    toast.success(`Saved ${draft.name}`);
+  };
+  const assignThread = async (threadId: string, botId: string) => {
+    try {
+      await rpc.call("assignConversation", { botId, threadId });
+      await refreshBots();
+      toast.success(`Assigned to ${botNamesById.get(botId) ?? "bot"}`);
+    } catch (error) {
+      toast.error("Could not assign the conversation", {
+        description: error instanceof Error ? error.message : undefined,
+      });
+    }
+  };
+  const hideBot = async (botId: string) => {
+    try {
+      await rpc.call("setBotVisibility", { botId, hiddenUntilActivity: true });
+      await refreshBots();
+    } catch (error) {
+      toast.error("Could not hide the bot", {
+        description: error instanceof Error ? error.message : undefined,
+      });
+    }
+  };
   const { collapsed: collapsedBots, toggle: toggleBot } = useCollapsedIds(
     BOT_EXPANSION_STORAGE_KEY,
   );
@@ -1097,6 +1172,14 @@ export function ThreadInbox({
           ? undefined
           : threadReorderControls(thread, shelf)
       }
+      assign={
+        bots !== null && !ownerByThreadId.has(thread.id)
+          ? {
+              bots: bots.bots.map((bot) => ({ id: bot.id, name: bot.name })),
+              onAssign: (botId) => void assignThread(thread.id, botId),
+            }
+          : undefined
+      }
       now={now}
     />
   );
@@ -1237,7 +1320,7 @@ export function ThreadInbox({
                 </Shelf>
               </CollapsibleShelf>
             ) : null}
-            {botCount > 0 ? (
+            {bots !== null ? (
               <CollapsibleShelf
                 label="Bots"
                 count={botCount}
@@ -1248,8 +1331,29 @@ export function ThreadInbox({
                     bots: !current.bots,
                   }))
                 }
+                action={
+                  <button
+                    type="button"
+                    aria-label="New bot"
+                    title="New bot"
+                    onClick={() => setBotEditor({ kind: "create" })}
+                    className="absolute bottom-1 right-[1.875rem] z-10 flex size-4 items-center justify-center rounded text-muted-foreground/40 hover:bg-sidebar-accent hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    <Icon name="Plus" className="size-3" aria-hidden />
+                  </button>
+                }
               >
-                {expandedShelves.bots ? (
+                {expandedShelves.bots && botCount === 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => setBotEditor({ kind: "create" })}
+                    className="mx-1 mb-1 flex w-[calc(100%-0.5rem)] items-center gap-2 rounded-md border border-dashed border-sidebar-border px-2.5 py-2 text-left text-xs text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
+                  >
+                    <Icon name="Plus" className="size-3.5 shrink-0" aria-hidden />
+                    Create your first bot
+                  </button>
+                ) : null}
+                {expandedShelves.bots && botCount > 0 ? (
                   <ul className="flex flex-col gap-px">
                     {botShelf.groups.map((group) => (
                       <Fragment key={group.section?.id ?? "__main__"}>
@@ -1278,6 +1382,15 @@ export function ThreadInbox({
                                   entry.bot.id
                               }
                               onNavigate={onNavigate}
+                              actions={{
+                                onNewConversation: () =>
+                                  setBotConversation({
+                                    bot: entry.bot,
+                                    makeMain: entry.openTarget === null,
+                                  }),
+                                onEdit: () => void editBot(entry.bot.id),
+                                onHide: () => void hideBot(entry.bot.id),
+                              }}
                             >
                               {!isCollapsed && entry.threads.length > 0 ? (
                                 <ul
@@ -1426,6 +1539,34 @@ export function ThreadInbox({
           </div>
         )}
       </div>
+      {botEditor !== null && bots !== null ? (
+        <BotEditorDialog
+          key={botEditor.kind === "edit" ? botEditor.bot.id : "create"}
+          target={botEditor}
+          hosts={bots.hosts}
+          onClose={() => setBotEditor(null)}
+          onSave={saveBot}
+        />
+      ) : null}
+      {botConversation !== null && bots !== null ? (
+        <BotConversationDialog
+          bot={botConversation.bot}
+          personalProjectId={bots.personalProjectId}
+          makeMain={botConversation.makeMain}
+          onClose={() => setBotConversation(null)}
+          onCreate={async (request) => {
+            const { threadId } = await rpc.call("createBotConversation", {
+              botId: botConversation.bot.id,
+              request,
+              makeMain: botConversation.makeMain,
+            });
+            setBotConversation(null);
+            void refreshBots();
+            navigate.toThread(threadId);
+            onNavigate();
+          }}
+        />
+      ) : null}
     </div>
   );
 }

@@ -14,7 +14,13 @@ function bot(overrides: Partial<SidebarBot> = {}): SidebarBot {
     id: "bot_1",
     name: "Reviewer",
     role: "Code review",
-    avatar: { color: "#6d5efc", shape: "round", expression: "curious" },
+    avatar: {
+      color: "#6d5efc",
+      shape: "round",
+      expression: "curious",
+      motion: "calm",
+    },
+    hostId: "host_1",
     mainThreadId: null,
     hiddenUntilActivity: false,
     hiddenAt: null,
@@ -48,8 +54,13 @@ describe("botsListSchema", () => {
       warnings: [],
       personalProjectId: "proj_personal",
     });
-    expect(parsed.bots[0]).toEqual(bot());
-    expect(parsed).not.toHaveProperty("hosts");
+    expect(parsed.bots[0]).toEqual({
+      ...bot(),
+      avatar: { ...bot().avatar, motion: "playful" },
+    });
+    expect(parsed).not.toHaveProperty("projects");
+    expect(parsed.hosts).toEqual([]);
+    expect(parsed.personalProjectId).toBe("proj_personal");
     expect(JSON.stringify(parsed)).not.toContain("careful reviewer");
   });
 
@@ -60,7 +71,12 @@ describe("botsListSchema", () => {
       bots: [
         {
           ...bot(),
-          avatar: { color: "purple", shape: "octagon", expression: "smug" },
+          avatar: {
+            color: "purple",
+            shape: "octagon",
+            expression: "smug",
+            motion: "wild",
+          },
         },
       ],
       sections: [],
@@ -70,6 +86,7 @@ describe("botsListSchema", () => {
       color: "#6d5efc",
       shape: "round",
       expression: "curious",
+      motion: "calm",
     });
   });
 });

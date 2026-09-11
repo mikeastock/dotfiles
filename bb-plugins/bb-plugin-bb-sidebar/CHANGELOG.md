@@ -10,6 +10,7 @@ v0.2.4 (`77e3696`). Upstream stays
 
 - Added a **Bots** shelf for [tobi/bb-bots-sidebar](https://github.com/tobi/bb-bots-sidebar): each bot is a row with its avatar, name, role and a rolled-up status, and its Active conversations group under it. Read through the bots plugin's own `bots_list` RPC via `bb.sdk.plugins.callRpc`; nothing is written back.
 - Added a **Bots shelf** switch to the sidebar settings page (`showBots`, on by default).
+- Manage bots without switching sidebars: create a bot from the shelf header (or the empty shelf), edit or hide it from its row menu, start a conversation with it in bb's own composer, and assign any unowned thread to a bot from its context menu. All proxied to the bots plugin's own RPCs.
 
 ### Changed
 
