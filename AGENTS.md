@@ -98,7 +98,7 @@ pnpm typecheck
 Tests use a sandbox environment (temporary HOME directory) to avoid affecting real agent installations. The test framework provides assertion helpers in `tests/test-helpers.sh`.
 
 ### CI/CD
-GitHub Actions (`.github/workflows/test.yml`) runs `./tests/run-all.sh`, `pnpm test`, `pnpm typecheck`, and the bb-plugin-t3sidebar tests/typecheck on push/PR to main/master.
+GitHub Actions (`.github/workflows/test.yml`) runs `./tests/run-all.sh`, `pnpm test`, `pnpm typecheck`, and the tests/typecheck of each vendored bb plugin (`bb-plugins/bb-plugin-t3sidebar`, `bb-plugins/bb-plugin-bb-sidebar`) on push/PR to main/master.
 
 ## Code Conventions
 

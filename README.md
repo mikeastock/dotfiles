@@ -78,13 +78,16 @@ After changing a plugin, rerun `make install-amp-plugins`, then run `plugins: re
 Forked bb plugins live in `bb-plugins/<plugin>/`, vendored as plain source so they can be modified in place. They are not part of `make install`; bb loads each one directly from its path in this repo.
 
 ```bash
-cd bb-plugins/bb-plugin-t3sidebar
+cd bb-plugins/bb-plugin-bb-sidebar
 npm install
 bb plugin install "$PWD" --yes    # register with bb (once)
 npx bb plugin dev                 # watch sources, hot-reload the frontend
 ```
 
-A plugin's bb id is its `package.json` name with the `bb-plugin-` prefix stripped, and its data lives in `~/.bb/plugins/<id>/`, so renaming the package orphans that data. Backend changes (`src/server.ts`) need `npm run build && bb plugin reload <id>`. Each plugin keeps `upstream` pointing at the repo it was forked from; sync by diffing against that remote.
+A plugin's bb id is its `package.json` name with the `bb-plugin-` prefix stripped, and its data lives in `~/.bb/plugins/<id>/`, so renaming the package orphans that data. Backend changes (`src/server.ts`) need `npm run build && bb plugin reload <id>`. Each plugin keeps `upstream` pointing at the repo it was forked from; sync by diffing against that remote. Run `bb plugin types` in the plugin directory after upgrading bb to repin `@get-bb/plugin-sdk` to the running version.
+
+- `bb-plugin-bb-sidebar` — the sidebar in use, forked from [yusuf8834/bb-sidebar](https://github.com/yusuf8834/bb-sidebar) v0.2.4. Adds a **Bots** shelf for [tobi/bb-bots-sidebar](https://github.com/tobi/bb-bots-sidebar): each bot's conversations group under a bot row, read through the bots plugin's own `bots_list` RPC via `bb.sdk.plugins.callRpc`. That plugin stays the place to create, edit and assign bots; see `bb-plugins/bb-plugin-bb-sidebar/README.md`.
+- `bb-plugin-t3sidebar` — the earlier fork of [SawyerHood/bb-plugin-t3sidebar](https://github.com/SawyerHood/bb-plugin-t3sidebar), kept for its auto-settle-on-merge sweep.
 
 ### Amp config
 
