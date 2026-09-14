@@ -47,6 +47,8 @@ test_config_new_files() {
     local pi_settings_json
     pi_settings_json=$(cat "$SANDBOX_DIR/.pi/agent/settings.json")
     assert_json_field "$pi_settings_json" '.enabledModels[4]' "google/gemini-3.8-flash" "Pi: Gemini 3.8 Flash is in enabledModels"
+    assert_json_field "$pi_settings_json" '.enabledModels[5]' "openai-codex/gpt-6-astra" "Pi: GPT-6 Astra is in enabledModels"
+    assert_json_field "$pi_settings_json" '.enabledModels[6]' "meta/muse-spark-1.3" "Pi: Muse Spark 1.3 is in enabledModels"
 
     local amp_json
     amp_json=$(cat "$SANDBOX_DIR/.config/amp/settings.json")
