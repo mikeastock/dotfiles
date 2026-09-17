@@ -12,6 +12,8 @@ min_version = "2026.9.2"
 "~/.tmux.conf" = { source = ".tmux.conf", mode = "symlink" }
 "~/.tmuxinator" = { source = ".tmuxinator", mode = "symlink" }
 "~/.vscode" = { source = ".vscode", mode = "symlink" }
+"~/.zshrc" = { source = ".zshrc", mode = "symlink" }
+"~/.bash_profile" = { source = ".bash_profile", mode = "symlink" }
 "~/.config/stylua" = { source = ".config/stylua", mode = "symlink" }
 "~/.config/lvim" = { source = ".config/lvim", mode = "symlink" }
 "~/.config/zellij" = { source = ".config/zellij", mode = "symlink" }
@@ -21,16 +23,16 @@ min_version = "2026.9.2"
 "~/.config/nvim/init.lua" = { source = ".config/nvim/init.lua", mode = "symlink" }
 "~/.config/fish/config.fish" = { source = ".config/fish/config.fish", mode = "symlink" }
 "~/.config/fish/functions" = { source = ".config/fish/functions", mode = "symlink" }
+"~/.config/fish/completions/fisher.fish" = { source = ".config/fish/completions/fisher.fish", mode = "symlink" }
 "~/.config/herdr/config.toml" = { source = ".config/herdr/config.toml", mode = "symlink" }
 "~/.local/bin" = { source = "bin", mode = "symlink-each" }
-"~/.config/amp/settings.json" = { source = "amp-configs/settings.json", mode = "copy" }
-"~/.config/opencode/opencode.jsonc" = { source = "configs/opencode/opencode.jsonc", mode = "copy" }
-"~/.codex/config.toml" = { source = "configs/codex-config.toml", mode = "copy" }
-"~/.codex/rules/default.rules" = { source = "configs/codex/rules/default.rules", mode = "copy" }
+"~/.config/amp/settings.json" = { source = ".config/amp/settings.json", mode = "copy" }
+"~/.config/opencode/opencode.jsonc" = { source = ".config/opencode/opencode.jsonc", mode = "copy" }
+"~/.codex/config.toml" = { source = ".codex/config.toml", mode = "copy" }
 "~/.codex/AGENTS.md" = { source = "configs/AGENTS.md", mode = "copy" }
 "~/.pi/agent/AGENTS.md" = { source = "configs/AGENTS.md", mode = "copy" }
-"~/.pi/agent/models.json" = { source = "pi-configs/pi-models.json", mode = "copy" }
-"~/.pi/agent/settings.json" = { source = "pi-configs/pi-settings.json", mode = "copy" }
+"~/.pi/agent/models.json" = { source = ".pi/agent/models.json", mode = "copy" }
+"~/.pi/agent/settings.json" = { source = ".pi/agent/settings.json", mode = "copy" }
 
 [bootstrap.repos]
 "~/.tmux/plugins/tpm" = { url = "https://github.com/tmux-plugins/tpm" }

@@ -52,14 +52,19 @@ assert_copied_file() {
 }
 
 assert_shared_agent_configs() {
-  assert_copied_file "$SANDBOX_DIR/.config/amp/settings.json" "$PROJECT_DIR/amp-configs/settings.json" "Amp settings"
-  assert_copied_file "$SANDBOX_DIR/.config/opencode/opencode.jsonc" "$PROJECT_DIR/configs/opencode/opencode.jsonc" "OpenCode config"
-  assert_copied_file "$SANDBOX_DIR/.codex/config.toml" "$PROJECT_DIR/configs/codex-config.toml" "Codex config"
-  assert_copied_file "$SANDBOX_DIR/.codex/rules/default.rules" "$PROJECT_DIR/configs/codex/rules/default.rules" "Codex rules"
+  assert_copied_file "$SANDBOX_DIR/.config/amp/settings.json" "$PROJECT_DIR/.config/amp/settings.json" "Amp settings"
+  assert_copied_file "$SANDBOX_DIR/.config/opencode/opencode.jsonc" "$PROJECT_DIR/.config/opencode/opencode.jsonc" "OpenCode config"
+  assert_copied_file "$SANDBOX_DIR/.codex/config.toml" "$PROJECT_DIR/.codex/config.toml" "Codex config"
   assert_copied_file "$SANDBOX_DIR/.codex/AGENTS.md" "$PROJECT_DIR/configs/AGENTS.md" "Codex AGENTS.md"
   assert_copied_file "$SANDBOX_DIR/.pi/agent/AGENTS.md" "$PROJECT_DIR/configs/AGENTS.md" "Pi AGENTS.md"
-  assert_copied_file "$SANDBOX_DIR/.pi/agent/models.json" "$PROJECT_DIR/pi-configs/pi-models.json" "Pi models"
-  assert_copied_file "$SANDBOX_DIR/.pi/agent/settings.json" "$PROJECT_DIR/pi-configs/pi-settings.json" "Pi settings"
+  assert_copied_file "$SANDBOX_DIR/.pi/agent/models.json" "$PROJECT_DIR/.pi/agent/models.json" "Pi models"
+  assert_copied_file "$SANDBOX_DIR/.pi/agent/settings.json" "$PROJECT_DIR/.pi/agent/settings.json" "Pi settings"
+}
+
+assert_shared_shell_links() {
+  assert_symlink "$SANDBOX_DIR/.zshrc" "$PROJECT_DIR/.zshrc" ".zshrc is linked"
+  assert_symlink "$SANDBOX_DIR/.bash_profile" "$PROJECT_DIR/.bash_profile" ".bash_profile is linked"
+  assert_symlink "$SANDBOX_DIR/.config/fish/completions/fisher.fish" "$PROJECT_DIR/.config/fish/completions/fisher.fish" "fish fisher completions are linked"
 }
 
 reset_home() {
@@ -138,6 +143,7 @@ test_omarchy_claims_personal_files() {
     "$SANDBOX_DIR/.config/omarchy/hooks/post-update.d/drop-omarchy-tmux.hook" \
     "$PROJECT_DIR/.config/omarchy/hooks/post-update.d/drop-omarchy-tmux.hook" \
     "Post-update hook is installed from the repo"
+  assert_shared_shell_links
   assert_shared_agent_configs
 
   assert_output_contains "$(<"$SANDBOX_DIR/.config/alacritty/alacritty.toml")" "omarchy-alacritty" "Alacritty stays Omarchy-owned"
@@ -200,6 +206,7 @@ test_home_links_terminals() {
   assert_symlink "$SANDBOX_DIR/.config/ghostty" "$PROJECT_DIR/.config/ghostty" "Ghostty is claimed on home"
   assert_symlink "$SANDBOX_DIR/.config/alacritty" "$PROJECT_DIR/.config/alacritty" "Alacritty is claimed on home"
   assert_symlink "$SANDBOX_DIR/.local/bin/clipboard-copy" "$PROJECT_DIR/bin/clipboard-copy" "local bin scripts are linked"
+  assert_shared_shell_links
   assert_shared_agent_configs
   assert_file_not_exists "$SANDBOX_DIR/.config/omarchy/hooks/post-update.d/drop-omarchy-tmux.hook" "Home profile does not install the Omarchy tmux hook"
   assert_output_not_contains "$(<"$SANDBOX_DIR/.bashrc")" ">>> mise:personal >>>" "Home profile does not patch bashrc"

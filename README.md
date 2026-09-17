@@ -94,13 +94,12 @@ A plugin's bb id is its `package.json` name with the `bb-plugin-` prefix strippe
 
 These are copied by `make dot-all` / `make dot-omarchy`:
 
-- `amp-configs/settings.json` → `~/.config/amp/settings.json`
-- `configs/opencode/opencode.jsonc` → `~/.config/opencode/opencode.jsonc`
-- `configs/codex-config.toml` → `~/.codex/config.toml`
-- `configs/codex/rules/default.rules` → `~/.codex/rules/default.rules`
+- `.config/amp/settings.json` → `~/.config/amp/settings.json`
+- `.config/opencode/opencode.jsonc` → `~/.config/opencode/opencode.jsonc`
+- `.codex/config.toml` → `~/.codex/config.toml`
 - `configs/AGENTS.md` → `~/.codex/AGENTS.md` and `~/.pi/agent/AGENTS.md`
-- `pi-configs/pi-models.json` → `~/.pi/agent/models.json`
-- `pi-configs/pi-settings.json` → `~/.pi/agent/settings.json`
+- `.pi/agent/models.json` → `~/.pi/agent/models.json`
+- `.pi/agent/settings.json` → `~/.pi/agent/settings.json`
 
 OpenCode keeps `{env:MODEL_API_KEY}` and `{env:RUNINFRA_GATEWAY_KEY}` in git. A later apply overwrites the live files; capture local edits with `mise dot add` first. The default OpenCode model is `meta/muse-spark-1.2`.
 
@@ -176,14 +175,15 @@ Pi settings and models are copied by `make dot-all` / `make dot-omarchy`. Extens
 
 ```text
 dotfiles/
-├── .config/                 # shell/editor/terminal configs
+├── .config/                 # shell/editor/terminal/agent configs
+├── .codex/                  # Codex user config
+├── .pi/agent/               # Pi settings and models
 ├── mise.toml                # shared mise dotfiles + bootstrap
 ├── mise.home.toml           # macOS/Ubuntu terminals and brew packages
 ├── mise.omarchy.toml        # Omarchy-only links, bashrc block, login shell
 ├── skills/                  # custom agent skills
 │   └── writing-pr/          # PR title and body guidance
-├── amp-configs/             # managed Amp settings
-├── configs/                 # managed Codex/OpenCode/AGENTS.md configs
+├── configs/                 # shared AGENTS.md for Codex and Pi
 ├── amp-plugins/             # custom Amp plugins
 ├── pi-extensions/           # Pi extensions
 ├── pi-themes/               # Pi themes
