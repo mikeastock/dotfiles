@@ -34,42 +34,6 @@ def remove_path(path: Path) -> None:
         shutil.rmtree(path)
 
 
-def load_json_with_trailing_commas(path: Path):
-    """Load JSON while accepting trailing commas used by some settings editors."""
-    contents = path.read_text()
-
-    try:
-        return json.loads(contents)
-    except json.JSONDecodeError:
-        cleaned = []
-        in_string = False
-        escaped = False
-
-        for index, character in enumerate(contents):
-            if in_string:
-                cleaned.append(character)
-                if escaped:
-                    escaped = False
-                elif character == "\\":
-                    escaped = True
-                elif character == '"':
-                    in_string = False
-                continue
-
-            if character == '"':
-                in_string = True
-            elif character == ",":
-                next_index = index + 1
-                while next_index < len(contents) and contents[next_index].isspace():
-                    next_index += 1
-                if next_index < len(contents) and contents[next_index] in "}]":
-                    continue
-
-            cleaned.append(character)
-
-        return json.loads("".join(cleaned))
-
-
 if sys.version_info < (3, 11):
     sys.exit("Error: Python 3.11+ required (for tomllib)")
 
@@ -81,22 +45,12 @@ PLUGINS_DIR = ROOT / "plugins"
 SKILLS_DIR = ROOT / "skills"
 PROMPTS_DIR = ROOT / "prompts"
 AMP_PLUGINS_DIR = ROOT / "amp-plugins"
-AMP_CONFIGS_DIR = ROOT / "amp-configs"
-AMP_SETTINGS_FILE = AMP_CONFIGS_DIR / "settings.json"
 
 PI_EXTENSIONS_DIR = ROOT / "pi-extensions"
 PI_THEMES_DIR = ROOT / "pi-themes"
 OVERRIDES_DIR = ROOT / "skill-overrides"
 BUILD_DIR = ROOT / "build"
 CONFIG_FILE = ROOT / "plugins.toml"
-CONFIGS_DIR = ROOT / "configs"
-CODEX_CONFIG_FILE = CONFIGS_DIR / "codex-config.toml"
-CODEX_RULES_DIR = CONFIGS_DIR / "codex" / "rules"
-OPENCODE_CONFIG_FILE = CONFIGS_DIR / "opencode" / "opencode.jsonc"
-PI_CONFIGS_DIR = ROOT / "pi-configs"
-PI_SETTINGS_FILE = PI_CONFIGS_DIR / "pi-settings.json"
-PI_MODELS_FILE = PI_CONFIGS_DIR / "pi-models.json"
-GLOBAL_AGENTS_MD = CONFIGS_DIR / "AGENTS.md"
 
 # Installation paths
 HOME = Path.home()
@@ -1382,276 +1336,6 @@ def install_amp_plugins(force: bool = False):
     print(f"  amp: {count} plugins -> {dest}")
 
 
-def install_amp_config():
-    """Install Amp agent configuration."""
-    import json
-
-    print("Installing Amp config...")
-
-    dest = HOME / ".config" / "amp" / "settings.json"
-    dest.parent.mkdir(parents=True, exist_ok=True)
-
-    # Amp accepts trailing commas in settings files, so preserve those settings
-    # before rewriting the merged result as strict JSON.
-    if dest.exists():
-        settings = load_json_with_trailing_commas(dest)
-    else:
-        settings = {}
-
-    if AMP_SETTINGS_FILE.exists():
-        with open(AMP_SETTINGS_FILE) as f:
-            managed_settings = json.load(f)
-    else:
-        managed_settings = {"amp.skills.path": "~/.config/agents/skills"}
-
-    settings.update(managed_settings)
-
-    with open(dest, "w") as f:
-        json.dump(settings, f, indent=2)
-
-    print(f"  Installed to {dest}")
-
-
-def read_codex_hook_state(config_file: Path) -> dict:
-    """Read Codex's runtime-managed hook trust and enablement state."""
-    if not config_file.exists():
-        return {}
-
-    try:
-        with open(config_file, "rb") as f:
-            config = tomllib.load(f)
-    except tomllib.TOMLDecodeError:
-        return {}
-
-    return config.get("hooks", {}).get("state", {})
-
-
-def append_codex_hook_state(config_file: Path, hook_state: dict) -> None:
-    """Append runtime hook state without treating it as managed dotfiles config."""
-    if not hook_state:
-        return
-
-    with open(config_file, "a") as f:
-        f.write("\n[hooks.state]\n")
-        for hook_id, state in hook_state.items():
-            f.write(f"\n[hooks.state.{json.dumps(hook_id)}]\n")
-            if "enabled" in state:
-                f.write(f"enabled = {str(state['enabled']).lower()}\n")
-            if "trusted_hash" in state:
-                f.write(f"trusted_hash = {json.dumps(state['trusted_hash'])}\n")
-
-
-def install_codex_config():
-    """Install Codex CLI configuration while preserving runtime hook state."""
-    print("Installing Codex config...")
-
-    if not CODEX_CONFIG_FILE.exists():
-        print("  No codex-config.toml found, skipping")
-        return
-
-    dest = HOME / ".codex" / "config.toml"
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    hook_state = read_codex_hook_state(dest)
-
-    shutil.copy(CODEX_CONFIG_FILE, dest)
-    append_codex_hook_state(dest, hook_state)
-    print(f"  Installed to {dest}")
-
-    for stale_file in ("model-catalog.json", "fireworks-glm52.config.toml"):
-        stale_path = dest.parent / stale_file
-        if stale_path.exists():
-            stale_path.unlink()
-            print(f"  Removed {stale_path}")
-
-
-def install_codex_rules():
-    """Install Codex CLI exec policy rules."""
-    print("Installing Codex rules...")
-
-    if not CODEX_RULES_DIR.exists():
-        print("  No codex rules found, skipping")
-        return
-
-    dest = HOME / ".codex" / "rules"
-    dest.mkdir(parents=True, exist_ok=True)
-
-    for source in sorted(CODEX_RULES_DIR.glob("*.rules")):
-        target = dest / source.name
-        shutil.copy(source, target)
-        print(f"  Installed to {target}")
-
-
-def install_pi_settings():
-    """Install Pi agent settings."""
-    import json
-
-    print("Installing Pi settings...")
-
-    if not PI_SETTINGS_FILE.exists():
-        print("  No pi-settings.json found, skipping")
-        return
-
-    dest = HOME / ".pi" / "agent" / "settings.json"
-    dest.parent.mkdir(parents=True, exist_ok=True)
-
-    with open(PI_SETTINGS_FILE) as f:
-        managed_settings = json.load(f)
-
-    if dest.exists():
-        with open(dest) as f:
-            settings = json.load(f)
-    else:
-        settings = {}
-
-    preserved_settings = {
-        key: settings[key]
-        for key in ("lastChangelogVersion",)
-        if key in settings
-    }
-
-    for key, value in managed_settings.items():
-        settings[key] = value
-
-    settings.update(preserved_settings)
-
-    with open(dest, "w") as f:
-        json.dump(settings, f, indent=2)
-        f.write("\n")
-
-    print(f"  Installed to {dest}")
-
-
-def install_pi_models():
-    """Install Pi custom model definitions."""
-    import json
-
-    print("Installing Pi models...")
-
-    if not PI_MODELS_FILE.exists():
-        print("  No pi-models.json found, skipping")
-        return
-
-    dest = HOME / ".pi" / "agent" / "models.json"
-    dest.parent.mkdir(parents=True, exist_ok=True)
-
-    with open(PI_MODELS_FILE) as f:
-        managed_models = json.load(f)
-
-    if dest.exists():
-        with open(dest) as f:
-            models = json.load(f)
-    else:
-        models = {}
-
-    # Overlay managed providers onto existing (managed wins on conflict)
-    managed_providers = managed_models.get("providers", {})
-    existing_providers = models.setdefault("providers", {})
-    existing_providers.update(managed_providers)
-
-    with open(dest, "w") as f:
-        json.dump(models, f, indent=2)
-        f.write("\n")
-
-    print(f"  Installed to {dest}")
-
-
-def _opencode_config_dest() -> Path:
-    """Prefer an existing OpenCode config file, otherwise write JSONC."""
-    config_dir = HOME / ".config" / "opencode"
-    jsonc = config_dir / "opencode.jsonc"
-    json_file = config_dir / "opencode.json"
-    if jsonc.exists():
-        return jsonc
-    if json_file.exists():
-        return json_file
-    return jsonc
-
-
-def _is_literal_api_key(value) -> bool:
-    """True when apiKey is a real secret rather than an {env:} or {file:} template."""
-    if not isinstance(value, str) or not value:
-        return False
-    return not value.startswith("{env:") and not value.startswith("{file:")
-
-
-def _overlay_opencode_providers(existing_providers: dict, managed_providers: dict) -> None:
-    """Replace managed providers but keep a locally hardcoded apiKey."""
-    for name, managed_provider in managed_providers.items():
-        current = existing_providers.get(name, {})
-        current_key = None
-        if isinstance(current, dict):
-            current_key = current.get("options", {}).get("apiKey")
-
-        merged = json.loads(json.dumps(managed_provider))
-        if _is_literal_api_key(current_key):
-            merged.setdefault("options", {})["apiKey"] = current_key
-        existing_providers[name] = merged
-
-
-def install_opencode_config():
-    """Install OpenCode config, overlaying managed providers onto the existing file."""
-    print("Installing OpenCode config...")
-
-    if not OPENCODE_CONFIG_FILE.exists():
-        print("  No opencode config found, skipping")
-        return
-
-    dest = _opencode_config_dest()
-    dest.parent.mkdir(parents=True, exist_ok=True)
-
-    with open(OPENCODE_CONFIG_FILE) as f:
-        managed = json.load(f)
-
-    if dest.exists():
-        existing = load_json_with_trailing_commas(dest)
-    else:
-        existing = {}
-
-    existing_providers = existing.setdefault("provider", {})
-    _overlay_opencode_providers(existing_providers, managed.get("provider", {}))
-
-    for key, value in managed.items():
-        if key != "provider":
-            existing[key] = value
-
-    with open(dest, "w") as f:
-        json.dump(existing, f, indent=2)
-        f.write("\n")
-
-    print(f"  Installed to {dest}")
-
-
-def install_global_agents_md():
-    """Install global AGENTS.md for codex and pi."""
-    print("Installing global AGENTS.md...")
-
-    if not GLOBAL_AGENTS_MD.exists():
-        print("  No AGENTS.md found in configs/, skipping")
-        return
-
-    # Install for codex and pi only
-    destinations = {
-        "codex": HOME / ".codex" / "AGENTS.md",
-        "pi": HOME / ".pi" / "agent" / "AGENTS.md",
-    }
-
-    for agent, dest in destinations.items():
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy(GLOBAL_AGENTS_MD, dest)
-        print(f"  {agent}: {dest}")
-
-
-def install_configs():
-    """Install all agent configurations."""
-    install_amp_config()
-    install_codex_config()
-    install_codex_rules()
-    install_opencode_config()
-    install_pi_settings()
-    install_pi_models()
-    install_global_agents_md()
-
-
 def remove_legacy_pi_subagents() -> None:
     """Remove Pi subagents previously managed by this repository."""
     manifest = load_install_manifest()
@@ -1688,22 +1372,6 @@ def clean():
         shutil.rmtree(BUILD_DIR)
         print("  Removed build directory")
 
-    # Clean global AGENTS.md
-    agents_md_paths = [
-        HOME / ".codex" / "AGENTS.md",
-        HOME / ".pi" / "agent" / "AGENTS.md",
-    ]
-    for path in agents_md_paths:
-        if path.exists():
-            path.unlink()
-            print(f"  Removed {path}")
-
-    # Clean managed Pi models
-    pi_models_dest = HOME / ".pi" / "agent" / "models.json"
-    if pi_models_dest.exists():
-        pi_models_dest.unlink()
-        print(f"  Removed {pi_models_dest}")
-
     print("  Done")
 
 
@@ -1721,7 +1389,6 @@ def main():
             "install-extensions",
             "install-prompts",
             "install-themes",
-            "install-configs",
             "clean",
             "submodule-init",
         ],
@@ -1765,7 +1432,6 @@ def main():
         install_themes(force=args.force)
         install_extensions(plugins, force=args.force)
         install_amp_plugins(force=args.force)
-        install_configs()
         print("\nAll done!")
     elif args.command == "install-skills":
         build_skills(plugins)
@@ -1780,8 +1446,6 @@ def main():
     elif args.command == "install-themes":
         build_themes()
         install_themes(force=args.force)
-    elif args.command == "install-configs":
-        install_configs()
     elif args.command == "clean":
         clean()
 

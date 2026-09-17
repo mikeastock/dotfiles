@@ -1,0 +1,30 @@
+#:schema https://mise.jdx.dev/schema/mise.json
+
+# Omarchy: leave Ghostty, Alacritty, and Starship on Omarchy's copies.
+# Loaded with `mise -E omarchy` via `make install` on Omarchy.
+
+[dotfiles]
+"~/.config/omarchy/hooks/post-update.d/drop-omarchy-tmux.hook" = { source = ".config/omarchy/hooks/post-update.d/drop-omarchy-tmux.hook", mode = "symlink" }
+
+"~/.bashrc/personal" = { block = '''
+export PATH="$HOME/.local/bin:$PATH"
+alias wk="work"
+alias wokr="work"
+if [ -f "$HOME/.env" ]; then
+  set -a
+  . "$HOME/.env"
+  set +a
+fi
+''' }
+
+[bootstrap.user]
+login_shell = "/usr/bin/fish"
+
+[bootstrap.hooks.pre-packages]
+run = "omarchy pkg add fish atuin"
+
+[bootstrap.hooks.pre-dotfiles]
+run = '''
+rm -f "$HOME/.config/tmux/tmux.conf" "$HOME/.config/tmux"/tmux.conf.bak.*
+rmdir "$HOME/.config/tmux" 2>/dev/null || true
+'''

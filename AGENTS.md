@@ -14,6 +14,9 @@ Skills are specialized instruction sets that guide AI agents through specific ta
 
 ```
 ├── plugins.toml                    # Plugin configuration (URLs, enabled items, paths)
+├── mise.toml                       # Shared mise dotfiles and bootstrap
+├── mise.home.toml                  # macOS/Ubuntu terminals and brew packages
+├── mise.omarchy.toml               # Omarchy-only links, bashrc block, login shell
 ├── plugins/                        # Git submodules (skill sources, owner-repo format)
 │   └── <owner>-<repo>/
 ├── skills/                         # Custom skills (local)
@@ -23,13 +26,13 @@ Skills are specialized instruction sets that guide AI agents through specific ta
 ├── pi-extensions/                  # Custom Pi extensions (local)
 │   └── <extension-name>/index.ts
 ├── scripts/
-│   └── build.py                    # Python build system (requires Python 3.11+)
+│   ├── build.py                    # Python build system (requires Python 3.11+)
+│   └── dotfiles.sh                 # mise bootstrap wrapper
 ├── tests/                          # Test suite (shell + node --test)
 │   ├── test-helpers.sh             # Shared test utilities
 │   ├── test-make.sh                # Makefile tests
-│   ├── test-install-configs.sh     # Agent config install tests
 │   ├── test-skill-doctor.sh        # skill-doctor collector/renderer tests
-│   ├── test-dot-omarchy.sh         # Omarchy installer tests
+│   ├── test-dotfiles.sh            # mise home/omarchy installer tests
 │   ├── test-grok-review.sh         # grok-review launcher tests
 │   ├── test-amp-worktree.sh        # amp-worktree tests
 │   ├── test-technical-explainer-comic.sh
@@ -78,8 +81,7 @@ make install
 ### Common Commands
 | Command | Description |
 |---------|-------------|
-| `make install` | Build and install skills and extensions for all agents |
-| `make dot-omarchy` | Install personal dotfiles on Omarchy Linux |
+| `make install` | Build and install skills, extensions, and machine dotfiles |
 | `make install-non-interactive` | Install for headless/automated environments (skips interactive extensions and overrides) |
 | `make build` | Build skills to `build/` without installing |
 | `make install-skills` | Install skills only |

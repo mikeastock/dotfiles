@@ -1,0 +1,38 @@
+#:schema https://mise.jdx.dev/schema/mise.json
+min_version = "2026.9.2"
+
+# Shared machine files. macOS/Ubuntu extras live in mise.home.toml (`-E home`).
+# Omarchy extras live in mise.omarchy.toml (`-E omarchy`).
+# Apply with `make install`, not bare `mise dot apply`.
+
+[dotfiles]
+"~/.gitconfig" = { source = ".gitconfig", mode = "symlink" }
+"~/.ideavimrc" = { source = ".ideavimrc", mode = "symlink" }
+"~/.psqlrc" = { source = ".psqlrc", mode = "symlink" }
+"~/.tmux.conf" = { source = ".tmux.conf", mode = "symlink" }
+"~/.tmuxinator" = { source = ".tmuxinator", mode = "symlink" }
+"~/.vscode" = { source = ".vscode", mode = "symlink" }
+"~/.zshrc" = { source = ".zshrc", mode = "symlink" }
+"~/.bash_profile" = { source = ".bash_profile", mode = "symlink" }
+"~/.config/stylua" = { source = ".config/stylua", mode = "symlink" }
+"~/.config/lvim" = { source = ".config/lvim", mode = "symlink" }
+"~/.config/zellij" = { source = ".config/zellij", mode = "symlink" }
+"~/.config/direnv" = { source = ".config/direnv", mode = "symlink" }
+"~/.config/atuin" = { source = ".config/atuin", mode = "symlink" }
+"~/.config/hypr" = { source = ".config/hypr", mode = "symlink" }
+"~/.config/nvim/init.lua" = { source = ".config/nvim/init.lua", mode = "symlink" }
+"~/.config/fish/config.fish" = { source = ".config/fish/config.fish", mode = "symlink" }
+"~/.config/fish/functions" = { source = ".config/fish/functions", mode = "symlink" }
+"~/.config/fish/completions/fisher.fish" = { source = ".config/fish/completions/fisher.fish", mode = "symlink" }
+"~/.config/herdr/config.toml" = { source = ".config/herdr/config.toml", mode = "symlink" }
+"~/.local/bin" = { source = "bin", mode = "symlink-each" }
+"~/.config/amp/settings.json" = { source = ".config/amp/settings.json", mode = "copy" }
+"~/.config/opencode/opencode.jsonc" = { source = ".config/opencode/opencode.jsonc", mode = "copy" }
+"~/.codex/config.toml" = { source = ".codex/config.toml", mode = "copy" }
+"~/.codex/AGENTS.md" = { source = "configs/AGENTS.md", mode = "copy" }
+"~/.pi/agent/AGENTS.md" = { source = "configs/AGENTS.md", mode = "copy" }
+"~/.pi/agent/models.json" = { source = ".pi/agent/models.json", mode = "copy" }
+"~/.pi/agent/settings.json" = { source = ".pi/agent/settings.json", mode = "copy" }
+
+[bootstrap.macos.defaults]
+"com.apple.screencapture" = { "disable-shadow" = true }

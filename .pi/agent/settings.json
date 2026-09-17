@@ -8,6 +8,7 @@
   "enabledModels": [
     "fireworks/accounts/fireworks/models/kimi-k3",
     "openai-codex/gpt-5.6-sol",
+    "openai-codex/gpt-5.6-luna",
     "xai/grok-4.6",
     "google/gemini-3.8-flash",
     "openai-codex/gpt-6-astra",
@@ -16,10 +17,15 @@
   ],
   "packages": [
     "npm:pi-verbosity-control",
-    "npm:pi-meta-oauth"
+    "npm:pi-meta-oauth",
+    "npm:@earendil-works/pi-radius"
   ],
   "theme": "catppuccin-mocha",
   "transport": "websocket",
   "quietStartup": true,
-  "enableInstallTelemetry": false
+  "enableInstallTelemetry": false,
+  "pi-codex-fast": {
+    "enabled": true
+  },
+  "tuiMode": "regular"
 }

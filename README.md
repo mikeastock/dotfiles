@@ -1,40 +1,34 @@
 # dotfiles
 
-Personal dotfiles for macOS, Omarchy, and Ubuntu 24.x. Omarchy setup does not use Homebrew and leaves Omarchy-owned terminal/theme files alone.
+Personal dotfiles for macOS, Omarchy, and Ubuntu 24.x. Machine setup is declared in `mise.toml` plus `mise.home.toml` or `mise.omarchy.toml`, and applied with [mise](https://mise.jdx.dev/dotfiles.html) 2026.9.2+. Omarchy setup does not use Homebrew and leaves Omarchy-owned terminal/theme files alone.
 
 ## Quick Start
 
-### macOS
+Install [mise](https://mise.jdx.dev/) 2026.9.2+ first (`curl https://mise.run | sh`).
+
+### macOS / Ubuntu 24.x
 
 ```bash
 git clone https://github.com/mikeastock/dotfiles.git ~/code/personal/dotfiles
 cd ~/code/personal/dotfiles
-make dot-all
+make install
 ```
+
+`make install` installs agent skills and applies machine files with `mise -E home bootstrap`: shared links, Ghostty/Alacritty/Starship, brew packages (`tmux`, `tmux-mem-cpu-load`, `tree-sitter-cli`), and macOS screenshot defaults (skipped on Linux).
 
 ### Omarchy
 
 ```bash
 git clone https://github.com/mikeastock/dotfiles.git ~/code/personal/dotfiles
 cd ~/code/personal/dotfiles
-make dot-omarchy
+make install
 ```
 
-`make dot-omarchy` claims home/config links around existing Omarchy files, installs `fish` and `atuin` with `omarchy pkg add`, switches the login shell to fish, and installs TPM. It leaves Ghostty, Alacritty, and Starship on Omarchy's copies, and removes `~/.config/tmux/tmux.conf` so `~/.tmux.conf` is the only tmux config. A post-update hook drops that XDG file again if `omarchy update` puts it back.
+On Omarchy, `make install` uses `mise -E omarchy bootstrap --force-dotfiles`. It claims home/config links around existing Omarchy files, installs `fish` and `atuin` with `omarchy pkg add`, and switches the login shell to fish. It leaves Ghostty, Alacritty, and Starship on Omarchy's copies, and removes `~/.config/tmux/tmux.conf` so `~/.tmux.conf` is the only tmux config. A post-update hook drops that XDG file again if `omarchy update` puts it back.
 
-Do not run **Update → Config → Tmux** in the Omarchy menu. Log out once after the first install so the fish login shell applies. Then `make install` for agent skills.
+Do not run **Update → Config → Tmux** in the Omarchy menu. Log out once after the first install so the fish login shell applies.
 
-### Ubuntu 24.x
-
-Install Homebrew/Linuxbrew first, then:
-
-```bash
-git clone https://github.com/mikeastock/dotfiles.git ~/code/personal/dotfiles
-cd ~/code/personal/dotfiles
-make dot-all
-```
-
-`make dot-all` skips macOS-only defaults on Linux.
+A bare `mise dot apply` from this repo skips the environment-specific files. Unapply with `scripts/dotfiles.sh clean`.
 
 ## Agent Skills / Extensions Tooling
 
@@ -44,18 +38,17 @@ This repo also contains reusable skills, prompt templates, and extensions for Am
 
 - Python 3.11+
 - Git
-- Homebrew or Linuxbrew for `make dot-install`
+- mise 2026.9.2+ for machine files applied by `make install`
 
 ### Agent commands
 
 ```bash
-make install                 # install agent skills/prompts/themes/extensions and Amp plugins
+make install                 # agent artifacts plus machine dotfiles (auto-detects Omarchy)
 make install-skills
 make install-amp-plugins
 make install-prompts
 make install-themes
 make install-extensions
-make install-configs
 make build                   # build agent artifacts only
 make clean                   # clean agent build/install artifacts
 make plugin-update           # update plugin submodules
@@ -89,13 +82,18 @@ A plugin's bb id is its `package.json` name with the `bb-plugin-` prefix strippe
 - `bb-plugin-bb-sidebar` — the sidebar in use, forked from [yusuf8834/bb-sidebar](https://github.com/yusuf8834/bb-sidebar) v0.2.4. Adds a **Bots** shelf for [tobi/bb-bots-sidebar](https://github.com/tobi/bb-bots-sidebar): each bot's conversations group under a bot row, read through the bots plugin's own `bots_list` RPC via `bb.sdk.plugins.callRpc`. That plugin stays the place to create, edit and assign bots; see `bb-plugins/bb-plugin-bb-sidebar/README.md`.
 - `bb-plugin-t3sidebar` — the earlier fork of [SawyerHood/bb-plugin-t3sidebar](https://github.com/SawyerHood/bb-plugin-t3sidebar), kept for its auto-settle-on-merge sweep.
 
-### Amp config
+### Amp / Codex / OpenCode / Pi configs
 
-Amp settings live in `amp-configs/settings.json`. `make install-configs` merges those managed settings into `~/.config/amp/settings.json` while preserving any other local Amp settings already present.
+These are copied by `make install`:
 
-### OpenCode config
+- `.config/amp/settings.json` → `~/.config/amp/settings.json`
+- `.config/opencode/opencode.jsonc` → `~/.config/opencode/opencode.jsonc`
+- `.codex/config.toml` → `~/.codex/config.toml`
+- `configs/AGENTS.md` → `~/.codex/AGENTS.md` and `~/.pi/agent/AGENTS.md`
+- `.pi/agent/models.json` → `~/.pi/agent/models.json`
+- `.pi/agent/settings.json` → `~/.pi/agent/settings.json`
 
-OpenCode config lives in `configs/opencode/opencode.jsonc`. `make install-configs` overlays the managed Meta and RunInfra providers, default model, and small model onto `~/.config/opencode/opencode.jsonc` (or `opencode.json` if that file already exists) while preserving any other local providers. Locally hardcoded provider `apiKey` values are kept; the tracked file uses `{env:MODEL_API_KEY}` and `{env:RUNINFRA_GATEWAY_KEY}` so secrets are not in git. The default model is `meta/muse-spark-1.2` (Meta Model API via the Responses adapter). `muse-spark-1.3` is also registered for when the account has access.
+OpenCode keeps `{env:MODEL_API_KEY}` and `{env:RUNINFRA_GATEWAY_KEY}` in git. A later apply overwrites the live files; capture local edits with `mise dot add` first. The default OpenCode model is `meta/muse-spark-1.2`.
 
 ### Managed install behavior
 
@@ -112,7 +110,7 @@ curl -fsSL https://pi.dev/install.sh | PI_EXPERIMENTAL=1 sh
 pi update
 ```
 
-This repo still installs Pi configs, extensions, prompts, and themes with `make install`. `pi-configs/pi-patch/` is an optional Ghostty/tmux image patch for that managed install.
+Pi settings and models are copied by `make install`. Extensions, prompts, and themes install in the same command. `pi-configs/pi-patch/` is an optional Ghostty/tmux image patch for the managed Pi install.
 
 ### Notable custom skills
 
@@ -169,11 +167,15 @@ This repo still installs Pi configs, extensions, prompts, and themes with `make 
 
 ```text
 dotfiles/
-├── .config/                 # shell/editor/terminal configs
+├── .config/                 # shell/editor/terminal/agent configs
+├── .codex/                  # Codex user config
+├── .pi/agent/               # Pi settings and models
+├── mise.toml                # shared mise dotfiles + bootstrap
+├── mise.home.toml           # macOS/Ubuntu terminals and brew packages
+├── mise.omarchy.toml        # Omarchy-only links, bashrc block, login shell
 ├── skills/                  # custom agent skills
 │   └── writing-pr/          # PR title and body guidance
-├── amp-configs/             # managed Amp settings
-├── configs/                 # managed agent configs (Codex, OpenCode, Omarchy)
+├── configs/                 # shared AGENTS.md for Codex and Pi
 ├── amp-plugins/             # custom Amp plugins
 ├── pi-extensions/           # Pi extensions
 ├── pi-themes/               # Pi themes
@@ -181,13 +183,14 @@ dotfiles/
 ├── plugins/                 # plugin submodules
 ├── bb-plugins/              # forked bb plugins
 ├── scripts/build.py         # agent build/install system
+├── scripts/dotfiles.sh      # mise bootstrap wrapper
 ├── tests/                   # agent tooling tests
 └── Makefile                 # dotfiles + agent commands
 ```
 
 ## Ubuntu notes
 
-Recommended apt packages before or after `make dot-all`:
+Recommended apt packages before or after `make install`:
 
 ```bash
 sudo apt update
@@ -198,14 +201,14 @@ sudo apt install -y fish tmux ripgrep fd-find xclip wl-clipboard xsel fonts-fira
 - Herdr config is symlinked to `~/.config/herdr/config.toml` and uses tmux-like `Ctrl-a` prefix bindings
 - `tmux-mem-cpu-load` is optional; the tmux status bar falls back to `uptime`
 - Install the configured fonts (`Fira Code` / `FiraCode Nerd Font`) if you want terminal rendering to match macOS
-- If you prefer one package manager across macOS and Linux, install Homebrew/Linuxbrew and use `make dot-install`
+- On macOS/Ubuntu, `make install` installs `tmux`, `tmux-mem-cpu-load`, and `tree-sitter-cli` through mise's brew bootstrap packages
 
 ## Omarchy notes
 
-- Hyprland config lives in `.config/hypr` and is claimed by `make dot-omarchy`
+- Hyprland config lives in `.config/hypr` and is claimed on Omarchy
 - Ghostty, Alacritty, and Starship stay on Omarchy so theme switches keep working
-- tmux is only `~/.tmux.conf`; the installer removes `~/.config/tmux/tmux.conf` and installs `configs/omarchy/hooks/post-update.d/drop-omarchy-tmux.hook`
-- Existing Omarchy files that get replaced are copied to `~/.config/dotfiles-setup-backup-<timestamp>`
+- tmux is only `~/.tmux.conf`; the installer removes `~/.config/tmux/tmux.conf` and installs `.config/omarchy/hooks/post-update.d/drop-omarchy-tmux.hook`
+- Conflicting whole-file targets are replaced (`mise bootstrap --force-dotfiles`); inspect `mise dot diff` first if you need to keep a local copy
 
 ## Notes
 

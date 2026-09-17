@@ -6,7 +6,8 @@
 
 .config/fish/fish_plugins
 .config/fish/themes
-.config/fish/completions
+.config/fish/completions/*
+!.config/fish/completions/fisher.fish
 .config/fish/fish_variables
 .config/hypr/*.bak.*
 
@@ -15,6 +16,10 @@
 
 # Agent build output
 build/
+
+# mise local overrides
+mise.local.toml
+mise.*.local.toml
 
 # Node.js
 node_modules/
