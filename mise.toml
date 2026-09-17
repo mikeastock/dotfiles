@@ -34,17 +34,5 @@ min_version = "2026.9.2"
 "~/.pi/agent/models.json" = { source = ".pi/agent/models.json", mode = "copy" }
 "~/.pi/agent/settings.json" = { source = ".pi/agent/settings.json", mode = "copy" }
 
-[bootstrap.repos]
-"~/.tmux/plugins/tpm" = { url = "https://github.com/tmux-plugins/tpm" }
-
 [bootstrap.macos.defaults]
 "com.apple.screencapture" = { "disable-shadow" = true }
-
-[bootstrap.hooks.post-dotfiles]
-run = '''
-if command -v tmux >/dev/null && [ -x "$HOME/.tmux/plugins/tpm/bin/install_plugins" ]; then
-  mkdir -p "$HOME/.tmux/plugins"
-  tmux start-server \; set-environment -g TMUX_PLUGIN_MANAGER_PATH "$HOME/.tmux/plugins/" \; source-file "$HOME/.tmux.conf"
-  "$HOME/.tmux/plugins/tpm/bin/install_plugins"
-fi
-'''

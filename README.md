@@ -14,7 +14,7 @@ cd ~/code/personal/dotfiles
 make dot-all
 ```
 
-`make dot-all` runs `mise -E home bootstrap` for shared links, Ghostty/Alacritty/Starship, brew packages (`tmux`, `tmux-mem-cpu-load`, `tree-sitter-cli`), TPM, and macOS screenshot defaults.
+`make dot-all` runs `mise -E home bootstrap` for shared links, Ghostty/Alacritty/Starship, brew packages (`tmux`, `tmux-mem-cpu-load`, `tree-sitter-cli`), and macOS screenshot defaults.
 
 ### Omarchy
 
@@ -24,7 +24,7 @@ cd ~/code/personal/dotfiles
 make dot-omarchy
 ```
 
-`make dot-omarchy` runs `mise -E omarchy bootstrap --force-dotfiles`. It claims home/config links around existing Omarchy files, installs `fish` and `atuin` with `omarchy pkg add`, switches the login shell to fish, and installs TPM. It leaves Ghostty, Alacritty, and Starship on Omarchy's copies, and removes `~/.config/tmux/tmux.conf` so `~/.tmux.conf` is the only tmux config. A post-update hook drops that XDG file again if `omarchy update` puts it back.
+`make dot-omarchy` runs `mise -E omarchy bootstrap --force-dotfiles`. It claims home/config links around existing Omarchy files, installs `fish` and `atuin` with `omarchy pkg add`, and switches the login shell to fish. It leaves Ghostty, Alacritty, and Starship on Omarchy's copies, and removes `~/.config/tmux/tmux.conf` so `~/.tmux.conf` is the only tmux config. A post-update hook drops that XDG file again if `omarchy update` puts it back.
 
 Do not run **Update → Config → Tmux** in the Omarchy menu. Log out once after the first install so the fish login shell applies. Then `make install` for agent skills.
 

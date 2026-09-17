@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Apply personal machine setup via mise bootstrap.
 #
-# home     macOS/Ubuntu: terminals, brew packages, TPM, macOS defaults
+# home     macOS/Ubuntu: terminals, brew packages, macOS defaults
 # omarchy  Omarchy Linux: skip terminals, claim around Omarchy files, fish login
 # clean    Remove mise-managed links from both profiles
 
@@ -11,7 +11,6 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 COMMAND=""
 SKIP_PACKAGES=0
-SKIP_TPM=0
 SKIP_SHELL=0
 FORCE=0
 
@@ -24,7 +23,6 @@ Usage: scripts/dotfiles.sh <home|omarchy|clean> [options]
   clean      Unapply home and omarchy dotfiles
 
   --skip-packages   Skip brew / omarchy package install
-  --skip-tpm        Skip cloning TPM
   --skip-shell      Do not change the login shell (omarchy)
   --force           Run omarchy even when this machine does not look like Omarchy
   -h, --help        Show this help
@@ -73,9 +71,6 @@ bootstrap() {
   if ((SKIP_PACKAGES == 0)); then
     parts+=(packages)
   fi
-  if ((SKIP_TPM == 0)); then
-    parts+=(repos)
-  fi
   parts+=(dotfiles)
   if [[ $profile == home && $(uname -s) == Darwin ]]; then
     parts+=(macos-defaults)
@@ -108,7 +103,6 @@ while (($#)); do
       COMMAND="$1"
       ;;
     --skip-packages) SKIP_PACKAGES=1 ;;
-    --skip-tpm) SKIP_TPM=1 ;;
     --skip-shell) SKIP_SHELL=1 ;;
     --force) FORCE=1 ;;
     -h | --help)

@@ -98,12 +98,12 @@ seed_omarchy_home() {
 run_omarchy() {
   HOME="$SANDBOX_DIR" \
     DOTFILES_OMARCHY=1 \
-    "$INSTALLER" omarchy --skip-packages --skip-tpm --skip-shell "$@"
+    "$INSTALLER" omarchy --skip-packages --skip-shell "$@"
 }
 
 run_home() {
   HOME="$SANDBOX_DIR" \
-    "$INSTALLER" home --skip-packages --skip-tpm "$@"
+    "$INSTALLER" home --skip-packages "$@"
 }
 
 test_refuses_non_omarchy() {
@@ -111,7 +111,7 @@ test_refuses_non_omarchy() {
   reset_home
   local output status
   set +e
-  output="$(HOME="$SANDBOX_DIR" DOTFILES_OMARCHY=0 "$INSTALLER" omarchy --skip-packages --skip-tpm --skip-shell 2>&1)"
+  output="$(HOME="$SANDBOX_DIR" DOTFILES_OMARCHY=0 "$INSTALLER" omarchy --skip-packages --skip-shell 2>&1)"
   status=$?
   set -e
 
