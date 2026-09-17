@@ -4,7 +4,7 @@
 # Loaded with `mise -E omarchy` via `make dot-omarchy`.
 
 [dotfiles]
-"~/.config/omarchy/hooks/post-update.d/drop-omarchy-tmux.hook" = { source = "configs/omarchy/hooks/post-update.d/drop-omarchy-tmux.hook", mode = "symlink" }
+"~/.config/omarchy/hooks/post-update.d/drop-omarchy-tmux.hook" = { source = ".config/omarchy/hooks/post-update.d/drop-omarchy-tmux.hook", mode = "symlink" }
 
 "~/.bashrc/personal" = { block = '''
 export PATH="$HOME/.local/bin:$PATH"

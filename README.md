@@ -178,7 +178,7 @@ dotfiles/
 ├── skills/                  # custom agent skills
 │   └── writing-pr/          # PR title and body guidance
 ├── amp-configs/             # managed Amp settings
-├── configs/                 # managed agent configs (Codex, OpenCode, Omarchy)
+├── configs/                 # managed Codex/OpenCode/AGENTS.md configs
 ├── amp-plugins/             # custom Amp plugins
 ├── pi-extensions/           # Pi extensions
 ├── pi-themes/               # Pi themes
@@ -210,7 +210,7 @@ sudo apt install -y fish tmux ripgrep fd-find xclip wl-clipboard xsel fonts-fira
 
 - Hyprland config lives in `.config/hypr` and is claimed by `make dot-omarchy`
 - Ghostty, Alacritty, and Starship stay on Omarchy so theme switches keep working
-- tmux is only `~/.tmux.conf`; the installer removes `~/.config/tmux/tmux.conf` and installs `configs/omarchy/hooks/post-update.d/drop-omarchy-tmux.hook`
+- tmux is only `~/.tmux.conf`; the installer removes `~/.config/tmux/tmux.conf` and installs `.config/omarchy/hooks/post-update.d/drop-omarchy-tmux.hook`
 - Conflicting whole-file targets are replaced (`mise bootstrap --force-dotfiles`); inspect `mise dot diff` first if you need to keep a local copy
 
 ## Notes

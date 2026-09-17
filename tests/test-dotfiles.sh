@@ -109,7 +109,7 @@ test_omarchy_claims_personal_files() {
   assert_file_not_exists "$SANDBOX_DIR/.config/tmux/tmux.conf" "Omarchy XDG tmux.conf is removed"
   assert_symlink \
     "$SANDBOX_DIR/.config/omarchy/hooks/post-update.d/drop-omarchy-tmux.hook" \
-    "$PROJECT_DIR/configs/omarchy/hooks/post-update.d/drop-omarchy-tmux.hook" \
+    "$PROJECT_DIR/.config/omarchy/hooks/post-update.d/drop-omarchy-tmux.hook" \
     "Post-update hook is installed from the repo"
 
   assert_output_contains "$(<"$SANDBOX_DIR/.config/alacritty/alacritty.toml")" "omarchy-alacritty" "Alacritty stays Omarchy-owned"
@@ -155,7 +155,7 @@ test_omarchy_replaces_wrong_hook_file() {
 
   assert_symlink \
     "$SANDBOX_DIR/.config/omarchy/hooks/post-update.d/drop-omarchy-tmux.hook" \
-    "$PROJECT_DIR/configs/omarchy/hooks/post-update.d/drop-omarchy-tmux.hook" \
+    "$PROJECT_DIR/.config/omarchy/hooks/post-update.d/drop-omarchy-tmux.hook" \
     "Existing hook file becomes the repo symlink"
 }
 
