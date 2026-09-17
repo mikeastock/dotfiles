@@ -35,6 +35,33 @@ assert_symlink() {
   return 1
 }
 
+assert_copied_file() {
+  local dest="$1"
+  local source="$2"
+  local description="$3"
+
+  if [[ -L $dest ]]; then
+    log_error "FAIL: $description"
+    log_error "  was a symlink instead of a copy"
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+    return 1
+  fi
+
+  assert_file_exists "$dest" "$description exists"
+  assert_success "$description matches source" cmp "$source" "$dest"
+}
+
+assert_shared_agent_configs() {
+  assert_copied_file "$SANDBOX_DIR/.config/amp/settings.json" "$PROJECT_DIR/amp-configs/settings.json" "Amp settings"
+  assert_copied_file "$SANDBOX_DIR/.config/opencode/opencode.jsonc" "$PROJECT_DIR/configs/opencode/opencode.jsonc" "OpenCode config"
+  assert_copied_file "$SANDBOX_DIR/.codex/config.toml" "$PROJECT_DIR/configs/codex-config.toml" "Codex config"
+  assert_copied_file "$SANDBOX_DIR/.codex/rules/default.rules" "$PROJECT_DIR/configs/codex/rules/default.rules" "Codex rules"
+  assert_copied_file "$SANDBOX_DIR/.codex/AGENTS.md" "$PROJECT_DIR/configs/AGENTS.md" "Codex AGENTS.md"
+  assert_copied_file "$SANDBOX_DIR/.pi/agent/AGENTS.md" "$PROJECT_DIR/configs/AGENTS.md" "Pi AGENTS.md"
+  assert_copied_file "$SANDBOX_DIR/.pi/agent/models.json" "$PROJECT_DIR/pi-configs/pi-models.json" "Pi models"
+  assert_copied_file "$SANDBOX_DIR/.pi/agent/settings.json" "$PROJECT_DIR/pi-configs/pi-settings.json" "Pi settings"
+}
+
 reset_home() {
   rm -rf "$SANDBOX_DIR"
   SANDBOX_DIR=$(mktemp -d)
@@ -111,15 +138,7 @@ test_omarchy_claims_personal_files() {
     "$SANDBOX_DIR/.config/omarchy/hooks/post-update.d/drop-omarchy-tmux.hook" \
     "$PROJECT_DIR/.config/omarchy/hooks/post-update.d/drop-omarchy-tmux.hook" \
     "Post-update hook is installed from the repo"
-  assert_file_exists "$SANDBOX_DIR/.pi/agent/settings.json" "Pi settings are copied"
-  assert_output_contains "$(<"$SANDBOX_DIR/.pi/agent/settings.json")" "gpt-5.6-luna" "Pi settings include the managed default model"
-  if [[ ! -L $SANDBOX_DIR/.pi/agent/settings.json ]]; then
-    log_info "PASS: Pi settings are a regular copied file"
-    TESTS_PASSED=$((TESTS_PASSED + 1))
-  else
-    log_error "FAIL: Pi settings were symlinked"
-    TESTS_FAILED=$((TESTS_FAILED + 1))
-  fi
+  assert_shared_agent_configs
 
   assert_output_contains "$(<"$SANDBOX_DIR/.config/alacritty/alacritty.toml")" "omarchy-alacritty" "Alacritty stays Omarchy-owned"
   assert_output_contains "$(<"$SANDBOX_DIR/.config/ghostty/config")" "omarchy-ghostty" "Ghostty stays Omarchy-owned"
@@ -181,7 +200,7 @@ test_home_links_terminals() {
   assert_symlink "$SANDBOX_DIR/.config/ghostty" "$PROJECT_DIR/.config/ghostty" "Ghostty is claimed on home"
   assert_symlink "$SANDBOX_DIR/.config/alacritty" "$PROJECT_DIR/.config/alacritty" "Alacritty is claimed on home"
   assert_symlink "$SANDBOX_DIR/.local/bin/clipboard-copy" "$PROJECT_DIR/bin/clipboard-copy" "local bin scripts are linked"
-  assert_file_exists "$SANDBOX_DIR/.pi/agent/settings.json" "Home profile copies Pi settings"
+  assert_shared_agent_configs
   assert_file_not_exists "$SANDBOX_DIR/.config/omarchy/hooks/post-update.d/drop-omarchy-tmux.hook" "Home profile does not install the Omarchy tmux hook"
   assert_output_not_contains "$(<"$SANDBOX_DIR/.bashrc")" ">>> mise:personal >>>" "Home profile does not patch bashrc"
 }

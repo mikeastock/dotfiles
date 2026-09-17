@@ -8,7 +8,7 @@ PYTHON := python3
 BUILD_SCRIPT := $(CURDIR)/scripts/build.py
 FORCE_FLAG := $(if $(FORCE),--force,)
 
-.PHONY: all install install-non-interactive install-skills install-amp-plugins install-extensions install-prompts install-themes install-configs amp-plugin-types amp-plugin-check package-manager-security-config build clean help submodule-init plugin-update check-python \
+.PHONY: all install install-non-interactive install-skills install-amp-plugins install-extensions install-prompts install-themes amp-plugin-types amp-plugin-check package-manager-security-config build clean help submodule-init plugin-update check-python \
 	dot-all dot-omarchy dot-clean
 
 all: help
@@ -25,7 +25,6 @@ help:
 	@echo "  make install-extensions      Install extensions only (Pi agent)"
 	@echo "  make install-prompts         Install prompt templates only (Pi agent)"
 	@echo "  make install-themes          Install themes only (Pi agent)"
-	@echo "  make install-configs         Install all agent configs (Amp, Codex, OpenCode, Pi)"
 	@echo "  make amp-plugin-types        Refresh local Amp plugin TypeScript declarations"
 	@echo "  make amp-plugin-check        Refresh Amp plugin declarations and typecheck plugins"
 	@echo "  make package-manager-security-config Configure global npm/pnpm/bun/uv package security settings"
@@ -74,9 +73,6 @@ install-prompts: check-python
 
 install-themes: check-python
 	@$(PYTHON) "$(BUILD_SCRIPT)" install-themes $(FORCE_FLAG)
-
-install-configs: check-python
-	@$(PYTHON) "$(BUILD_SCRIPT)" install-configs
 
 amp-plugin-types: check-python
 	@$(PYTHON) $(CURDIR)/scripts/update_amp_plugin_types.py

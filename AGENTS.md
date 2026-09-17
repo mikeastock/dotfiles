@@ -31,7 +31,6 @@ Skills are specialized instruction sets that guide AI agents through specific ta
 ├── tests/                          # Test suite (shell + node --test)
 │   ├── test-helpers.sh             # Shared test utilities
 │   ├── test-make.sh                # Makefile tests
-│   ├── test-install-configs.sh     # Agent config install tests
 │   ├── test-skill-doctor.sh        # skill-doctor collector/renderer tests
 │   ├── test-dotfiles.sh            # mise home/omarchy installer tests
 │   ├── test-grok-review.sh         # grok-review launcher tests

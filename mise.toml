@@ -23,6 +23,13 @@ min_version = "2026.9.2"
 "~/.config/fish/functions" = { source = ".config/fish/functions", mode = "symlink" }
 "~/.config/herdr/config.toml" = { source = ".config/herdr/config.toml", mode = "symlink" }
 "~/.local/bin" = { source = "bin", mode = "symlink-each" }
+"~/.config/amp/settings.json" = { source = "amp-configs/settings.json", mode = "copy" }
+"~/.config/opencode/opencode.jsonc" = { source = "configs/opencode/opencode.jsonc", mode = "copy" }
+"~/.codex/config.toml" = { source = "configs/codex-config.toml", mode = "copy" }
+"~/.codex/rules/default.rules" = { source = "configs/codex/rules/default.rules", mode = "copy" }
+"~/.codex/AGENTS.md" = { source = "configs/AGENTS.md", mode = "copy" }
+"~/.pi/agent/AGENTS.md" = { source = "configs/AGENTS.md", mode = "copy" }
+"~/.pi/agent/models.json" = { source = "pi-configs/pi-models.json", mode = "copy" }
 "~/.pi/agent/settings.json" = { source = "pi-configs/pi-settings.json", mode = "copy" }
 
 [bootstrap.repos]

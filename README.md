@@ -57,7 +57,6 @@ make install-amp-plugins
 make install-prompts
 make install-themes
 make install-extensions
-make install-configs
 make build                   # build agent artifacts only
 make clean                   # clean agent build/install artifacts
 make plugin-update           # update plugin submodules
@@ -91,13 +90,19 @@ A plugin's bb id is its `package.json` name with the `bb-plugin-` prefix strippe
 - `bb-plugin-bb-sidebar` — the sidebar in use, forked from [yusuf8834/bb-sidebar](https://github.com/yusuf8834/bb-sidebar) v0.2.4. Adds a **Bots** shelf for [tobi/bb-bots-sidebar](https://github.com/tobi/bb-bots-sidebar): each bot's conversations group under a bot row, read through the bots plugin's own `bots_list` RPC via `bb.sdk.plugins.callRpc`. That plugin stays the place to create, edit and assign bots; see `bb-plugins/bb-plugin-bb-sidebar/README.md`.
 - `bb-plugin-t3sidebar` — the earlier fork of [SawyerHood/bb-plugin-t3sidebar](https://github.com/SawyerHood/bb-plugin-t3sidebar), kept for its auto-settle-on-merge sweep.
 
-### Amp config
+### Amp / Codex / OpenCode / Pi configs
 
-Amp settings live in `amp-configs/settings.json`. `make install-configs` merges those managed settings into `~/.config/amp/settings.json` while preserving any other local Amp settings already present.
+These are copied by `make dot-all` / `make dot-omarchy`:
 
-### OpenCode config
+- `amp-configs/settings.json` → `~/.config/amp/settings.json`
+- `configs/opencode/opencode.jsonc` → `~/.config/opencode/opencode.jsonc`
+- `configs/codex-config.toml` → `~/.codex/config.toml`
+- `configs/codex/rules/default.rules` → `~/.codex/rules/default.rules`
+- `configs/AGENTS.md` → `~/.codex/AGENTS.md` and `~/.pi/agent/AGENTS.md`
+- `pi-configs/pi-models.json` → `~/.pi/agent/models.json`
+- `pi-configs/pi-settings.json` → `~/.pi/agent/settings.json`
 
-OpenCode config lives in `configs/opencode/opencode.jsonc`. `make install-configs` overlays the managed Meta and RunInfra providers, default model, and small model onto `~/.config/opencode/opencode.jsonc` (or `opencode.json` if that file already exists) while preserving any other local providers. Locally hardcoded provider `apiKey` values are kept; the tracked file uses `{env:MODEL_API_KEY}` and `{env:RUNINFRA_GATEWAY_KEY}` so secrets are not in git. The default model is `meta/muse-spark-1.2` (Meta Model API via the Responses adapter). `muse-spark-1.3` is also registered for when the account has access.
+OpenCode keeps `{env:MODEL_API_KEY}` and `{env:RUNINFRA_GATEWAY_KEY}` in git. A later apply overwrites the live files; capture local edits with `mise dot add` first. The default OpenCode model is `meta/muse-spark-1.2`.
 
 ### Managed install behavior
 
@@ -114,7 +119,7 @@ curl -fsSL https://pi.dev/install.sh | PI_EXPERIMENTAL=1 sh
 pi update
 ```
 
-Pi `settings.json` is copied by `make dot-all` / `make dot-omarchy` from `pi-configs/pi-settings.json`. Models, extensions, prompts, and themes still install with `make install`. `pi-configs/pi-patch/` is an optional Ghostty/tmux image patch for the managed Pi install.
+Pi settings and models are copied by `make dot-all` / `make dot-omarchy`. Extensions, prompts, and themes still install with `make install`. `pi-configs/pi-patch/` is an optional Ghostty/tmux image patch for the managed Pi install.
 
 ### Notable custom skills
 
