@@ -114,7 +114,7 @@ curl -fsSL https://pi.dev/install.sh | PI_EXPERIMENTAL=1 sh
 pi update
 ```
 
-This repo still installs Pi configs, extensions, prompts, and themes with `make install`. `pi-configs/pi-patch/` is an optional Ghostty/tmux image patch for that managed install.
+Pi `settings.json` is copied by `make dot-all` / `make dot-omarchy` from `pi-configs/pi-settings.json`. Models, extensions, prompts, and themes still install with `make install`. `pi-configs/pi-patch/` is an optional Ghostty/tmux image patch for the managed Pi install.
 
 ### Notable custom skills
 

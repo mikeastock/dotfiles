@@ -94,7 +94,6 @@ CODEX_CONFIG_FILE = CONFIGS_DIR / "codex-config.toml"
 CODEX_RULES_DIR = CONFIGS_DIR / "codex" / "rules"
 OPENCODE_CONFIG_FILE = CONFIGS_DIR / "opencode" / "opencode.jsonc"
 PI_CONFIGS_DIR = ROOT / "pi-configs"
-PI_SETTINGS_FILE = PI_CONFIGS_DIR / "pi-settings.json"
 PI_MODELS_FILE = PI_CONFIGS_DIR / "pi-models.json"
 GLOBAL_AGENTS_MD = CONFIGS_DIR / "AGENTS.md"
 
@@ -1481,46 +1480,6 @@ def install_codex_rules():
         print(f"  Installed to {target}")
 
 
-def install_pi_settings():
-    """Install Pi agent settings."""
-    import json
-
-    print("Installing Pi settings...")
-
-    if not PI_SETTINGS_FILE.exists():
-        print("  No pi-settings.json found, skipping")
-        return
-
-    dest = HOME / ".pi" / "agent" / "settings.json"
-    dest.parent.mkdir(parents=True, exist_ok=True)
-
-    with open(PI_SETTINGS_FILE) as f:
-        managed_settings = json.load(f)
-
-    if dest.exists():
-        with open(dest) as f:
-            settings = json.load(f)
-    else:
-        settings = {}
-
-    preserved_settings = {
-        key: settings[key]
-        for key in ("lastChangelogVersion",)
-        if key in settings
-    }
-
-    for key, value in managed_settings.items():
-        settings[key] = value
-
-    settings.update(preserved_settings)
-
-    with open(dest, "w") as f:
-        json.dump(settings, f, indent=2)
-        f.write("\n")
-
-    print(f"  Installed to {dest}")
-
-
 def install_pi_models():
     """Install Pi custom model definitions."""
     import json
@@ -1647,7 +1606,6 @@ def install_configs():
     install_codex_config()
     install_codex_rules()
     install_opencode_config()
-    install_pi_settings()
     install_pi_models()
     install_global_agents_md()
 

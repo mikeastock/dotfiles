@@ -23,6 +23,7 @@ min_version = "2026.9.2"
 "~/.config/fish/functions" = { source = ".config/fish/functions", mode = "symlink" }
 "~/.config/herdr/config.toml" = { source = ".config/herdr/config.toml", mode = "symlink" }
 "~/.local/bin" = { source = "bin", mode = "symlink-each" }
+"~/.pi/agent/settings.json" = { source = "pi-configs/pi-settings.json", mode = "copy" }
 
 [bootstrap.repos]
 "~/.tmux/plugins/tpm" = { url = "https://github.com/tmux-plugins/tpm" }

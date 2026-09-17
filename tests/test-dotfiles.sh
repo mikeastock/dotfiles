@@ -111,6 +111,15 @@ test_omarchy_claims_personal_files() {
     "$SANDBOX_DIR/.config/omarchy/hooks/post-update.d/drop-omarchy-tmux.hook" \
     "$PROJECT_DIR/.config/omarchy/hooks/post-update.d/drop-omarchy-tmux.hook" \
     "Post-update hook is installed from the repo"
+  assert_file_exists "$SANDBOX_DIR/.pi/agent/settings.json" "Pi settings are copied"
+  assert_output_contains "$(<"$SANDBOX_DIR/.pi/agent/settings.json")" "gpt-5.6-luna" "Pi settings include the managed default model"
+  if [[ ! -L $SANDBOX_DIR/.pi/agent/settings.json ]]; then
+    log_info "PASS: Pi settings are a regular copied file"
+    TESTS_PASSED=$((TESTS_PASSED + 1))
+  else
+    log_error "FAIL: Pi settings were symlinked"
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+  fi
 
   assert_output_contains "$(<"$SANDBOX_DIR/.config/alacritty/alacritty.toml")" "omarchy-alacritty" "Alacritty stays Omarchy-owned"
   assert_output_contains "$(<"$SANDBOX_DIR/.config/ghostty/config")" "omarchy-ghostty" "Ghostty stays Omarchy-owned"
@@ -172,6 +181,7 @@ test_home_links_terminals() {
   assert_symlink "$SANDBOX_DIR/.config/ghostty" "$PROJECT_DIR/.config/ghostty" "Ghostty is claimed on home"
   assert_symlink "$SANDBOX_DIR/.config/alacritty" "$PROJECT_DIR/.config/alacritty" "Alacritty is claimed on home"
   assert_symlink "$SANDBOX_DIR/.local/bin/clipboard-copy" "$PROJECT_DIR/bin/clipboard-copy" "local bin scripts are linked"
+  assert_file_exists "$SANDBOX_DIR/.pi/agent/settings.json" "Home profile copies Pi settings"
   assert_file_not_exists "$SANDBOX_DIR/.config/omarchy/hooks/post-update.d/drop-omarchy-tmux.hook" "Home profile does not install the Omarchy tmux hook"
   assert_output_not_contains "$(<"$SANDBOX_DIR/.bashrc")" ">>> mise:personal >>>" "Home profile does not patch bashrc"
 }

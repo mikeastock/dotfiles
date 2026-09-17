@@ -44,12 +44,6 @@ test_config_new_files() {
     assert_json_field "$pi_models_json" '.providers.google.models[0].name' "Gemini 3.8 Flash" "Pi: Gemini 3.8 Flash model is registered"
     assert_json_field "$pi_models_json" '.providers["novita-ai"].models[0].name' "Kimi K2.7 Code (Novita)" "Pi: Kimi K2.7 Code model is registered"
 
-    local pi_settings_json
-    pi_settings_json=$(cat "$SANDBOX_DIR/.pi/agent/settings.json")
-    assert_json_field "$pi_settings_json" '.enabledModels[4]' "google/gemini-3.8-flash" "Pi: Gemini 3.8 Flash is in enabledModels"
-    assert_json_field "$pi_settings_json" '.enabledModels[5]' "openai-codex/gpt-6-astra" "Pi: GPT-6 Astra is in enabledModels"
-    assert_json_field "$pi_settings_json" '.enabledModels[6]' "meta/muse-spark-1.3" "Pi: Muse Spark 1.3 is in enabledModels"
-
     local amp_json
     amp_json=$(cat "$SANDBOX_DIR/.config/amp/settings.json")
     assert_json_field "$amp_json" '."amp.skills.path"' "~/.config/agents/skills" "Amp: skills.path comes from amp-configs"
@@ -155,33 +149,6 @@ EOF
     assert_json_field "$amp_json" '."amp.skills.path"' "~/.config/agents/skills" "Amp: managed setting is merged"
 }
 
-# Test: Pi config preserves changelog version while updating managed settings
-test_pi_preserve_changelog_version() {
-    log_test "Testing 'make install-configs' preserves Pi changelog version"
-    cd "$PROJECT_DIR"
-
-    mkdir -p "$SANDBOX_DIR/.pi/agent"
-    cat > "$SANDBOX_DIR/.pi/agent/settings.json" <<'EOF'
-{
-  "lastChangelogVersion": "9.9.9",
-  "defaultProvider": "openai-codex",
-  "defaultModel": "old-model",
-  "enabledModels": [
-    "old/provider"
-  ],
-  "customSetting": true
-}
-EOF
-
-    HOME="$SANDBOX_DIR" make install-configs >/dev/null 2>&1
-
-    local pi_json
-    pi_json=$(cat "$SANDBOX_DIR/.pi/agent/settings.json")
-
-    assert_json_field "$pi_json" '.lastChangelogVersion' "9.9.9" "Pi: lastChangelogVersion preserved"
-    assert_json_field "$pi_json" '.customSetting' "true" "Pi: custom unmanaged settings preserved"
-}
-
 # Test: OpenCode config overlays RunInfra while preserving other providers
 test_opencode_preserve_existing_providers() {
     log_test "Testing 'make install-configs' preserves existing OpenCode providers"
@@ -261,7 +228,7 @@ test_config_idempotent() {
     codex_first=$(cat "$SANDBOX_DIR/.codex/config.toml")
     codex_rules_first=$(cat "$SANDBOX_DIR/.codex/rules/default.rules")
     opencode_first=$(cat "$SANDBOX_DIR/.config/opencode/opencode.jsonc")
-    pi_first=$(cat "$SANDBOX_DIR/.pi/agent/settings.json")
+    pi_first=$(cat "$SANDBOX_DIR/.pi/agent/models.json")
 
     HOME="$SANDBOX_DIR" make install-configs >/dev/null 2>&1
     local amp_second codex_second codex_rules_second opencode_second pi_second
@@ -269,7 +236,7 @@ test_config_idempotent() {
     codex_second=$(cat "$SANDBOX_DIR/.codex/config.toml")
     codex_rules_second=$(cat "$SANDBOX_DIR/.codex/rules/default.rules")
     opencode_second=$(cat "$SANDBOX_DIR/.config/opencode/opencode.jsonc")
-    pi_second=$(cat "$SANDBOX_DIR/.pi/agent/settings.json")
+    pi_second=$(cat "$SANDBOX_DIR/.pi/agent/models.json")
 
     # Content should be identical
     local all_match=true
@@ -290,7 +257,7 @@ test_config_idempotent() {
         all_match=false
     fi
     if [ "$pi_first" != "$pi_second" ]; then
-        log_error "FAIL: Pi results differ between runs"
+        log_error "FAIL: Pi models differ between runs"
         all_match=false
     fi
 
@@ -318,7 +285,6 @@ main() {
     test_codex_preserve_hook_trust
     test_amp_preserve_existing
     test_amp_trailing_commas
-    test_pi_preserve_changelog_version
     test_opencode_preserve_existing_providers
     test_opencode_preserve_runinfra_api_key
     test_config_idempotent
