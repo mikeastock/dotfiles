@@ -212,6 +212,22 @@ test_home_links_terminals() {
   assert_output_not_contains "$(<"$SANDBOX_DIR/.bashrc")" ">>> mise:personal >>>" "Home profile does not patch bashrc"
 }
 
+test_auto_picks_omarchy() {
+  log_test "Testing auto profile claims Omarchy files and leaves terminals"
+  seed_omarchy_home
+  HOME="$SANDBOX_DIR" DOTFILES_OMARCHY=1 "$INSTALLER" auto --skip-packages --skip-shell >/dev/null
+  assert_symlink "$SANDBOX_DIR/.tmux.conf" "$PROJECT_DIR/.tmux.conf" "auto omarchy links tmux.conf"
+  assert_output_contains "$(<"$SANDBOX_DIR/.config/starship.toml")" "omarchy-starship" "auto omarchy leaves Starship"
+}
+
+test_auto_picks_home() {
+  log_test "Testing auto profile uses home terminals when not Omarchy"
+  reset_home
+  mkdir -p "$SANDBOX_DIR/.config"
+  HOME="$SANDBOX_DIR" DOTFILES_OMARCHY=0 "$INSTALLER" auto --skip-packages >/dev/null
+  assert_symlink "$SANDBOX_DIR/.config/starship.toml" "$PROJECT_DIR/.config/starship.toml" "auto home claims Starship"
+}
+
 test_home_refuses_existing_files() {
   log_test "Testing home profile refuses to overwrite a real file"
   reset_home
@@ -252,6 +268,8 @@ main() {
   test_omarchy_is_idempotent
   test_omarchy_replaces_wrong_hook_file
   test_home_links_terminals
+  test_auto_picks_omarchy
+  test_auto_picks_home
   test_home_refuses_existing_files
 
   print_summary

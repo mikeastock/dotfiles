@@ -3,7 +3,7 @@ min_version = "2026.9.2"
 
 # Shared machine files. macOS/Ubuntu extras live in mise.home.toml (`-E home`).
 # Omarchy extras live in mise.omarchy.toml (`-E omarchy`).
-# Apply with `make dot-all` / `make dot-omarchy`, not bare `mise dot apply`.
+# Apply with `make install`, not bare `mise dot apply`.
 
 [dotfiles]
 "~/.gitconfig" = { source = ".gitconfig", mode = "symlink" }

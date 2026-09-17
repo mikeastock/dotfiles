@@ -1,7 +1,7 @@
 #:schema https://mise.jdx.dev/schema/mise.json
 
 # Omarchy: leave Ghostty, Alacritty, and Starship on Omarchy's copies.
-# Loaded with `mise -E omarchy` via `make dot-omarchy`.
+# Loaded with `mise -E omarchy` via `make install` on Omarchy.
 
 [dotfiles]
 "~/.config/omarchy/hooks/post-update.d/drop-omarchy-tmux.hook" = { source = ".config/omarchy/hooks/post-update.d/drop-omarchy-tmux.hook", mode = "symlink" }

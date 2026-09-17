@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Apply personal machine setup via mise bootstrap.
 #
+# auto     Detect Omarchy vs home and bootstrap
 # home     macOS/Ubuntu: terminals, brew packages, macOS defaults
 # omarchy  Omarchy Linux: skip terminals, claim around Omarchy files, fish login
 # clean    Remove mise-managed links from both profiles
@@ -16,8 +17,9 @@ FORCE=0
 
 usage() {
   cat <<'USAGE'
-Usage: scripts/dotfiles.sh <home|omarchy|clean> [options]
+Usage: scripts/dotfiles.sh <auto|home|omarchy|clean> [options]
 
+  auto       Detect Omarchy vs home and bootstrap
   home       Install macOS/Ubuntu dotfiles (`mise -E home`)
   omarchy    Install Omarchy Linux dotfiles (`mise -E omarchy`)
   clean      Unapply home and omarchy dotfiles
@@ -47,7 +49,7 @@ require_omarchy() {
     return
   fi
 
-  echo "✗ This target is for Omarchy Linux. Use make dot-all elsewhere, or pass --force." >&2
+  echo "✗ This target is for Omarchy Linux. Use make install elsewhere, or pass --force." >&2
   exit 1
 }
 
@@ -94,7 +96,7 @@ unapply() {
 
 while (($#)); do
   case "$1" in
-    home | omarchy | clean)
+    auto | home | omarchy | clean)
       if [[ -n $COMMAND ]]; then
         echo "Unknown option: $1" >&2
         usage >&2
@@ -126,6 +128,15 @@ fi
 require_mise
 
 case "$COMMAND" in
+  auto)
+    if is_omarchy; then
+      bootstrap omarchy
+      echo "✓ Omarchy dotfiles installed"
+    else
+      bootstrap home
+      echo "✓ Home dotfiles installed"
+    fi
+    ;;
   home)
     bootstrap home
     echo "✓ Home dotfiles installed"

@@ -8,8 +8,7 @@ PYTHON := python3
 BUILD_SCRIPT := $(CURDIR)/scripts/build.py
 FORCE_FLAG := $(if $(FORCE),--force,)
 
-.PHONY: all install install-non-interactive install-skills install-amp-plugins install-extensions install-prompts install-themes amp-plugin-types amp-plugin-check package-manager-security-config build clean help submodule-init plugin-update check-python \
-	dot-all dot-omarchy dot-clean
+.PHONY: all install install-non-interactive install-skills install-amp-plugins install-extensions install-prompts install-themes amp-plugin-types amp-plugin-check package-manager-security-config build clean help submodule-init plugin-update check-python
 
 all: help
 
@@ -17,7 +16,7 @@ help:
 	@echo "Agents - Skills, Prompt Templates, and Extensions Installer"
 	@echo ""
 	@echo "Usage:"
-	@echo "  make install                 Initialize submodules and install all agent artifacts"
+	@echo "  make install                 Install agent artifacts and machine dotfiles"
 	@echo "  make install FORCE=1         Claim existing unmanaged paths that match managed artifacts"
 	@echo "  make install-non-interactive Install for headless/automated environments (skips interactive extensions)"
 	@echo "  make install-skills          Install skills only (Amp, Claude Code, Pi agent)"
@@ -32,11 +31,6 @@ help:
 	@echo "  make plugin-update           Update all plugin submodules to latest"
 	@echo "  make clean                   Remove all installed skills, extensions, and build artifacts"
 	@echo ""
-	@echo "Dotfiles:"
-	@echo "  make dot-all                Install macOS/Ubuntu dotfiles via mise -E home"
-	@echo "  make dot-omarchy            Install Omarchy Linux dotfiles via mise -E omarchy"
-	@echo "  make dot-clean              Unapply mise-managed dotfile links"
-	@echo ""
 	@echo "  make help                    Show this help message"
 	@echo ""
 	@echo "Configuration: plugins.toml"
@@ -47,11 +41,13 @@ check-python:
 
 install: check-python
 	@$(PYTHON) "$(BUILD_SCRIPT)" install $(FORCE_FLAG)
-	@echo "All skills, prompt templates, themes, extensions, and Amp plugins installed"
+	@$(CURDIR)/scripts/dotfiles.sh auto
+	@echo "All skills, prompt templates, themes, extensions, Amp plugins, and machine dotfiles installed"
 
 install-non-interactive: check-python
 	@$(PYTHON) "$(BUILD_SCRIPT)" install --non-interactive $(FORCE_FLAG)
-	@echo "All skills, prompt templates, themes, extensions, and Amp plugins installed (non-interactive mode)"
+	@$(CURDIR)/scripts/dotfiles.sh auto --skip-packages --skip-shell
+	@echo "All skills, prompt templates, themes, extensions, Amp plugins, and machine dotfiles installed (non-interactive mode)"
 
 submodule-init:
 	@$(PYTHON) "$(BUILD_SCRIPT)" submodule-init
@@ -90,14 +86,3 @@ plugin-update:
 	@echo "Updating plugin submodules..."
 	@git submodule update --remote --merge
 	@echo "Plugins updated"
-
-# Dotfiles: mise.toml + mise.home.toml / mise.omarchy.toml
-
-dot-all:
-	@$(CURDIR)/scripts/dotfiles.sh home
-
-dot-omarchy:
-	@$(CURDIR)/scripts/dotfiles.sh omarchy
-
-dot-clean:
-	@$(CURDIR)/scripts/dotfiles.sh clean

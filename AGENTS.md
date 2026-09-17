@@ -81,10 +81,7 @@ make install
 ### Common Commands
 | Command | Description |
 |---------|-------------|
-| `make install` | Build and install skills and extensions for all agents |
-| `make dot-all` | Install macOS/Ubuntu dotfiles via `mise -E home` |
-| `make dot-omarchy` | Install Omarchy Linux dotfiles via `mise -E omarchy` |
-| `make dot-clean` | Unapply mise-managed dotfile links |
+| `make install` | Build and install skills, extensions, and machine dotfiles |
 | `make install-non-interactive` | Install for headless/automated environments (skips interactive extensions and overrides) |
 | `make build` | Build skills to `build/` without installing |
 | `make install-skills` | Install skills only |

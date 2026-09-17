@@ -1,7 +1,7 @@
 #:schema https://mise.jdx.dev/schema/mise.json
 
 # macOS and Ubuntu: claim terminal configs and install brew packages.
-# Loaded with `mise -E home` via `make dot-all`.
+# Loaded with `mise -E home` via `make install` on macOS/Ubuntu.
 
 [dotfiles]
 "~/.config/alacritty" = { source = ".config/alacritty", mode = "symlink" }
