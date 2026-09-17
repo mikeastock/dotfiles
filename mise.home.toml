@@ -1,0 +1,14 @@
+#:schema https://mise.jdx.dev/schema/mise.json
+
+# macOS and Ubuntu: claim terminal configs and install brew packages.
+# Loaded with `mise -E home` via `make dot-all`.
+
+[dotfiles]
+"~/.config/alacritty" = { source = ".config/alacritty", mode = "symlink" }
+"~/.config/ghostty" = { source = ".config/ghostty", mode = "symlink" }
+"~/.config/starship.toml" = { source = ".config/starship.toml", mode = "symlink" }
+
+[bootstrap.packages]
+"brew:tmux" = "latest"
+"brew:tmux-mem-cpu-load" = "latest"
+"brew:tree-sitter-cli" = "latest"

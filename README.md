@@ -1,8 +1,10 @@
 # dotfiles
 
-Personal dotfiles for macOS, Omarchy, and Ubuntu 24.x. Omarchy setup does not use Homebrew and leaves Omarchy-owned terminal/theme files alone.
+Personal dotfiles for macOS, Omarchy, and Ubuntu 24.x. Machine setup is declared in `mise.toml` plus `mise.home.toml` or `mise.omarchy.toml`, and applied with [mise](https://mise.jdx.dev/dotfiles.html) 2026.9.2+. Omarchy setup does not use Homebrew and leaves Omarchy-owned terminal/theme files alone.
 
 ## Quick Start
+
+Install [mise](https://mise.jdx.dev/) 2026.9.2+ first (`curl https://mise.run | sh`).
 
 ### macOS
 
@@ -12,6 +14,8 @@ cd ~/code/personal/dotfiles
 make dot-all
 ```
 
+`make dot-all` runs `mise -E home bootstrap` for shared links, Ghostty/Alacritty/Starship, brew packages (`tmux`, `tmux-mem-cpu-load`, `tree-sitter-cli`), TPM, and macOS screenshot defaults.
+
 ### Omarchy
 
 ```bash
@@ -20,13 +24,11 @@ cd ~/code/personal/dotfiles
 make dot-omarchy
 ```
 
-`make dot-omarchy` claims home/config links around existing Omarchy files, installs `fish` and `atuin` with `omarchy pkg add`, switches the login shell to fish, and installs TPM. It leaves Ghostty, Alacritty, and Starship on Omarchy's copies, and removes `~/.config/tmux/tmux.conf` so `~/.tmux.conf` is the only tmux config. A post-update hook drops that XDG file again if `omarchy update` puts it back.
+`make dot-omarchy` runs `mise -E omarchy bootstrap --force-dotfiles`. It claims home/config links around existing Omarchy files, installs `fish` and `atuin` with `omarchy pkg add`, switches the login shell to fish, and installs TPM. It leaves Ghostty, Alacritty, and Starship on Omarchy's copies, and removes `~/.config/tmux/tmux.conf` so `~/.tmux.conf` is the only tmux config. A post-update hook drops that XDG file again if `omarchy update` puts it back.
 
 Do not run **Update → Config → Tmux** in the Omarchy menu. Log out once after the first install so the fish login shell applies. Then `make install` for agent skills.
 
 ### Ubuntu 24.x
-
-Install Homebrew/Linuxbrew first, then:
 
 ```bash
 git clone https://github.com/mikeastock/dotfiles.git ~/code/personal/dotfiles
@@ -34,7 +36,7 @@ cd ~/code/personal/dotfiles
 make dot-all
 ```
 
-`make dot-all` skips macOS-only defaults on Linux.
+`make dot-all` skips macOS-only defaults on Linux. Use `mise -E home` / `mise -E omarchy`; a bare `mise dot apply` from this repo skips the environment-specific files.
 
 ## Agent Skills / Extensions Tooling
 
@@ -44,7 +46,7 @@ This repo also contains reusable skills, prompt templates, and extensions for Am
 
 - Python 3.11+
 - Git
-- Homebrew or Linuxbrew for `make dot-install`
+- mise 2026.9.2+ for `make dot-all` / `make dot-omarchy`
 
 ### Agent commands
 
@@ -170,6 +172,9 @@ This repo still installs Pi configs, extensions, prompts, and themes with `make 
 ```text
 dotfiles/
 ├── .config/                 # shell/editor/terminal configs
+├── mise.toml                # shared mise dotfiles + bootstrap
+├── mise.home.toml           # macOS/Ubuntu terminals and brew packages
+├── mise.omarchy.toml        # Omarchy-only links, bashrc block, login shell
 ├── skills/                  # custom agent skills
 │   └── writing-pr/          # PR title and body guidance
 ├── amp-configs/             # managed Amp settings
@@ -181,6 +186,7 @@ dotfiles/
 ├── plugins/                 # plugin submodules
 ├── bb-plugins/              # forked bb plugins
 ├── scripts/build.py         # agent build/install system
+├── scripts/dotfiles.sh      # mise bootstrap wrapper
 ├── tests/                   # agent tooling tests
 └── Makefile                 # dotfiles + agent commands
 ```
@@ -198,14 +204,14 @@ sudo apt install -y fish tmux ripgrep fd-find xclip wl-clipboard xsel fonts-fira
 - Herdr config is symlinked to `~/.config/herdr/config.toml` and uses tmux-like `Ctrl-a` prefix bindings
 - `tmux-mem-cpu-load` is optional; the tmux status bar falls back to `uptime`
 - Install the configured fonts (`Fira Code` / `FiraCode Nerd Font`) if you want terminal rendering to match macOS
-- If you prefer one package manager across macOS and Linux, install Homebrew/Linuxbrew and use `make dot-install`
+- `make dot-all` installs `tmux`, `tmux-mem-cpu-load`, and `tree-sitter-cli` through mise's brew bootstrap packages
 
 ## Omarchy notes
 
 - Hyprland config lives in `.config/hypr` and is claimed by `make dot-omarchy`
 - Ghostty, Alacritty, and Starship stay on Omarchy so theme switches keep working
 - tmux is only `~/.tmux.conf`; the installer removes `~/.config/tmux/tmux.conf` and installs `configs/omarchy/hooks/post-update.d/drop-omarchy-tmux.hook`
-- Existing Omarchy files that get replaced are copied to `~/.config/dotfiles-setup-backup-<timestamp>`
+- Conflicting whole-file targets are replaced (`mise bootstrap --force-dotfiles`); inspect `mise dot diff` first if you need to keep a local copy
 
 ## Notes
 

@@ -7,16 +7,9 @@
 PYTHON := python3
 BUILD_SCRIPT := $(CURDIR)/scripts/build.py
 FORCE_FLAG := $(if $(FORCE),--force,)
-UNAME_S := $(shell uname -s)
-
-# Home directory symlinks
-HOME_LINKS := .gitconfig .ideavimrc .psqlrc .tmux.conf .tmuxinator .vscode
-
-# .config directories to symlink entirely
-CONFIG_DIRS := alacritty stylua lvim zellij direnv atuin ghostty hypr
 
 .PHONY: all install install-non-interactive install-skills install-amp-plugins install-extensions install-prompts install-themes install-configs amp-plugin-types amp-plugin-check package-manager-security-config build clean help submodule-init plugin-update check-python \
-	dot-all dot-install dot-omarchy dot-home-symlinks dot-config-symlinks dot-platform-defaults dot-macos-defaults dot-clean
+	dot-all dot-omarchy dot-clean
 
 all: help
 
@@ -41,14 +34,9 @@ help:
 	@echo "  make clean                   Remove all installed skills, extensions, and build artifacts"
 	@echo ""
 	@echo "Dotfiles:"
-	@echo "  make dot-all                Run all dotfile setup tasks"
-	@echo "  make dot-omarchy            Install dotfiles on Omarchy Linux"
-	@echo "  make dot-install            Install required Homebrew/Linuxbrew packages and tmux plugins"
-	@echo "  make dot-home-symlinks      Symlink dotfiles to home directory"
-	@echo "  make dot-config-symlinks    Symlink .config files and directories"
-	@echo "  make dot-platform-defaults  Apply supported platform defaults"
-	@echo "  make dot-macos-defaults     Set macOS defaults"
-	@echo "  make dot-clean              Remove all managed dotfile symlinks"
+	@echo "  make dot-all                Install macOS/Ubuntu dotfiles via mise -E home"
+	@echo "  make dot-omarchy            Install Omarchy Linux dotfiles via mise -E omarchy"
+	@echo "  make dot-clean              Unapply mise-managed dotfile links"
 	@echo ""
 	@echo "  make help                    Show this help message"
 	@echo ""
@@ -107,170 +95,13 @@ plugin-update:
 	@git submodule update --remote --merge
 	@echo "Plugins updated"
 
-# Helper: create symlink or error if non-symlink exists
-# Usage: $(call safe_symlink,source,target)
-define safe_symlink
-	@if [ -L $(2) ]; then \
-		:; \
-	elif [ -e $(2) ]; then \
-		echo "✗ Error: $(2) exists and is not a symlink"; \
-		echo "  Run 'make dot-clean' first or remove it manually"; \
-		exit 1; \
-	else \
-		ln -s $(1) $(2); \
-	fi
-endef
+# Dotfiles: mise.toml + mise.home.toml / mise.omarchy.toml
 
-# Dotfiles targets
+dot-all:
+	@$(CURDIR)/scripts/dotfiles.sh home
 
-dot-all: dot-install dot-home-symlinks dot-config-symlinks dot-platform-defaults
-
-# Install personal dotfiles on Omarchy without Homebrew or Omarchy terminal configs
 dot-omarchy:
-	@$(CURDIR)/scripts/dot-omarchy.sh
+	@$(CURDIR)/scripts/dotfiles.sh omarchy
 
-# Install required Homebrew/Linuxbrew packages from Brewfile and tmux plugins
-dot-install:
-	@which brew >/dev/null 2>&1 || (echo "✗ Error: Homebrew/Linuxbrew not installed"; exit 1)
-	@brew bundle --file=$(CURDIR)/Brewfile
-	@echo "✓ Brew packages installed"
-	@mkdir -p $(HOME)/.tmux/plugins
-	@if [ -d $(HOME)/.tmux/plugins/tpm/.git ]; then \
-		git -C $(HOME)/.tmux/plugins/tpm pull --ff-only; \
-	elif [ -e $(HOME)/.tmux/plugins/tpm ]; then \
-		echo "✗ Error: $(HOME)/.tmux/plugins/tpm exists and is not a git checkout"; \
-		exit 1; \
-	else \
-		git clone https://github.com/tmux-plugins/tpm $(HOME)/.tmux/plugins/tpm; \
-	fi
-	@tmux start-server \; set-environment -g TMUX_PLUGIN_MANAGER_PATH $(HOME)/.tmux/plugins/ \; source-file $(CURDIR)/.tmux.conf
-	@$(HOME)/.tmux/plugins/tpm/bin/install_plugins
-	@echo "✓ tmux plugins installed"
-
-# Apply platform-specific defaults when supported
-dot-platform-defaults:
-ifeq ($(UNAME_S),Darwin)
-	@$(MAKE) dot-macos-defaults
-else
-	@echo "✓ No platform defaults to apply for $(UNAME_S)"
-endif
-
-# Symlink dotfiles to home directory
-dot-home-symlinks:
-	@for link in $(HOME_LINKS); do \
-		if [ -L $(HOME)/$$link ]; then \
-			:; \
-		elif [ -e $(HOME)/$$link ]; then \
-			echo "✗ Error: $(HOME)/$$link exists and is not a symlink"; \
-			echo "  Run 'make dot-clean' first or remove it manually"; \
-			exit 1; \
-		else \
-			ln -s $(CURDIR)/$$link $(HOME)/$$link; \
-		fi; \
-	done
-	@# Symlink bin/ scripts into ~/.local/bin/
-	@mkdir -p $(HOME)/.local/bin
-	@for script in $(CURDIR)/bin/*; do \
-		name=$$(basename $$script); \
-		if [ -L $(HOME)/.local/bin/$$name ]; then \
-			:; \
-		elif [ -e $(HOME)/.local/bin/$$name ]; then \
-			echo "✗ Error: $(HOME)/.local/bin/$$name exists and is not a symlink"; \
-			echo "  Remove it manually to proceed"; \
-			exit 1; \
-		else \
-			ln -s $$script $(HOME)/.local/bin/$$name; \
-		fi; \
-	done
-	@echo "✓ Home symlinks created"
-
-# Symlink .config files and directories
-dot-config-symlinks:
-	@mkdir -p $(HOME)/.config
-	@mkdir -p $(HOME)/.config/nvim
-	@mkdir -p $(HOME)/.config/fish
-	@# Config directories (link entire dir)
-	@for dir in $(CONFIG_DIRS); do \
-		if [ -L $(HOME)/.config/$$dir ]; then \
-			:; \
-		elif [ -e $(HOME)/.config/$$dir ]; then \
-			echo "✗ Error: $(HOME)/.config/$$dir exists and is not a symlink"; \
-			echo "  Run 'make dot-clean' first or remove it manually"; \
-			exit 1; \
-		else \
-			ln -s $(CURDIR)/.config/$$dir $(HOME)/.config/$$dir; \
-		fi; \
-	done
-	@# nvim (individual files - only if nvim dir is not already a symlink)
-	@if [ ! -L $(HOME)/.config/nvim ]; then \
-		if [ -L $(HOME)/.config/nvim/init.lua ]; then :; \
-		elif [ -e $(HOME)/.config/nvim/init.lua ]; then \
-			echo "✗ Error: $(HOME)/.config/nvim/init.lua exists and is not a symlink"; \
-			echo "  Run 'make dot-clean' first or remove it manually"; \
-			exit 1; \
-		else ln -s $(CURDIR)/.config/nvim/init.lua $(HOME)/.config/nvim/init.lua; fi; \
-		if [ -L $(HOME)/.config/nvim/autoload ]; then :; \
-		elif [ -e $(HOME)/.config/nvim/autoload ]; then \
-			echo "✗ Error: $(HOME)/.config/nvim/autoload exists and is not a symlink"; \
-			echo "  Run 'make dot-clean' first or remove it manually"; \
-			exit 1; \
-		else ln -s $(CURDIR)/.config/nvim/autoload $(HOME)/.config/nvim/autoload; fi; \
-	fi
-	@# fish (config.fish and functions/ - only if fish dir is not already a symlink)
-	@if [ ! -L $(HOME)/.config/fish ]; then \
-		if [ -L $(HOME)/.config/fish/config.fish ]; then :; \
-		elif [ -e $(HOME)/.config/fish/config.fish ]; then \
-			echo "✗ Error: $(HOME)/.config/fish/config.fish exists and is not a symlink"; \
-			echo "  Run 'make dot-clean' first or remove it manually"; \
-			exit 1; \
-		else ln -s $(CURDIR)/.config/fish/config.fish $(HOME)/.config/fish/config.fish; fi; \
-		if [ -L $(HOME)/.config/fish/functions ]; then :; \
-		elif [ -e $(HOME)/.config/fish/functions ]; then \
-			echo "✗ Error: $(HOME)/.config/fish/functions exists and is not a symlink"; \
-			echo "  Run 'make dot-clean' first or remove it manually"; \
-			exit 1; \
-		else ln -s $(CURDIR)/.config/fish/functions $(HOME)/.config/fish/functions; fi; \
-	fi
-	@# Single-file configs
-	$(call safe_symlink,$(CURDIR)/.config/starship.toml,$(HOME)/.config/starship.toml)
-	@mkdir -p $(HOME)/.config/herdr
-	$(call safe_symlink,$(CURDIR)/.config/herdr/config.toml,$(HOME)/.config/herdr/config.toml)
-	@echo "✓ Config symlinks created"
-
-# Remove all managed dotfile symlinks (only removes if target is a symlink)
 dot-clean:
-	@echo "Removing managed dotfile symlinks..."
-	@# Home symlinks
-	@for link in $(HOME_LINKS); do \
-		[ -L $(HOME)/$$link ] && rm $(HOME)/$$link || true; \
-	done
-	@# ~/.local/bin scripts
-	@for script in $(CURDIR)/bin/*; do \
-		name=$$(basename $$script); \
-		[ -L $(HOME)/.local/bin/$$name ] && rm $(HOME)/.local/bin/$$name || true; \
-	done
-	@# Config directories
-	@for dir in $(CONFIG_DIRS); do \
-		[ -L $(HOME)/.config/$$dir ] && rm $(HOME)/.config/$$dir || true; \
-	done
-	@# nvim
-	@[ -L $(HOME)/.config/nvim/init.lua ] && rm $(HOME)/.config/nvim/init.lua || true
-	@[ -L $(HOME)/.config/nvim/autoload ] && rm $(HOME)/.config/nvim/autoload || true
-	@# fish
-	@[ -L $(HOME)/.config/fish/config.fish ] && rm $(HOME)/.config/fish/config.fish || true
-	@[ -L $(HOME)/.config/fish/functions ] && rm $(HOME)/.config/fish/functions || true
-	@# Single-file configs
-	@[ -L $(HOME)/.config/starship.toml ] && rm $(HOME)/.config/starship.toml || true
-	@[ -L $(HOME)/.config/herdr/config.toml ] && rm $(HOME)/.config/herdr/config.toml || true
-	@[ -L $(HOME)/.config/omarchy/hooks/post-update.d/drop-omarchy-tmux.hook ] && rm $(HOME)/.config/omarchy/hooks/post-update.d/drop-omarchy-tmux.hook || true
-	@echo "✓ Dotfile symlinks removed"
-
-# Set macOS defaults
-dot-macos-defaults:
-	@if [ "$(UNAME_S)" != "Darwin" ]; then \
-		echo "✗ Error: dot-macos-defaults is only supported on macOS"; \
-		exit 1; \
-	fi
-	@# Disable shadows on window screenshots
-	@defaults write com.apple.screencapture disable-shadow -bool true
-	@echo "✓ macOS defaults set"
+	@$(CURDIR)/scripts/dotfiles.sh clean

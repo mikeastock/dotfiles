@@ -1,0 +1,40 @@
+#:schema https://mise.jdx.dev/schema/mise.json
+min_version = "2026.9.2"
+
+# Shared machine files. macOS/Ubuntu extras live in mise.home.toml (`-E home`).
+# Omarchy extras live in mise.omarchy.toml (`-E omarchy`).
+# Apply with `make dot-all` / `make dot-omarchy`, not bare `mise dot apply`.
+
+[dotfiles]
+"~/.gitconfig" = { source = ".gitconfig", mode = "symlink" }
+"~/.ideavimrc" = { source = ".ideavimrc", mode = "symlink" }
+"~/.psqlrc" = { source = ".psqlrc", mode = "symlink" }
+"~/.tmux.conf" = { source = ".tmux.conf", mode = "symlink" }
+"~/.tmuxinator" = { source = ".tmuxinator", mode = "symlink" }
+"~/.vscode" = { source = ".vscode", mode = "symlink" }
+"~/.config/stylua" = { source = ".config/stylua", mode = "symlink" }
+"~/.config/lvim" = { source = ".config/lvim", mode = "symlink" }
+"~/.config/zellij" = { source = ".config/zellij", mode = "symlink" }
+"~/.config/direnv" = { source = ".config/direnv", mode = "symlink" }
+"~/.config/atuin" = { source = ".config/atuin", mode = "symlink" }
+"~/.config/hypr" = { source = ".config/hypr", mode = "symlink" }
+"~/.config/nvim/init.lua" = { source = ".config/nvim/init.lua", mode = "symlink" }
+"~/.config/fish/config.fish" = { source = ".config/fish/config.fish", mode = "symlink" }
+"~/.config/fish/functions" = { source = ".config/fish/functions", mode = "symlink" }
+"~/.config/herdr/config.toml" = { source = ".config/herdr/config.toml", mode = "symlink" }
+"~/.local/bin" = { source = "bin", mode = "symlink-each" }
+
+[bootstrap.repos]
+"~/.tmux/plugins/tpm" = { url = "https://github.com/tmux-plugins/tpm" }
+
+[bootstrap.macos.defaults]
+"com.apple.screencapture" = { "disable-shadow" = true }
+
+[bootstrap.hooks.post-dotfiles]
+run = '''
+if command -v tmux >/dev/null && [ -x "$HOME/.tmux/plugins/tpm/bin/install_plugins" ]; then
+  mkdir -p "$HOME/.tmux/plugins"
+  tmux start-server \; set-environment -g TMUX_PLUGIN_MANAGER_PATH "$HOME/.tmux/plugins/" \; source-file "$HOME/.tmux.conf"
+  "$HOME/.tmux/plugins/tpm/bin/install_plugins"
+fi
+'''

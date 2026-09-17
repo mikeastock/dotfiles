@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
-# Tests for scripts/dot-omarchy.sh
+# Tests for scripts/dotfiles.sh (mise -E home / -E omarchy)
 #
-# Usage: ./tests/test-dot-omarchy.sh
+# Usage: ./tests/test-dotfiles.sh
 #
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -10,7 +10,7 @@ source "$SCRIPT_DIR/test-helpers.sh"
 
 trap cleanup EXIT
 
-INSTALLER="$PROJECT_DIR/scripts/dot-omarchy.sh"
+INSTALLER="$PROJECT_DIR/scripts/dotfiles.sh"
 
 assert_symlink() {
   local dest="$1"
@@ -63,18 +63,23 @@ seed_omarchy_home() {
   printf '%s\n' "omarchy bashrc" >"$SANDBOX_DIR/.bashrc"
 }
 
-run_installer() {
+run_omarchy() {
   HOME="$SANDBOX_DIR" \
-    DOTFILES_BACKUP_DIR="$SANDBOX_DIR/backup" \
     DOTFILES_OMARCHY=1 \
-    "$INSTALLER" --skip-packages --skip-tpm --skip-shell "$@"
+    "$INSTALLER" omarchy --skip-packages --skip-tpm --skip-shell "$@"
+}
+
+run_home() {
+  HOME="$SANDBOX_DIR" \
+    "$INSTALLER" home --skip-packages --skip-tpm "$@"
 }
 
 test_refuses_non_omarchy() {
   log_test "Testing installer refuses a non-Omarchy machine"
+  reset_home
   local output status
   set +e
-  output="$(HOME="$SANDBOX_DIR" DOTFILES_OMARCHY=0 "$INSTALLER" --skip-packages --skip-tpm --skip-shell 2>&1)"
+  output="$(HOME="$SANDBOX_DIR" DOTFILES_OMARCHY=0 "$INSTALLER" omarchy --skip-packages --skip-tpm --skip-shell 2>&1)"
   status=$?
   set -e
 
@@ -88,11 +93,11 @@ test_refuses_non_omarchy() {
   assert_output_contains "$output" "for Omarchy Linux" "Refusal names the Omarchy-only target"
 }
 
-test_installs_around_omarchy_defaults() {
-  log_test "Testing installer claims personal files and leaves Omarchy terminals"
+test_omarchy_claims_personal_files() {
+  log_test "Testing omarchy claims personal files and leaves Omarchy terminals"
   seed_omarchy_home
 
-  run_installer >/dev/null
+  run_omarchy >/dev/null
 
   assert_symlink "$SANDBOX_DIR/.tmux.conf" "$PROJECT_DIR/.tmux.conf" "Home tmux.conf is the dotfiles link"
   assert_symlink "$SANDBOX_DIR/.config/hypr" "$PROJECT_DIR/.config/hypr" "Hyprland config is claimed"
@@ -118,34 +123,20 @@ test_installs_around_omarchy_defaults() {
     TESTS_FAILED=$((TESTS_FAILED + 1))
   fi
 
-  assert_file_exists "$SANDBOX_DIR/backup/hypr/hyprland.lua" "Existing Hyprland dir was backed up"
-  assert_file_exists "$SANDBOX_DIR/backup/nvim-init.lua" "Existing nvim init.lua was backed up"
-  assert_output_contains "$(<"$SANDBOX_DIR/backup/nvim-init.lua")" "omarchy-nvim" "nvim backup keeps the Omarchy file"
-  assert_output_contains "$(<"$SANDBOX_DIR/.bashrc")" "# From personal dotfiles" "bashrc receives the dotfiles snippet"
+  assert_output_contains "$(<"$SANDBOX_DIR/.bashrc")" ">>> mise:personal >>>" "bashrc receives the mise-managed snippet"
   assert_output_contains "$(<"$SANDBOX_DIR/.bashrc")" 'alias wk="work"' "bashrc gets the wk alias"
 }
 
-test_is_idempotent() {
-  log_test "Testing a second install does not rewrite already-claimed links"
+test_omarchy_is_idempotent() {
+  log_test "Testing a second omarchy install does not duplicate the bashrc block"
   seed_omarchy_home
-  run_installer >/dev/null
-  rm -rf "$SANDBOX_DIR/backup"
-  mkdir -p "$SANDBOX_DIR/backup"
-
-  run_installer >/dev/null
+  run_omarchy >/dev/null
+  run_omarchy >/dev/null
 
   assert_symlink "$SANDBOX_DIR/.tmux.conf" "$PROJECT_DIR/.tmux.conf" "Second run keeps the tmux.conf link"
-  if [[ -z $(ls -A "$SANDBOX_DIR/backup") ]]; then
-    log_info "PASS: Second run created no new backups"
-    TESTS_PASSED=$((TESTS_PASSED + 1))
-  else
-    log_error "FAIL: Second run wrote unexpected backups"
-    ls -A "$SANDBOX_DIR/backup"
-    TESTS_FAILED=$((TESTS_FAILED + 1))
-  fi
 
   local marker_count
-  marker_count="$(rg --fixed-strings --count -- '# From personal dotfiles' "$SANDBOX_DIR/.bashrc")"
+  marker_count="$(rg --fixed-strings --count -- '>>> mise:personal >>>' "$SANDBOX_DIR/.bashrc")"
   if [[ $marker_count == 1 ]]; then
     log_info "PASS: bashrc snippet appears once"
     TESTS_PASSED=$((TESTS_PASSED + 1))
@@ -155,31 +146,77 @@ test_is_idempotent() {
   fi
 }
 
-test_replaces_wrong_hook_file() {
+test_omarchy_replaces_wrong_hook_file() {
   log_test "Testing a regular Omarchy hook file is replaced with the repo symlink"
   seed_omarchy_home
   printf '%s\n' "old hook" >"$SANDBOX_DIR/.config/omarchy/hooks/post-update.d/drop-omarchy-tmux.hook"
 
-  run_installer >/dev/null
+  run_omarchy >/dev/null
 
   assert_symlink \
     "$SANDBOX_DIR/.config/omarchy/hooks/post-update.d/drop-omarchy-tmux.hook" \
     "$PROJECT_DIR/configs/omarchy/hooks/post-update.d/drop-omarchy-tmux.hook" \
     "Existing hook file becomes the repo symlink"
-  assert_file_exists "$SANDBOX_DIR/backup/drop-omarchy-tmux.hook" "Previous hook file was backed up"
+}
+
+test_home_links_terminals() {
+  log_test "Testing home profile links terminals and does not patch bashrc"
+  reset_home
+  mkdir -p "$SANDBOX_DIR/.config"
+  printf '%s\n' "plain bashrc" >"$SANDBOX_DIR/.bashrc"
+
+  run_home >/dev/null
+
+  assert_symlink "$SANDBOX_DIR/.tmux.conf" "$PROJECT_DIR/.tmux.conf" "Home tmux.conf is linked"
+  assert_symlink "$SANDBOX_DIR/.config/starship.toml" "$PROJECT_DIR/.config/starship.toml" "Starship is claimed on home"
+  assert_symlink "$SANDBOX_DIR/.config/ghostty" "$PROJECT_DIR/.config/ghostty" "Ghostty is claimed on home"
+  assert_symlink "$SANDBOX_DIR/.config/alacritty" "$PROJECT_DIR/.config/alacritty" "Alacritty is claimed on home"
+  assert_symlink "$SANDBOX_DIR/.local/bin/clipboard-copy" "$PROJECT_DIR/bin/clipboard-copy" "local bin scripts are linked"
+  assert_file_not_exists "$SANDBOX_DIR/.config/omarchy/hooks/post-update.d/drop-omarchy-tmux.hook" "Home profile does not install the Omarchy tmux hook"
+  assert_output_not_contains "$(<"$SANDBOX_DIR/.bashrc")" ">>> mise:personal >>>" "Home profile does not patch bashrc"
+}
+
+test_home_refuses_existing_files() {
+  log_test "Testing home profile refuses to overwrite a real file"
+  reset_home
+  mkdir -p "$SANDBOX_DIR/.config"
+  printf '%s\n' "local-starship" >"$SANDBOX_DIR/.config/starship.toml"
+
+  local output status
+  set +e
+  output="$(run_home 2>&1)"
+  status=$?
+  set -e
+
+  if [[ $status -ne 0 ]]; then
+    log_info "PASS: home install exits when a target already exists"
+    TESTS_PASSED=$((TESTS_PASSED + 1))
+  else
+    log_error "FAIL: home install overwrote an existing file"
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+  fi
+  assert_output_contains "$output" "refusing to overwrite" "Conflict error explains the unsafe overwrite"
+  assert_output_contains "$(<"$SANDBOX_DIR/.config/starship.toml")" "local-starship" "Rejected install preserves the local file"
 }
 
 main() {
   echo -e "${YELLOW}========================================${NC}"
-  echo -e "${YELLOW}Omarchy Dotfiles Installer Test Suite${NC}"
+  echo -e "${YELLOW}Dotfiles Installer Test Suite${NC}"
   echo -e "${YELLOW}========================================${NC}"
   echo ""
 
+  if ! command -v mise >/dev/null 2>&1; then
+    log_error "mise is required for this suite"
+    exit 1
+  fi
+
   setup_sandbox
   test_refuses_non_omarchy
-  test_installs_around_omarchy_defaults
-  test_is_idempotent
-  test_replaces_wrong_hook_file
+  test_omarchy_claims_personal_files
+  test_omarchy_is_idempotent
+  test_omarchy_replaces_wrong_hook_file
+  test_home_links_terminals
+  test_home_refuses_existing_files
 
   print_summary
 }

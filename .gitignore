@@ -16,6 +16,10 @@
 # Agent build output
 build/
 
+# mise local overrides
+mise.local.toml
+mise.*.local.toml
+
 # Node.js
 node_modules/
 
