@@ -114,6 +114,7 @@ Pi settings and models are copied by `make install`. Extensions, prompts, and th
 
 ### Notable custom skills
 
+- `before-and-after` — attach screenshots and screen recordings to GitHub PR descriptions with formatted Markdown tables and video players, vendored from `vercel-labs/before-and-after` commit `8306d34`
 - `babysit-pr` — GitHub PR monitoring/babysitting workflow imported from `openai/codex` commit `7e569f1`
 - `editorial-sketches` — editorial article illustration skill vendored from `helloianneo/ian-xiaohei-illustrations` commit `91b5608`
 - `technical-explainer-comic` — evidence-backed technical comic workflow with editorial panels, expandable traces, responsive HTML, browser QA, and static publication
@@ -174,6 +175,7 @@ dotfiles/
 ├── mise.home.toml           # macOS/Ubuntu terminals and brew packages
 ├── mise.omarchy.toml        # Omarchy-only links, bashrc block, login shell
 ├── skills/                  # custom agent skills
+│   ├── before-and-after/    # GitHub PR screenshot and video formatting
 │   └── writing-pr/          # PR title and body guidance
 ├── configs/                 # shared AGENTS.md for Codex and Pi
 ├── amp-plugins/             # custom Amp plugins
