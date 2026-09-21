@@ -114,6 +114,7 @@ Pi settings and models are copied by `make install`. Extensions, prompts, and th
 
 ### Notable custom skills
 
+- `agent-browser` — fast browser automation CLI for AI agents with CDP accessibility tree snapshots and refs, vendored from `vercel-labs/agent-browser` commit `44583ac`
 - `before-and-after` — attach screenshots and screen recordings to GitHub PR descriptions with formatted Markdown tables and video players, vendored from `vercel-labs/before-and-after` commit `8306d34`
 - `babysit-pr` — GitHub PR monitoring/babysitting workflow imported from `openai/codex` commit `7e569f1`
 - `editorial-sketches` — editorial article illustration skill vendored from `helloianneo/ian-xiaohei-illustrations` commit `91b5608`
@@ -175,6 +176,7 @@ dotfiles/
 ├── mise.home.toml           # macOS/Ubuntu terminals and brew packages
 ├── mise.omarchy.toml        # Omarchy-only links, bashrc block, login shell
 ├── skills/                  # custom agent skills
+│   ├── agent-browser/       # fast browser automation CLI for AI agents
 │   ├── before-and-after/    # GitHub PR screenshot and video formatting
 │   └── writing-pr/          # PR title and body guidance
 ├── configs/                 # shared AGENTS.md for Codex and Pi

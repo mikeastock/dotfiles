@@ -80,7 +80,7 @@ agent-browser click @e12
 
 ## Ref Lifecycle
 
-**IMPORTANT**: Refs are invalidated when the page changes!
+Same-document updates preserve refs for surviving DOM elements. Replaced elements and page or iframe document replacements invalidate the corresponding refs. Invalidated IDs are never recycled within the browser session. JSON snapshot responses list refs that disappeared in `removedRefs`. Virtual accessibility nodes have snapshot-local refs.
 
 ```bash
 # Get initial snapshot
@@ -90,9 +90,9 @@ agent-browser snapshot -i
 # Click triggers page change
 agent-browser click @e1
 
-# MUST re-snapshot to get new refs!
+# Re-snapshot after navigation to get new refs
 agent-browser snapshot -i
-# @e1 [h1] "Page 2"  ← Different element now!
+# @e2 [heading] "Page 2"  ← New element, new ref
 ```
 
 ## Best Practices
@@ -161,6 +161,31 @@ agent-browser snapshot @e9
 @e9 [checkbox] checked                   # Checked checkbox
 @e10 [radio] selected                    # Selected radio
 ```
+
+## Iframes
+
+Snapshots automatically detect and inline iframe content. When the main-frame snapshot runs, each `Iframe` node is resolved and its child accessibility tree is included directly beneath it in the output. Refs assigned to elements inside iframes carry frame context, so interactions like `click`, `fill`, and `type` work without manually switching frames.
+
+```bash
+agent-browser snapshot -i
+# @e1 [heading] "Checkout"
+# @e2 [Iframe] "payment-frame"
+#   @e3 [input] "Card number"
+#   @e4 [input] "Expiry"
+#   @e5 [button] "Pay"
+# @e6 [button] "Cancel"
+
+# Interact with iframe elements directly using their refs
+agent-browser fill @e3 "4111111111111111"
+agent-browser fill @e4 "12/28"
+agent-browser click @e5
+```
+
+**Key details:**
+- Only one level of iframe nesting is expanded (iframes within iframes are not recursed)
+- Cross-origin iframes that block accessibility tree access are silently skipped
+- Empty iframes or iframes with no interactive content are omitted from the output
+- To scope a snapshot to a single iframe, use `frame @ref` then `snapshot -i`
 
 ## Troubleshooting
 
