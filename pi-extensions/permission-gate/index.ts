@@ -10,6 +10,19 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
 const SAFE_TMP_PREFIXES = ["/tmp", "tmp/", ".tmp"];
+const PROMPT_TITLE = "⚠️ Dangerous command — allow?";
+const PROMPT_MESSAGE_MAX_LENGTH = 8000;
+
+// Keep the dialog title short and put the command in the message body.
+// RPC hosts such as BB cap dialog titles (160 chars) and cancel longer ones,
+// which silently turned long commands into "Blocked by user".
+export function buildDangerousCommandPrompt(command: string): { title: string; message: string } {
+	const message =
+		command.length > PROMPT_MESSAGE_MAX_LENGTH
+			? `${command.slice(0, PROMPT_MESSAGE_MAX_LENGTH)}\n… (truncated, ${command.length} chars total)`
+			: command;
+	return { title: PROMPT_TITLE, message };
+}
 const RECURSIVE_RM_PATTERN = /\brm\s+(-rf?|--recursive)/i;
 
 function tokenizeCommand(command: string): string[] {
@@ -124,9 +137,10 @@ export default function (pi: ExtensionAPI) {
 				return { block: true, reason: "Dangerous command blocked (no UI for confirmation)" };
 			}
 
-			const choice = await ctx.ui.select(`⚠️ Dangerous command:\n\n ${command}\n\nAllow?`, ["Yes", "No"]);
+			const prompt = buildDangerousCommandPrompt(command);
+			const allowed = await ctx.ui.confirm(prompt.title, prompt.message);
 
-			if (choice !== "Yes") {
+			if (!allowed) {
 				return { block: true, reason: "Blocked by user" };
 			}
 		}
