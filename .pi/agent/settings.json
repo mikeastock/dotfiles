@@ -19,7 +19,8 @@
   "packages": [
     "npm:pi-verbosity-control",
     "npm:pi-meta-oauth",
-    "npm:@earendil-works/pi-radius"
+    "npm:@earendil-works/pi-radius",
+    "npm:@gotgenes/pi-anthropic-auth"
   ],
   "theme": "catppuccin-mocha",
   "transport": "websocket",
