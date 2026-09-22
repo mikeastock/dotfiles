@@ -7,13 +7,14 @@
   "doubleEscapeAction": "tree",
   "enabledModels": [
     "fireworks/accounts/fireworks/models/kimi-k3",
-    "openai-codex/gpt-5.6-sol",
-    "openai-codex/gpt-5.6-luna",
     "xai/grok-4.6",
-    "google/gemini-3.8-flash",
     "openai-codex/gpt-6-astra",
     "openrouter/meta/muse-spark-1.3",
-    "radius/deepseek-v4.1-flash"
+    "radius/deepseek-v4.1-flash",
+    "google/gemini-3.8-flash",
+    "openrouter/google/gemini-3.8-flash:nitro",
+    "anthropic/claude-opus-5-5",
+    "openai-codex/gpt-6-sol"
   ],
   "packages": [
     "npm:pi-verbosity-control",
