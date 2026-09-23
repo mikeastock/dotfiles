@@ -7,6 +7,7 @@ import {
 	type GateContext,
 	isUnsafeRmCommand,
 	isUnsafeRmTarget,
+	tokenize,
 	UNSAFE_RM_NAMES,
 	UNSAFE_RM_ROOTS,
 	UNSAFE_RM_TREES,
@@ -29,6 +30,37 @@ function assertPrompts(commands: string[], context: GateContext = PROJECT) {
 function assertAllows(commands: string[], context: GateContext = PROJECT) {
 	for (const command of commands) assert.equal(unsafeCommand(command, context), false, JSON.stringify(command));
 }
+
+describe("tokenize", () => {
+	const tokens = (command: string) => tokenize(command).tokens;
+
+	it("splits words on whitespace and removes quotes", () => {
+		assert.deepEqual(tokens(`a 'b c' "d e" f\\ g`), ["a", "b c", "d e", "f g"]);
+		assert.deepEqual(tokens(`"$HOME"/x '~'/y`), ["$HOME/x", "~/y"]);
+		assert.deepEqual(tokens(`"" x`), ["", "x"]);
+	});
+
+	it("handles backslashes inside double quotes like the shell", () => {
+		assert.deepEqual(tokens(`"a\\"b" "c\\d"`), ['a"b', "c\\d"]);
+	});
+
+	it("turns operators and unquoted newlines into separators", () => {
+		assert.deepEqual(tokens("a;b&&c || d|e 2>&1\nf"), ["a", null, "b", null, "c", null, "d", null, "e", "2", null, "1", null, "f"]);
+	});
+
+	it("skips comments and line continuations", () => {
+		assert.deepEqual(tokens("a # b c\nd"), ["a", null, "d"]);
+		assert.deepEqual(tokens("a#b"), ["a#b"]);
+		assert.deepEqual(tokens("a \\\n b"), ["a", "b"]);
+	});
+
+	it("keeps substitutions in the word and returns their bodies", () => {
+		assert.deepEqual(tokenize("rm -rf $(pwd)/x `echo y` \"$(a (b))\""), {
+			tokens: ["rm", "-rf", "$(pwd)/x", "`echo y`", "$(a (b))"],
+			substitutions: ["pwd", "echo y", "a (b)"],
+		});
+	});
+});
 
 describe("collectRmInvocations: parsing", () => {
 	it("reads flags, targets, and --no-preserve-root", () => {
@@ -94,6 +126,16 @@ describe("collectRmInvocations: parsing", () => {
 		assert.deepEqual(targetsOf('cd "$DIR" && rm -rf x'), ["x"]);
 		assert.deepEqual(targetsOf("rm -rf x", { cwd: null, home: HOME }), ["x"]);
 		assert.deepEqual(targetsOf('rm -rf "$DIR/"'), ["$DIR"]);
+		assert.deepEqual(targetsOf("rm -rf $(pwd)/x"), ["$(pwd)/x"]);
+	});
+
+	it("scans command substitutions", () => {
+		assert.deepEqual(targetsOf("echo $(rm -rf /etc)"), ["/etc"]);
+		assert.deepEqual(targetsOf('x="`rm -rf /etc`"'), ["/etc"]);
+	});
+
+	it("ignores rm in comments", () => {
+		assert.deepEqual(targetsOf("rm -rf build # not /etc"), ["/home/mike/code/app/build"]);
 	});
 });
 
@@ -118,6 +160,11 @@ describe("isUnsafeRmTarget: trees (the directory and everything inside)", () => 
 	it("matches globs anywhere in the path", () => {
 		assert.equal(unsafe("/home/*/.ssh"), true);
 		assert.equal(unsafe("/e*"), true);
+		assert.equal(unsafe("/e?c"), true);
+		assert.equal(unsafe("/[ef]tc"), true);
+		assert.equal(unsafe("/{etc,opt}"), true);
+		assert.equal(unsafe("/home/mike/code/app/[id]"), false);
+		assert.equal(unsafe("/home/mike/*/id_ed25519"), false); // `*` skips dot directories like .ssh
 		assert.equal(unsafe("/etc/*.conf"), true);
 	});
 });

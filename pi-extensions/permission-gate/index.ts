@@ -14,9 +14,9 @@
  * Patterns may start with `~` (the current user's home) and use `*` to match
  * exactly one path segment.
  *
- * Commands are parsed with shell-quote. Relative targets resolve against the
- * agent's working directory and any `cd <dir>` earlier in the same command.
- * `sh -c` / `bash -c` payloads are scanned too.
+ * Relative targets resolve against the agent's working directory and any
+ * `cd <dir>` earlier in the same command. `sh -c` / `bash -c` payloads and
+ * `$(...)` / backtick substitutions are scanned too.
  *
  * Known gaps: variables other than $HOME and command substitutions are not
  * expanded, so targets like "$DIR/" are judged as written. SSH commands are
@@ -26,8 +26,6 @@
 import { homedir } from "node:os";
 import { posix } from "node:path";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import picomatch from "picomatch";
-import { type ParseEntry, parse } from "shell-quote";
 
 /** Deleting any of these, or anything beneath them, prompts. */
 export const UNSAFE_RM_TREES = [
@@ -157,49 +155,107 @@ const GLOB_CHARS = /[*?[{]/;
 // directory. Globs with literal text (`build-*`, `*.log`) only remove matches.
 const EMPTYING_GLOB = /^[.*?[\]!{},]*\*[.*?[\]!{},]*$/;
 
+const OPERATOR_CHARS = new Set([";", "&", "|", "(", ")", "<", ">"]);
+// Inside double quotes, a backslash only escapes these characters.
+const DOUBLE_QUOTE_ESCAPES = new Set(["$", "`", '"', "\\", "\n"]);
+
+/** A shell word with quotes removed, or null for an operator that ends a command. */
+type Token = string | null;
+
+/** Index of the `)` closing a `$(` whose body starts at `start`. */
+function closingParen(command: string, start: number): number {
+	let depth = 1;
+	for (let i = start; i < command.length; i++) {
+		if (command[i] === "(") depth++;
+		if (command[i] === ")" && --depth === 0) return i;
+	}
+	return command.length;
+}
+
 /**
- * shell-quote treats newlines as plain whitespace. Turn unquoted newlines into
- * `;` so each line is its own command, and drop `\`-newline continuations.
+ * Split a command into words and operators the way the shell would: quotes
+ * and backslashes are removed, `\`-newline continues a line, unquoted
+ * newlines and `;&|()<>` end a command, and `#` starts a comment.
+ * Substitutions stay in the word as written; their bodies are returned
+ * separately so they can be scanned too.
  */
-function splitLines(command: string): string {
-	let result = "";
-	let quote: "'" | '"' | null = null;
+export function tokenize(command: string): { tokens: Token[]; substitutions: string[] } {
+	const tokens: Token[] = [];
+	const substitutions: string[] = [];
+	let word = "";
+	let inWord = false;
+
+	const endWord = () => {
+		if (inWord) tokens.push(word);
+		word = "";
+		inWord = false;
+	};
+
+	// Append a `$(...)` or backtick substitution starting at `i`; return its last index.
+	const readSubstitution = (i: number): number => {
+		const backtick = command[i] === "`";
+		const bodyStart = backtick ? i + 1 : i + 2;
+		const end = backtick ? command.indexOf("`", bodyStart) : closingParen(command, bodyStart);
+		const stop = end === -1 ? command.length : end;
+		substitutions.push(command.slice(bodyStart, stop));
+		word += command.slice(i, stop + 1);
+		inWord = true;
+		return stop;
+	};
 
 	for (let i = 0; i < command.length; i++) {
 		const char = command[i];
+		const next = command[i + 1];
 
-		if (quote === "'") {
-			if (char === "'") quote = null;
-			result += char;
-		} else if (char === "\\") {
-			const next = command[i + 1] ?? "";
-			if (next !== "\n") result += char + next;
+		if (char === "\\") {
 			i++;
-		} else if (quote === '"') {
-			if (char === '"') quote = null;
-			result += char;
-		} else if (char === "'" || char === '"') {
-			quote = char;
-			result += char;
+			if (next !== undefined && next !== "\n") {
+				word += next;
+				inWord = true;
+			}
+		} else if (char === "'") {
+			const end = command.indexOf("'", i + 1);
+			const stop = end === -1 ? command.length : end;
+			word += command.slice(i + 1, stop);
+			inWord = true;
+			i = stop;
+		} else if (char === '"') {
+			inWord = true;
+			for (i++; i < command.length && command[i] !== '"'; i++) {
+				const inner = command[i];
+				if (inner === "\\" && DOUBLE_QUOTE_ESCAPES.has(command[i + 1])) {
+					i++;
+					if (command[i] !== "\n") word += command[i];
+				} else if (inner === "`" || (inner === "$" && command[i + 1] === "(")) {
+					i = readSubstitution(i);
+				} else {
+					word += inner;
+				}
+			}
+		} else if (char === "`" || (char === "$" && next === "(")) {
+			i = readSubstitution(i);
+		} else if (char === "#" && !inWord) {
+			const end = command.indexOf("\n", i);
+			i = (end === -1 ? command.length : end) - 1;
+		} else if (char === "\n" || OPERATOR_CHARS.has(char)) {
+			endWord();
+			if (tokens.at(-1) !== null) tokens.push(null);
+		} else if (char === " " || char === "\t") {
+			endWord();
 		} else {
-			result += char === "\n" ? " ; " : char;
+			word += char;
+			inWord = true;
 		}
 	}
 
-	return result;
+	endWord();
+	return { tokens, substitutions };
 }
 
-/** Plain words and glob patterns are arguments; operators and comments end a command. */
-function wordOf(entry: ParseEntry): string | null {
-	if (typeof entry === "string") return entry;
-	if ("op" in entry && entry.op === "glob") return entry.pattern;
-	return null;
-}
-
-function wordsUntilSeparator(entries: ParseEntry[], start: number): string[] {
+function wordsUntilSeparator(tokens: Token[], start: number): string[] {
 	const words: string[] = [];
-	for (let i = start; i < entries.length; i++) {
-		const word = wordOf(entries[i]);
+	for (let i = start; i < tokens.length; i++) {
+		const word = tokens[i];
 		if (word === null) break;
 		words.push(word);
 	}
@@ -250,19 +306,21 @@ function shellPayload(args: string[]): string | null {
 }
 
 function scanCommand(command: string, context: GateContext, found: RmInvocation[]): void {
-	const entries = parse(splitLines(command), (key) => `$${key}`);
+	const { tokens, substitutions } = tokenize(command);
+	for (const body of substitutions) scanCommand(body, context, found);
+
 	let current = context;
 	let atCommandStart = true;
 
-	for (let i = 0; i < entries.length; i++) {
-		const word = wordOf(entries[i]);
+	for (let i = 0; i < tokens.length; i++) {
+		const word = tokens[i];
 		if (word === null) {
 			atCommandStart = true;
 			continue;
 		}
 
-		const args = wordsUntilSeparator(entries, i + 1);
-		// Matches `rm`, `\rm` (shell-quote drops the backslash), and `/bin/rm`.
+		const args = wordsUntilSeparator(tokens, i + 1);
+		// Matches `rm`, `\rm` (the tokenizer drops the backslash), and `/bin/rm`.
 		// Every word is checked, so `sudo rm` and `xargs rm` are covered too.
 		const program = posix.basename(word);
 
@@ -293,11 +351,43 @@ function segmentsOf(path: string): string[] {
 	return path === "/" ? [""] : path.split("/");
 }
 
+const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/** Regex source for one path segment of a shell glob: `*`, `?`, `[...]`, `{a,b}`. */
+function globSource(glob: string): string {
+	let source = "";
+
+	for (let i = 0; i < glob.length; i++) {
+		const char = glob[i];
+		const close = char === "[" ? glob.indexOf("]", i + 2) : char === "{" ? glob.indexOf("}", i + 1) : -1;
+
+		if (char === "*") {
+			source += ".*";
+		} else if (char === "?") {
+			source += ".";
+		} else if (char === "[" && close !== -1) {
+			const body = glob.slice(i + 1, close).replace(/^!/, "^").replaceAll("\\", "\\\\");
+			source += `[${body}]`;
+			i = close;
+		} else if (char === "{" && close !== -1) {
+			source += `(?:${glob.slice(i + 1, close).split(",").map(globSource).join("|")})`;
+			i = close;
+		} else {
+			source += escapeRegExp(char);
+		}
+	}
+
+	return source;
+}
+
 function segmentMatches(pathSegment: string | undefined, patternSegment: string): boolean {
 	if (pathSegment === undefined) return false;
 	if (patternSegment === "*" || pathSegment === patternSegment) return true;
+	if (!GLOB_CHARS.test(pathSegment)) return false;
+	// Like the shell, a glob only matches a dot entry when it starts with a dot.
+	if (patternSegment.startsWith(".") && !pathSegment.startsWith(".")) return false;
 	// A glob in the target (`/home/*/.ssh`) matches any directory it could expand to.
-	return GLOB_CHARS.test(pathSegment) && picomatch.isMatch(patternSegment, pathSegment);
+	return new RegExp(`^${globSource(pathSegment)}$`).test(patternSegment);
 }
 
 function startsWithPattern(path: string[], pattern: string[]): boolean {
