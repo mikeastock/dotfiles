@@ -1,63 +1,100 @@
 /**
  * Permission Gate Extension
  *
- * Prompts for confirmation only when a recursive `rm` targets a known unsafe
- * directory prefix. Everything else is allowed through without prompting.
+ * Prompts for confirmation only when a recursive `rm` hits the deny list below.
+ * Everything else runs without prompting.
  *
- * The gate is intentionally a growing deny list: pad `UNSAFE_RM_PREFIXES` with
- * directories whose recursive deletion would be catastrophic. Deleting anything
- * that does not sit under one of those prefixes (project files, /tmp, build
- * output, etc.) is allowed silently.
+ * The deny list has three parts:
+ * - UNSAFE_RM_TREES: never delete these or anything inside them.
+ * - UNSAFE_RM_ROOTS: never delete or empty these directories, but deleting
+ *   things inside them is fine (e.g. a project's node_modules under /home).
+ * - UNSAFE_RM_NAMES: never delete a directory with this name, wherever it is.
+ *
+ * Patterns may start with `~` (the current user's home) and use `*` to match
+ * exactly one path segment.
  *
  * SSH commands are excluded since they run on remote machines.
  */
 
+import { homedir } from "node:os";
+import { posix } from "node:path";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
-/**
- * Directories we never want to recursively delete (or delete anything inside).
- * Matching is prefix-based: a target is unsafe when it equals a prefix or sits
- * beneath it. Keep this list small and focused on genuine catastrophe.
- */
-export const UNSAFE_RM_PREFIXES = [
-	// Root filesystem itself. Matched exactly only, otherwise every absolute
-	// path would sit "under" it and prompt.
-	"/",
-
+/** Deleting any of these, or anything beneath them, prompts. */
+export const UNSAFE_RM_TREES = [
 	// Linux system directories
 	"/bin",
 	"/boot",
 	"/dev",
 	"/etc",
 	"/lib",
+	"/lib32",
 	"/lib64",
 	"/proc",
 	"/root",
 	"/run",
 	"/sbin",
+	"/snap",
 	"/sys",
 	"/usr",
-	"/var",
+	"/var/lib",
 
 	// macOS system directories
-	"/System",
-	"/Library",
 	"/Applications",
+	"/Library",
+	"/System",
+	"/private/etc",
+
+	// Credentials
+	"~/.gnupg",
+	"~/.ssh",
+	"/data/workspace/1password-service-tokens",
+];
+
+/**
+ * Deleting or emptying (`dir/*`) any of these prompts. Deleting a path inside
+ * them does not, because that is where normal work happens.
+ */
+export const UNSAFE_RM_ROOTS = [
+	"/",
+
+	// Shared system roots whose subdirectories are routinely cleaned up
+	"/opt",
+	"/private",
+	"/private/var",
+	"/srv",
+	"/tmp",
+	"/var",
+
+	// Mounted drives
+	"/media",
+	"/media/*",
+	"/mnt",
+	"/mnt/*",
 	"/Volumes",
+	"/Volumes/*",
 
 	// Home directories
 	"/home",
+	"/home/*",
 	"/Users",
+	"/Users/*",
 	"~",
-	"$HOME",
-	"${HOME}",
+	"~/.config",
+	"~/.local",
+	"~/Desktop",
+	"~/Documents",
+	"~/Library",
 
-	// Shared / mounted software roots
-	"/opt",
-	"/srv",
-	"/mnt",
-	"/media",
+	// Workspace volume that holds the main checkouts
+	"/data",
+	"/data/workspace",
+	"/data/workspace/*",
+	"/data/workspace/code/*",
 ];
+
+/** Deleting a directory with one of these names prompts, wherever it lives. */
+export const UNSAFE_RM_NAMES = [".git"];
 
 const PROMPT_TITLE = "⚠️ Unsafe rm — allow?";
 const PROMPT_MESSAGE_MAX_LENGTH = 8000;
@@ -75,24 +112,13 @@ export function buildUnsafeRmPrompt(command: string): { title: string; message: 
 
 const SSH_PATTERN = /^\s*ssh\s+/i;
 
-// Shell control operators that terminate an `rm` argument list. Tokenized as
-// standalone tokens (including newlines) so we never read the next command's
-// arguments as rm targets.
-const SHELL_SEPARATORS = new Set([
-	"\n",
-	"&&",
-	"||",
-	";",
-	"|",
-	"&",
-	"(",
-	")",
-	"{",
-	"}",
-	">",
-	">>",
-	"<",
-]);
+// Shell control operators that end an `rm` argument list. Newlines are kept as
+// tokens so a following command's arguments are never read as rm targets.
+const SHELL_SEPARATORS = new Set(["\n", "&&", "||", ";", "|", "&", "(", ")", "{", "}", ">", ">>", "<"]);
+
+// A last segment made only of wildcards (`*`, `.*`, `**`, `.[!.]*`) empties its
+// directory. Globs with literal text (`build-*`, `*.log`) only remove matches.
+const EMPTYING_GLOB = /^[.*?[\]!{},]*\*[.*?[\]!{},]*$/;
 
 function tokenizeCommand(command: string): string[] {
 	return command.match(/'[^']*'|"(?:\\.|[^"\\])*"|\n|[^\s]+/g) ?? [];
@@ -115,19 +141,23 @@ function isRecursiveOption(token: string): boolean {
 	return /[rR]/.test(token.slice(1));
 }
 
+export type RecursiveRm = { targets: string[]; noPreserveRoot: boolean };
+
 /**
- * Collect every target of a recursive `rm` anywhere in the command, including
- * through wrappers such as `sudo` or `xargs`.
+ * Find every recursive `rm` in the command, including behind wrappers such as
+ * `sudo` or `xargs`. Options may appear after operands, as GNU rm allows.
  */
-export function collectRecursiveRmTargets(command: string): string[] {
+export function collectRecursiveRms(command: string): RecursiveRm[] {
 	const tokens = tokenizeCommand(command);
-	const targets: string[] = [];
+	const invocations: RecursiveRm[] = [];
 
 	for (let i = 0; i < tokens.length; i++) {
 		if (stripWrappingQuotes(tokens[i]) !== "rm") continue;
 
 		let isRecursive = false;
+		let noPreserveRoot = false;
 		let parsingOptions = true;
+		const targets: string[] = [];
 
 		for (let j = i + 1; j < tokens.length; j++) {
 			const token = stripWrappingQuotes(tokens[j]);
@@ -135,40 +165,71 @@ export function collectRecursiveRmTargets(command: string): string[] {
 
 			if (parsingOptions && token === "--") {
 				parsingOptions = false;
-				continue;
-			}
-
-			if (parsingOptions && token.startsWith("-") && token !== "-") {
+			} else if (parsingOptions && token.startsWith("-") && token !== "-") {
 				if (isRecursiveOption(token)) isRecursive = true;
-				continue;
+				if (token === "--no-preserve-root") noPreserveRoot = true;
+			} else {
+				targets.push(token);
 			}
-
-			parsingOptions = false;
-			if (isRecursive) targets.push(token);
 		}
+
+		if (isRecursive) invocations.push({ targets, noPreserveRoot });
 	}
 
-	return targets;
+	return invocations;
 }
 
-function normalizeTarget(target: string): string {
-	if (target === "") return "";
-	const stripped = target.replace(/\/+$/, "");
-	return stripped === "" ? "/" : stripped;
+function expandHome(path: string, home: string): string {
+	const match = path.match(/^(~|\$HOME|\$\{HOME\})(?=\/|$)/);
+	return match ? home + path.slice(match[0].length) : path;
 }
 
-export function isUnsafeRmTarget(target: string): boolean {
-	const normalized = normalizeTarget(target);
-
-	return UNSAFE_RM_PREFIXES.some((prefix) => {
-		// The root prefix only matches the root itself.
-		if (prefix === "/") return normalized === "/";
-		return normalized === prefix || normalized.startsWith(`${prefix}/`);
-	});
+function normalizePath(path: string, home: string): string {
+	const normalized = posix.normalize(expandHome(path, home));
+	return normalized.length > 1 ? normalized.replace(/\/+$/, "") : normalized;
 }
 
-export function isUnsafeRmCommand(command: string): boolean {
-	return collectRecursiveRmTargets(command).some(isUnsafeRmTarget);
+function splitSegments(path: string): string[] {
+	// "/etc/nginx" -> ["", "etc", "nginx"]; "/" -> [""]
+	return path === "/" ? [""] : path.split("/");
+}
+
+function segmentsMatch(pathSegments: string[], patternSegments: string[]): boolean {
+	return patternSegments.every((pattern, index) => pattern === "*" || pattern === pathSegments[index]);
+}
+
+function isSameOrInside(path: string[], pattern: string[]): boolean {
+	return path.length >= pattern.length && segmentsMatch(path, pattern);
+}
+
+function isSame(path: string[], pattern: string[]): boolean {
+	return path.length === pattern.length && segmentsMatch(path, pattern);
+}
+
+export function isUnsafeRmTarget(target: string, home: string = homedir()): boolean {
+	if (target === "") return false;
+
+	let path = normalizePath(target, home);
+
+	// `dir/*` empties dir, so judge dir itself.
+	if (EMPTYING_GLOB.test(posix.basename(path))) {
+		path = posix.dirname(path);
+	}
+
+	const segments = splitSegments(path);
+	const patternSegments = (pattern: string) => splitSegments(normalizePath(pattern, home));
+
+	return (
+		UNSAFE_RM_TREES.some((tree) => isSameOrInside(segments, patternSegments(tree))) ||
+		UNSAFE_RM_ROOTS.some((root) => isSame(segments, patternSegments(root))) ||
+		UNSAFE_RM_NAMES.includes(posix.basename(path))
+	);
+}
+
+export function isUnsafeRmCommand(command: string, home: string = homedir()): boolean {
+	return collectRecursiveRms(command).some(
+		(rm) => rm.noPreserveRoot || rm.targets.some((target) => isUnsafeRmTarget(target, home)),
+	);
 }
 
 export default function (pi: ExtensionAPI) {
