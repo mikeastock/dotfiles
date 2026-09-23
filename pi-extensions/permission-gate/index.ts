@@ -1,24 +1,33 @@
 /**
  * Permission Gate Extension
  *
- * Prompts for confirmation only when a recursive `rm` hits the deny list below.
+ * Prompts for confirmation only when an `rm` hits the deny list below.
  * Everything else runs without prompting.
  *
  * The deny list has three parts:
- * - UNSAFE_RM_TREES: never delete these or anything inside them.
- * - UNSAFE_RM_ROOTS: never delete or empty these directories, but deleting
- *   things inside them is fine (e.g. a project's node_modules under /home).
- * - UNSAFE_RM_NAMES: never delete a directory with this name, wherever it is.
+ * - UNSAFE_RM_TREES: never delete these or anything inside them, recursive or
+ *   not (system and credential directories).
+ * - UNSAFE_RM_ROOTS: never recursively delete or empty these directories, but
+ *   deleting things inside them is fine (e.g. node_modules under /home).
+ * - UNSAFE_RM_NAMES: never recursively delete a directory with this name.
  *
  * Patterns may start with `~` (the current user's home) and use `*` to match
  * exactly one path segment.
  *
- * SSH commands are excluded since they run on remote machines.
+ * Commands are parsed with shell-quote. Relative targets resolve against the
+ * agent's working directory and any `cd <dir>` earlier in the same command.
+ * `sh -c` / `bash -c` payloads are scanned too.
+ *
+ * Known gaps: variables other than $HOME and command substitutions are not
+ * expanded, so targets like "$DIR/" are judged as written. SSH commands are
+ * skipped since they run on remote machines.
  */
 
 import { homedir } from "node:os";
 import { posix } from "node:path";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import picomatch from "picomatch";
+import { type ParseEntry, parse } from "shell-quote";
 
 /** Deleting any of these, or anything beneath them, prompts. */
 export const UNSAFE_RM_TREES = [
@@ -46,14 +55,19 @@ export const UNSAFE_RM_TREES = [
 	"/private/etc",
 
 	// Credentials
+	"~/.aws",
+	"~/.config/gh",
+	"~/.config/op",
+	"~/.docker",
 	"~/.gnupg",
+	"~/.kube",
 	"~/.ssh",
 	"/data/workspace/1password-service-tokens",
 ];
 
 /**
- * Deleting or emptying (`dir/*`) any of these prompts. Deleting a path inside
- * them does not, because that is where normal work happens.
+ * Recursively deleting or emptying (`dir/*`) any of these prompts. Deleting a
+ * path inside them does not, because that is where normal work happens.
  */
 export const UNSAFE_RM_ROOTS = [
 	"/",
@@ -80,21 +94,42 @@ export const UNSAFE_RM_ROOTS = [
 	"/Users",
 	"/Users/*",
 	"~",
+	"~/.bb",
+	"~/.bb/*",
 	"~/.config",
 	"~/.local",
+	"~/.local/*",
 	"~/Desktop",
 	"~/Documents",
 	"~/Library",
 
-	// Workspace volume that holds the main checkouts
+	// Workspace volume. Main checkouts live one level below each code group;
+	// /data/workspace/code/worktrees/* is left out so worktree cleanup is quiet.
 	"/data",
 	"/data/workspace",
 	"/data/workspace/*",
 	"/data/workspace/code/*",
+	"/data/workspace/code/buildr/*",
+	"/data/workspace/code/exo/*",
+	"/data/workspace/code/oss/*",
+	"/data/workspace/code/personal/*",
 ];
 
-/** Deleting a directory with one of these names prompts, wherever it lives. */
+/** Recursively deleting a directory with one of these names prompts. */
 export const UNSAFE_RM_NAMES = [".git"];
+
+export type GateContext = {
+	/** Working directory the command runs in; null when unknown. */
+	cwd: string | null;
+	home: string;
+};
+
+export type RmInvocation = {
+	recursive: boolean;
+	noPreserveRoot: boolean;
+	/** Targets resolved to absolute paths where the working directory is known. */
+	targets: string[];
+};
 
 const PROMPT_TITLE = "⚠️ Unsafe rm — allow?";
 const PROMPT_MESSAGE_MAX_LENGTH = 8000;
@@ -111,125 +146,204 @@ export function buildUnsafeRmPrompt(command: string): { title: string; message: 
 }
 
 const SSH_PATTERN = /^\s*ssh\s+/i;
-
-// Shell control operators that end an `rm` argument list. Newlines are kept as
-// tokens so a following command's arguments are never read as rm targets.
-const SHELL_SEPARATORS = new Set(["\n", "&&", "||", ";", "|", "&", "(", ")", "{", "}", ">", ">>", "<"]);
-
-// A last segment made only of wildcards (`*`, `.*`, `**`, `.[!.]*`) empties its
+const SHELLS = new Set(["sh", "bash", "zsh", "dash", "ksh"]);
+const SHELL_COMMAND_FLAG = /^-[a-zA-Z]*c[a-zA-Z]*$/;
+const ENV_ASSIGNMENT = /^[A-Za-z_][A-Za-z0-9_]*=/;
+const HOME_PREFIX = /^(~|\$HOME|\$\{HOME\})(?=\/|$)/;
+// Paths that still contain a variable or command substitution can't be resolved.
+const UNRESOLVED = /[$`]/;
+const GLOB_CHARS = /[*?[{]/;
+// A last segment made only of wildcards (`*`, `.*`, `**`, `{*,.*}`) empties its
 // directory. Globs with literal text (`build-*`, `*.log`) only remove matches.
 const EMPTYING_GLOB = /^[.*?[\]!{},]*\*[.*?[\]!{},]*$/;
 
-function tokenizeCommand(command: string): string[] {
-	return command.match(/'[^']*'|"(?:\\.|[^"\\])*"|\n|[^\s]+/g) ?? [];
-}
-
-function stripWrappingQuotes(token: string): string {
-	if (token.length < 2) return token;
-
-	const first = token[0];
-	const last = token[token.length - 1];
-	if ((first === '"' && last === '"') || (first === "'" && last === "'")) {
-		return token.slice(1, -1);
-	}
-
-	return token;
-}
-
-function isRecursiveOption(token: string): boolean {
-	if (token.startsWith("--")) return token === "--recursive";
-	return /[rR]/.test(token.slice(1));
-}
-
-export type RecursiveRm = { targets: string[]; noPreserveRoot: boolean };
-
 /**
- * Find every recursive `rm` in the command, including behind wrappers such as
- * `sudo` or `xargs`. Options may appear after operands, as GNU rm allows.
+ * shell-quote treats newlines as plain whitespace. Turn unquoted newlines into
+ * `;` so each line is its own command, and drop `\`-newline continuations.
  */
-export function collectRecursiveRms(command: string): RecursiveRm[] {
-	const tokens = tokenizeCommand(command);
-	const invocations: RecursiveRm[] = [];
+function splitLines(command: string): string {
+	let result = "";
+	let quote: "'" | '"' | null = null;
 
-	for (let i = 0; i < tokens.length; i++) {
-		if (stripWrappingQuotes(tokens[i]) !== "rm") continue;
+	for (let i = 0; i < command.length; i++) {
+		const char = command[i];
 
-		let isRecursive = false;
-		let noPreserveRoot = false;
-		let parsingOptions = true;
-		const targets: string[] = [];
-
-		for (let j = i + 1; j < tokens.length; j++) {
-			const token = stripWrappingQuotes(tokens[j]);
-			if (SHELL_SEPARATORS.has(token)) break;
-
-			if (parsingOptions && token === "--") {
-				parsingOptions = false;
-			} else if (parsingOptions && token.startsWith("-") && token !== "-") {
-				if (isRecursiveOption(token)) isRecursive = true;
-				if (token === "--no-preserve-root") noPreserveRoot = true;
-			} else {
-				targets.push(token);
-			}
+		if (quote === "'") {
+			if (char === "'") quote = null;
+			result += char;
+		} else if (char === "\\") {
+			const next = command[i + 1] ?? "";
+			if (next !== "\n") result += char + next;
+			i++;
+		} else if (quote === '"') {
+			if (char === '"') quote = null;
+			result += char;
+		} else if (char === "'" || char === '"') {
+			quote = char;
+			result += char;
+		} else {
+			result += char === "\n" ? " ; " : char;
 		}
-
-		if (isRecursive) invocations.push({ targets, noPreserveRoot });
 	}
 
-	return invocations;
+	return result;
 }
 
-function expandHome(path: string, home: string): string {
-	const match = path.match(/^(~|\$HOME|\$\{HOME\})(?=\/|$)/);
-	return match ? home + path.slice(match[0].length) : path;
+/** Plain words and glob patterns are arguments; operators and comments end a command. */
+function wordOf(entry: ParseEntry): string | null {
+	if (typeof entry === "string") return entry;
+	if ("op" in entry && entry.op === "glob") return entry.pattern;
+	return null;
 }
 
-function normalizePath(path: string, home: string): string {
-	const normalized = posix.normalize(expandHome(path, home));
+function wordsUntilSeparator(entries: ParseEntry[], start: number): string[] {
+	const words: string[] = [];
+	for (let i = start; i < entries.length; i++) {
+		const word = wordOf(entries[i]);
+		if (word === null) break;
+		words.push(word);
+	}
+	return words;
+}
+
+function resolvePath(path: string, context: GateContext): string {
+	const expanded = path.replace(HOME_PREFIX, context.home);
+	const resolvable = !expanded.startsWith("/") && context.cwd !== null && !UNRESOLVED.test(expanded);
+	const normalized = posix.normalize(resolvable ? posix.join(context.cwd as string, expanded) : expanded);
 	return normalized.length > 1 ? normalized.replace(/\/+$/, "") : normalized;
 }
 
-function splitSegments(path: string): string[] {
+function changeDirectory(arg: string | undefined, context: GateContext): string | null {
+	if (arg === undefined) return context.home;
+	if (arg === "-") return null;
+	const next = resolvePath(arg, context);
+	return next.startsWith("/") && !UNRESOLVED.test(next) ? next : null;
+}
+
+function parseRmArgs(args: string[], context: GateContext): RmInvocation {
+	let recursive = false;
+	let noPreserveRoot = false;
+	let parsingOptions = true;
+	const targets: string[] = [];
+
+	// GNU rm accepts options after operands, so keep reading options until `--`.
+	for (const arg of args) {
+		if (parsingOptions && arg === "--") {
+			parsingOptions = false;
+		} else if (parsingOptions && arg.startsWith("-") && arg !== "-") {
+			if (arg === "--recursive" || (!arg.startsWith("--") && /[rR]/.test(arg))) recursive = true;
+			if (arg === "--no-preserve-root") noPreserveRoot = true;
+		} else if (arg !== "") {
+			targets.push(resolvePath(arg, context));
+		}
+	}
+
+	return { recursive, noPreserveRoot, targets };
+}
+
+/** Return the command string passed to `sh -c` and friends, if any. */
+function shellPayload(args: string[]): string | null {
+	for (let i = 0; i < args.length && args[i].startsWith("-"); i++) {
+		if (SHELL_COMMAND_FLAG.test(args[i])) return args[i + 1] ?? null;
+	}
+	return null;
+}
+
+function scanCommand(command: string, context: GateContext, found: RmInvocation[]): void {
+	const entries = parse(splitLines(command), (key) => `$${key}`);
+	let current = context;
+	let atCommandStart = true;
+
+	for (let i = 0; i < entries.length; i++) {
+		const word = wordOf(entries[i]);
+		if (word === null) {
+			atCommandStart = true;
+			continue;
+		}
+
+		const args = wordsUntilSeparator(entries, i + 1);
+		// Matches `rm`, `\rm` (shell-quote drops the backslash), and `/bin/rm`.
+		// Every word is checked, so `sudo rm` and `xargs rm` are covered too.
+		const program = posix.basename(word);
+
+		if (atCommandStart && word === "cd") {
+			current = { ...current, cwd: changeDirectory(args[0], current) };
+		}
+		if (program === "rm") {
+			found.push(parseRmArgs(args, current));
+		}
+		if (SHELLS.has(program)) {
+			const payload = shellPayload(args);
+			if (payload !== null) scanCommand(payload, current, found);
+		}
+
+		atCommandStart = atCommandStart && ENV_ASSIGNMENT.test(word);
+	}
+}
+
+/** Find every `rm` in the command, with targets resolved against the context. */
+export function collectRmInvocations(command: string, context: GateContext): RmInvocation[] {
+	const found: RmInvocation[] = [];
+	scanCommand(command, context, found);
+	return found;
+}
+
+function segmentsOf(path: string): string[] {
 	// "/etc/nginx" -> ["", "etc", "nginx"]; "/" -> [""]
 	return path === "/" ? [""] : path.split("/");
 }
 
-function segmentsMatch(pathSegments: string[], patternSegments: string[]): boolean {
-	return patternSegments.every((pattern, index) => pattern === "*" || pattern === pathSegments[index]);
+function segmentMatches(pathSegment: string | undefined, patternSegment: string): boolean {
+	if (pathSegment === undefined) return false;
+	if (patternSegment === "*" || pathSegment === patternSegment) return true;
+	// A glob in the target (`/home/*/.ssh`) matches any directory it could expand to.
+	return GLOB_CHARS.test(pathSegment) && picomatch.isMatch(patternSegment, pathSegment);
 }
 
-function isSameOrInside(path: string[], pattern: string[]): boolean {
-	return path.length >= pattern.length && segmentsMatch(path, pattern);
+function startsWithPattern(path: string[], pattern: string[]): boolean {
+	return pattern.every((segment, index) => segmentMatches(path[index], segment));
 }
 
-function isSame(path: string[], pattern: string[]): boolean {
-	return path.length === pattern.length && segmentsMatch(path, pattern);
+function patternSegments(pattern: string, home: string): string[] {
+	return segmentsOf(resolvePath(pattern, { cwd: null, home }));
 }
 
-export function isUnsafeRmTarget(target: string, home: string = homedir()): boolean {
-	if (target === "") return false;
-
-	let path = normalizePath(target, home);
-
-	// `dir/*` empties dir, so judge dir itself.
-	if (EMPTYING_GLOB.test(posix.basename(path))) {
+/**
+ * Check one resolved target. Relative targets (unknown working directory) can
+ * only match UNSAFE_RM_NAMES.
+ */
+export function isUnsafeRmTarget(target: string, recursive: boolean, home: string): boolean {
+	let path = target;
+	// `dir/*` (or `dir/*/*`) empties dir, so judge dir itself.
+	while (path !== "/" && EMPTYING_GLOB.test(posix.basename(path))) {
 		path = posix.dirname(path);
 	}
 
-	const segments = splitSegments(path);
-	const patternSegments = (pattern: string) => splitSegments(normalizePath(pattern, home));
+	const segments = segmentsOf(path);
+	const inTree = UNSAFE_RM_TREES.some((tree) => startsWithPattern(segments, patternSegments(tree, home)));
+	if (inTree || !recursive) return inTree;
 
 	return (
-		UNSAFE_RM_TREES.some((tree) => isSameOrInside(segments, patternSegments(tree))) ||
-		UNSAFE_RM_ROOTS.some((root) => isSame(segments, patternSegments(root))) ||
-		UNSAFE_RM_NAMES.includes(posix.basename(path))
+		UNSAFE_RM_ROOTS.some((root) => {
+			const pattern = patternSegments(root, home);
+			return segments.length === pattern.length && startsWithPattern(segments, pattern);
+		}) || UNSAFE_RM_NAMES.includes(posix.basename(path))
 	);
 }
 
-export function isUnsafeRmCommand(command: string, home: string = homedir()): boolean {
-	return collectRecursiveRms(command).some(
-		(rm) => rm.noPreserveRoot || rm.targets.some((target) => isUnsafeRmTarget(target, home)),
+export function isUnsafeRmCommand(command: string, context: GateContext): boolean {
+	return collectRmInvocations(command, context).some(
+		(rm) =>
+			(rm.recursive && rm.noPreserveRoot) ||
+			rm.targets.some((target) => isUnsafeRmTarget(target, rm.recursive, context.home)),
 	);
+}
+
+/** Decide whether a bash tool call needs confirmation. */
+export function evaluateBashCommand(command: string, context: GateContext): "allow" | "confirm" {
+	// Remote machines are not our filesystem; the gate does not apply.
+	if (SSH_PATTERN.test(command)) return "allow";
+	return isUnsafeRmCommand(command, context) ? "confirm" : "allow";
 }
 
 export default function (pi: ExtensionAPI) {
@@ -237,11 +351,7 @@ export default function (pi: ExtensionAPI) {
 		if (event.toolName !== "bash") return undefined;
 
 		const command = event.input.command as string;
-
-		// Remote machines are not our filesystem; the gate does not apply.
-		if (SSH_PATTERN.test(command)) return undefined;
-
-		if (!isUnsafeRmCommand(command)) return undefined;
+		if (evaluateBashCommand(command, { cwd: ctx.cwd, home: homedir() }) === "allow") return undefined;
 
 		if (!ctx.hasUI) {
 			// In non-interactive mode, block by default.

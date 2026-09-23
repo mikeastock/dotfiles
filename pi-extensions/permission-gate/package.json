@@ -1,0 +1,25 @@
+{
+  "name": "permission-gate",
+  "version": "0.1.0",
+  "description": "Prompt before recursive rm hits a deny list of catastrophic targets",
+  "type": "module",
+  "keywords": [
+    "pi-package",
+    "pi",
+    "pi-coding-agent",
+    "extension"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "picomatch": "^4.0.7",
+    "shell-quote": "^1.10.0"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}
