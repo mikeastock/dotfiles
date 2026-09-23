@@ -48,6 +48,7 @@ jobs:
           pnpm install --frozen-lockfile
           npm ci --prefix bb-plugins/bb-plugin-t3sidebar
           npm ci --prefix bb-plugins/bb-plugin-bb-sidebar
+          npm ci --prefix bb-plugins/bb-plugin-tok-speed
 
       - name: Run shell tests
         run: ./tests/run-all.sh
@@ -57,9 +58,11 @@ jobs:
           pnpm test
           npm test --prefix bb-plugins/bb-plugin-t3sidebar
           npm test --prefix bb-plugins/bb-plugin-bb-sidebar
+          npm test --prefix bb-plugins/bb-plugin-tok-speed
 
       - name: Typecheck
         run: |
           pnpm typecheck
           npm run typecheck --prefix bb-plugins/bb-plugin-t3sidebar
           npm run typecheck --prefix bb-plugins/bb-plugin-bb-sidebar
+          npm run typecheck --prefix bb-plugins/bb-plugin-tok-speed

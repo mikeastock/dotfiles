@@ -1,0 +1,233 @@
+[
+  {
+    "seq": 117,
+    "createdAt": 1788455241447,
+    "type": "item/started",
+    "scope": {
+      "kind": "turn",
+      "turnId": "turn_fixture_4"
+    },
+    "data": {
+      "providerThreadId": "thr_fixture5",
+      "item": {
+        "type": "agentMessage",
+        "id": "item_fixture_6",
+        "text": ""
+      }
+    }
+  },
+  {
+    "seq": 118,
+    "createdAt": 1788455241447,
+    "type": "item/agentMessage/delta",
+    "scope": {
+      "kind": "turn",
+      "turnId": "turn_fixture_4"
+    },
+    "data": {
+      "providerThreadId": "thr_fixture5",
+      "itemId": "item_fixture_6",
+      "delta": "Recorded response sample."
+    }
+  },
+  {
+    "seq": 119,
+    "createdAt": 1788455246472,
+    "type": "item/completed",
+    "scope": {
+      "kind": "turn",
+      "turnId": "turn_fixture_4"
+    },
+    "data": {
+      "providerThreadId": "thr_fixture5",
+      "item": {
+        "type": "agentMessage",
+        "id": "item_fixture_6",
+        "text": "Recorded response sample."
+      }
+    }
+  },
+  {
+    "seq": 120,
+    "createdAt": 1788455246472,
+    "type": "thread/tokenUsage/updated",
+    "scope": {
+      "kind": "turn",
+      "turnId": "turn_fixture_4"
+    },
+    "data": {
+      "providerThreadId": "thr_fixture5",
+      "tokenUsage": {
+        "total": {
+          "totalTokens": 909545,
+          "inputTokens": 780,
+          "cachedInputTokens": 906210,
+          "outputTokens": 2555,
+          "reasoningOutputTokens": 0
+        },
+        "last": {
+          "totalTokens": 480101,
+          "inputTokens": 728,
+          "cachedInputTokens": 478577,
+          "outputTokens": 796,
+          "reasoningOutputTokens": 0
+        },
+        "modelContextWindow": 1048576
+      }
+    }
+  },
+  {
+    "seq": 133,
+    "createdAt": 1788456375746,
+    "type": "item/started",
+    "scope": {
+      "kind": "turn",
+      "turnId": "turn_fixture_7"
+    },
+    "data": {
+      "providerThreadId": "thr_fixture5",
+      "item": {
+        "type": "agentMessage",
+        "id": "item_fixture_8",
+        "text": ""
+      }
+    }
+  },
+  {
+    "seq": 134,
+    "createdAt": 1788456375746,
+    "type": "item/agentMessage/delta",
+    "scope": {
+      "kind": "turn",
+      "turnId": "turn_fixture_7"
+    },
+    "data": {
+      "providerThreadId": "thr_fixture5",
+      "itemId": "item_fixture_8",
+      "delta": "Recorded response sample."
+    }
+  },
+  {
+    "seq": 135,
+    "createdAt": 1788456377031,
+    "type": "item/completed",
+    "scope": {
+      "kind": "turn",
+      "turnId": "turn_fixture_7"
+    },
+    "data": {
+      "providerThreadId": "thr_fixture5",
+      "item": {
+        "type": "agentMessage",
+        "id": "item_fixture_8",
+        "text": "Recorded response sample."
+      }
+    }
+  },
+  {
+    "seq": 136,
+    "createdAt": 1788456377031,
+    "type": "thread/tokenUsage/updated",
+    "scope": {
+      "kind": "turn",
+      "turnId": "turn_fixture_7"
+    },
+    "data": {
+      "providerThreadId": "thr_fixture5",
+      "tokenUsage": {
+        "total": {
+          "totalTokens": 483665,
+          "inputTokens": 156,
+          "cachedInputTokens": 483313,
+          "outputTokens": 196,
+          "reasoningOutputTokens": 0
+        },
+        "last": {
+          "totalTokens": 483665,
+          "inputTokens": 156,
+          "cachedInputTokens": 483313,
+          "outputTokens": 196,
+          "reasoningOutputTokens": 0
+        },
+        "modelContextWindow": 1048576
+      }
+    }
+  },
+  {
+    "seq": 143,
+    "createdAt": 1788458654370,
+    "type": "item/started",
+    "scope": {
+      "kind": "turn",
+      "turnId": "turn_fixture_9"
+    },
+    "data": {
+      "providerThreadId": "thr_fixture5",
+      "item": {
+        "type": "agentMessage",
+        "id": "item_fixture_10",
+        "text": ""
+      }
+    }
+  },
+  {
+    "seq": 144,
+    "createdAt": 1788458654370,
+    "type": "item/agentMessage/delta",
+    "scope": {
+      "kind": "turn",
+      "turnId": "turn_fixture_9"
+    },
+    "data": {
+      "providerThreadId": "thr_fixture5",
+      "itemId": "item_fixture_10",
+      "delta": "Recorded response sample."
+    }
+  },
+  {
+    "seq": 145,
+    "createdAt": 1788458657693,
+    "type": "item/completed",
+    "scope": {
+      "kind": "turn",
+      "turnId": "turn_fixture_9"
+    },
+    "data": {
+      "providerThreadId": "thr_fixture5",
+      "item": {
+        "type": "agentMessage",
+        "id": "item_fixture_10",
+        "text": "Recorded response sample."
+      }
+    }
+  },
+  {
+    "seq": 146,
+    "createdAt": 1788458657693,
+    "type": "thread/tokenUsage/updated",
+    "scope": {
+      "kind": "turn",
+      "turnId": "turn_fixture_9"
+    },
+    "data": {
+      "providerThreadId": "thr_fixture5",
+      "tokenUsage": {
+        "total": {
+          "totalTokens": 485525,
+          "inputTokens": 956,
+          "cachedInputTokens": 483761,
+          "outputTokens": 808,
+          "reasoningOutputTokens": 0
+        },
+        "last": {
+          "totalTokens": 485525,
+          "inputTokens": 956,
+          "cachedInputTokens": 483761,
+          "outputTokens": 808,
+          "reasoningOutputTokens": 0
+        },
+        "modelContextWindow": 1048576
+      }
+    }
+  }
+]
