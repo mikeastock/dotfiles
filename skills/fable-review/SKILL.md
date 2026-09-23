@@ -1,58 +1,44 @@
 ---
 name: fable-review
-description: Use Claude Code non-interactively with claude-fable-5-1 as a trusted, high-authority code reviewer. Use when the user asks for a Fable review, Claude Fable review, external review with claude -p, or a stronger reviewer focused on implementation risks, regressions, and missing tests.
+description: Run a code review with Claude Fable (claude-fable-5-1) through non-interactive `claude -p`, then triage its findings. Use when the user asks for a Fable review, a Claude Fable review, an external review via `claude -p`, or a stronger second reviewer for correctness, regression, and missing-test risks.
 ---
 
 # Fable Review
 
-Use `claude -p` with `claude-fable-5-1` as a trusted senior reviewer. Assume
-Fable is likely to reason better than the current model on subtle correctness,
-architecture, and regression risks. Write the review prompt yourself from the
-current task, changed files, and known risks; do not ask Fable to infer the
-review brief from a raw diff dump alone.
+Run `claude -p --model claude-fable-5-1` as a senior reviewer, then triage what
+it finds.
 
-Treat Fable's output as high-signal review, not casual advice. Start from the
-assumption that Fable may be seeing something important you missed. Verify
-actionable findings against the repo before changing code or reporting them as
-true, but do not dismiss them just because they are inconvenient or surprising.
+**Stance:** assume Fable reasons better than you on subtle correctness,
+architecture, and regression risks. Its findings are high-signal: verify each
+one against the repo, but do not dismiss a finding because it is surprising or
+inconvenient.
 
 ## Workflow
 
-1. Identify the review scope from the user request, current branch, PR, or diff.
-2. Inspect enough local context to write a focused prompt:
-   - `git status --short`
-   - `git diff --stat <base>...HEAD` or the user-specified range
-   - targeted reads of changed files, tests, and nearby contracts
-3. Write a concise prompt that includes:
-   - project and stack context that Fable needs
-   - the exact review target, such as branch, PR, commit range, or files
-   - the intended behavior and constraints from the user
-   - relevant verification already run and any failures
-   - the output format: findings first, severity, file/line references, and no praise-only summary
-4. Run Claude in print mode with Fable, stream JSON output, Read, and full
-   Bash access.
-5. Triage the response:
-   - take each finding seriously and inspect the relevant code path
-   - prefer Fable's judgment when the issue is plausible and your local reading is inconclusive
-   - discard a finding only when the code, requirements, or tests clearly disprove it
-   - fix confirmed issues when the user asked for implementation
-   - summarize unresolved Fable concerns separately instead of flattening them into your own conclusion
+1. **Scope.** Identify the review target (branch, PR, commit range, or files)
+   from the request. Gather context: `git status --short`,
+   `git diff --stat <base>...HEAD`, and targeted reads of changed files, tests,
+   and nearby contracts.
+2. **Prompt.** Write a task-specific prompt from the [template](#prompt-template).
+   You write the review brief; do not hand Fable a raw diff and ask it to infer
+   intent.
+3. **Run.** Start Claude in the background and wait for it
+   ([Run](#run)). Reviews often take 10+ minutes. Do not cancel or retry a run
+   that looks quiet.
+4. **Triage.** For each finding:
+   - Inspect the code path it names.
+   - If the issue is plausible and your reading is inconclusive, defer to Fable.
+   - Discard it only when code, requirements, or tests clearly disprove it.
+   - Fix confirmed issues only if the user asked for implementation.
+5. **Report.** List confirmed, discarded (with the reason), and unresolved
+   findings separately. Do not fold unresolved Fable concerns into your own
+   conclusion.
 
-## Command Pattern
+## Run
 
-Expect Fable reviews to take a long time; 10+ minutes is not uncommon. Be
-patient: let the command run until it returns, and do not cancel or retry just
-because it appears quiet.
-
-Write the prompt to a temporary file, then pass it through stdin. In print mode,
-this Claude CLI expects prompt input on stdin; do not pass the prompt as a
-positional shell argument.
-
-Write stream JSON to a file instead of letting it fill the calling agent's
-context. Start the review with `zmx` as a detached background job, then tail or
-sample the JSONL file when you want progress.
-
-Prefer this shape from the repo root:
+Run from the repo root. The run goes through `zmx` so it survives agent tool
+timeouts. Stream JSON goes to a file, not into your context. The prompt goes in
+through stdin, which avoids shell quoting problems.
 
 ```bash
 SESSION="fable-review-$(date -u +%Y%m%dT%H%M%SZ)"
@@ -67,64 +53,66 @@ CLAUDE_CMD="claude -p \
   --model claude-fable-5-1 \
   --effort high \
   --output-format stream-json \
-  --include-partial-messages \
-  --include-hook-events \
+  --verbose \
   --tools 'Read,Bash' \
   --allowedTools 'Read,Bash' \
   < '$PROMPT' > '$STREAM' 2> '$ERR'"
 zmx run "$SESSION" -d bash -lc "$CLAUDE_CMD" >/dev/null 2>&1
-printf '%s\n' "$SESSION" > "$RUN_DIR/zmx-session"
-printf 'Fable review started in %s\n' "$RUN_DIR"
 ```
 
-Use `--tools "Read"` when shell access is unnecessary. Add `--add-dir <path>`
-only when the review requires files outside the current working directory.
+Tool access:
 
-Check progress without loading the full stream:
+- `Read,Bash` with no Bash allowlist lets Fable run `git`, `rg`, tests, and
+  similar commands without getting blocked on permissions. Use `--tools 'Read'`
+  (and matching `--allowedTools`) when it does not need a shell.
+- Never grant `Edit`/`Write`, and never use `--dangerously-skip-permissions`.
+- Add `--add-dir <path>` only when the review needs files outside the repo.
+
+Check progress (recent tool calls; tolerates a partially written last line):
 
 ```bash
-tail -n 20 "$STREAM"
-zmx list --short
+jq -Rr 'fromjson? | select(.type=="assistant") | .message.content[]?
+  | select(.type=="tool_use") | "\(.name): \(.input | tostring | .[0:120])"' \
+  "$STREAM" | tail -n 5
 tail -n 20 "$ERR"
 ```
 
-`zmx wait` is the completion and failure gate: it returns when the wrapped
-`claude` process exits and reports a nonzero exit status. Do not replace it
-with a hand-rolled loop over `zmx list` — the session and its detached client
-linger after completion, so a loop that waits for the session to disappear
-spins forever.
+Wait, read the result, then clean up:
 
 ```bash
-zmx wait "$(cat "$RUN_DIR/zmx-session")"
-rg -n '^\{"type":"result"' "$STREAM" | tail -n 1
+zmx wait "$SESSION"   # returns when claude exits; nonzero exit = failure
+jq -Rr 'fromjson? | select(.type=="result")
+  | if .is_error then "ERROR (\(.subtype))" else .result end' "$STREAM"
+zmx kill "$SESSION" >/dev/null 2>&1
 ```
 
-A finished session with no result line means `claude` failed; read `$ERR`.
-Once the result line is present, remove the lingering session:
+- If there is no `result` event, Claude failed. Read `$ERR`.
+- Gate on `zmx wait`. Do not poll `zmx list` for the session to disappear:
+  finished sessions stay listed until you kill them, so that loop never ends.
+
+`--verbose` is required: `-p` rejects `stream-json` output without it.
+
+If the CLI behaves unexpectedly, run a smoke test with the same output flags:
 
 ```bash
-[ -f "$STREAM" ] && rg -q '^\{"type":"result"' "$STREAM" \
-  && zmx kill "$(cat "$RUN_DIR/zmx-session")"
-```
-
-If the installed Claude CLI behaves unexpectedly, first probe with:
-
-```bash
-printf '%s\n' "Reply ok." \
-  | claude -p --model claude-fable-5-1 --output-format stream-json --tools "" \
-  > /tmp/fable-review-probe.jsonl
+printf 'Reply ok.\n' \
+  | claude -p --model claude-fable-5-1 --output-format stream-json --verbose --tools "" \
+  | jq -Rr 'fromjson? | select(.type=="result") | .result'
 ```
 
 ## Prompt Template
 
-Write a task-specific prompt; adapt this template rather than using it
-unchanged:
+Adapt this template to the task. Point Fable at the range and files instead of
+pasting large diffs; it can read them itself. Keep the scope narrower than
+"the whole repo". Never include `.env` contents, credentials, tokens, or
+private keys.
 
 ```text
 You are the trusted senior reviewer for this change. The calling model expects
 your judgment to be sharper than its own, especially on subtle correctness,
 architecture, regression, security, data integrity, and missing-test risks.
-Ignore style-only nits unless they hide a real maintainability risk.
+Challenge the change; do not rubber-stamp it. Ignore style-only nits unless
+they hide a real maintainability risk.
 
 Review target:
 - Base/range: <base>...HEAD
@@ -138,25 +126,11 @@ Important repo context:
 Verification already run:
 - <commands and results, or "not run yet">
 
-Please inspect the repo with the available Read and Bash tools. Be direct and
-skeptical. Return only:
+Inspect the repo with Read and Bash. This is review-only: do not modify files,
+the git state, or the environment. Be direct and skeptical. Return only:
 1. Findings, ordered by severity, with file/line references where possible.
 2. Missing tests or verification gaps.
 3. Questions only if they block judging correctness.
 
 Do not provide a general summary unless there are no findings.
 ```
-
-## Review Discipline
-
-- Keep the prompt narrower than "review the whole repo".
-- Position Fable as the reviewer whose judgment should challenge yours, not as
-  a rubber stamp.
-- Avoid pasting huge diffs when Fable has `Read` and `Bash`; point it to the
-  range and files instead.
-- Do not grant edit tools for review-only work.
-- Do not use `--dangerously-skip-permissions` for normal reviews.
-- Grant full Bash intentionally so Fable can inspect the repo without command
-  allowlist friction.
-- Preserve secrets: do not paste `.env`, credentials, tokens, or private keys
-  into the prompt.
