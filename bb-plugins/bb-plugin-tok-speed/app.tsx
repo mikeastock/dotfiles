@@ -15,6 +15,7 @@ type TurnRate = {
   rate: number | null;
   totalOutputTokens: number;
   responseCount: number;
+  measurement: "visible-stream" | "pi-session";
 };
 
 type RpcEnvelope =
@@ -90,8 +91,13 @@ function rateKey(threadId: string, turnId: string): string {
 }
 
 function tooltipFor(rate: TurnRate, label: string): string {
+  const tokens = rate.totalOutputTokens.toLocaleString("en-US");
+  if (rate.measurement === "pi-session") {
+    const responseWord = rate.responseCount === 1 ? "response" : "responses";
+    return `Provider output: ${label} tok/s across ${rate.responseCount} ${responseWord} (${tokens} output tokens including thinking; timed from request start, so time to first token is included; host tool time excluded)`;
+  }
   const sampleWord = rate.responseCount === 1 ? "sample" : "samples";
-  return `Provider output: ${label} tok/s across ${rate.responseCount} ${sampleWord} (${rate.totalOutputTokens.toLocaleString("en-US")} visible output tokens; reasoning and host tool time excluded)`;
+  return `Provider output: ${label} tok/s across ${rate.responseCount} ${sampleWord} (${tokens} visible output tokens; reasoning and host tool time excluded)`;
 }
 
 function clearDecoration(message: HTMLElement): void {
@@ -203,6 +209,8 @@ export default definePluginApp((app) => {
             typeof rate.turnId !== "string" ||
             typeof rate.responseCount !== "number" ||
             typeof rate.totalOutputTokens !== "number" ||
+            (rate.measurement !== "visible-stream" &&
+              rate.measurement !== "pi-session") ||
             (rate.rate !== null && typeof rate.rate !== "number")
           ) {
             continue;

@@ -1,0 +1,158 @@
+[
+ {
+  "seq": 22,
+  "createdAt": 1790140660497,
+  "type": "turn/started",
+  "scope": {
+   "kind": "turn",
+   "turnId": "da9d14c31e-t1"
+  },
+  "data": {
+   "providerThreadId": "pi_8cf417e9-c1b3-42b1-acad-277754edafab"
+  }
+ },
+ {
+  "seq": 111,
+  "createdAt": 1790140919354,
+  "type": "turn/completed",
+  "scope": {
+   "kind": "turn",
+   "turnId": "da9d14c31e-t1"
+  },
+  "data": {
+   "providerThreadId": "pi_8cf417e9-c1b3-42b1-acad-277754edafab"
+  }
+ },
+ {
+  "seq": 113,
+  "createdAt": 1790140997036,
+  "type": "turn/started",
+  "scope": {
+   "kind": "turn",
+   "turnId": "da9d14c31e-t2"
+  },
+  "data": {
+   "providerThreadId": "pi_8cf417e9-c1b3-42b1-acad-277754edafab"
+  }
+ },
+ {
+  "seq": 126,
+  "createdAt": 1790140999406,
+  "type": "turn/completed",
+  "scope": {
+   "kind": "turn",
+   "turnId": "da9d14c31e-t2"
+  },
+  "data": {
+   "providerThreadId": "pi_8cf417e9-c1b3-42b1-acad-277754edafab"
+  }
+ },
+ {
+  "seq": 130,
+  "createdAt": 1790141018942,
+  "type": "turn/started",
+  "scope": {
+   "kind": "turn",
+   "turnId": "dab3901617-t1"
+  },
+  "data": {
+   "providerThreadId": "pi_8cf417e9-c1b3-42b1-acad-277754edafab"
+  }
+ },
+ {
+  "seq": 333,
+  "createdAt": 1790141158895,
+  "type": "turn/completed",
+  "scope": {
+   "kind": "turn",
+   "turnId": "dab3901617-t1"
+  },
+  "data": {
+   "providerThreadId": "pi_8cf417e9-c1b3-42b1-acad-277754edafab"
+  }
+ },
+ {
+  "seq": 335,
+  "createdAt": 1790141986913,
+  "type": "turn/started",
+  "scope": {
+   "kind": "turn",
+   "turnId": "dab3901617-t2"
+  },
+  "data": {
+   "providerThreadId": "pi_8cf417e9-c1b3-42b1-acad-277754edafab"
+  }
+ },
+ {
+  "seq": 349,
+  "createdAt": 1790141993078,
+  "type": "turn/completed",
+  "scope": {
+   "kind": "turn",
+   "turnId": "dab3901617-t2"
+  },
+  "data": {
+   "providerThreadId": "pi_8cf417e9-c1b3-42b1-acad-277754edafab"
+  }
+ },
+ {
+  "seq": 353,
+  "createdAt": 1790179555126,
+  "type": "turn/started",
+  "scope": {
+   "kind": "turn",
+   "turnId": "da3c3af285-t1"
+  },
+  "data": {
+   "providerThreadId": "pi_8cf417e9-c1b3-42b1-acad-277754edafab"
+  }
+ },
+ {
+  "seq": 516,
+  "createdAt": 1790179632415,
+  "type": "turn/completed",
+  "scope": {
+   "kind": "turn",
+   "turnId": "da3c3af285-t1"
+  },
+  "data": {
+   "providerThreadId": "pi_8cf417e9-c1b3-42b1-acad-277754edafab"
+  }
+ },
+ {
+  "seq": 518,
+  "createdAt": 1790180140914,
+  "type": "turn/started",
+  "scope": {
+   "kind": "turn",
+   "turnId": "da3c3af285-t2"
+  },
+  "data": {
+   "providerThreadId": "pi_8cf417e9-c1b3-42b1-acad-277754edafab"
+  }
+ },
+ {
+  "seq": 812,
+  "createdAt": 1790180271164,
+  "type": "turn/completed",
+  "scope": {
+   "kind": "turn",
+   "turnId": "da3c3af285-t2"
+  },
+  "data": {
+   "providerThreadId": "pi_8cf417e9-c1b3-42b1-acad-277754edafab"
+  }
+ },
+ {
+  "seq": 814,
+  "createdAt": 1790180742406,
+  "type": "turn/started",
+  "scope": {
+   "kind": "turn",
+   "turnId": "da3c3af285-t3"
+  },
+  "data": {
+   "providerThreadId": "pi_8cf417e9-c1b3-42b1-acad-277754edafab"
+  }
+ }
+]
