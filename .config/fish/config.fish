@@ -53,9 +53,6 @@ alias vim="nvim"
 alias wk="work"
 alias wokr="work"
 
-alias h="heroku"
-alias hc="heroku run env CONSOLE_USER=mike bin/rails console"
-
 # tmux / zellij
 alias mux="tmuxinator"
 alias tma="tmux att -t"
