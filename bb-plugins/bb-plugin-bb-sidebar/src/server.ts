@@ -4,25 +4,8 @@
 // Putting it on the thread would mean a schema change, a wire change, and a
 // HOST_DAEMON_PROTOCOL_VERSION bump for something only this sidebar
 // understands. Here, uninstalling the plugin removes its state with it.
-import {
-  defineRpcContract,
-  type BbPluginApi,
-  type JsonValue,
-  type NewThreadRequest,
-} from "@get-bb/plugin-sdk";
+import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
 import { z } from "zod";
-import {
-  BOTS_CHANNEL,
-  BOTS_LIST_METHOD,
-  BOTS_PLUGIN_ID,
-  botDraftSchema,
-  botsListSchema,
-  botsSnapshotSchema,
-  editorBotSchema,
-  sidebarBotSchema,
-  snapshotFromList,
-  type BotsSnapshot,
-} from "./bots";
 import {
   decideAutoSettle,
   parseAutoSettleAfterDays,
@@ -82,9 +65,6 @@ const migrations = [
      size_bytes       INTEGER NOT NULL,
      updated_at       INTEGER NOT NULL
    )`,
-  // The Bots shelf switch. On by default: the shelf only exists when the
-  // Bots Sidebar plugin is installed, so "on" costs nothing without it.
-  `ALTER TABLE sidebar_settings ADD COLUMN show_bots INTEGER NOT NULL DEFAULT 1`,
 ];
 
 export interface StoredLifecycleRow {
@@ -110,7 +90,6 @@ interface SidebarSettingsDbRow {
   auto_settle_inactive: number;
   auto_settle_after_days: number;
   auto_settle_on_merge: number;
-  show_bots: number;
 }
 
 const threadIdSchema = z.object({ threadId: z.string().trim().min(1) });
@@ -143,9 +122,6 @@ const sidebarSettingsSchema = z
     autoSettleInactive: z.boolean(),
     autoSettleAfterDays: z.number().int().min(1).max(90),
     autoSettleOnMerge: z.boolean(),
-    // Defaulted rather than required, so a client built before the Bots shelf
-    // can still save the settings it knows about.
-    showBots: z.boolean().default(true),
   })
   .strict();
 const uploadFilenameSchema = z
@@ -329,77 +305,11 @@ export const bbSidebarRpcContract = defineRpcContract({
       })
       .strict(),
   },
-  // The Bots Sidebar plugin's list, narrowed and re-served under this
-  // plugin's own RPC: a frontend can only call its own backend, so the server
-  // is where the cross-plugin read has to happen.
-  listBots: { input: z.object({}).strict(), output: botsSnapshotSchema },
-  // The rest of the bots plugin's surface this sidebar needs, proxied the
-  // same way. Each write publishes `bots` so every client re-reads.
-  getBotEditor: {
-    input: z.object({ botId: z.string().min(1) }).strict(),
-    output: editorBotSchema,
-  },
-  createBot: { input: botDraftSchema, output: sidebarBotSchema },
-  updateBot: {
-    input: botDraftSchema
-      .safeExtend({
-        botId: z.string().min(1),
-        sectionId: z.string().nullable(),
-        linkedProjectIds: z.array(z.string()),
-        expectedUpdatedAt: z.number(),
-        expectedStateHashes: z.object({
-          "SOUL.md": z.string().nullable(),
-          "AGENTS.md": z.string().nullable(),
-          "MEMORY.md": z.string().nullable(),
-          "settings.json": z.string().nullable(),
-        }),
-      })
-      .strict(),
-    output: sidebarBotSchema,
-  },
-  assignConversation: {
-    input: z
-      .object({ botId: z.string().min(1), threadId: z.string().min(1) })
-      .strict(),
-    output: z.object({ ok: z.literal(true) }).strict(),
-  },
-  setBotVisibility: {
-    input: z
-      .object({ botId: z.string().min(1), hiddenUntilActivity: z.boolean() })
-      .strict(),
-    output: z.object({ ok: z.literal(true) }).strict(),
-  },
-  createBotConversation: {
-    input: z
-      .object({
-        botId: z.string().min(1),
-        // The composer's own request, forwarded whole. The bots plugin
-        // validates it strictly against the SDK shape on its side.
-        request: z.custom<NewThreadRequest>(
-          (value) =>
-            typeof value === "object" &&
-            value !== null &&
-            typeof (value as { projectId?: unknown }).projectId === "string",
-          "Expected a new-thread request",
-        ),
-        makeMain: z.boolean().optional(),
-      })
-      .strict(),
-    output: z.object({ threadId: z.string() }).strict(),
-  },
 });
 
 /** Channel the frontend re-reads on. */
 export const LIFECYCLE_CHANNEL = "lifecycle";
 export const INBOX_ORDER_CHANNEL = "inbox-order";
-
-/**
- * How long after a thread is created before telling the frontend to re-read
- * bots. bb-bots-sidebar binds a new thread to its bot from the same
- * `thread.created` event, and nothing orders the two plugins' handlers, so
- * re-reading at once would race it and see the old bindings.
- */
-export const BOTS_REBIND_DELAY_MS = 1_500;
 interface StoredProjectIconRow {
   project_id: string;
   path: string;
@@ -457,7 +367,7 @@ export default async function plugin(bb: BbPluginApi) {
       .prepare(
         `SELECT snooze_presets, inactive_threads_enabled,
                 inactive_after_hours, auto_settle_inactive,
-                auto_settle_after_days, auto_settle_on_merge, show_bots
+                auto_settle_after_days, auto_settle_on_merge
            FROM sidebar_settings
           WHERE id = 1`,
       )
@@ -470,7 +380,6 @@ export default async function plugin(bb: BbPluginApi) {
           autoSettleInactive: row.auto_settle_inactive === 1,
           autoSettleAfterDays: row.auto_settle_after_days,
           autoSettleOnMerge: row.auto_settle_on_merge === 1,
-          showBots: row.show_bots !== 0,
         }
       : { ...DEFAULT_SIDEBAR_SETTINGS };
   };
@@ -479,16 +388,15 @@ export default async function plugin(bb: BbPluginApi) {
       `INSERT INTO sidebar_settings (
          id, snooze_presets, inactive_threads_enabled,
          inactive_after_hours, auto_settle_inactive,
-         auto_settle_after_days, auto_settle_on_merge, show_bots
-       ) VALUES (1, ?, ?, ?, ?, ?, ?, ?)
+         auto_settle_after_days, auto_settle_on_merge
+       ) VALUES (1, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET
          snooze_presets = excluded.snooze_presets,
          inactive_threads_enabled = excluded.inactive_threads_enabled,
          inactive_after_hours = excluded.inactive_after_hours,
          auto_settle_inactive = excluded.auto_settle_inactive,
          auto_settle_after_days = excluded.auto_settle_after_days,
-         auto_settle_on_merge = excluded.auto_settle_on_merge,
-         show_bots = excluded.show_bots`,
+         auto_settle_on_merge = excluded.auto_settle_on_merge`,
     ).run(
       values.snoozePresets,
       values.inactiveThreadsEnabled ? 1 : 0,
@@ -496,7 +404,6 @@ export default async function plugin(bb: BbPluginApi) {
       values.autoSettleInactive ? 1 : 0,
       values.autoSettleAfterDays,
       values.autoSettleOnMerge ? 1 : 0,
-      values.showBots ? 1 : 0,
     );
   };
 
@@ -1066,100 +973,7 @@ export default async function plugin(bb: BbPluginApi) {
     await evaluatePolicies();
   });
 
-  /**
-   * Reads the Bots Sidebar plugin's list through bb, which routes the call to
-   * that plugin's own RPC handler. Any failure — not installed, disabled, a
-   * contract change — answers "unavailable" rather than throwing: the bots
-   * plugin is optional, and the sidebar without it is the sidebar as it was.
-   */
-  const loadBots = async (): Promise<BotsSnapshot> => {
-    try {
-      const list = await bb.sdk.plugins.callRpc({
-        pluginId: BOTS_PLUGIN_ID,
-        method: BOTS_LIST_METHOD,
-        input: null,
-        outputSchema: botsListSchema,
-      });
-      return snapshotFromList(list);
-    } catch (error) {
-      const reason = error instanceof Error ? error.message : String(error);
-      bb.log.debug(`bots unavailable: ${reason}`);
-      return { available: false, reason };
-    }
-  };
-
-  // A new thread may belong to a bot — spawned under a bot's conversation, or
-  // in a project a bot owns — and the frontend cannot hear the bots plugin
-  // say so. Nudge it to re-read once the bots plugin has had time to bind.
-  const rebindTimers = new Set<ReturnType<typeof setTimeout>>();
-  bb.events.on("thread.created", ({ thread }) => {
-    const timer = setTimeout(() => {
-      rebindTimers.delete(timer);
-      bb.realtime.publish(BOTS_CHANNEL, { threadId: thread.id });
-    }, BOTS_REBIND_DELAY_MS);
-    rebindTimers.add(timer);
-  });
-  bb.onDispose(() => {
-    for (const timer of rebindTimers) clearTimeout(timer);
-    rebindTimers.clear();
-  });
-
-  /** One call on the bots plugin, parsed with the schema given. */
-  const callBots = <T>(
-    method: string,
-    input: unknown,
-    outputSchema: z.ZodType<T>,
-  ): Promise<T> =>
-    bb.sdk.plugins.callRpc({
-      pluginId: BOTS_PLUGIN_ID,
-      method,
-      input: input as JsonValue,
-      outputSchema,
-    });
-  const publishBots = () => bb.realtime.publish(BOTS_CHANNEL, {});
-
   bb.rpc.register(bbSidebarRpcContract, {
-    async listBots() {
-      return loadBots();
-    },
-    async getBotEditor({ botId }) {
-      return callBots("bot_prepare", { botId }, editorBotSchema);
-    },
-    async createBot(draft) {
-      // A new bot starts in the main section with no linked projects; the
-      // bots plugin links projects as conversations join them.
-      const bot = await callBots(
-        "bot_create",
-        { ...draft, sectionId: null, linkedProjectIds: [] },
-        sidebarBotSchema,
-      );
-      publishBots();
-      return bot;
-    },
-    async updateBot(input) {
-      const bot = await callBots("bot_update", input, sidebarBotSchema);
-      publishBots();
-      return bot;
-    },
-    async assignConversation(input) {
-      await callBots("conversation_assign", input, z.looseObject({}));
-      publishBots();
-      return { ok: true as const };
-    },
-    async setBotVisibility(input) {
-      await callBots("visibility_set", input, z.looseObject({}));
-      publishBots();
-      return { ok: true as const };
-    },
-    async createBotConversation({ botId, request, makeMain }) {
-      const result = await callBots(
-        "conversation_create",
-        { botId, request, makeMain: makeMain ?? false },
-        z.object({ threadId: z.string() }),
-      );
-      publishBots();
-      return result;
-    },
     async getSidebarSettings() {
       return readSidebarSettings();
     },

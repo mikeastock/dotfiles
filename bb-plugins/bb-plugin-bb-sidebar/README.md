@@ -18,7 +18,6 @@ A stable thread list for [bb](https://github.com/get-bb/bb). Threads stay where 
 - Expandable child-thread indicators with running and attention states
 - Live status, branch, pull request, and provider details
 - Native bb navigation, split, rename, archive, and delete flows
-- A **Bots** shelf when the [Bots Sidebar](https://github.com/tobi/bb-bots-sidebar) plugin is installed (this fork)
 
 ## This fork
 
@@ -36,71 +35,6 @@ bb plugin install "$PWD" --yes
 Then choose **BB Sidebar** under **Settings > Appearance > Sidebar**. The
 plugin id stays `bb-sidebar`, so an install over the upstream release keeps
 its database — lifecycle rows, manual order, project icons and settings.
-
-## Bots, from the Bots Sidebar plugin
-
-[tobi/bb-bots-sidebar](https://github.com/tobi/bb-bots-sidebar) gives bb named
-bots — an identity, memory and avatar — and binds conversations to them. It is
-also a sidebar replacement, and bb allows exactly one, so choosing this list
-used to mean losing the bots view. This fork shows them too.
-
-When that plugin is installed and enabled, a **Bots** shelf sits between
-Pinned and Active. Each bot is one row: its avatar (a compact rendition of the
-same colour, silhouette and expression), its name and role, and a status slot
-that rolls up every conversation the bot owns in the list's own words —
-"Needs you" (with a count past one), "Working", "Failed", "Unread", otherwise
-how many conversations the row groups. The bot's Active conversations sit
-under it as ordinary cards, in the Active shelf's own order, with their
-children in the usual chip. Click the row to open the bot's main conversation
-(its newest one if the main is gone); fold it shut with the chevron, and the
-row keeps answering for the count. The shelf collapses like the others.
-Custom sections from the bots plugin keep their headings; its unnamed main
-section stays unnamed. A bot hidden "until activity" over there is hidden here
-by the same rule, and its quiet conversations return to Active as plain cards
-— a thread must always have a row somewhere.
-
-Everything else is unchanged: pinned stays pinned wherever the work belongs,
-Inactive, Snoozed and Settled stay flat, project scope applies to bots (a
-scoped list shows the bots linked to or working in that project), and search
-keeps its flat results.
-
-Bots are managed from here too, so there is no need to switch sidebars:
-
-- **New bot** — the `+` in the Bots shelf header, or the "Create your first
-  bot" row while there are none. Name, role, machine, a face (colour,
-  silhouette, expression, or Randomize) and instructions; Save is explicit.
-  The bot's first conversation opens straight after, in bb's own composer,
-  and becomes its main one.
-- **New conversation with a bot** — the `+` that appears on hover over the
-  bot row, or right-click → New conversation…. bb's composer, seeded
-  projectless on the bot's machine; the project picker stays editable. The
-  thread is spawned and bound by the bots plugin, so it lands under the bot.
-- **Edit bot…** and **Hide until activity** — right-click the bot row. Edits
-  carry the revision and hashes the bots plugin checks, so a save cannot
-  overwrite a change made elsewhere.
-- **Assign to bot** — right-click any thread no bot owns yet. A binding never
-  moves once made, so an owned thread does not offer it.
-
-Every one of these is the bots plugin's own RPC (`bot_create`, `bot_update`,
-`conversation_create`, `conversation_assign`, `visibility_set`), proxied by
-this plugin's server and followed by a `bots` signal so every client
-re-reads. Sections, project roles, memory and settings are still edited in
-Bots Sidebar; this fork covers the everyday flow.
-
-How it reads them: a plugin frontend can only call its own backend, so this
-plugin's server asks bb to call the bots plugin's `bots_list` RPC on its
-behalf (`bb.sdk.plugins.callRpc`) and re-serves the answer as `listBots`,
-narrowed on the way to what a row needs. A bot's memory and settings are
-dropped at the parse and never reach this plugin's frontend; its
-instructions are read only when the editor opens. The bots plugin publishes its changes on its own
-realtime channel, which this plugin cannot hear, so freshness comes from this
-plugin's own signal after a thread is created (delayed 1.5s, so the bots
-plugin has bound the thread first), a change in the thread list, a reconnect,
-and a slow tick once a minute. Without the bots plugin, `listBots` answers
-"unavailable" and the shelf simply does not exist — no error, no toast.
-
-The **Bots shelf** switch on the sidebar settings page turns it off; off, the
-list never asks for bots.
 
 ## Install (upstream)
 

@@ -7,8 +7,6 @@ export interface SidebarSettingsValues {
   autoSettleInactive: boolean;
   autoSettleAfterDays: number;
   autoSettleOnMerge: boolean;
-  /** Show bots from the Bots Sidebar plugin as their own shelf. */
-  showBots: boolean;
 }
 
 export const DEFAULT_SIDEBAR_SETTINGS: SidebarSettingsValues = {
@@ -18,7 +16,6 @@ export const DEFAULT_SIDEBAR_SETTINGS: SidebarSettingsValues = {
   autoSettleInactive: true,
   autoSettleAfterDays: 3,
   autoSettleOnMerge: true,
-  showBots: true,
 };
 
 const SIDEBAR_SETTINGS_CACHE_KEY = "bb-sidebar:settings-cache:v1";
@@ -39,12 +36,7 @@ function readStoredSidebarSettings(): SidebarSettingsValues | null {
     ) {
       return null;
     }
-    // A cache written before the Bots shelf existed lacks the switch; the
-    // default applies rather than throwing the whole cache away.
-    return {
-      ...value,
-      showBots: typeof value.showBots === "boolean" ? value.showBots : true,
-    } as SidebarSettingsValues;
+    return value as SidebarSettingsValues;
   } catch {
     return null;
   }

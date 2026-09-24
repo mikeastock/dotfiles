@@ -1,12 +1,9 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import {
   createFakePluginHost,
   makeThreadResponse,
 } from "@get-bb/plugin-sdk/testing";
-import plugin, {
-  BOTS_REBIND_DELAY_MS,
-  type StoredLifecycleRow,
-} from "./server";
+import plugin, { type StoredLifecycleRow } from "./server";
 
 interface LifecycleListResult {
   rows: StoredLifecycleRow[];
@@ -115,29 +112,7 @@ describe("lifecycle RPC", () => {
       autoSettleInactive: true,
       autoSettleAfterDays: 3,
       autoSettleOnMerge: true,
-      showBots: true,
     });
-    await expect(
-      harness.behavior.callRpc("updateSidebarSettings", {
-        snoozePresets: "10m, 4h",
-        inactiveThreadsEnabled: false,
-        inactiveAfterHours: 12,
-        autoSettleInactive: false,
-        autoSettleAfterDays: 7,
-        autoSettleOnMerge: false,
-        showBots: false,
-      }),
-    ).resolves.toEqual({
-      snoozePresets: "10m, 4h",
-      inactiveThreadsEnabled: false,
-      inactiveAfterHours: 12,
-      autoSettleInactive: false,
-      autoSettleAfterDays: 7,
-      autoSettleOnMerge: false,
-      showBots: false,
-    });
-    // A client built before the Bots shelf omits the switch; the save still
-    // lands and the switch keeps its default.
     await expect(
       harness.behavior.callRpc("updateSidebarSettings", {
         snoozePresets: "10m, 4h",
@@ -147,7 +122,14 @@ describe("lifecycle RPC", () => {
         autoSettleAfterDays: 7,
         autoSettleOnMerge: false,
       }),
-    ).resolves.toMatchObject({ showBots: true });
+    ).resolves.toEqual({
+      snoozePresets: "10m, 4h",
+      inactiveThreadsEnabled: false,
+      inactiveAfterHours: 12,
+      autoSettleInactive: false,
+      autoSettleAfterDays: 7,
+      autoSettleOnMerge: false,
+    });
     expect(harness.inspection.realtimeSignals).toContainEqual({
       channel: "sidebar-settings",
       payload: {},
@@ -189,7 +171,6 @@ describe("lifecycle RPC", () => {
       autoSettleInactive: false,
       autoSettleAfterDays: 14,
       autoSettleOnMerge: false,
-      showBots: true,
     });
   });
 
@@ -1017,346 +998,5 @@ describe("automatic settle evaluation", () => {
     await expect(
       harness.behavior.callRpc("listLifecycle", {}),
     ).resolves.toEqual({ rows: [] });
-  });
-});
-
-describe("listBots", () => {
-  const upstream = {
-    bots: [
-      {
-        id: "bot_1",
-        name: "Reviewer",
-        role: "Code review",
-        avatar: {
-          color: "#6d5efc",
-          shape: "blob",
-          expression: "focused",
-          motion: "playful",
-        },
-        mainThreadId: "thr_main",
-        hiddenUntilActivity: false,
-        hiddenAt: null,
-        sectionId: null,
-        order: 0,
-        linkedProjectIds: ["proj_1"],
-        // Private state the bots plugin also returns; none of it may pass.
-        soul: "You are a careful reviewer.",
-        memory: "The user prefers terse feedback.",
-        settings: { tone: "dry" },
-        hostId: "host_1",
-        stateHashes: {},
-        updatedAt: 1,
-      },
-    ],
-    sections: [{ id: "sec_1", name: "Ops", order: 0 }],
-    threadBindings: [{ threadId: "thr_main", botId: "bot_1" }],
-    hosts: [{ id: "host_1", name: "laptop", connected: true }],
-    projects: [{ id: "proj_1", name: "bb" }],
-    warnings: [],
-    personalProjectId: "proj_personal",
-  };
-
-  type CallRpcArgs = {
-    pluginId: string;
-    method: string;
-    input?: unknown;
-    outputSchema: { parse(value: unknown): unknown };
-  };
-
-  async function loadWithBots(
-    callRpc: (args: CallRpcArgs) => Promise<unknown>,
-  ) {
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
-      sdk: {
-        threads: { list: async () => [] },
-        plugins: {
-          // bb parses the other plugin's answer with the caller's schema;
-          // the fake does the same, so narrowing is exercised here too.
-          callRpc: async (args: CallRpcArgs) =>
-            args.outputSchema.parse(await callRpc(args)),
-        },
-      },
-    });
-    await plugin(bb);
-    disposers.push(() => harness.lifecycle.dispose());
-    return harness;
-  }
-
-  it("reads the bots plugin's list through bb and narrows it", async () => {
-    const harness = await loadWithBots(async () => upstream);
-
-    const result = await harness.behavior.callRpc("listBots", {});
-
-    expect(result).toEqual({
-      available: true,
-      bots: [
-        {
-          id: "bot_1",
-          name: "Reviewer",
-          role: "Code review",
-          mainThreadId: "thr_main",
-          hiddenUntilActivity: false,
-          hiddenAt: null,
-          sectionId: null,
-          order: 0,
-          linkedProjectIds: ["proj_1"],
-          avatar: {
-            color: "#6d5efc",
-            shape: "blob",
-            expression: "focused",
-            motion: "playful",
-          },
-          hostId: "host_1",
-        },
-      ],
-      sections: [{ id: "sec_1", name: "Ops", order: 0 }],
-      bindings: [{ threadId: "thr_main", botId: "bot_1" }],
-      hosts: [{ id: "host_1", name: "laptop", connected: true }],
-      personalProjectId: "proj_personal",
-    });
-    expect(JSON.stringify(result)).not.toContain("careful reviewer");
-
-    const calls = harness.inspection.sdk.callsTo("plugins.callRpc");
-    expect(calls).toHaveLength(1);
-    expect(calls[0]![0]).toMatchObject({
-      pluginId: "bots-sidebar",
-      method: "bots_list",
-      input: null,
-    });
-  });
-
-  // The bots plugin is optional. Not installed, disabled, or answering in a
-  // shape this plugin does not understand all mean the same thing to the
-  // sidebar: no shelf, and no error in the user's face.
-  it("answers unavailable, not an error, when the bots plugin cannot be read", async () => {
-    const harness = await loadWithBots(async () => {
-      throw new Error("plugin bots-sidebar is not installed");
-    });
-
-    await expect(harness.behavior.callRpc("listBots", {})).resolves.toEqual({
-      available: false,
-      reason: "plugin bots-sidebar is not installed",
-    });
-  });
-
-  it("answers unavailable when the bots plugin's answer has the wrong shape", async () => {
-    const harness = await loadWithBots(async () => ({ nope: true }));
-
-    const result = (await harness.behavior.callRpc("listBots", {})) as {
-      available: boolean;
-    };
-
-    expect(result.available).toBe(false);
-  });
-});
-
-describe("bots re-read signal", () => {
-  function botsSignals(harness: Awaited<ReturnType<typeof loadPlugin>>) {
-    return harness.inspection.realtimeSignals.filter(
-      (signal) => signal.channel === "bots",
-    );
-  }
-
-  it("nudges the frontend after a thread is created, once the bots plugin has had time to bind", async () => {
-    vi.useFakeTimers();
-    try {
-      const harness = await loadPlugin();
-      await harness.behavior.emitThreadEvent("thread.created", {
-        thread: makeThreadResponse({ id: "thr_new" }),
-      });
-      // Not at once: the bots plugin binds from the same event, and nothing
-      // orders the two handlers.
-      expect(botsSignals(harness)).toHaveLength(0);
-
-      vi.advanceTimersByTime(BOTS_REBIND_DELAY_MS);
-
-      expect(botsSignals(harness)).toEqual([
-        { channel: "bots", payload: { threadId: "thr_new" } },
-      ]);
-    } finally {
-      vi.useRealTimers();
-    }
-  });
-
-  it("drops a pending nudge when the plugin unloads", async () => {
-    vi.useFakeTimers();
-    try {
-      const harness = await loadPlugin();
-      await harness.behavior.emitThreadEvent("thread.created", {
-        thread: makeThreadResponse({ id: "thr_new" }),
-      });
-      // Dispose here rather than in afterEach, so the timer's fate is what
-      // this test observes.
-      await Promise.all(disposers.splice(0).map((dispose) => dispose()));
-
-      vi.advanceTimersByTime(BOTS_REBIND_DELAY_MS * 2);
-
-      expect(botsSignals(harness)).toHaveLength(0);
-    } finally {
-      vi.useRealTimers();
-    }
-  });
-});
-
-describe("bot writes, proxied to the bots plugin", () => {
-  const createdBot = {
-    id: "bot_new",
-    name: "Deployer",
-    role: "Release",
-    avatar: { color: "#e44f67", shape: "round", expression: "happy", motion: "calm" },
-    hostId: "host_1",
-    mainThreadId: null,
-    hiddenUntilActivity: false,
-    hiddenAt: null,
-    sectionId: null,
-    order: 1,
-    linkedProjectIds: [],
-    soul: "Ship it.",
-  };
-
-  async function loadRecording(answer: (method: string) => unknown) {
-    const calls: Array<{ method: string; input: unknown }> = [];
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
-      sdk: {
-        threads: { list: async () => [] },
-        plugins: {
-          callRpc: async (args: {
-            method: string;
-            input?: unknown;
-            outputSchema: { parse(value: unknown): unknown };
-          }) => {
-            calls.push({ method: args.method, input: args.input });
-            return args.outputSchema.parse(answer(args.method));
-          },
-        },
-      },
-    });
-    await plugin(bb);
-    disposers.push(() => harness.lifecycle.dispose());
-    return { harness, calls };
-  }
-
-  const botsSignals = (harness: Awaited<ReturnType<typeof loadPlugin>>) =>
-    harness.inspection.realtimeSignals.filter(
-      (signal) => signal.channel === "bots",
-    );
-
-  it("creates a bot in the main section with no projects, then tells clients", async () => {
-    const { harness, calls } = await loadRecording(() => createdBot);
-    const draft = {
-      name: "Deployer",
-      role: "Release",
-      hostId: "host_1",
-      avatar: createdBot.avatar,
-      soul: "Ship it.",
-    };
-
-    const result = await harness.behavior.callRpc("createBot", draft);
-
-    expect(calls).toEqual([
-      {
-        method: "bot_create",
-        input: { ...draft, sectionId: null, linkedProjectIds: [] },
-      },
-    ]);
-    expect(result).toMatchObject({ id: "bot_new", name: "Deployer" });
-    expect(JSON.stringify(result)).not.toContain("Ship it");
-    expect(botsSignals(harness)).toHaveLength(1);
-  });
-
-  it("refuses a draft the bots plugin would refuse, before calling it", async () => {
-    const { harness, calls } = await loadRecording(() => createdBot);
-    await expect(
-      harness.behavior.callRpc("createBot", {
-        name: "   ",
-        role: "",
-        hostId: "host_1",
-        avatar: createdBot.avatar,
-        soul: "",
-      }),
-    ).rejects.toThrow();
-    expect(calls).toHaveLength(0);
-  });
-
-  it("reads the editor fields fresh and drops the bot's memory", async () => {
-    const { harness, calls } = await loadRecording(() => ({
-      ...createdBot,
-      updatedAt: 42,
-      stateHashes: { "SOUL.md": "a", "AGENTS.md": null, "MEMORY.md": "b", "settings.json": null },
-      memory: "The user prefers terse feedback.",
-      settings: { tone: "dry" },
-    }));
-
-    const result = await harness.behavior.callRpc("getBotEditor", {
-      botId: "bot_new",
-    });
-
-    expect(calls).toEqual([{ method: "bot_prepare", input: { botId: "bot_new" } }]);
-    expect(result).toEqual({
-      id: "bot_new",
-      name: "Deployer",
-      role: "Release",
-      avatar: createdBot.avatar,
-      hostId: "host_1",
-      sectionId: null,
-      linkedProjectIds: [],
-      soul: "Ship it.",
-      updatedAt: 42,
-      stateHashes: { "SOUL.md": "a", "AGENTS.md": null, "MEMORY.md": "b", "settings.json": null },
-    });
-    expect(JSON.stringify(result)).not.toContain("terse");
-  });
-
-  it("assigns a conversation and hides a bot through the bots plugin", async () => {
-    const { harness, calls } = await loadRecording(() => ({ ok: true }));
-
-    await expect(
-      harness.behavior.callRpc("assignConversation", {
-        botId: "bot_new",
-        threadId: "thr_9",
-      }),
-    ).resolves.toEqual({ ok: true });
-    await expect(
-      harness.behavior.callRpc("setBotVisibility", {
-        botId: "bot_new",
-        hiddenUntilActivity: true,
-      }),
-    ).resolves.toEqual({ ok: true });
-
-    expect(calls).toEqual([
-      { method: "conversation_assign", input: { botId: "bot_new", threadId: "thr_9" } },
-      { method: "visibility_set", input: { botId: "bot_new", hiddenUntilActivity: true } },
-    ]);
-    expect(botsSignals(harness)).toHaveLength(2);
-  });
-
-  it("starts a bot conversation with the composer's own request", async () => {
-    const { harness, calls } = await loadRecording(() => ({ threadId: "thr_new" }));
-    const request = {
-      projectId: "proj_personal",
-      providerId: "codex",
-      model: "gpt",
-      reasoningLevel: "medium",
-      permissionMode: "auto",
-      executionInputSources: {},
-      environment: { type: "host", hostId: "host_1", workspace: { type: "personal" } },
-      input: [{ type: "text", text: "Hello", mentions: [] }],
-    };
-
-    await expect(
-      harness.behavior.callRpc("createBotConversation", {
-        botId: "bot_new",
-        request,
-      }),
-    ).resolves.toEqual({ threadId: "thr_new" });
-
-    expect(calls).toEqual([
-      {
-        method: "conversation_create",
-        input: { botId: "bot_new", request, makeMain: false },
-      },
-    ]);
   });
 });

@@ -1,5 +1,4 @@
 import {
-  Fragment,
   useCallback,
   useEffect,
   useMemo,
@@ -13,7 +12,6 @@ import {
   experimental_useProviders as useProviders,
   type PluginSidebarThread,
   type PluginThreadListProps,
-  useBbNavigate,
   useRealtime,
   useRpc,
   useSettings,
@@ -34,13 +32,6 @@ import { SlimRow } from "./SlimRow";
 import { SearchResults } from "./SearchResults";
 import { BulkSelectionBar } from "./BulkSelectionBar";
 import { childThreadsByParent } from "./ChildThreadList";
-import { BotRow } from "./BotRow";
-import { BotEditorDialog, type BotEditorTarget } from "./BotEditorDialog";
-import { BotConversationDialog } from "./BotConversationDialog";
-import { buildBotShelf, type BotShelf } from "./bot-shelf";
-import { resolveBotOwners, type BotDraft, type SidebarBot } from "./bots";
-import { useBots } from "./useBots";
-import { BOT_EXPANSION_STORAGE_KEY, useCollapsedIds } from "./useCollapsedIds";
 import { runBulkAction, type BulkActionResult } from "./bulk-actions";
 import { useLifecycle } from "./useLifecycle";
 import { usePinnedReorder } from "./usePinnedReorder";
@@ -145,7 +136,6 @@ function suppressNextClick(threadId: string): void {
 interface ShelfExpansionState {
   active: boolean;
   pinned: boolean;
-  bots: boolean;
   inactive: boolean;
   snoozed: boolean;
   settled: boolean;
@@ -154,7 +144,6 @@ interface ShelfExpansionState {
 const DEFAULT_SHELF_EXPANSION: ShelfExpansionState = {
   active: true,
   pinned: true,
-  bots: true,
   inactive: false,
   snoozed: false,
   settled: false,
@@ -170,8 +159,6 @@ function readShelfExpansion(): ShelfExpansionState {
       active: parsed.active !== false,
       // Pinned became independently collapsible after the first stored shape.
       pinned: parsed.pinned !== false,
-      // Bots arrived after the stored shape too, and start open.
-      bots: parsed.bots !== false,
       inactive: parsed.inactive === true,
       snoozed: parsed.snoozed === true,
       settled: parsed.settled === true,
@@ -339,106 +326,6 @@ export function ThreadInbox({
     void loadSidebarSettings();
   });
   const lifecycle = useLifecycle(threads);
-  // Bots from the Bots Sidebar plugin. Off by the setting, or absent when
-  // that plugin is not there to answer; either way the list is what it always
-  // was. Nothing is asked until the settings have answered, so a switch that
-  // is off never costs the request it turns off.
-  const showBots =
-    sidebarSettings !== null && sidebarSettings.showBots !== false;
-  const threadIdsKey = useMemo(
-    () => threads.map((thread) => thread.id).join("\n"),
-    [threads],
-  );
-  const { snapshot: botsSnapshot, refresh: refreshBots } = useBots(
-    threadIdsKey,
-    showBots,
-  );
-  const bots =
-    showBots && botsSnapshot !== null && botsSnapshot.available
-      ? botsSnapshot
-      : null;
-  const navigate = useBbNavigate();
-  const [botEditor, setBotEditor] = useState<BotEditorTarget | null>(null);
-  const [botConversation, setBotConversation] = useState<{
-    bot: SidebarBot;
-    makeMain: boolean;
-  } | null>(null);
-  const botNamesById = useMemo(
-    () => new Map((bots?.bots ?? []).map((bot) => [bot.id, bot.name])),
-    [bots],
-  );
-  // Every write goes to the bots plugin through this plugin's server, then
-  // the list re-reads. Failures surface as toasts, the way bulk actions do.
-  const editBot = async (botId: string) => {
-    try {
-      const bot = await rpc.call("getBotEditor", { botId });
-      setBotEditor({ kind: "edit", bot });
-    } catch (error) {
-      toast.error("Could not open the bot", {
-        description: error instanceof Error ? error.message : undefined,
-      });
-    }
-  };
-  const saveBot = async (draft: BotDraft) => {
-    if (botEditor === null) return;
-    if (botEditor.kind === "create") {
-      const created = await rpc.call("createBot", draft);
-      await refreshBots();
-      // Creation is saved; close the editor before anything else can fail,
-      // so a retry cannot create a duplicate. The bot's first conversation
-      // becomes its main one.
-      setBotEditor(null);
-      toast.success(`Created ${created.name}`);
-      setBotConversation({ bot: created, makeMain: true });
-      return;
-    }
-    const { bot } = botEditor;
-    await rpc.call("updateBot", {
-      ...draft,
-      botId: bot.id,
-      sectionId: bot.sectionId,
-      linkedProjectIds: bot.linkedProjectIds,
-      expectedUpdatedAt: bot.updatedAt,
-      expectedStateHashes: bot.stateHashes,
-    });
-    await refreshBots();
-    setBotEditor(null);
-    toast.success(`Saved ${draft.name}`);
-  };
-  const assignThread = async (threadId: string, botId: string) => {
-    try {
-      await rpc.call("assignConversation", { botId, threadId });
-      await refreshBots();
-      toast.success(`Assigned to ${botNamesById.get(botId) ?? "bot"}`);
-    } catch (error) {
-      toast.error("Could not assign the conversation", {
-        description: error instanceof Error ? error.message : undefined,
-      });
-    }
-  };
-  const hideBot = async (botId: string) => {
-    try {
-      await rpc.call("setBotVisibility", { botId, hiddenUntilActivity: true });
-      await refreshBots();
-    } catch (error) {
-      toast.error("Could not hide the bot", {
-        description: error instanceof Error ? error.message : undefined,
-      });
-    }
-  };
-  const { collapsed: collapsedBots, toggle: toggleBot } = useCollapsedIds(
-    BOT_EXPANSION_STORAGE_KEY,
-  );
-  // Ownership resolves against the FULL list, like child lookups: a thread
-  // still belongs to its bot when the bound ancestor is archived or scoped
-  // out.
-  const ownerByThreadId = useMemo(
-    () =>
-      bots === null
-        ? new Map<string, string>()
-        : resolveBotOwners(threads, bots.bindings),
-    [bots, threads],
-  );
   const [projectIconRevision, setProjectIconRevision] = useState(0);
   useRealtime(PROJECT_ICONS_CHANNEL, () => {
     setProjectIconRevision((revision) => revision + 1);
@@ -647,39 +534,6 @@ export function ThreadInbox({
     () => orderPinnedThreads(inactiveBase, inboxReorder.ids),
     [inactiveBase, inboxReorder.ids],
   );
-  // A bot's conversations leave the Active shelf for the bot's own group,
-  // keeping the order the shelf gave them. Pinned stays pinned — that is the
-  // user's own ordering, and it outranks whose work it is — and the Inactive
-  // and parked shelves stay flat, as they always were.
-  const botShelf = useMemo<BotShelf>(
-    () =>
-      bots === null
-        ? { groups: [], unassigned: inbox }
-        : buildBotShelf({
-            snapshot: bots,
-            ownerByThreadId,
-            threads: visibleInboxThreads(threads),
-            activeThreads: inbox,
-            scopeProjectId: scope === ALL_PROJECTS ? null : scope,
-          }),
-    [bots, inbox, ownerByThreadId, scope, threads],
-  );
-  const activeInbox = botShelf.unassigned;
-  const botCount = botShelf.groups.reduce(
-    (sum, group) => sum + group.bots.length,
-    0,
-  );
-  const visibleBotThreads = useMemo(
-    () =>
-      expandedShelves.bots
-        ? botShelf.groups.flatMap((group) =>
-            group.bots.flatMap((entry) =>
-              collapsedBots.has(entry.bot.id) ? [] : entry.threads,
-            ),
-          )
-        : [],
-    [botShelf, collapsedBots, expandedShelves.bots],
-  );
   const visiblePinned = useMemo(
     () =>
       visibleShelfThreads(
@@ -690,13 +544,8 @@ export function ThreadInbox({
     [activeListThreadId, expandedShelves.pinned, pinned],
   );
   const visibleInbox = useMemo(
-    () =>
-      visibleShelfThreads(
-        activeInbox,
-        expandedShelves.active,
-        activeListThreadId,
-      ),
-    [activeInbox, activeListThreadId, expandedShelves.active],
+    () => visibleShelfThreads(inbox, expandedShelves.active, activeListThreadId),
+    [activeListThreadId, expandedShelves.active, inbox],
   );
   const visibleInactive = useMemo(
     () =>
@@ -927,7 +776,6 @@ export function ThreadInbox({
         ? searchResults
         : [
             ...visiblePinned,
-            ...visibleBotThreads,
             ...visibleInbox,
             ...visibleInactive,
             ...visibleSnoozed,
@@ -936,7 +784,6 @@ export function ThreadInbox({
     [
       isSearching,
       searchResults,
-      visibleBotThreads,
       visibleInbox,
       visibleInactive,
       visiblePinned,
@@ -1172,14 +1019,6 @@ export function ThreadInbox({
           ? undefined
           : threadReorderControls(thread, shelf)
       }
-      assign={
-        bots !== null && !ownerByThreadId.has(thread.id)
-          ? {
-              bots: bots.bots.map((bot) => ({ id: bot.id, name: bot.name })),
-              onAssign: (botId) => void assignThread(thread.id, botId),
-            }
-          : undefined
-      }
       now={now}
     />
   );
@@ -1320,101 +1159,10 @@ export function ThreadInbox({
                 </Shelf>
               </CollapsibleShelf>
             ) : null}
-            {bots !== null ? (
-              <CollapsibleShelf
-                label="Bots"
-                count={botCount}
-                expanded={expandedShelves.bots}
-                onToggle={() =>
-                  setExpandedShelves((current) => ({
-                    ...current,
-                    bots: !current.bots,
-                  }))
-                }
-                action={
-                  <button
-                    type="button"
-                    aria-label="New bot"
-                    title="New bot"
-                    onClick={() => setBotEditor({ kind: "create" })}
-                    className="absolute bottom-1 right-[1.875rem] z-10 flex size-4 items-center justify-center rounded text-muted-foreground/40 hover:bg-sidebar-accent hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  >
-                    <Icon name="Plus" className="size-3" aria-hidden />
-                  </button>
-                }
-              >
-                {expandedShelves.bots && botCount === 0 ? (
-                  <button
-                    type="button"
-                    onClick={() => setBotEditor({ kind: "create" })}
-                    className="mx-1 mb-1 flex w-[calc(100%-0.5rem)] items-center gap-2 rounded-md border border-dashed border-sidebar-border px-2.5 py-2 text-left text-xs text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
-                  >
-                    <Icon name="Plus" className="size-3.5 shrink-0" aria-hidden />
-                    Create your first bot
-                  </button>
-                ) : null}
-                {expandedShelves.bots && botCount > 0 ? (
-                  <ul className="flex flex-col gap-px">
-                    {botShelf.groups.map((group) => (
-                      <Fragment key={group.section?.id ?? "__main__"}>
-                        {/* The bots plugin's implicit main section has no
-                            heading there either; only a named section earns
-                            one. */}
-                        {group.section === null ? null : (
-                          <li className="list-none truncate px-2.5 pb-0.5 pt-2 text-2xs font-medium text-muted-foreground/60">
-                            {group.section.name}
-                          </li>
-                        )}
-                        {group.bots.map((entry) => {
-                          const isCollapsed = collapsedBots.has(entry.bot.id);
-                          return (
-                            <BotRow
-                              key={entry.bot.id}
-                              bot={entry.bot}
-                              activity={entry.activity}
-                              openTarget={entry.openTarget}
-                              hasRows={entry.threads.length > 0}
-                              isCollapsed={isCollapsed}
-                              onToggleCollapsed={() => toggleBot(entry.bot.id)}
-                              containsActive={
-                                activeListThreadId !== null &&
-                                ownerByThreadId.get(activeListThreadId) ===
-                                  entry.bot.id
-                              }
-                              onNavigate={onNavigate}
-                              actions={{
-                                onNewConversation: () =>
-                                  setBotConversation({
-                                    bot: entry.bot,
-                                    makeMain: entry.openTarget === null,
-                                  }),
-                                onEdit: () => void editBot(entry.bot.id),
-                                onHide: () => void hideBot(entry.bot.id),
-                              }}
-                            >
-                              {!isCollapsed && entry.threads.length > 0 ? (
-                                <ul
-                                  aria-label={`${entry.bot.name}'s conversations`}
-                                  className="ml-3.5 flex flex-col gap-px border-l border-sidebar-border/50 pl-1"
-                                >
-                                  {entry.threads.map((thread) =>
-                                    renderActiveThread(thread, "inbox", false),
-                                  )}
-                                </ul>
-                              ) : null}
-                            </BotRow>
-                          );
-                        })}
-                      </Fragment>
-                    ))}
-                  </ul>
-                ) : null}
-              </CollapsibleShelf>
-            ) : null}
-            {activeInbox.length > 0 ? (
+            {inbox.length > 0 ? (
               <CollapsibleShelf
                 label="Active"
-                count={activeInbox.length}
+                count={inbox.length}
                 expanded={expandedShelves.active}
                 onToggle={() =>
                   setExpandedShelves((current) => ({
@@ -1485,8 +1233,7 @@ export function ThreadInbox({
               </CollapsibleShelf>
             ) : null}
             {pinned.length === 0 &&
-            botCount === 0 &&
-            activeInbox.length === 0 &&
+            inbox.length === 0 &&
             inactive.length === 0 ? (
               <ActiveEmptyState />
             ) : null}
@@ -1539,34 +1286,6 @@ export function ThreadInbox({
           </div>
         )}
       </div>
-      {botEditor !== null && bots !== null ? (
-        <BotEditorDialog
-          key={botEditor.kind === "edit" ? botEditor.bot.id : "create"}
-          target={botEditor}
-          hosts={bots.hosts}
-          onClose={() => setBotEditor(null)}
-          onSave={saveBot}
-        />
-      ) : null}
-      {botConversation !== null && bots !== null ? (
-        <BotConversationDialog
-          bot={botConversation.bot}
-          personalProjectId={bots.personalProjectId}
-          makeMain={botConversation.makeMain}
-          onClose={() => setBotConversation(null)}
-          onCreate={async (request) => {
-            const { threadId } = await rpc.call("createBotConversation", {
-              botId: botConversation.bot.id,
-              request,
-              makeMain: botConversation.makeMain,
-            });
-            setBotConversation(null);
-            void refreshBots();
-            navigate.toThread(threadId);
-            onNavigate();
-          }}
-        />
-      ) : null}
     </div>
   );
 }

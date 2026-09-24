@@ -288,22 +288,6 @@ export function SidebarSettings() {
         </SettingRow>
       </SettingsGroup>
 
-      <SettingsGroup
-        title="Bots"
-        description="With the Bots Sidebar plugin installed, show its bots as a shelf and group each bot's conversations under it."
-      >
-        <SettingRow
-          title="Bots shelf"
-          description="Group conversations under the bot they belong to. Bots are created and edited in the Bots Sidebar plugin."
-        >
-          <Switch
-            label="Bots shelf"
-            checked={draft.showBots !== false}
-            onChange={(checked) => update("showBots", checked)}
-          />
-        </SettingRow>
-      </SettingsGroup>
-
       <div className="flex items-center justify-end gap-3">
         {dirty ? (
           <span className="text-xs text-muted-foreground">Unsaved changes</span>

@@ -2,7 +2,7 @@
   "name": "bb-plugin-bb-sidebar",
   "version": "0.2.4",
   "type": "module",
-  "description": "A bb thread sidebar with manual and automatic sorting, snooze, settle, bulk actions, and a Bots shelf for the Bots Sidebar plugin.",
+  "description": "A bb thread sidebar with manual and automatic sorting, snooze, settle, and bulk actions.",
   "license": "MIT",
   "author": "Yusuf Akbulut",
   "repository": {
@@ -19,7 +19,7 @@
   },
   "bb": {
     "name": "BB Sidebar",
-    "description": "Organizes bb threads with manual and automatic sorting, snooze, settle, and bulk actions; shows bots from the Bots Sidebar plugin as their own shelf.",
+    "description": "Organizes bb threads with manual and automatic sorting, snooze, settle, and bulk actions.",
     "branding": {
       "icon": "PanelLeft"
     },
