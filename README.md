@@ -71,7 +71,7 @@ After changing a plugin, rerun `make install-amp-plugins`, then run `plugins: re
 Forked bb plugins live in `bb-plugins/<plugin>/`, vendored as plain source so they can be modified in place. They are not part of `make install`; bb loads each one directly from its path in this repo.
 
 ```bash
-cd bb-plugins/bb-plugin-bb-sidebar
+cd bb-plugins/bb-plugin-tok-speed
 npm install
 bb plugin install "$PWD" --yes    # register with bb (once)
 npx bb plugin dev                 # watch sources, hot-reload the frontend
@@ -79,7 +79,6 @@ npx bb plugin dev                 # watch sources, hot-reload the frontend
 
 A plugin's bb id is its `package.json` name with the `bb-plugin-` prefix stripped, and its data lives in `~/.bb/plugins/<id>/`, so renaming the package orphans that data. Backend changes (`src/server.ts`) need `npm run build && bb plugin reload <id>`. Each plugin keeps `upstream` pointing at the repo it was forked from; sync by diffing against that remote. Run `bb plugin types` in the plugin directory after upgrading bb to repin `@get-bb/plugin-sdk` to the running version.
 
-- `bb-plugin-bb-sidebar` — the sidebar in use, forked from [yusuf8834/bb-sidebar](https://github.com/yusuf8834/bb-sidebar) v0.2.4 and repinned to bb 0.42's plugin SDK; see `bb-plugins/bb-plugin-bb-sidebar/README.md`.
 - `bb-plugin-tok-speed` — shows a visible provider-output `tok/s` figure in each assistant message's hover menu. Forked from [patleeman/bb-plugins](https://github.com/patleeman/bb-plugins/tree/main/packages/bb-plugin-tok-speed) at `e275465`, with thread-event pages capped at 100 (bb's server limit) instead of 500. Pi threads are measured from the Pi session file bb's Pi bridge writes, because bb prunes the per-turn usage and stream timing from its event log; see `bb-plugins/bb-plugin-tok-speed/README.md`.
 - `bb-plugin-t3sidebar` — the earlier fork of [SawyerHood/bb-plugin-t3sidebar](https://github.com/SawyerHood/bb-plugin-t3sidebar), kept for its auto-settle-on-merge sweep.
 
