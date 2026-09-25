@@ -2,7 +2,7 @@
   "name": "bb-plugin-bb-sidebar",
   "version": "0.2.21",
   "type": "module",
-  "description": "A bb thread sidebar with manual and automatic sorting, snooze, and settle actions, plus a Channels shelf for Bot Teams.",
+  "description": "A bb thread sidebar with manual and automatic sorting, snooze, and settle actions.",
   "license": "MIT",
   "author": "Yusuf Akbulut",
   "repository": {
@@ -19,7 +19,7 @@
   },
   "bb": {
     "name": "BB Sidebar",
-    "description": "Organizes bb threads with manual and automatic sorting, snooze, and settle actions; shows Bot Teams channels as their own shelf.",
+    "description": "Organizes bb threads with manual and automatic sorting, snooze, and settle actions.",
     "branding": {
       "icon": "PanelLeft"
     },

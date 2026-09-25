@@ -37,8 +37,6 @@ import { portSnapshotSchema } from "./open-ports";
 import { createPortDiscovery } from "./port-discovery";
 import { createThreadPortActions } from "./thread-ports";
 import { ownedPortTargetSchema, closePortsResultSchema } from "./close-owned-ports";
-import { channelStateInputSchema, channelsSnapshotSchema } from "./channels";
-import { createChannelsRpc } from "./channels-server";
 
 const migrations = [
   `CREATE TABLE IF NOT EXISTS thread_lifecycle (
@@ -181,15 +179,6 @@ const iconBase64Schema = z
   .max(1_400_000)
   .regex(/^[A-Za-z0-9+/]*={0,2}$/, "Invalid image data");
 export const bbSidebarRpcContract = defineRpcContract({
-  // Bot Teams' channels, read and written through bb (see channels-server.ts).
-  listChannels: {
-    input: z.object({}).strict(),
-    output: channelsSnapshotSchema,
-  },
-  setChannelState: {
-    input: channelStateInputSchema,
-    output: z.object({ ok: z.literal(true) }).strict(),
-  },
   getThreadPorts: {
     input: threadIdSchema,
     output: z.object({ ports: z.array(ownedPortTargetSchema) }),
@@ -1157,7 +1146,6 @@ export default async function plugin(bb: BbPluginApi) {
   });
 
   bb.rpc.register(bbSidebarRpcContract, {
-    ...createChannelsRpc(bb),
     getOpenPorts,
     getThreadPorts: threadPortActions.getThreadPorts,
     async closeThreadPorts(input) {

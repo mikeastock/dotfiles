@@ -1,14 +1,6 @@
 # Changelog
 
-## Unreleased — dotfiles fork
-
-Forked into [mikeastock/dotfiles](https://github.com/mikeastock/dotfiles) at
-v0.2.21 (`4fffb49`). Upstream stays
-[yusuf8834/bb-sidebar](https://github.com/yusuf8834/bb-sidebar).
-
-### Added
-
-- A **Channels** shelf for [Bot Teams](https://github.com/patleeman/bb-plugins/tree/main/packages/bb-plugin-bot-teams) channels above Pinned, with needs-you, working, and unread states, in-place navigation, and Pin, Mark read/unread, and Archive from the row menu. Read and written through Bot Teams' `list` and `channelState` RPCs via `bb.sdk.plugins.callRpc`; absent when Bot Teams is not installed.
+## Unreleased
 
 ## [0.2.21] - 2026-09-23
 

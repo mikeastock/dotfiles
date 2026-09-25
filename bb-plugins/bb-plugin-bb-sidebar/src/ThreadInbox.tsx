@@ -39,8 +39,6 @@ import { useInboxReorder } from "./useInboxReorder";
 import { TRAILING_GLYPH_BOX_CLASS } from "./StatusSlot";
 import { WorkingSinceContext, useWorkingSince } from "./useWorkingSince";
 import { OpenPortsProvider } from "./OpenPorts";
-import { ChannelsShelf } from "./ChannelsShelf";
-import { useChannels } from "./useChannels";
 import {
   ALL_PROJECTS,
   filterByProject,
@@ -223,7 +221,6 @@ const DRAG_SCROLL_EDGE = 48;
 const DRAG_SCROLL_SPEED = 14;
 
 interface ShelfExpansionState {
-  channels: boolean;
   active: boolean;
   pinned: boolean;
   inactive: boolean;
@@ -233,7 +230,6 @@ interface ShelfExpansionState {
 }
 
 const DEFAULT_SHELF_EXPANSION: ShelfExpansionState = {
-  channels: true,
   active: true,
   pinned: true,
   inactive: false,
@@ -248,7 +244,6 @@ function readShelfExpansion(): ShelfExpansionState {
     if (!stored) return DEFAULT_SHELF_EXPANSION;
     const parsed = JSON.parse(stored) as Partial<ShelfExpansionState>;
     return {
-      channels: parsed.channels !== false,
       // Keep Active expanded for people with the older stored shape.
       active: parsed.active !== false,
       // Pinned became independently collapsible after the first stored shape.
@@ -475,18 +470,6 @@ export function ThreadInbox({
     () => new Map(projects.map((project) => [project.id, project.name])),
     [projects],
   );
-  // Bot work runs in (often hidden) threads, so any thread change is the
-  // earliest hint that a channel moved.
-  const threadActivityKey = useMemo(
-    () =>
-      String(threads.reduce((latest, t) => Math.max(latest, t.updatedAt), 0)),
-    [threads],
-  );
-  const { snapshot: channelsSnapshot, refresh: refreshChannels } =
-    useChannels(threadActivityKey);
-  const channels = channelsSnapshot?.available
-    ? channelsSnapshot.channels
-    : [];
   const providerById = useMemo(
     () => new Map(providers.map((provider) => [provider.id, provider])),
     [providers],
@@ -1180,27 +1163,6 @@ export function ThreadInbox({
             />
           ) : (
             <div ref={attachShelvesAutoAnimateRef} className="flex flex-col">
-              {channels.length > 0 ? (
-                <CollapsibleShelf
-                  label="Channels"
-                  icon="BubbleChat"
-                  count={channels.length}
-                  expanded={expandedShelves.channels}
-                  onToggle={() =>
-                    setExpandedShelves((current) => ({
-                      ...current,
-                      channels: !current.channels,
-                    }))
-                  }
-                >
-                  <ChannelsShelf
-                    channels={channels}
-                    expanded={expandedShelves.channels}
-                    onNavigate={onNavigate}
-                    onChanged={() => void refreshChannels()}
-                  />
-                </CollapsibleShelf>
-              ) : null}
               {pinned.length > 0 ? (
                 <CollapsibleShelf
                   label="Pinned"
