@@ -159,6 +159,8 @@ Pi settings and models are copied by `make install`. Extensions, prompts, and th
 
 ### Notable custom Pi extensions
 
+- `wafer` — [Wafer Serverless provider](pi-extensions/wafer/README.md) with eight catalog models, reasoning controls, and `WAFER_API_KEY` authentication
+
 - `handoff` and `session-query` — vendored from `buildrtech/dotagents` commit `a484ad4`
 - `openai-fast` — mirrors `calesennett/pi-codex-fast`; `/codex-fast` toggles priority service-tier requests for supported OpenAI Codex models, shows an inline `⚡` beside the model without adding a status line, and stores state under `pi-codex-fast.enabled` in Pi settings
 - `pi-prompt-shelf` — local copy of `tanishqkancharla/pi-prompt-shelf`; shelves editor prompts per session with shortcuts and `/shelf`
@@ -182,6 +184,7 @@ dotfiles/
 ├── configs/                 # shared AGENTS.md for Codex and Pi
 ├── amp-plugins/             # custom Amp plugins
 ├── pi-extensions/           # Pi extensions
+│   └── wafer/              # Wafer Serverless model provider
 ├── pi-themes/               # Pi themes
 ├── prompts/                 # Pi prompt templates
 ├── plugins/                 # plugin submodules
