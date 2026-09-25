@@ -1,0 +1,145 @@
+/*
+ * Every colour in this plugin that differs between BB's light and dark themes.
+ *
+ * bb switches theme by toggling a class on <html>, but `bb plugin build` hands
+ * Tailwind an input with no `@custom-variant dark`, so a `dark:` utility
+ * compiles to `@media (prefers-color-scheme: dark)` and follows the OS
+ * instead. On BB dark with the OS in light mode that left light status
+ * colours on a dark sidebar (Failed at 2.68:1, a cream needs-you band); the
+ * inverse pairing was worse. So the pairs live here, keyed off the same
+ * classes bb's own stylesheet keys off, and components reference them through
+ * arbitrary-value utilities: `text-[color:var(--bb-sidebar-tone-error)]`.
+ *
+ * A plugin stylesheet is emitted unlayered and after Tailwind's utilities, so
+ * these rules outrank the utilities they replace.
+ */
+
+:root {
+  /*
+   * The Tailwind swatches the pairs below are built from, named so a pair
+   * still reads as the `red-700 dark:red-300` it replaced. Spelled with a
+   * literal fallback because the theme layer only carries a colour some
+   * utility still asks for, and after this change most of these have none.
+   */
+  --bb-sidebar-red-100: var(--color-red-100, oklch(93.6% 0.032 17.717));
+  --bb-sidebar-red-300: var(--color-red-300, oklch(80.8% 0.114 19.571));
+  --bb-sidebar-red-600: var(--color-red-600, oklch(57.7% 0.245 27.325));
+  --bb-sidebar-red-700: var(--color-red-700, oklch(50.5% 0.213 27.518));
+  --bb-sidebar-red-950: var(--color-red-950, oklch(25.8% 0.092 26.042));
+  --bb-sidebar-amber-50: var(--color-amber-50, oklch(98.7% 0.022 95.277));
+  --bb-sidebar-amber-100: var(--color-amber-100, oklch(96.2% 0.059 95.617));
+  --bb-sidebar-amber-300: var(--color-amber-300, oklch(87.9% 0.169 91.605));
+  --bb-sidebar-amber-700: var(--color-amber-700, oklch(55.5% 0.163 48.998));
+  --bb-sidebar-amber-950: var(--color-amber-950, oklch(27.9% 0.077 45.635));
+  --bb-sidebar-emerald-100: var(--color-emerald-100, oklch(95% 0.052 163.051));
+  --bb-sidebar-emerald-300: var(--color-emerald-300, oklch(84.5% 0.143 164.978));
+  --bb-sidebar-emerald-600: var(--color-emerald-600, oklch(59.6% 0.145 163.225));
+  --bb-sidebar-emerald-700: var(--color-emerald-700, oklch(50.8% 0.118 165.612));
+  --bb-sidebar-emerald-950: var(--color-emerald-950, oklch(26.2% 0.051 172.552));
+  --bb-sidebar-sky-100: var(--color-sky-100, oklch(95.1% 0.026 236.824));
+  --bb-sidebar-sky-300: var(--color-sky-300, oklch(82.8% 0.111 230.318));
+  --bb-sidebar-sky-400: var(--color-sky-400, oklch(74.6% 0.16 232.661));
+  --bb-sidebar-sky-600: var(--color-sky-600, oklch(58.8% 0.158 241.966));
+  --bb-sidebar-sky-700: var(--color-sky-700, oklch(50% 0.134 242.749));
+  --bb-sidebar-sky-950: var(--color-sky-950, oklch(29.3% 0.066 243.157));
+  --bb-sidebar-indigo-300: var(--color-indigo-300, oklch(78.5% 0.115 274.713));
+  --bb-sidebar-indigo-600: var(--color-indigo-600, oklch(51.1% 0.262 276.966));
+  --bb-sidebar-violet-300: var(--color-violet-300, oklch(81.1% 0.111 293.571));
+  --bb-sidebar-violet-600: var(--color-violet-600, oklch(54.1% 0.281 293.009));
+}
+
+/*
+ * `:root, .light` and `.dark` mirror how bb's own theme stylesheet is written,
+ * so a light island inside a dark tree (or the reverse) still resolves the way
+ * the host does.
+ */
+:root,
+.light {
+  --bb-sidebar-tone-error: var(--bb-sidebar-red-700);
+  --bb-sidebar-tone-pending: var(--bb-sidebar-indigo-600);
+  --bb-sidebar-tone-success: var(--bb-sidebar-emerald-700);
+  --bb-sidebar-tone-working: var(--bb-sidebar-sky-600);
+  --bb-sidebar-tone-draft: var(--bb-sidebar-amber-700);
+
+  --bb-sidebar-woke: var(--bb-sidebar-amber-700);
+
+  --bb-sidebar-badge-failed-fg: var(--bb-sidebar-red-700);
+  --bb-sidebar-badge-failed-bg: var(--bb-sidebar-red-100);
+  --bb-sidebar-badge-needs-you-fg: var(--bb-sidebar-amber-700);
+  --bb-sidebar-badge-needs-you-bg: var(--bb-sidebar-amber-100);
+  --bb-sidebar-badge-done-fg: var(--bb-sidebar-emerald-700);
+  --bb-sidebar-badge-done-bg: var(--bb-sidebar-emerald-100);
+  --bb-sidebar-badge-working-fg: var(--bb-sidebar-sky-700);
+  --bb-sidebar-badge-working-bg: var(--bb-sidebar-sky-100);
+
+  /*
+   * A needs-you child row. In light the cream band is a full step brighter
+   * than the sidebar, so it needs no help; the accent below is the dark
+   * theme's substitute for a brightness step amber-950 cannot deliver.
+   */
+  --bb-sidebar-needs-you-tint: var(--bb-sidebar-amber-50);
+  --bb-sidebar-needs-you-tint-hover: var(--bb-sidebar-amber-50);
+  --bb-sidebar-needs-you-accent: transparent;
+
+  --bb-sidebar-settle-active: var(--bb-sidebar-emerald-700);
+
+  --bb-sidebar-pr-merged: var(--bb-sidebar-violet-600);
+  --bb-sidebar-pr-alert: var(--bb-sidebar-red-600);
+  --bb-sidebar-pr-open: var(--bb-sidebar-emerald-600);
+}
+
+.dark {
+  --bb-sidebar-tone-error: var(--bb-sidebar-red-300);
+  --bb-sidebar-tone-pending: var(--bb-sidebar-indigo-300);
+  --bb-sidebar-tone-success: var(--bb-sidebar-emerald-300);
+  --bb-sidebar-tone-working: var(--bb-sidebar-sky-400);
+  --bb-sidebar-tone-draft: var(--bb-sidebar-amber-300);
+
+  --bb-sidebar-woke: var(--bb-sidebar-amber-300);
+
+  --bb-sidebar-badge-failed-fg: var(--bb-sidebar-red-300);
+  --bb-sidebar-badge-failed-bg: color-mix(in oklab, var(--bb-sidebar-red-950) 60%, transparent);
+  --bb-sidebar-badge-needs-you-fg: var(--bb-sidebar-amber-300);
+  --bb-sidebar-badge-needs-you-bg: color-mix(in oklab, var(--bb-sidebar-amber-950) 60%, transparent);
+  --bb-sidebar-badge-done-fg: var(--bb-sidebar-emerald-300);
+  --bb-sidebar-badge-done-bg: color-mix(in oklab, var(--bb-sidebar-emerald-950) 60%, transparent);
+  --bb-sidebar-badge-working-fg: var(--bb-sidebar-sky-300);
+  --bb-sidebar-badge-working-bg: color-mix(in oklab, var(--bb-sidebar-sky-950) 60%, transparent);
+
+  /*
+   * amber-950 at 30% was a 1.03:1 luminance step off the sidebar — the row
+   * read by hue alone. 60% matches the child badge's tint and a 2px inset
+   * rule down the leading edge carries where the fill cannot.
+   */
+  --bb-sidebar-needs-you-tint: color-mix(in oklab, var(--bb-sidebar-amber-950) 60%, transparent);
+  --bb-sidebar-needs-you-tint-hover: color-mix(in oklab, var(--bb-sidebar-amber-950) 80%, transparent);
+  --bb-sidebar-needs-you-accent: color-mix(in oklab, var(--bb-sidebar-amber-300) 55%, transparent);
+
+  --bb-sidebar-settle-active: var(--bb-sidebar-emerald-300);
+
+  --bb-sidebar-pr-merged: color-mix(in oklab, var(--bb-sidebar-violet-300) 90%, transparent);
+  --bb-sidebar-pr-alert: color-mix(in oklab, var(--bb-sidebar-red-300) 90%, transparent);
+  --bb-sidebar-pr-open: color-mix(in oklab, var(--bb-sidebar-emerald-300) 90%, transparent);
+}
+
+/*
+ * A provider logo is drawn once per theme tint, because the tints are provider
+ * data rather than CSS, so the pair has to be swapped by visibility. These
+ * replace `dark:hidden` / `hidden dark:block`; the `hidden` in the markup
+ * still supplies the light default.
+ */
+.dark .bb-sidebar-theme-light-only {
+  display: none;
+}
+
+.dark .bb-sidebar-theme-dark-only {
+  display: block;
+}
+
+.light .bb-sidebar-theme-light-only {
+  display: block;
+}
+
+.light .bb-sidebar-theme-dark-only {
+  display: none;
+}

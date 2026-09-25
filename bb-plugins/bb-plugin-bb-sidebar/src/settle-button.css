@@ -1,0 +1,82 @@
+.bb-sidebar-settle-sparkle {
+  position: absolute;
+  width: 19%;
+  height: 19%;
+  min-width: 4px;
+  min-height: 4px;
+  background: currentColor;
+  clip-path: polygon(50% 0, 62% 37%, 100% 50%, 62% 62%, 50% 100%, 37% 62%, 0 50%, 37% 37%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.bb-sidebar-settle-sparkle:nth-of-type(1) {
+  top: -17%;
+  right: -12%;
+  --sparkle-delay: 0ms;
+  --sparkle-x: 3px;
+  --sparkle-y: -3px;
+}
+
+.bb-sidebar-settle-sparkle:nth-of-type(2) {
+  top: 26%;
+  right: -25%;
+  width: 14%;
+  height: 14%;
+  --sparkle-delay: 100ms;
+  --sparkle-x: 4px;
+  --sparkle-y: 0px;
+}
+
+.bb-sidebar-settle-sparkle:nth-of-type(3) {
+  bottom: -18%;
+  right: 9%;
+  --sparkle-delay: 160ms;
+  --sparkle-x: 2px;
+  --sparkle-y: 3px;
+}
+
+.bb-sidebar-settle-sparkle:nth-of-type(4) {
+  bottom: 2%;
+  left: -23%;
+  width: 15%;
+  height: 15%;
+  --sparkle-delay: 70ms;
+  --sparkle-x: -3px;
+  --sparkle-y: 2px;
+}
+
+.bb-sidebar-settle-sparkle:nth-of-type(5) {
+  top: -21%;
+  left: 9%;
+  width: 14%;
+  height: 14%;
+  --sparkle-delay: 130ms;
+  --sparkle-x: -2px;
+  --sparkle-y: -3px;
+}
+
+.bb-sidebar-settle:is(:hover, :focus-visible) .bb-sidebar-settle-sparkle {
+  opacity: 0.85;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .bb-sidebar-settle:is(:hover, :focus-visible) .bb-sidebar-settle-sparkle {
+    animation: bb-sidebar-settle-sparkle 750ms var(--sparkle-delay) ease-out both;
+  }
+}
+
+@keyframes bb-sidebar-settle-sparkle {
+  0% {
+    opacity: 0;
+    transform: scale(0.15) rotate(-35deg);
+  }
+  40% {
+    opacity: 1;
+    transform: translate(var(--sparkle-x), var(--sparkle-y)) scale(1.45) rotate(15deg);
+  }
+  100% {
+    opacity: 0.85;
+    transform: translate(var(--sparkle-x), var(--sparkle-y)) scale(0.9) rotate(45deg);
+  }
+}
