@@ -6,6 +6,8 @@ import {
   ArrowTurnBackwardIcon,
   ArrowUp01Icon,
   ArrowUpDownIcon,
+  BubbleChatIcon,
+  BubbleChatNotificationIcon,
   CancelCircleIcon,
   Car05Icon,
   CheckListIcon,
@@ -36,6 +38,8 @@ import { cn } from "../lib/utils";
 const ICON_MAP = {
   ArrowTurnBackward: ArrowTurnBackwardIcon,
   ArrowUpDown: ArrowUpDownIcon,
+  BubbleChat: BubbleChatIcon,
+  BubbleChatNotification: BubbleChatNotificationIcon,
   Car: Car05Icon,
   Check: Tick02Icon,
   ChevronDown: ArrowDown01Icon,
