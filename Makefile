@@ -7,8 +7,9 @@
 PYTHON := python3
 BUILD_SCRIPT := $(CURDIR)/scripts/build.py
 FORCE_FLAG := $(if $(FORCE),--force,)
+DOTFILES_ARGS ?=
 
-.PHONY: all install install-non-interactive install-skills install-amp-plugins install-extensions install-prompts install-themes amp-plugin-types amp-plugin-check package-manager-security-config build clean help submodule-init plugin-update check-python
+.PHONY: all install install-non-interactive dotfiles dotfiles-clean install-skills install-amp-plugins install-extensions install-prompts install-themes amp-plugin-types amp-plugin-check package-manager-security-config build clean help submodule-init plugin-update check-python
 
 all: help
 
@@ -16,9 +17,12 @@ help:
 	@echo "Agents - Skills, Prompt Templates, and Extensions Installer"
 	@echo ""
 	@echo "Usage:"
-	@echo "  make install                 Install agent artifacts and machine dotfiles"
+	@echo "  make install                 Install agent artifacts"
+	@echo "  make install DOTFILES=1      Install agent artifacts and machine dotfiles"
 	@echo "  make install FORCE=1         Claim existing unmanaged paths that match managed artifacts"
 	@echo "  make install-non-interactive Install for headless/automated environments (skips interactive extensions)"
+	@echo "  make dotfiles                Install machine dotfiles (auto-detects Omarchy)"
+	@echo "  make dotfiles-clean          Remove machine dotfile links"
 	@echo "  make install-skills          Install skills only (Amp, Claude Code, Pi agent)"
 	@echo "  make install-amp-plugins     Install Amp plugins from amp-plugins/"
 	@echo "  make install-extensions      Install extensions only (Pi agent)"
@@ -41,13 +45,27 @@ check-python:
 
 install: check-python
 	@$(PYTHON) "$(BUILD_SCRIPT)" install $(FORCE_FLAG)
-	@$(CURDIR)/scripts/dotfiles.sh auto
+ifneq ($(filter 1 true yes,$(DOTFILES)),)
+	@$(CURDIR)/scripts/dotfiles.sh auto $(DOTFILES_ARGS)
 	@echo "All skills, prompt templates, themes, extensions, Amp plugins, and machine dotfiles installed"
+else
+	@echo "All skills, prompt templates, themes, extensions, and Amp plugins installed"
+endif
 
 install-non-interactive: check-python
 	@$(PYTHON) "$(BUILD_SCRIPT)" install --non-interactive $(FORCE_FLAG)
-	@$(CURDIR)/scripts/dotfiles.sh auto --skip-packages --skip-shell
+ifneq ($(filter 1 true yes,$(DOTFILES)),)
+	@$(CURDIR)/scripts/dotfiles.sh auto --skip-packages --skip-shell $(DOTFILES_ARGS)
 	@echo "All skills, prompt templates, themes, extensions, Amp plugins, and machine dotfiles installed (non-interactive mode)"
+else
+	@echo "All skills, prompt templates, themes, extensions, and Amp plugins installed (non-interactive mode)"
+endif
+
+dotfiles:
+	@$(CURDIR)/scripts/dotfiles.sh auto $(DOTFILES_ARGS)
+
+dotfiles-clean:
+	@$(CURDIR)/scripts/dotfiles.sh clean
 
 submodule-init:
 	@$(PYTHON) "$(BUILD_SCRIPT)" submodule-init

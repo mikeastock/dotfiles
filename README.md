@@ -12,9 +12,10 @@ Install [mise](https://mise.jdx.dev/) 2026.9.2+ first (`curl https://mise.run | 
 git clone https://github.com/mikeastock/dotfiles.git ~/code/personal/dotfiles
 cd ~/code/personal/dotfiles
 make install
+make dotfiles
 ```
 
-`make install` installs agent skills and applies machine files with `mise -E home bootstrap`: shared links, Ghostty/Alacritty/Starship, brew packages (`tmux`, `tmux-mem-cpu-load`, `tree-sitter-cli`), and macOS screenshot defaults (skipped on Linux).
+`make install` installs agent skills, prompts, themes, extensions, and Amp plugins. `make dotfiles` (or `make install DOTFILES=1`) applies machine files with `mise -E home bootstrap`: shared links, Ghostty/Alacritty/Starship, brew packages (`tmux`, `tmux-mem-cpu-load`, `tree-sitter-cli`), and macOS screenshot defaults (skipped on Linux).
 
 ### Omarchy
 
@@ -22,13 +23,14 @@ make install
 git clone https://github.com/mikeastock/dotfiles.git ~/code/personal/dotfiles
 cd ~/code/personal/dotfiles
 make install
+make dotfiles
 ```
 
-On Omarchy, `make install` uses `mise -E omarchy bootstrap --force-dotfiles`. It claims home/config links around existing Omarchy files, installs `fish` and `atuin` with `omarchy pkg add`, and switches the login shell to fish. It leaves Ghostty, Alacritty, and Starship on Omarchy's copies, and removes `~/.config/tmux/tmux.conf` so `~/.tmux.conf` is the only tmux config. A post-update hook drops that XDG file again if `omarchy update` puts it back.
+On Omarchy, `make dotfiles` (or `make install DOTFILES=1`) uses `mise -E omarchy bootstrap --force-dotfiles`. It claims home/config links around existing Omarchy files, installs `fish` and `atuin` with `omarchy pkg add`, and switches the login shell to fish. It leaves Ghostty, Alacritty, and Starship on Omarchy's copies, and removes `~/.config/tmux/tmux.conf` so `~/.tmux.conf` is the only tmux config. A post-update hook drops that XDG file again if `omarchy update` puts it back.
 
 Do not run **Update → Config → Tmux** in the Omarchy menu. Log out once after the first install so the fish login shell applies.
 
-A bare `mise dot apply` from this repo skips the environment-specific files. Unapply with `scripts/dotfiles.sh clean`.
+A bare `mise dot apply` from this repo skips the environment-specific files. Unapply with `make dotfiles-clean` (or `scripts/dotfiles.sh clean`).
 
 ## Agent Skills / Extensions Tooling
 
@@ -43,7 +45,10 @@ This repo also contains reusable skills, prompt templates, and extensions for Am
 ### Agent commands
 
 ```bash
-make install                 # agent artifacts plus machine dotfiles (auto-detects Omarchy)
+make install                 # agent artifacts only (skills, prompts, themes, extensions, Amp plugins)
+make install DOTFILES=1      # agent artifacts plus machine dotfiles (auto-detects Omarchy)
+make dotfiles                # machine dotfiles only (auto-detects Omarchy)
+make dotfiles-clean          # remove machine dotfile links
 make install-skills
 make install-amp-plugins
 make install-prompts
@@ -84,7 +89,7 @@ A plugin's bb id is its `package.json` name with the `bb-plugin-` prefix strippe
 
 ### Amp / Codex / OpenCode / Pi configs
 
-These are copied by `make install`:
+These are copied by `make dotfiles` (or `make install DOTFILES=1`):
 
 - `.config/amp/settings.json` → `~/.config/amp/settings.json`
 - `.config/opencode/opencode.jsonc` → `~/.config/opencode/opencode.jsonc`
@@ -208,7 +213,7 @@ sudo apt install -y fish tmux ripgrep fd-find xclip wl-clipboard xsel fonts-fira
 - Herdr config is symlinked to `~/.config/herdr/config.toml` and uses tmux-like `Ctrl-a` prefix bindings
 - `tmux-mem-cpu-load` is optional; the tmux status bar falls back to `uptime`
 - Install the configured fonts (`Fira Code` / `FiraCode Nerd Font`) if you want terminal rendering to match macOS
-- On macOS/Ubuntu, `make install` installs `tmux`, `tmux-mem-cpu-load`, and `tree-sitter-cli` through mise's brew bootstrap packages
+- On macOS/Ubuntu, `make dotfiles` (or `make install DOTFILES=1`) installs `tmux`, `tmux-mem-cpu-load`, and `tree-sitter-cli` through mise's brew bootstrap packages
 
 ## Omarchy notes
 

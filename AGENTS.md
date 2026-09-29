@@ -81,7 +81,10 @@ make install
 ### Common Commands
 | Command | Description |
 |---------|-------------|
-| `make install` | Build and install skills, extensions, and machine dotfiles |
+| `make install` | Build and install skills, extensions, prompts, themes, and Amp plugins |
+| `make install DOTFILES=1` | Build and install agent artifacts plus machine dotfiles |
+| `make dotfiles` | Install machine dotfiles (auto-detects Omarchy) |
+| `make dotfiles-clean` | Remove machine dotfile links |
 | `make install-non-interactive` | Install for headless/automated environments (skips interactive extensions and overrides) |
 | `make build` | Build skills to `build/` without installing |
 | `make install-skills` | Install skills only |

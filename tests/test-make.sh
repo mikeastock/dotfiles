@@ -15,7 +15,10 @@ reset_install_state() {
         "$SANDBOX_DIR/.pi/agent/extensions" \
         "$SANDBOX_DIR/.pi/agent/prompts" \
         "$SANDBOX_DIR/.pi/agent/themes" \
-        "$SANDBOX_DIR/.local/state/dotfiles"
+        "$SANDBOX_DIR/.local/state/dotfiles" \
+        "$SANDBOX_DIR/.gitconfig" \
+        "$SANDBOX_DIR/.tmux.conf" \
+        "$SANDBOX_DIR/.config/starship.toml"
 }
 
 test_make_build() {
@@ -340,6 +343,54 @@ test_package_manager_security_config() {
     assert_output_contains "$uv_config" "native-tls = true" "uv preserves existing config"
 }
 
+test_make_install_default_omits_dotfiles() {
+    log_test "Testing make install omits dotfiles by default"
+    cd "$PROJECT_DIR"
+    reset_install_state
+
+    HOME="$SANDBOX_DIR" XDG_STATE_HOME="$SANDBOX_DIR/.local/state" make install >/dev/null
+
+    assert_file_exists "$SANDBOX_DIR/.claude/skills/zmx/SKILL.md" "Agent skills are installed"
+    assert_file_exists "$SANDBOX_DIR/.pi/agent/extensions/wafer/index.ts" "Pi extensions are installed"
+    assert_file_not_exists "$SANDBOX_DIR/.gitconfig" "Machine dotfiles are not installed by default"
+    assert_file_not_exists "$SANDBOX_DIR/.tmux.conf" "tmux config is not installed by default"
+    assert_file_not_exists "$SANDBOX_DIR/.config/starship.toml" "Starship config is not installed by default"
+}
+
+test_make_install_non_interactive_omits_dotfiles() {
+    log_test "Testing make install-non-interactive omits dotfiles by default"
+    cd "$PROJECT_DIR"
+    reset_install_state
+
+    HOME="$SANDBOX_DIR" XDG_STATE_HOME="$SANDBOX_DIR/.local/state" make install-non-interactive >/dev/null
+
+    assert_file_exists "$SANDBOX_DIR/.claude/skills/zmx/SKILL.md" "Agent skills are installed in non-interactive mode"
+    assert_file_not_exists "$SANDBOX_DIR/.gitconfig" "Machine dotfiles are not installed in non-interactive mode by default"
+}
+
+test_make_install_with_dotfiles() {
+    log_test "Testing make install DOTFILES=1 installs machine dotfiles"
+    cd "$PROJECT_DIR"
+    reset_install_state
+
+    HOME="$SANDBOX_DIR" XDG_STATE_HOME="$SANDBOX_DIR/.local/state" DOTFILES_OMARCHY=0 make install DOTFILES=1 DOTFILES_ARGS="--skip-packages" >/dev/null
+
+    assert_file_exists "$SANDBOX_DIR/.claude/skills/zmx/SKILL.md" "Agent skills are installed"
+    assert_file_exists "$SANDBOX_DIR/.gitconfig" "Machine dotfiles are installed when DOTFILES=1"
+    assert_file_exists "$SANDBOX_DIR/.tmux.conf" "tmux config is installed when DOTFILES=1"
+}
+
+test_make_dotfiles() {
+    log_test "Testing make dotfiles installs machine dotfiles"
+    cd "$PROJECT_DIR"
+    reset_install_state
+
+    HOME="$SANDBOX_DIR" DOTFILES_OMARCHY=0 make dotfiles DOTFILES_ARGS="--skip-packages" >/dev/null
+
+    assert_file_exists "$SANDBOX_DIR/.gitconfig" "Machine dotfiles are installed by make dotfiles"
+    assert_file_exists "$SANDBOX_DIR/.tmux.conf" "tmux config is installed by make dotfiles"
+}
+
 main() {
     echo -e "${YELLOW}========================================${NC}"
     echo -e "${YELLOW}Build and Install Test Suite${NC}"
@@ -361,6 +412,10 @@ main() {
     test_make_install_prompts_and_themes
     test_make_clean
     test_package_manager_security_config
+    test_make_install_default_omits_dotfiles
+    test_make_install_non_interactive_omits_dotfiles
+    test_make_install_with_dotfiles
+    test_make_dotfiles
 
     print_summary
 }
