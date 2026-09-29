@@ -1,12 +1,12 @@
 {
-  "defaultProvider": "openai-codex",
+  "defaultProvider": "openai",
   "defaultModel": "gpt-5.6-luna",
   "hideThinkingBlock": false,
   "defaultThinkingLevel": "high",
   "steeringMode": "all",
   "doubleEscapeAction": "tree",
   "enabledModels": [
-    "openai-codex/gpt-6-astra",
+    "openai/gpt-6-astra",
     "openrouter/meta/muse-spark-1.3",
     "google/gemini-3.8-flash",
     "openrouter/google/gemini-3.8-flash",
@@ -24,8 +24,8 @@
   "transport": "websocket",
   "quietStartup": true,
   "enableInstallTelemetry": false,
-  "pi-codex-fast": {
-    "enabled": true
+  "openai-fast": {
+    "mode": "fast"
   },
   "tuiMode": "regular"
 }

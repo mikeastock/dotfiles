@@ -162,7 +162,7 @@ Pi settings and models are copied by `make install`. Extensions, prompts, and th
 - `wafer` — [Wafer Serverless provider](pi-extensions/wafer/README.md) with eight catalog models, reasoning controls, and `WAFER_API_KEY` authentication
 
 - `handoff` and `session-query` — vendored from `buildrtech/dotagents` commit `a484ad4`
-- `openai-fast` — mirrors `calesennett/pi-codex-fast`; `/codex-fast` toggles priority service-tier requests for supported OpenAI Codex models, shows an inline `⚡` beside the model without adding a status line, and stores state under `pi-codex-fast.enabled` in Pi settings
+- `openai-fast` — [OpenAI Fast and Ultrafast service tiers](pi-extensions/openai-fast/README.md); `/openai-fast [off|fast|ultrafast|status]` selects speed for supported `openai` models, with `--fast`/`--ultrafast` startup flags and inline `⚡`/`⚡⚡` indicators. Settings use `openai-fast.mode`; replaces the Codex-only command and boolean setting.
 - `pi-prompt-shelf` — local copy of `tanishqkancharla/pi-prompt-shelf`; shelves editor prompts per session with shortcuts and `/shelf`
 - `full-read-for-paths` — upgrades partial `read` calls to full reads for configured resource-file paths
 - `revdiff` — adds `/revdiff` to launch the revdiff TUI and send captured annotations back to Pi

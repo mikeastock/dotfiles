@@ -2,50 +2,74 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { visibleWidth } from "@earendil-works/pi-tui";
 
-const SETTINGS_KEY = "pi-codex-fast";
-const PRIORITY_MODELS = [
-	"openai-codex/gpt-5.4",
-	"openai-codex/gpt-5.5",
-	"openai-codex/gpt-5.6-sol",
-	"openai-codex/gpt-5.6-terra",
-	"openai-codex/gpt-5.6-luna",
-];
+const SETTINGS_KEY = "openai-fast";
+type SpeedMode = "off" | "fast" | "ultrafast";
+type OpenAIModel = Pick<NonNullable<ExtensionContext["model"]>, "provider" | "id">;
 
-type FooterModel = NonNullable<ExtensionContext["model"]> & {
-	reasoning?: boolean;
-};
-
-type FooterComponentLike = {
-	prototype: {
-		render(width: number): string[];
-	};
-};
-
-let originalFooterRender: ((width: number) => string[]) | undefined;
-let patchedFooterComponent: FooterComponentLike | undefined;
+// Explicit capabilities, not a GPT prefix match: new models do not necessarily support these tiers.
+// https://developers.openai.com/api/docs/guides/fast-mode
+const FAST_MODELS = new Set([
+	"gpt-5.4",
+	"gpt-5.5",
+	"gpt-5.6-sol",
+	"gpt-5.6-terra",
+	"gpt-5.6-luna",
+	"gpt-6-astra",
+	"gpt-6-sol",
+	"gpt-6-luna",
+	"gpt-6.1-sol",
+]);
+// https://developers.openai.com/api/docs/guides/ultrafast-mode
+// GPT-5.6 Sol requires preview access; GPT-6 Astra is available at limited API rate limits.
+const ULTRAFAST_MODELS = new Set(["gpt-5.6-sol", "gpt-6-astra"]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function currentModelName(ctx: Pick<ExtensionContext, "model">): string | undefined {
-	return ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : undefined;
+function isSpeedMode(value: unknown): value is SpeedMode {
+	return value === "off" || value === "fast" || value === "ultrafast";
 }
 
-function supportsPriorityServiceTier(ctx: Pick<ExtensionContext, "model">): boolean {
-	const modelName = currentModelName(ctx);
-	return modelName !== undefined && PRIORITY_MODELS.includes(modelName);
+function serviceTier(model: OpenAIModel | undefined, mode: SpeedMode): "fast" | "ultrafast" | undefined {
+	if (!model || model.provider !== "openai" || mode === "off") return;
+	const supportedModels = mode === "ultrafast" ? ULTRAFAST_MODELS : FAST_MODELS;
+	return supportedModels.has(model.id) ? mode : undefined;
 }
+
+function applyServiceTier(payload: unknown, model: OpenAIModel | undefined, mode: SpeedMode): unknown {
+	const tier = serviceTier(model, mode);
+	if (!tier || !isRecord(payload)) return;
+	return { ...payload, service_tier: tier };
+}
+
+function commandMode(args: string, current: SpeedMode): SpeedMode | "status" {
+	const value = args.trim().toLowerCase();
+	if (!value) return current === "off" ? "fast" : "off";
+	if (value === "status" || isSpeedMode(value)) return value;
+	throw new Error("Usage: /openai-fast [off|fast|ultrafast|status]");
+}
+
+function startupMode(persisted: SpeedMode | undefined, fast: boolean, ultrafast: boolean): SpeedMode {
+	if (fast && ultrafast) throw new Error("Choose either --fast or --ultrafast, not both.");
+	if (ultrafast) return "ultrafast";
+	if (fast) return "fast";
+	return persisted ?? "off";
+}
+
+type FooterModel = NonNullable<ExtensionContext["model"]> & { reasoning?: boolean };
+type FooterComponentLike = { prototype: { render(width: number): string[] } };
+let originalFooterRender: ((width: number) => string[]) | undefined;
+let patchedFooterComponent: FooterComponentLike | undefined;
 
 function buildFooterRightSideCandidates(model: FooterModel, thinkingLevel: string | undefined): string[] {
 	let rightSideWithoutProvider = model.id;
-
 	if (model.reasoning) {
 		const level = thinkingLevel || "off";
 		rightSideWithoutProvider = level === "off" ? `${model.id} • thinking off` : `${model.id} • ${level}`;
 	}
-
 	return [`(${model.provider}) ${rightSideWithoutProvider}`, rightSideWithoutProvider];
 }
 
@@ -55,49 +79,37 @@ function injectFastIntoFooterLine(
 	thinkingLevel: string | undefined,
 	indicator: string,
 ): string {
-	const candidates = buildFooterRightSideCandidates(model, thinkingLevel);
-	const suffix = ` • ${indicator}`;
-
-	for (const candidate of candidates) {
+	for (const candidate of buildFooterRightSideCandidates(model, thinkingLevel)) {
 		const candidateStart = line.lastIndexOf(candidate);
 		if (candidateStart === -1) continue;
-
 		let paddingStart = candidateStart;
 		while (paddingStart > 0 && line[paddingStart - 1] === " ") paddingStart -= 1;
-
-		const availableWidth = candidateStart - paddingStart + candidate.length;
-		const indicatorWidth = indicator === "⚡" ? 2 : [...indicator].length;
-		const desiredWidth = candidate.length + 3 + indicatorWidth;
+		const availableWidth = candidateStart - paddingStart + visibleWidth(candidate);
+		const desiredWidth = visibleWidth(`${candidate} • ${indicator}`);
 		if (desiredWidth > availableWidth) return line;
-
 		const prefix = line.slice(0, paddingStart);
 		const suffixAnsi = line.slice(candidateStart + candidate.length);
 		const nextPadding = " ".repeat(availableWidth - desiredWidth);
-		return `${prefix}${nextPadding}${candidate}${suffix}${suffixAnsi}`;
+		return `${prefix}${nextPadding}${candidate} • ${indicator}${suffixAnsi}`;
 	}
-
 	return line;
 }
 
 async function patchFooterRender(getIndicator: (model: FooterModel) => string | undefined): Promise<void> {
 	if (patchedFooterComponent) return;
-
 	const { FooterComponent } = await import("@earendil-works/pi-coding-agent");
 	originalFooterRender = FooterComponent.prototype.render;
 	patchedFooterComponent = FooterComponent;
 	FooterComponent.prototype.render = function renderWithFast(width: number): string[] {
 		const lines = originalFooterRender?.call(this, width) ?? [];
 		if (lines.length < 2) return lines;
-
 		const session = (this as unknown as {
 			session?: { state?: { model?: FooterModel; thinkingLevel?: string } };
 		}).session;
 		const model = session?.state?.model;
 		if (!model) return lines;
-
 		const indicator = getIndicator(model);
 		if (!indicator) return lines;
-
 		const nextLines = [...lines];
 		nextLines[1] = injectFastIntoFooterLine(lines[1] ?? "", model, session?.state?.thinkingLevel, indicator);
 		return nextLines;
@@ -106,29 +118,18 @@ async function patchFooterRender(getIndicator: (model: FooterModel) => string | 
 
 function unpatchFooterRender(): void {
 	if (!patchedFooterComponent || !originalFooterRender) return;
-
 	patchedFooterComponent.prototype.render = originalFooterRender;
 	patchedFooterComponent = undefined;
 	originalFooterRender = undefined;
-}
-
-function asObject(value: unknown): Record<string, unknown> | null {
-	if (!isRecord(value)) return null;
-	return value;
 }
 
 function globalSettingsPath(): string {
 	return join(process.env.PI_CODING_AGENT_DIR ?? join(homedir(), ".pi", "agent"), "settings.json");
 }
 
-function projectSettingsPath(cwd: string): string {
-	return join(cwd, ".pi", "settings.json");
-}
-
 async function readSettings(path: string): Promise<Record<string, unknown>> {
 	try {
-		const content = await readFile(path, "utf8");
-		const settings = JSON.parse(content) as unknown;
+		const settings: unknown = JSON.parse(await readFile(path, "utf8"));
 		return isRecord(settings) ? settings : {};
 	} catch (error) {
 		if (isRecord(error) && error.code === "ENOENT") return {};
@@ -136,143 +137,102 @@ async function readSettings(path: string): Promise<Record<string, unknown>> {
 	}
 }
 
-function mergeSettings(base: Record<string, unknown>, overrides: Record<string, unknown>): Record<string, unknown> {
-	const merged: Record<string, unknown> = { ...base };
-	for (const [key, overrideValue] of Object.entries(overrides)) {
-		const baseValue = merged[key];
-		if (isRecord(baseValue) && isRecord(overrideValue)) {
-			merged[key] = mergeSettings(baseValue, overrideValue);
-			continue;
-		}
-		merged[key] = overrideValue;
+async function loadPersistedMode(cwd: string): Promise<SpeedMode | undefined> {
+	const global = (await readSettings(globalSettingsPath()))[SETTINGS_KEY];
+	const project = (await readSettings(join(cwd, ".pi", "settings.json")))[SETTINGS_KEY];
+	const mode = isRecord(project) && "mode" in project ? project.mode : isRecord(global) ? global.mode : undefined;
+	if (mode !== undefined && !isSpeedMode(mode)) {
+		throw new Error("openai-fast.mode must be off, fast, or ultrafast.");
 	}
-	return merged;
+	return mode;
 }
 
-async function loadPersistedFastMode(cwd: string): Promise<boolean | undefined> {
-	const settings = mergeSettings(
-		await readSettings(globalSettingsPath()),
-		await readSettings(projectSettingsPath(cwd)),
-	);
-	const extensionSettings = asObject(settings[SETTINGS_KEY]);
-	return typeof extensionSettings?.enabled === "boolean" ? extensionSettings.enabled : undefined;
-}
-
-async function persistFastMode(enabled: boolean): Promise<void> {
+async function persistMode(mode: SpeedMode): Promise<void> {
 	const path = globalSettingsPath();
-	const globalSettings = await readSettings(path);
-	const extensionSettings = asObject(globalSettings[SETTINGS_KEY]) ?? {};
-	globalSettings[SETTINGS_KEY] = {
-		...extensionSettings,
-		enabled,
-	};
+	const settings = await readSettings(path);
+	const extensionSettings = settings[SETTINGS_KEY];
+	settings[SETTINGS_KEY] = { ...(isRecord(extensionSettings) ? extensionSettings : {}), mode };
 	await mkdir(dirname(path), { recursive: true });
-	await writeFile(path, `${JSON.stringify(globalSettings, null, 2)}\n`);
+	await writeFile(path, `${JSON.stringify(settings, null, 2)}\n`);
 }
 
-export default function codexFastExtension(pi: ExtensionAPI): void {
-	let fastModeEnabled = false;
+export default function openaiFastExtension(pi: ExtensionAPI): void {
+	let mode: SpeedMode = "off";
 	let settingsWriteQueue: Promise<void> = Promise.resolve();
-
-	function persistState(enabled: boolean, ctx: ExtensionContext): void {
-		settingsWriteQueue = settingsWriteQueue
-			.catch(() => undefined)
-			.then(() => persistFastMode(enabled));
-
-		void settingsWriteQueue.catch((error) => {
-			if (!ctx.hasUI) return;
-			const message = error instanceof Error ? error.message : String(error);
-			ctx.ui.notify(`pi-codex-fast: failed to write settings: ${message}`, "warning");
-		});
-	}
 
 	function notifyState(ctx: ExtensionContext): void {
 		if (!ctx.hasUI) return;
-		if (!fastModeEnabled) {
-			ctx.ui.notify("Fast mode disabled. Requests will use the default service tier.", "info");
+		if (mode === "off") {
+			ctx.ui.notify("OpenAI speed override disabled. Requests keep their configured service tier.", "info");
 			return;
 		}
-
-		const modelLabel = currentModelName(ctx) ?? "no active model";
-		if (supportsPriorityServiceTier(ctx)) {
-			ctx.ui.notify(`Fast mode enabled (${modelLabel}).`, "info");
+		const modelLabel = ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : "no active model";
+		if (!serviceTier(ctx.model, mode)) {
+			ctx.ui.notify(`${mode} enabled but inactive (${modelLabel}); no supported service tier requested.`, "warning");
 			return;
 		}
-
-		ctx.ui.notify(`Fast mode enabled but inactive (${modelLabel}).`, "info");
-	}
-
-	function setFastMode(enabled: boolean, ctx: ExtensionContext, options?: { persist?: boolean; notify?: boolean }): void {
-		fastModeEnabled = enabled;
-		if (options?.persist !== false) persistState(enabled, ctx);
-		if (options?.notify !== false) notifyState(ctx);
-	}
-
-	async function reloadFastModeState(ctx: ExtensionContext, options?: { includeStartupFlag?: boolean }): Promise<void> {
-		fastModeEnabled = false;
-
-		try {
-			const persistedEnabled = await loadPersistedFastMode(ctx.cwd);
-			if (typeof persistedEnabled === "boolean") {
-				fastModeEnabled = persistedEnabled;
-			}
-		} catch (error) {
-			if (ctx.hasUI) {
-				const message = error instanceof Error ? error.message : String(error);
-				ctx.ui.notify(`pi-codex-fast: failed to load settings: ${message}`, "warning");
-			}
-		}
-
-		if (options?.includeStartupFlag && pi.getFlag("fast") === true) {
-			fastModeEnabled = true;
+		ctx.ui.notify(`${mode} enabled (${modelLabel}). Higher usage costs apply.`, "info");
+		if (mode === "ultrafast") {
+			ctx.ui.notify(
+				"Ultrafast requires OpenAI API access (GPT-5.6 Sol: limited preview). ChatGPT-subscription access is unconfirmed. Pi 0.99.1 does not account for Ultrafast pricing; its displayed cost may be too low.",
+				"warning",
+			);
 		}
 	}
 
-	pi.registerFlag("fast", {
-		description: "Start with fast mode enabled",
-		type: "boolean",
-		default: false,
-	});
-
-	pi.registerCommand("codex-fast", {
-		description: "Toggle fast mode",
-		handler: async (_args, ctx) => {
-			setFastMode(!fastModeEnabled, ctx);
+	pi.registerFlag("fast", { description: "Start with OpenAI Fast mode enabled", type: "boolean", default: false });
+	pi.registerFlag("ultrafast", { description: "Start with OpenAI Ultrafast mode enabled", type: "boolean", default: false });
+	pi.registerCommand("openai-fast", {
+		description: "Set OpenAI speed: off, fast, ultrafast, or status (no argument toggles fast/off)",
+		handler: async (args, ctx) => {
+			const next = commandMode(args, mode);
+			if (next !== "status") {
+				mode = next;
+				settingsWriteQueue = settingsWriteQueue.catch(() => undefined).then(() => persistMode(next));
+				try {
+					await settingsWriteQueue;
+				} catch (error) {
+					if (ctx.hasUI) ctx.ui.notify(`openai-fast: failed to write settings: ${String(error)}`, "warning");
+					else throw error;
+				}
+			}
+			notifyState(ctx);
 		},
 	});
 
 	pi.on("session_start", async (_event, ctx) => {
-		await reloadFastModeState(ctx, { includeStartupFlag: true });
-		await patchFooterRender((model) => {
-			if (!fastModeEnabled || !supportsPriorityServiceTier({ model })) return;
-			return "⚡";
-		});
+		mode = "off";
+		let persisted: SpeedMode | undefined;
+		try {
+			persisted = await loadPersistedMode(ctx.cwd);
+		} catch (error) {
+			if (ctx.hasUI) ctx.ui.notify(`openai-fast: failed to load settings: ${String(error)}`, "warning");
+			else throw error;
+		}
+		mode = startupMode(persisted, pi.getFlag("fast") === true, pi.getFlag("ultrafast") === true);
+		if (ctx.mode === "tui") {
+			await patchFooterRender((model) => {
+				const tier = serviceTier(model, mode);
+				return tier === "ultrafast" ? "⚡⚡" : tier === "fast" ? "⚡" : undefined;
+			});
+		}
+		if (mode !== "off") notifyState(ctx);
 	});
-
 	pi.on("session_shutdown", async () => {
+		await settingsWriteQueue.catch(() => undefined);
 		unpatchFooterRender();
 	});
-
-	pi.on("before_provider_request", (event, ctx) => {
-		if (!fastModeEnabled || !supportsPriorityServiceTier(ctx) || !isRecord(event.payload)) {
-			return;
-		}
-
-		return {
-			...event.payload,
-			service_tier: "priority",
-		};
-	});
+	pi.on("before_provider_request", (event, ctx) => applyServiceTier(event.payload, ctx.model, mode));
 }
 
 export const _test = {
-	PRIORITY_MODELS,
-	SETTINGS_KEY,
-	buildFooterRightSideCandidates,
+	FAST_MODELS,
+	ULTRAFAST_MODELS,
+	serviceTier,
+	applyServiceTier,
+	commandMode,
+	startupMode,
 	injectFastIntoFooterLine,
-	currentModelName,
-	supportsPriorityServiceTier,
-	mergeSettings,
-	loadPersistedFastMode,
-	persistFastMode,
+	loadPersistedMode,
+	persistMode,
 };
