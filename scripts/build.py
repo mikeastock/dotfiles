@@ -22,6 +22,9 @@ INTERACTIVE_EXTENSIONS = {
     "confirm-destructive",
 }
 
+# Plugins that require user interaction and should be skipped entirely in non-interactive mode
+INTERACTIVE_PLUGINS: set[str] = set()
+
 # Global flag for non-interactive mode
 NON_INTERACTIVE = False
 
