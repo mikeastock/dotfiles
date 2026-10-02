@@ -16,7 +16,7 @@
  * The generated prompt appears as a draft in the editor for review/editing.
  */
 
-import type { Message } from "@earendil-works/pi-ai";
+import type { Message, ProviderHeaders } from "@earendil-works/pi-ai";
 import { complete } from "@earendil-works/pi-ai/compat";
 import type {
 	ExtensionAPI,
@@ -83,7 +83,7 @@ Files involved:
 async function generateContextSummary(
 	model: any,
 	apiKey: string | undefined,
-	headers: Record<string, string> | undefined,
+	headers: ProviderHeaders | undefined,
 	messages: any[],
 	goal: string,
 	signal?: AbortSignal,

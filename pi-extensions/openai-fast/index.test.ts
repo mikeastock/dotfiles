@@ -23,17 +23,23 @@ async function sandbox() {
 }
 
 async function createSession(options: { fast?: boolean; ultrafast?: boolean; mode?: string } = {}) {
-	const { AuthStorage, createAgentSession, DefaultResourceLoader, ModelRegistry, SessionManager, SettingsManager } =
-		await import("@earendil-works/pi-coding-agent");
+	const { InMemoryCredentialStore, InMemoryModelsStore } = await import("@earendil-works/pi-ai");
+	const { createAgentSession, DefaultResourceLoader, ModelRuntime, SessionManager, SettingsManager } = await import(
+		"@earendil-works/pi-coding-agent"
+	);
 	const { agentDir, cwd } = await sandbox();
 	if (options.mode) {
 		await writeFile(join(agentDir, "settings.json"), JSON.stringify({ "openai-fast": { mode: options.mode } }));
 	}
 	const settingsManager = SettingsManager.inMemory();
-	const authStorage = AuthStorage.inMemory();
-	authStorage.setRuntimeApiKey("openai", "test-key-not-sent-to-any-provider");
-	const modelRegistry = ModelRegistry.inMemory(authStorage);
-	const model = modelRegistry.find("openai", "gpt-5.4");
+	const modelRuntime = await ModelRuntime.create({
+		credentials: new InMemoryCredentialStore(),
+		modelsPath: null,
+		modelsStore: new InMemoryModelsStore(),
+		refreshOnCreate: false,
+	});
+	await modelRuntime.setRuntimeApiKey("openai", "test-key-not-sent-to-any-provider");
+	const model = modelRuntime.getModel("openai", "gpt-5.4");
 	assert.ok(model);
 	const resourceLoader = new DefaultResourceLoader({
 		cwd,
@@ -52,8 +58,7 @@ async function createSession(options: { fast?: boolean; ultrafast?: boolean; mod
 		cwd,
 		agentDir,
 		model,
-		authStorage,
-		modelRegistry,
+		modelRuntime,
 		settingsManager,
 		resourceLoader,
 		sessionManager: SessionManager.inMemory(cwd),

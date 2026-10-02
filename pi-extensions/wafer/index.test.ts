@@ -1,16 +1,22 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { AuthStorage, ModelRegistry } from "@earendil-works/pi-coding-agent";
 import { waferProvider } from "./index.ts";
 
-function registry() {
-  const result = ModelRegistry.inMemory(AuthStorage.inMemory());
+async function runtime() {
+  const { InMemoryCredentialStore, InMemoryModelsStore } = await import("@earendil-works/pi-ai");
+  const { ModelRuntime } = await import("@earendil-works/pi-coding-agent");
+  const result = await ModelRuntime.create({
+    credentials: new InMemoryCredentialStore(),
+    modelsPath: null,
+    modelsStore: new InMemoryModelsStore(),
+    refreshOnCreate: false,
+  });
   result.registerProvider("wafer", waferProvider);
   return result;
 }
 
-test("Wafer catalog registers with the real Pi model registry", () => {
-  const models = registry().getAll().filter((model) => model.provider === "wafer");
+test("Wafer catalog registers with the real Pi model runtime", async () => {
+  const models = (await runtime()).getModels("wafer");
   assert.equal(models.length, 8);
   assert.equal(new Set(models.map((model) => model.id)).size, 8);
   for (const model of models) {
@@ -43,14 +49,13 @@ test("Wafer resolves its key from the environment without embedding credentials"
   const previous = process.env.WAFER_API_KEY;
   try {
     delete process.env.WAFER_API_KEY;
-    const models = registry();
-    const model = models.find("wafer", "Kimi-K3")!;
-    assert.equal(models.hasConfiguredAuth(model), false);
+    const models = await runtime();
+    const model = models.getModel("wafer", "Kimi-K3")!;
+    assert.equal(await models.checkAuth("wafer"), undefined);
     process.env.WAFER_API_KEY = "wafer-unit-test-key";
-    assert.equal(models.hasConfiguredAuth(model), true);
-    const auth = await models.getApiKeyAndHeaders(model);
-    assert.equal(auth.ok, true);
-    if (auth.ok) assert.equal(auth.apiKey, "wafer-unit-test-key");
+    assert.ok(await models.checkAuth("wafer"));
+    const auth = await models.getAuth(model);
+    assert.equal(auth?.auth.apiKey, "wafer-unit-test-key");
     assert.equal(waferProvider.apiKey, "$WAFER_API_KEY");
   } finally {
     if (previous === undefined) delete process.env.WAFER_API_KEY;
