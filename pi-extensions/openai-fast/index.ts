@@ -174,7 +174,7 @@ export default function openaiFastExtension(pi: ExtensionAPI): void {
 		ctx.ui.notify(`${mode} enabled (${modelLabel}). Higher usage costs apply.`, "info");
 		if (mode === "ultrafast") {
 			ctx.ui.notify(
-				"Ultrafast requires OpenAI API access (GPT-5.6 Sol: limited preview). ChatGPT-subscription access is unconfirmed. Pi 0.99.1 does not account for Ultrafast pricing; its displayed cost may be too low.",
+				"Ultrafast requires OpenAI API access (GPT-5.6 Sol: limited preview). ChatGPT-subscription access is unconfirmed. Pi (through 1.0.0) prices Ultrafast at the standard rate; its displayed cost is too low.",
 				"warning",
 			);
 		}
