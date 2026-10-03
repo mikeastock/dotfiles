@@ -130,6 +130,7 @@ Pi settings and models are copied by `make install`. Extensions, prompts, and th
 - `grok-driver` — headless Grok as implementation driver for frozen work orders, with the host agent as coordinator (complement of `grok-review`)
 - `writing-mike-ruby-style` — Mike's personal Ruby/Rails style (mirrors his canonical style rules)
 - `writing-pr` — concise PR titles and bodies with diagrams, code examples, and before/after evidence
+- `reddit-search` — Reddit community opinions through Gemini Google Search grounding, with resolved thread links and explicit summary attribution (`GEMINI_API_KEY`, Python stdlib only)
 - `prepare-branch-context` — read-only branch diff, commit, and PR context gathering skill vendored from `jnsahaj/skills`
 - `simplify` — code and comment simplification skill vendored from `bholmesdev/skills`, extended to cut over-engineering and needless defensiveness (explicit invocation only)
 - `unslop` — AI-writing cleanup and human-voice editing skill vendored from `cursor/plugins` commit `99559f2` (explicit invocation only)
@@ -186,6 +187,7 @@ dotfiles/
 ├── skills/                  # custom agent skills
 │   ├── agent-browser/       # fast browser automation CLI for AI agents
 │   ├── before-and-after/    # GitHub PR screenshot and video formatting
+│   ├── reddit-search/       # Gemini-grounded Reddit search and thread resolution
 │   ├── ui-recording-timeline/ # interactive UI recording paint timelines
 │   └── writing-pr/          # PR title and body guidance
 ├── configs/                 # shared AGENTS.md for Codex and Pi
