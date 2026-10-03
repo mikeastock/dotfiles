@@ -37,8 +37,6 @@ Skills are specialized instruction sets that guide AI agents through specific ta
 │   ├── test-amp-worktree.sh        # amp-worktree tests
 │   ├── test-technical-explainer-comic.sh
 │   ├── test-tmux-skill-scripts.sh
-│   ├── test-reddit-search.sh       # Gemini Reddit search contracts (offline)
-│   ├── test_reddit_search.py      # Stdlib unit, redirect, and install tests
 │   ├── *.test.ts                   # TypeScript tests (pnpm test)
 │   └── run-all.sh                  # Run all shell suites
 ├── build/                          # Generated during build (gitignored)
@@ -98,7 +96,6 @@ make install
 ```bash
 ./tests/run-all.sh          # Run all shell suites
 ./tests/test-make.sh        # Test Makefile commands
-./tests/test-reddit-search.sh # Test Reddit search contracts without an API key
 pnpm test                   # TypeScript tests (pi-extensions, tests/*.test.ts)
 pnpm typecheck
 ```
