@@ -121,6 +121,7 @@ Pi settings and models are copied by `make install`. Extensions, prompts, and th
 
 - `agent-browser` — fast browser automation CLI for AI agents with CDP accessibility tree snapshots and refs, vendored from `vercel-labs/agent-browser` commit `44583ac`
 - `before-and-after` — attach screenshots and screen recordings to GitHub PR descriptions with formatted Markdown tables and video players, vendored from `vercel-labs/before-and-after` commit `8306d34`
+- `ui-recording-timeline` — turn UI screen recordings into interactive paint timelines with change and movement overlays, vendored from [`rauchg/skills`](https://github.com/rauchg/skills/tree/40f2a05ce791aa9f920e5525786fa097182174ed/skills/ui-recording-timeline) commit `40f2a05` (requires `uv` and `ffmpeg`; Chrome/Chromium for previews)
 - `babysit-pr` — GitHub PR monitoring/babysitting workflow imported from `openai/codex` commit `7e569f1`
 - `editorial-sketches` — editorial article illustration skill vendored from `helloianneo/ian-xiaohei-illustrations` commit `91b5608`
 - `technical-explainer-comic` — evidence-backed technical comic workflow with editorial panels, expandable traces, responsive HTML, browser QA, and static publication
@@ -185,6 +186,7 @@ dotfiles/
 ├── skills/                  # custom agent skills
 │   ├── agent-browser/       # fast browser automation CLI for AI agents
 │   ├── before-and-after/    # GitHub PR screenshot and video formatting
+│   ├── ui-recording-timeline/ # interactive UI recording paint timelines
 │   └── writing-pr/          # PR title and body guidance
 ├── configs/                 # shared AGENTS.md for Codex and Pi
 ├── amp-plugins/             # custom Amp plugins
