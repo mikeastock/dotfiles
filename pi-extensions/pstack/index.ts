@@ -85,7 +85,10 @@ export default function pstack(pi: ExtensionAPI) {
 			if (controller.signal.aborted) return;
 			background.delete(id);
 			showBackground(ctx);
-			pi.sendMessage({ customType: "pstack-task", content, display: true }, { triggerTurn: true, deliverAs: "followUp" });
+			// An idle session must wake through a user message: a custom message starts the turn without
+			// before_agent_start, and Pi then drops the poteto_mode and pstack_models prompt sections.
+			if (ctx.isIdle()) pi.sendUserMessage(content);
+			else pi.sendMessage({ customType: "pstack-task", content, display: true }, { triggerTurn: true, deliverAs: "followUp" });
 		};
 		runTask(task, parent, TASK_SESSIONS_DIR, ctx.cwd, controller.signal, (result) => {
 			entry.progress = result;
@@ -168,7 +171,7 @@ export default function pstack(pi: ExtensionAPI) {
 		name: "todo_write",
 		label: "Todos",
 		description:
-			"Replace the session's todo list. Send the complete list every call, with each item's current status. Keep exactly one item in_progress while working, and mark items completed as soon as they are done.",
+			"Replace the session's todo list. Send the complete list every call, with each item's current status. Do not number items; the list is numbered for you. Keep exactly one item in_progress while working, and mark items completed as soon as they are done.",
 		parameters: Type.Object({
 			todos: Type.Array(
 				Type.Object({

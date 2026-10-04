@@ -239,6 +239,11 @@ describe("todos", () => {
 			["2/4 done", "[x] 1. repro", "[~] 2. fix", "[-] 3. bench", "[ ] 4. pr"],
 		);
 		assert.deepEqual(renderTodos([]), ["(no todos)"]);
+		assert.deepEqual(renderTodos([{ content: "1. Reproduce it", status: "pending" }, { content: "2) Fix it", status: "pending" }]), [
+			"0/2 done",
+			"[ ] 1. Reproduce it",
+			"[ ] 2. Fix it",
+		]);
 	});
 
 	it("restores the list from the last todo_write result on the branch", () => {
