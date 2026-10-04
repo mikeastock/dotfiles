@@ -35,6 +35,16 @@ Reports start with `[pstack background report]` and say they are subagent output
 
 Child transcripts are saved per project under `~/.pi/agent/pstack/task-sessions/--<cwd>--/`, and each report names its file, so a parent can audit what a subagent actually did. Nothing prunes them.
 
+## Updating from upstream
+
+The port tracks upstream commit `pi-extensions/pstack/UPSTREAM`. Keep local edits to the vendored skills limited to what Pi needs, so upstream changes keep merging cleanly. Pull upstream changes with:
+
+```bash
+scripts/pstack_upstream.py main          # clones cursor/plugins; or --repo <clone>
+```
+
+It three-way merges every vendored file (`skills/<name>/`, `pi-extensions/pstack/agents/`) from the recorded commit to the new one, leaves conflict markers where both sides changed a line, adds new files in vendored skills, lists new upstream skills without adding them, flags merged lines that still use Cursor-only terms (`subagent_type`, `AskQuestion`, Cursor model names, and so on), and records the new commit. Resolve conflicts and port the flagged lines, then commit.
+
 ## Not ported
 
 - `make-bot-ui` and the Benny automations (Cursor bot and automation infrastructure).

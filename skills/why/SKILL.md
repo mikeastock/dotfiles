@@ -14,7 +14,7 @@ Investigate the motivation and intent behind code.
 
 Companion to the `how` skill. `how` answers what the code does and how it works. `why` answers what forces led to its shape.
 
-Each spawn below names a role line in the pstack model config (`~/.pi/agent/pstack-models.md`) and a default. Set `model` to that line's value, or to the default if the config or the line is missing. Leave `model` unset when the value is `auto` or `inherit-parent`. If a `task` entry fails on its model, rerun it once on the same model with a lower thinking suffix, or none, when the error names the thinking level. If the model itself is unavailable, use the closest model of the same family from `pi --list-models`, never a costlier tier than the one configured, and say so.
+Each spawn below names a role line in the pstack model config (`~/.pi/agent/pstack-models.md`) and a default. Set `model` to that line's value, or to the default if the config or the line is missing. Leave `model` unset when the value is `auto` or `inherit-parent`. If a `task` entry fails because its model is unavailable, rerun it on the default and say so. If the default is unavailable too, use the closest model of the same family from `pi --list-models`.
 
 ## Operating Posture
 
@@ -85,7 +85,7 @@ Launch all matching investigators in a single `task` call so they run concurrent
 
 Subagent config (each):
 - `agent`: `general`
-- `model`: the `why investigators` line, default `xai/grok-4.7:xhigh`. Always pass it. Omitting `model` silently runs the investigator on your own model.
+- `model`: the `why investigators` line, default `xai/grok-4.7:xhigh`
 - `readonly`: `true`. Read-only drops the edit and write tools but keeps MCP access.
 
 Each investigator gets:
@@ -129,7 +129,7 @@ If your scope assessment suggests a single-commit trivial target where the PR de
 Spawn one synthesizer subagent:
 
 - `agent`: `general`
-- `model`: the `why synthesizer` line, default `anthropic/claude-opus-5-5:max`. Always pass it.
+- `model`: the `why synthesizer` line, default `anthropic/claude-opus-5-5:max`
 - `readonly`: `true`. The synthesizer's quality check spot-verifies citations, which can require MCP access, and read-only keeps it.
 
 The synthesizer gets:

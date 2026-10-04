@@ -37,6 +37,7 @@ Skills are specialized instruction sets that guide AI agents through specific ta
 │   ├── test-amp-worktree.sh        # amp-worktree tests
 │   ├── test-technical-explainer-comic.sh
 │   ├── test-tmux-skill-scripts.sh
+│   ├── test-pstack-upstream.sh     # pstack upstream merge script tests
 │   ├── *.test.ts                   # TypeScript tests (pnpm test)
 │   └── run-all.sh                  # Run all shell suites
 ├── build/                          # Generated during build (gitignored)

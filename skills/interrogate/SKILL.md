@@ -50,7 +50,7 @@ For each reviewer:
 - `model`: the configured `interrogate reviewers` entry, or the table default with no configured line. For an `auto` or `inherit-parent` entry, omit `model` so that reviewer runs on the parent model.
 - `readonly`: `true`
 
-If a `task` entry fails on its configured model, rerun that reviewer once on the same model with a lower thinking suffix, or none, when the error names the thinking level. If the model itself is unavailable, rerun it on its family's table default model with the configured thinking suffix kept, and say so. Families go by prefix: `anthropic/claude-*`, `openai/gpt-*`, and `xai/grok-*`. With no family match, use Reviewer A's default. If a table default is unavailable too, check `pi --list-models`, pick the closest equivalent (prefer the highest-reasoning tier of the same family), spawn with it, and open a separate PR to update the default table. Do not block the review on the model issue. Never treat an alias entry as a rejected slug or apply either fallback to it.
+If a `task` entry fails because its configured model is unavailable, rerun that reviewer on the table default of its family and say so. Families go by prefix: `anthropic/claude-*`, `openai/gpt-*`, and `xai/grok-*`. With no family match, use Reviewer A's default. If a table default is unavailable too, check `pi --list-models`, pick the closest equivalent (prefer the highest-reasoning tier of the same family), spawn with it, and open a separate PR to update the default table. Do not block the review on the model issue. Never treat an alias entry as a rejected slug or apply either fallback to it.
 
 Read `references/reviewer-prompt.md` and fill in the template with:
 1. The stated intent
