@@ -97,13 +97,14 @@ make install
 ./tests/run-all.sh          # Run all shell suites
 ./tests/test-make.sh        # Test Makefile commands
 pnpm test                   # TypeScript tests (pi-extensions, tests/*.test.ts)
+(cd skills/poteto-mode/scripts && bun install --frozen-lockfile && bun test orch watch-pr)  # pstack scripts
 pnpm typecheck
 ```
 
 Tests use a sandbox environment (temporary HOME directory) to avoid affecting real agent installations. The test framework provides assertion helpers in `tests/test-helpers.sh`.
 
 ### CI/CD
-GitHub Actions (`.github/workflows/test.yml`) runs `./tests/run-all.sh`, `pnpm test`, `pnpm typecheck`, and the tests/typecheck of each vendored bb plugin (`bb-plugins/bb-plugin-t3sidebar`, `bb-plugins/bb-plugin-tok-speed`) on push/PR to main/master.
+GitHub Actions (`.github/workflows/test.yml`) runs `./tests/run-all.sh`, `pnpm test`, `pnpm typecheck`, the poteto-mode script tests (`bun test orch watch-pr` in `skills/poteto-mode/scripts`), and the tests/typecheck of each vendored bb plugin (`bb-plugins/bb-plugin-t3sidebar`, `bb-plugins/bb-plugin-tok-speed`) on push/PR to main/master.
 
 ## Code Conventions
 

@@ -33,6 +33,9 @@ jobs:
           node-version: '24'
           cache: 'pnpm'
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
       - name: Install ripgrep
         run: |
           sudo apt-get update
@@ -57,6 +60,12 @@ jobs:
           pnpm test
           npm test --prefix bb-plugins/bb-plugin-t3sidebar
           npm test --prefix bb-plugins/bb-plugin-tok-speed
+
+      - name: Run poteto-mode script tests
+        working-directory: skills/poteto-mode/scripts
+        run: |
+          bun install --frozen-lockfile
+          bun test orch watch-pr
 
       - name: Typecheck
         run: |
