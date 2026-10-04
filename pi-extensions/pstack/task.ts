@@ -367,6 +367,7 @@ export function formatBackgroundStatus(
 	stopped: string[],
 	unknown: string[],
 	now: number,
+	queued: Array<{ id: string; description: string }> = [],
 ): string {
 	const lines = running.map(({ id, startedAt, progress }) => {
 		const minutes = Math.floor((now - startedAt) / 60_000);
@@ -376,6 +377,7 @@ export function formatBackgroundStatus(
 	return [
 		...(stopped.length > 0 ? [`Stopped: ${stopped.join(", ")}`] : []),
 		...(unknown.length > 0 ? [`Not running (unknown or already finished): ${unknown.join(", ")}`] : []),
+		...(queued.length > 0 ? [`Finished, report queued for your next tool call: ${queued.map((task) => `${task.id} (${task.description})`).join(", ")}`] : []),
 		running.length > 0 ? `Running background tasks:\n${lines.join("\n")}` : "No background tasks running.",
 	].join("\n");
 }

@@ -22,6 +22,7 @@ import { MODE_ENTRY_TYPE, type PotetoModeState, modeReminder, modelsSection, pot
 import {
 	AGENT_TYPES,
 	MAX_CONCURRENCY,
+	MAX_DEPTH,
 	MAX_TASKS,
 	POTETO_SKILL_FILE,
 	type TaskResult,
@@ -78,20 +79,28 @@ export default function pstack(pi: ExtensionAPI) {
 		/** `task_status` calls currently waiting on this task. While any wait, they receive the report instead of a message. */
 		waiters: number;
 		done: boolean;
+		id: string;
 	}
 	const background = new Map<string, BackgroundEntry>();
+	/** Finished tasks whose report waits in the steer queue for the next tool boundary. */
+	const queued = new Map<string, string>();
 	let nextBackgroundId = 1;
 
 	const showBackground = (ctx: ExtensionContext) => {
 		ctx.ui.setStatus("pstack-tasks", background.size > 0 ? `${background.size} background task(s)` : undefined);
 	};
 
-	const deliverReport = (content: string, ctx: ExtensionContext) => {
+	const deliverReport = (id: string, description: string, content: string, ctx: ExtensionContext) => {
+		const message = `[pstack background report]\n${content}`;
 		// An idle session must wake through a user message: a custom message starts the turn without
 		// before_agent_start, and Pi then drops the poteto_mode and pstack_models prompt sections.
 		// A busy session gets the report at its next tool boundary (steer), not after the whole run (followUp).
-		if (ctx.isIdle()) pi.sendUserMessage(content);
-		else pi.sendMessage({ customType: "pstack-task", content, display: true }, { triggerTurn: true, deliverAs: "steer" });
+		if (ctx.isIdle()) {
+			pi.sendUserMessage(message);
+			return;
+		}
+		queued.set(id, description);
+		pi.sendMessage({ customType: "pstack-task", content: message, display: true, details: { id } }, { triggerTurn: true, deliverAs: "steer" });
 	};
 
 	const startBackground = (task: TaskSpec, parent: { model?: string; thinkingLevel?: string }, ctx: ExtensionContext): string => {
@@ -103,7 +112,7 @@ export default function pstack(pi: ExtensionAPI) {
 			(result) => `Background task ${id} finished.\n\n${formatFinal([result])}`,
 			(error: unknown) => `Background task ${id} (${task.description}) failed to start: ${String(error)}`,
 		);
-		const entry: BackgroundEntry = { controller, progress: pendingResult(task, parent), startedAt: Date.now(), report, waiters: 0, done: false };
+		const entry: BackgroundEntry = { controller, progress: pendingResult(task, parent), startedAt: Date.now(), report, waiters: 0, done: false, id };
 		background.set(id, entry);
 		showBackground(ctx);
 		void report.then((content) => {
@@ -111,10 +120,15 @@ export default function pstack(pi: ExtensionAPI) {
 			if (controller.signal.aborted) return;
 			background.delete(id);
 			showBackground(ctx);
-			if (entry.waiters === 0) deliverReport(content, ctx);
+			if (entry.waiters === 0) deliverReport(id, task.description, content, ctx);
 		});
 		return id;
 	};
+
+	pi.on("message_end", async (event) => {
+		const message = event.message as { role?: string; customType?: string; details?: { id?: string } };
+		if (message.role === "custom" && message.customType === "pstack-task" && message.details?.id) queued.delete(message.details.id);
+	});
 
 	pi.on("session_shutdown", async () => {
 		for (const { controller } of background.values()) controller.abort();
@@ -155,7 +169,8 @@ export default function pstack(pi: ExtensionAPI) {
 		if (sessionFile) {
 			sections.pstack_session = sessionSection(sessionFile, ctx.sessionManager.getSessionDir());
 		}
-		if (fs.existsSync(MODELS_FILE)) {
+		// Children at the nesting limit cannot spawn, so the role table is only noise for them.
+		if (currentDepth() < MAX_DEPTH && fs.existsSync(MODELS_FILE)) {
 			sections.pstack_models = modelsSection(fs.readFileSync(MODELS_FILE, "utf8"), MODELS_FILE);
 		}
 	});
@@ -190,7 +205,7 @@ export default function pstack(pi: ExtensionAPI) {
 		name: "todo_write",
 		label: "Todos",
 		description:
-			"Replace the session's todo list. Send the complete list every call, with each item's current status. Do not number items; the list is numbered for you. Keep exactly one item in_progress while working, and mark items completed as soon as they are done.",
+			"Replace the session's todo list. Send the complete list every call, with each item's current status. Do not number items; the list is numbered for you. When a skill says to copy steps verbatim, pass each step's full text and keep it unchanged on later calls. Keep exactly one item in_progress while working, and mark items completed as soon as they are done.",
 		parameters: Type.Object({
 			todos: Type.Array(
 				Type.Object({
@@ -316,7 +331,7 @@ export default function pstack(pi: ExtensionAPI) {
 					// Reports that finished during the interrupted wait were held back for it; send them now.
 					for (const entry of waited) {
 						if (entry.done && entry.waiters === 0 && !entry.controller.signal.aborted) {
-							void entry.report.then((content) => deliverReport(content, ctx));
+							void entry.report.then((content) => deliverReport(entry.id, entry.progress.description, content, ctx));
 						}
 					}
 					throw new Error("task_status: wait aborted");
@@ -327,7 +342,7 @@ export default function pstack(pi: ExtensionAPI) {
 			showBackground(ctx);
 			const now = Date.now();
 			const running = [...background].map(([id, entry]) => ({ id, startedAt: entry.startedAt, progress: entry.progress }));
-			const status = formatBackgroundStatus(running, stopped, unknown, now);
+			const status = formatBackgroundStatus(running, stopped, unknown, now, [...queued].map(([id, description]) => ({ id, description })));
 			return { content: [{ type: "text", text: [...reports, status].join("\n\n---\n\n") }], details: undefined };
 		},
 	});

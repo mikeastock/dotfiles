@@ -254,6 +254,10 @@ describe("formatBackgroundStatus", () => {
 			"Stopped: bg-1\nNot running (unknown or already finished): bg-9\nRunning background tasks:\nbg-2: owner #12 (poteto-agent, 2m, 4 turns) \u00b7 last: bash gh pr checks",
 		);
 		assert.equal(formatBackgroundStatus([], [], [], 0), "No background tasks running.");
+		assert.equal(
+			formatBackgroundStatus([], [], [], 0, [{ id: "bg-2", description: "heartbeat" }]),
+			"Finished, report queued for your next tool call: bg-2 (heartbeat)\nNo background tasks running.",
+		);
 	});
 });
 
