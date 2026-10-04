@@ -5,9 +5,12 @@ export interface PotetoModeState {
 	skillPath?: string;
 }
 
-const SKILL_BLOCK = /<skill name="poteto-mode" location="([^"]+)">/;
+// Only Pi's own `/skill:poteto-mode` expansion counts: it puts the block first, at the installed skill path.
+// A block quoted later in a prompt (a pasted transcript, a subagent report) must not switch the mode on or
+// point the per-turn reminder at an arbitrary file.
+const SKILL_BLOCK = /^<skill name="poteto-mode" location="([^"]+\/poteto-mode\/SKILL\.md)">/;
 
-/** Returns the skill path when the expanded prompt contains the poteto-mode skill block. */
+/** Returns the skill path when the prompt is an expanded `/skill:poteto-mode` invocation. */
 export function potetoSkillInvocation(prompt: string): string | undefined {
 	return prompt.match(SKILL_BLOCK)?.[1];
 }

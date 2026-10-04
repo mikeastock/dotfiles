@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { type ChildProcess, spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import * as fs from "node:fs";
 import * as os from "node:os";
@@ -120,7 +120,8 @@ export function buildChildArgs(
 	const excluded = [...(spec.readonly ? READONLY_EXCLUDED_TOOLS : []), ...(leaf ? DELEGATION_TOOLS : [])];
 	if (excluded.length > 0) args.push("--exclude-tools", excluded.join(","));
 	if (systemPromptFile) args.push("--append-system-prompt", systemPromptFile);
-	args.push("--", spec.prompt);
+	// Pi reads a positional argument starting with `@` as a file to attach, even after `--`.
+	args.push("--", spec.prompt.startsWith("@") ? `Task: ${spec.prompt}` : spec.prompt);
 	return args;
 }
 
@@ -137,6 +138,9 @@ export function validateTasks(tasks: TaskSpec[], depth: number): void {
 	if (tasks.length === 0) throw new Error("task: pass at least one task.");
 	if (tasks.length > MAX_TASKS) throw new Error(`task: at most ${MAX_TASKS} tasks per call, got ${tasks.length}.`);
 	for (const task of tasks) {
+		if (task.agent === "poteto-agent" && !fs.existsSync(POTETO_SKILL_FILE)) {
+			throw new Error(`task "${task.description}": poteto-agent needs the poteto-mode skill at ${POTETO_SKILL_FILE}. Install it with make install-skills.`);
+		}
 		if (task.cwd && !fs.statSync(task.cwd, { throwIfNoEntry: false })?.isDirectory()) {
 			throw new Error(`task "${task.description}": cwd ${task.cwd} is not an existing directory.`);
 		}
@@ -181,14 +185,21 @@ function describeToolCall(name: string, args: Record<string, unknown>): string {
 
 /** Fold one `pi --mode json` event line into the running result. Returns true when the result changed. */
 export function applyChildEvent(result: TaskResult, line: string): boolean {
-	if (!line.trim()) return false;
+	// Streaming update events carry the whole partial message and make up most of the output; skip them unparsed.
+	if (!line.includes('"message_end"')) return false;
 	let event: { type?: string; message?: Message };
 	try {
 		event = JSON.parse(line);
 	} catch {
 		return false;
 	}
-	if (event.type !== "message_end" || event.message?.role !== "assistant") return false;
+	if (event.type !== "message_end") return false;
+	// A grandchild's spend reaches the child as usage on its `task` tool result.
+	if (event.message?.role === "toolResult") {
+		addUsage(result.usage, event.message.usage);
+		return false;
+	}
+	if (event.message?.role !== "assistant") return false;
 
 	const message = event.message;
 	result.turns++;
@@ -202,10 +213,14 @@ export function applyChildEvent(result: TaskResult, line: string): boolean {
 		.map((part) => part.text)
 		.join("\n")
 		.trim();
-	if (text) result.output = text;
-	if (message.stopReason === "error" || message.stopReason === "aborted") {
-		result.error = message.errorMessage ? readableError(message.errorMessage) : `child stopped: ${message.stopReason}`;
-	}
+	result.output = text;
+	// Pi retries transient provider errors inside the run, so only the latest assistant message decides.
+	result.error =
+		message.stopReason === "error" || message.stopReason === "aborted"
+			? message.errorMessage
+				? readableError(message.errorMessage)
+				: `child stopped: ${message.stopReason}`
+			: undefined;
 	return true;
 }
 
@@ -236,12 +251,14 @@ export function childError(stderr: string): string {
 }
 
 export function capOutput(output: string): string {
-	const bytes = Buffer.byteLength(output, "utf8");
-	if (bytes <= OUTPUT_CAP_BYTES) return output;
-	let truncated = output.slice(0, OUTPUT_CAP_BYTES);
-	while (Buffer.byteLength(truncated, "utf8") > OUTPUT_CAP_BYTES) truncated = truncated.slice(0, -1);
-	return `${truncated}\n\n[output truncated: ${bytes - Buffer.byteLength(truncated, "utf8")} bytes omitted]`;
+	const bytes = Buffer.from(output, "utf8");
+	if (bytes.length <= OUTPUT_CAP_BYTES) return output;
+	// A cut through a multibyte character decodes to U+FFFD; drop it.
+	const truncated = bytes.subarray(0, OUTPUT_CAP_BYTES).toString("utf8").replace(/\uFFFD+$/, "");
+	return `${truncated}\n\n[output truncated: ${bytes.length - Buffer.byteLength(truncated, "utf8")} bytes omitted]`;
 }
+
+export type Invocation = (args: string[]) => { command: string; args: string[] };
 
 function piInvocation(args: string[]): { command: string; args: string[] } {
 	const script = process.argv[1];
@@ -261,73 +278,128 @@ export async function findTranscript(session: ChildSession): Promise<string | un
 	return name ? path.join(session.dir, name) : undefined;
 }
 
-export async function runTask(
-	spec: TaskSpec,
-	parent: ParentModel,
-	sessionDir: string,
-	defaultCwd: string,
-	signal: AbortSignal | undefined,
-	onChange: (result: TaskResult) => void,
-): Promise<TaskResult> {
-	const result = pendingResult(spec, parent);
+export interface RunOptions {
+	sessionDir: string;
+	cwd: string;
+	signal: AbortSignal | undefined;
+	onChange: (result: TaskResult) => void;
+	/** How to start the child. Defaults to the running Pi. */
+	invoke?: Invocation;
+}
 
-	const systemPrompt = childSystemPrompt(spec);
-	const tmpDir = systemPrompt ? await fs.promises.mkdtemp(path.join(os.tmpdir(), "pstack-task-")) : undefined;
-	const systemPromptFile = tmpDir ? path.join(tmpDir, "system-prompt.md") : undefined;
+/** Every child still running, so the session and the process can take them down on exit. */
+const liveChildren = new Set<ChildProcess>();
 
+/** Children run as process-group leaders, so a signal reaches their own subagents too. */
+function signalGroup(child: ChildProcess, signal: NodeJS.Signals): void {
+	if (child.pid === undefined || child.exitCode !== null) return;
 	try {
+		process.kill(-child.pid, signal);
+	} catch {
+		// The group is already gone.
+	}
+}
+
+export function killAllChildren(signal: NodeJS.Signals = "SIGTERM"): void {
+	for (const child of liveChildren) signalGroup(child, signal);
+}
+
+let exitHookInstalled = false;
+
+export async function runTask(spec: TaskSpec, parent: ParentModel, options: RunOptions): Promise<TaskResult> {
+	const { sessionDir, cwd, signal, onChange, invoke = piInvocation } = options;
+	const result = pendingResult(spec, parent);
+	const finish = (error?: string) => {
+		result.error = error ?? result.error;
+		result.status = result.error ? "failed" : "done";
+		onChange(result);
+		return result;
+	};
+	if (signal?.aborted) return finish("aborted");
+	if (!exitHookInstalled) {
+		exitHookInstalled = true;
+		process.once("exit", () => killAllChildren("SIGKILL"));
+	}
+
+	let tmpDir: string | undefined;
+	try {
+		const systemPrompt = childSystemPrompt(spec);
+		tmpDir = systemPrompt ? await fs.promises.mkdtemp(path.join(os.tmpdir(), "pstack-task-")) : undefined;
+		const systemPromptFile = tmpDir ? path.join(tmpDir, "system-prompt.md") : undefined;
 		if (systemPromptFile && systemPrompt) {
 			await fs.promises.writeFile(systemPromptFile, systemPrompt, { mode: 0o600 });
 		}
 		await fs.promises.mkdir(sessionDir, { recursive: true });
 		const session = { dir: sessionDir, id: randomUUID() };
 		const childDepth = currentDepth() + 1;
-		const invocation = piInvocation(buildChildArgs(spec, parent, session, childDepth, systemPromptFile));
+		const invocation = invoke(buildChildArgs(spec, parent, session, childDepth, systemPromptFile));
 		let stderr = "";
 		let aborted = false;
 
 		const exitCode = await new Promise<number>((resolve) => {
 			const child = spawn(invocation.command, invocation.args, {
-				cwd: spec.cwd ?? defaultCwd,
+				cwd: spec.cwd ?? cwd,
 				env: { ...process.env, [DEPTH_ENV]: String(childDepth), ...(spec.readonly ? { [READONLY_ENV]: "1" } : {}) },
 				stdio: ["ignore", "pipe", "pipe"],
+				detached: true,
 			});
+			liveChildren.add(child);
 			let buffer = "";
-			child.stdout.on("data", (chunk) => {
-				buffer += chunk.toString();
+			child.stdout.setEncoding("utf8");
+			child.stderr.setEncoding("utf8");
+			child.stdout.on("data", (chunk: string) => {
+				buffer += chunk;
 				const lines = buffer.split("\n");
 				buffer = lines.pop() ?? "";
 				for (const line of lines) if (applyChildEvent(result, line)) onChange(result);
 			});
-			child.stderr.on("data", (chunk) => {
-				stderr += chunk.toString();
+			child.stderr.on("data", (chunk: string) => {
+				stderr += chunk;
 			});
 			child.on("close", (code) => {
+				liveChildren.delete(child);
 				if (applyChildEvent(result, buffer)) onChange(result);
 				resolve(code ?? 1);
 			});
 			child.on("error", (error) => {
+				liveChildren.delete(child);
 				stderr += error.message;
 				resolve(1);
 			});
 			const kill = () => {
 				aborted = true;
-				child.kill("SIGTERM");
-				setTimeout(() => child.exitCode === null && child.kill("SIGKILL"), 5000).unref();
+				signalGroup(child, "SIGTERM");
+				setTimeout(() => signalGroup(child, "SIGKILL"), 5000).unref();
 			};
 			if (signal?.aborted) kill();
 			else signal?.addEventListener("abort", kill, { once: true });
 		});
 
-		if (aborted) result.error = "aborted";
-		else if (exitCode !== 0 && !result.error) result.error = childError(stderr) || `pi exited with code ${exitCode}`;
-		result.status = result.error ? "failed" : "done";
 		result.transcript = await findTranscript(session);
-		onChange(result);
-		return result;
+		if (aborted) return finish("aborted");
+		if (exitCode !== 0 && !result.error) return finish(childError(stderr) || `pi exited with code ${exitCode}`);
+		return finish();
+	} catch (error) {
+		return finish(error instanceof Error ? error.message : String(error));
 	} finally {
 		if (tmpDir) await fs.promises.rm(tmpDir, { recursive: true, force: true });
 	}
+}
+
+/** Runs at most `limit` jobs at once across every caller, in arrival order. */
+export function createLimiter(limit: number): <T>(job: () => Promise<T>) => Promise<T> {
+	let active = 0;
+	const waiting: Array<() => void> = [];
+	return async <T>(job: () => Promise<T>): Promise<T> => {
+		if (active >= limit) await new Promise<void>((resolve) => waiting.push(resolve));
+		active++;
+		try {
+			return await job();
+		} finally {
+			active--;
+			waiting.shift()?.();
+		}
+	};
 }
 
 export async function mapWithConcurrency<TIn, TOut>(

@@ -29,8 +29,10 @@ import {
 	type TaskSpec,
 	addUsage,
 	currentDepth,
+	createLimiter,
 	inheritedReadonly,
 	emptyUsage,
+	killAllChildren,
 	formatBackgroundStatus,
 	formatFinal,
 	formatProgress,
@@ -39,6 +41,7 @@ import {
 	runTask,
 	validateTasks,
 } from "./task.ts";
+import { ReportCourier } from "./courier.ts";
 import { TODO_STATUSES, type Todo, type TodoDetails, renderTodos, restoreTodos } from "./todo.ts";
 
 const MODELS_FILE = path.join(getAgentDir(), "pstack-models.md");
@@ -63,7 +66,10 @@ const TaskItem = Type.Object({
 		}),
 	),
 	readonly: Type.Optional(
-		Type.Boolean({ description: "Disable edit and write tools and tell the subagent not to change anything. Default false." }),
+		Type.Boolean({
+			description:
+				"Remove the edit and write tools, tell the subagent not to change anything, and make its own subagents read-only. Not a sandbox: bash and other tools can still write. Default false.",
+		}),
 	),
 	cwd: Type.Optional(Type.String({ description: "Working directory for the subagent, e.g. a worktree. Default: current cwd." })),
 });
@@ -71,6 +77,7 @@ const TaskItem = Type.Object({
 export default function pstack(pi: ExtensionAPI) {
 	let mode: PotetoModeState = { enabled: false };
 	interface BackgroundEntry {
+		id: string;
 		controller: AbortController;
 		progress: TaskResult;
 		startedAt: number;
@@ -79,40 +86,41 @@ export default function pstack(pi: ExtensionAPI) {
 		/** `task_status` calls currently waiting on this task. While any wait, they receive the report instead of a message. */
 		waiters: number;
 		done: boolean;
-		id: string;
 	}
 	const background = new Map<string, BackgroundEntry>();
-	/** Finished tasks whose report waits in the steer queue for the next tool boundary. */
-	const queued = new Map<string, string>();
+	const backgroundSlots = createLimiter(MAX_CONCURRENCY);
 	let nextBackgroundId = 1;
+
+	const courier = new ReportCourier({
+		wake: (text) => pi.sendUserMessage(text),
+		steer: (report, text) =>
+			pi.sendMessage({ customType: "pstack-task", content: text, display: true, details: { id: report.id } }, { triggerTurn: true, deliverAs: "steer" }),
+		nextTurn: (report, text) =>
+			pi.sendMessage({ customType: "pstack-task", content: text, display: true, details: { id: report.id } }, { deliverAs: "nextTurn" }),
+		isIdle: () => latestCtx?.isIdle() ?? false,
+	});
+	let latestCtx: ExtensionContext | undefined;
 
 	const showBackground = (ctx: ExtensionContext) => {
 		ctx.ui.setStatus("pstack-tasks", background.size > 0 ? `${background.size} background task(s)` : undefined);
 	};
 
-	const deliverReport = (id: string, description: string, content: string, ctx: ExtensionContext) => {
-		const message = `[pstack background report]\n${content}`;
-		// An idle session must wake through a user message: a custom message starts the turn without
-		// before_agent_start, and Pi then drops the poteto_mode and pstack_models prompt sections.
-		// A busy session gets the report at its next tool boundary (steer), not after the whole run (followUp).
-		if (ctx.isIdle()) {
-			pi.sendUserMessage(message);
-			return;
-		}
-		queued.set(id, description);
-		pi.sendMessage({ customType: "pstack-task", content: message, display: true, details: { id } }, { triggerTurn: true, deliverAs: "steer" });
-	};
+	const sessionDirFor = (cwd: string) => path.join(TASK_SESSIONS_DIR, `--${cwd.replace(/^\//, "").replace(/[/\\:]/g, "-")}--`);
 
 	const startBackground = (task: TaskSpec, parent: { model?: string; thinkingLevel?: string }, ctx: ExtensionContext): string => {
 		const id = `bg-${nextBackgroundId++}`;
 		const controller = new AbortController();
-		const report = runTask(task, parent, TASK_SESSIONS_DIR, ctx.cwd, controller.signal, (result) => {
-			entry.progress = result;
-		}).then(
-			(result) => `Background task ${id} finished.\n\n${formatFinal([result])}`,
-			(error: unknown) => `Background task ${id} (${task.description}) failed to start: ${String(error)}`,
-		);
-		const entry: BackgroundEntry = { controller, progress: pendingResult(task, parent), startedAt: Date.now(), report, waiters: 0, done: false, id };
+		const report = backgroundSlots(() =>
+			runTask(task, parent, {
+				sessionDir: sessionDirFor(ctx.cwd),
+				cwd: ctx.cwd,
+				signal: controller.signal,
+				onChange: (result) => {
+					entry.progress = result;
+				},
+			}),
+		).then((result) => `Background task ${id} finished.\n\n${formatFinal([result])}`);
+		const entry: BackgroundEntry = { id, controller, progress: pendingResult(task, parent), startedAt: Date.now(), report, waiters: 0, done: false };
 		background.set(id, entry);
 		showBackground(ctx);
 		void report.then((content) => {
@@ -120,19 +128,32 @@ export default function pstack(pi: ExtensionAPI) {
 			if (controller.signal.aborted) return;
 			background.delete(id);
 			showBackground(ctx);
-			if (entry.waiters === 0) deliverReport(id, task.description, content, ctx);
+			if (entry.waiters === 0) courier.deliver({ id, description: task.description, content });
 		});
 		return id;
 	};
 
+	pi.on("agent_start", async (_event, ctx) => {
+		latestCtx = ctx;
+		courier.runStarted();
+	});
+	pi.on("agent_settled", async (_event, ctx) => {
+		latestCtx = ctx;
+		courier.runSettled();
+	});
+	pi.on("session_compact", async (_event, ctx) => {
+		latestCtx = ctx;
+		courier.retry();
+	});
 	pi.on("message_end", async (event) => {
 		const message = event.message as { role?: string; customType?: string; details?: { id?: string } };
-		if (message.role === "custom" && message.customType === "pstack-task" && message.details?.id) queued.delete(message.details.id);
+		if (message.role === "custom" && message.customType === "pstack-task" && message.details?.id) courier.delivered(message.details.id);
 	});
 
 	pi.on("session_shutdown", async () => {
 		for (const { controller } of background.values()) controller.abort();
 		background.clear();
+		killAllChildren();
 	});
 
 	const setMode = (next: PotetoModeState, ctx: ExtensionContext) => {
@@ -153,10 +174,15 @@ export default function pstack(pi: ExtensionAPI) {
 		showTodos(restoreTodos(branch), ctx);
 	};
 
-	pi.on("session_start", async (_event, ctx) => restoreBranchState(ctx));
+	pi.on("session_start", async (_event, ctx) => {
+		latestCtx = ctx;
+		restoreBranchState(ctx);
+	});
 	pi.on("session_tree", async (_event, ctx) => restoreBranchState(ctx));
 
 	pi.on("before_agent_start", async (event, ctx) => {
+		latestCtx = ctx;
+		courier.promptStarting(event.prompt);
 		const skillPath = potetoSkillInvocation(event.prompt);
 		if (skillPath && (!mode.enabled || mode.skillPath !== skillPath)) {
 			setMode({ enabled: true, skillPath }, ctx);
@@ -269,9 +295,14 @@ export default function pstack(pi: ExtensionAPI) {
 			const report = () => onUpdate?.({ content: [{ type: "text", text: formatProgress(progress) }], details: undefined });
 
 			const results = await mapWithConcurrency(tasks, MAX_CONCURRENCY, (task, index) =>
-				runTask(task, parent, TASK_SESSIONS_DIR, ctx.cwd, signal, (result) => {
-					progress[index] = result;
-					report();
+				runTask(task, parent, {
+					sessionDir: sessionDirFor(ctx.cwd),
+					cwd: ctx.cwd,
+					signal,
+					onChange: (result) => {
+						progress[index] = result;
+						report();
+					},
 				}),
 			);
 
@@ -331,7 +362,7 @@ export default function pstack(pi: ExtensionAPI) {
 					// Reports that finished during the interrupted wait were held back for it; send them now.
 					for (const entry of waited) {
 						if (entry.done && entry.waiters === 0 && !entry.controller.signal.aborted) {
-							void entry.report.then((content) => deliverReport(entry.id, entry.progress.description, content, ctx));
+							void entry.report.then((content) => courier.deliver({ id: entry.id, description: entry.progress.description, content }));
 						}
 					}
 					throw new Error("task_status: wait aborted");
@@ -342,7 +373,7 @@ export default function pstack(pi: ExtensionAPI) {
 			showBackground(ctx);
 			const now = Date.now();
 			const running = [...background].map(([id, entry]) => ({ id, startedAt: entry.startedAt, progress: entry.progress }));
-			const status = formatBackgroundStatus(running, stopped, unknown, now, [...queued].map(([id, description]) => ({ id, description })));
+			const status = formatBackgroundStatus(running, stopped, unknown, now, courier.undelivered());
 			return { content: [{ type: "text", text: [...reports, status].join("\n\n---\n\n") }], details: undefined };
 		},
 	});
