@@ -8,7 +8,7 @@ metadata:
 
 # Reflect
 
-> Pi: other pstack skills named here (for example **how** or `principle-prove-it-works`) are installed as siblings of this skill. Read `../<name>/SKILL.md`. A `/name` reference means that skill. Subagents run through the pstack `task` tool, and per-role models come from `~/.pi/agent/pstack-models.md` when it exists.
+> Pi: other pstack skills named here (for example **how** or `principle-prove-it-works`) are installed as siblings of this skill. Read `../<name>/SKILL.md`. A `/name` reference means that skill. Subagents cannot resolve this skill's relative paths, so when a prompt you pass to a subagent names `references/<file>`, give it the absolute path under this skill's directory. Subagents run through the pstack `task` tool, and per-role models come from `~/.pi/agent/pstack-models.md` when it exists.
 
 Mine the current conversation for durable learnings, then route them into skill edits.
 

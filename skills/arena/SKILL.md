@@ -8,7 +8,7 @@ metadata:
 
 # Arena
 
-> Pi: other pstack skills named here (for example **how** or `principle-prove-it-works`) are installed as siblings of this skill. Read `../<name>/SKILL.md`. A `/name` reference means that skill. Subagents run through the pstack `task` tool, and per-role models come from `~/.pi/agent/pstack-models.md` when it exists.
+> Pi: other pstack skills named here (for example **how** or `principle-prove-it-works`) are installed as siblings of this skill. Read `../<name>/SKILL.md`. A `/name` reference means that skill. Subagents cannot resolve this skill's relative paths, so when a prompt you pass to a subagent names `references/<file>`, give it the absolute path under this skill's directory. Subagents run through the pstack `task` tool, and per-role models come from `~/.pi/agent/pstack-models.md` when it exists.
 
 Fan out N parallel attempts at the same task. Read every candidate end to end. Pick the strongest as the base. Graft the best ideas from the others into it. Verify the synthesized result.
 
@@ -29,7 +29,7 @@ The N candidates will receive the same prompt, so the prompt is the contract.
 
 1. State the artifact each candidate is producing.
 2. Derive the rubric. State what success looks like for *this* task, then turn it into 3-6 concrete gradeable criteria. The rubric is the picker's tool in Phase D. Candidates only see the task.
-3. Pick the runners. Use the `arena runners` line in `~/.pi/agent/pstack-models.md`. If the config or that line is missing, default to one each on `anthropic/claude-opus-5-5:max`, `openai/gpt-5.6-sol:max`, `xai/grok-4.7:xhigh`. An `auto` or `inherit-parent` entry in this line or the cross-judge line means the parent model, so omit `model` for it. If a `task` entry fails on its configured model, rerun that seat once on the same model with a lower thinking suffix, or none, when the error names the thinking level. If the model itself is unavailable, rerun the seat on its family's default and say so. Families go by prefix: `anthropic/claude-*`, `openai/gpt-*`, and `xai/grok-*`. With no family match, use `anthropic/claude-opus-5-5:max`. If a default is unavailable too, use the closest model of the same family from `pi --list-models`. Spawn more when the arena covers multiple design directions. Same model N times when the work is generation-bound rather than judgment-sensitive.
+3. Pick the runners. Use the `arena runners` line in `~/.pi/agent/pstack-models.md`. If the config or that line is missing, default to one each on `anthropic/claude-opus-5-5:max`, `openai/gpt-5.6-sol:max`, `xai/grok-4.7:xhigh`. An `auto` or `inherit-parent` entry in this line or the cross-judge line means the parent model, so omit `model` for it. If a `task` entry fails on its configured model, rerun that seat once on the same model with a lower thinking suffix, or none, when the error names the thinking level. If the model itself is unavailable, rerun the seat on its family's default model with the configured thinking suffix kept, and say so. Families go by prefix: `anthropic/claude-*`, `openai/gpt-*`, and `xai/grok-*`. With no family match, use `anthropic/claude-opus-5-5:max`. If a default is unavailable too, use the closest model of the same family from `pi --list-models`. Spawn more when the arena covers multiple design directions. Same model N times when the work is generation-bound rather than judgment-sensitive.
 4. Assign output paths. Each candidate writes to its own location (a git worktree where possible, otherwise `/tmp/arena-<slug>/candidate-<n>/`), per the **separate-before-serializing-shared-state** principle skill.
 
 ## Phase B: Fan out
@@ -48,11 +48,11 @@ After all Phase B candidates complete, choose one model from the `arena cross-ju
 
 Read every candidate end to end before picking.
 
-Score each candidate against the rubric criterion by criterion, not on holistic feel. Compare against the cross-judge. Agreement on the base confirms the pick. Disagreement means one of you is biased or the rubric was ambiguous. Read both rationales before deciding.
+Score each candidate against the rubric criterion by criterion, not on holistic feel. Before comparing, collect the judge's verdict with `task_status` (`wait: ["<judge id>"]`). Do not poll or parse its transcript. Compare against the cross-judge. Agreement on the base confirms the pick. Disagreement means one of you is biased or the rubric was ambiguous. Read both rationales before deciding.
 
 Pick the base on which candidate a future maintainer can extend most easily without breaking invariants. Prefer the cleaner boundary or smaller API when two feel tied, per the Laziness Protocol.
 
-Record the pick and the reason in a short synthesis note alongside the base artifact, including the cross-judge's verdict.
+Record the pick and the reason in a short synthesis note under `/tmp/arena-<slug>/` or in your final message, never committed to the repo, including the cross-judge's verdict.
 
 ## Phase E: Graft
 

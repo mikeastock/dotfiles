@@ -68,34 +68,50 @@ const TaskItem = Type.Object({
 
 export default function pstack(pi: ExtensionAPI) {
 	let mode: PotetoModeState = { enabled: false };
-	const background = new Map<string, { controller: AbortController; progress: TaskResult; startedAt: number }>();
+	interface BackgroundEntry {
+		controller: AbortController;
+		progress: TaskResult;
+		startedAt: number;
+		/** Resolves to the formatted report when the subagent ends. */
+		report: Promise<string>;
+		/** `task_status` calls currently waiting on this task. While any wait, they receive the report instead of a message. */
+		waiters: number;
+		done: boolean;
+	}
+	const background = new Map<string, BackgroundEntry>();
 	let nextBackgroundId = 1;
 
 	const showBackground = (ctx: ExtensionContext) => {
 		ctx.ui.setStatus("pstack-tasks", background.size > 0 ? `${background.size} background task(s)` : undefined);
 	};
 
+	const deliverReport = (content: string, ctx: ExtensionContext) => {
+		// An idle session must wake through a user message: a custom message starts the turn without
+		// before_agent_start, and Pi then drops the poteto_mode and pstack_models prompt sections.
+		// A busy session gets the report at its next tool boundary (steer), not after the whole run (followUp).
+		if (ctx.isIdle()) pi.sendUserMessage(content);
+		else pi.sendMessage({ customType: "pstack-task", content, display: true }, { triggerTurn: true, deliverAs: "steer" });
+	};
+
 	const startBackground = (task: TaskSpec, parent: { model?: string; thinkingLevel?: string }, ctx: ExtensionContext): string => {
 		const id = `bg-${nextBackgroundId++}`;
 		const controller = new AbortController();
-		const entry = { controller, progress: pendingResult(task), startedAt: Date.now() };
+		const report = runTask(task, parent, TASK_SESSIONS_DIR, ctx.cwd, controller.signal, (result) => {
+			entry.progress = result;
+		}).then(
+			(result) => `Background task ${id} finished.\n\n${formatFinal([result])}`,
+			(error: unknown) => `Background task ${id} (${task.description}) failed to start: ${String(error)}`,
+		);
+		const entry: BackgroundEntry = { controller, progress: pendingResult(task), startedAt: Date.now(), report, waiters: 0, done: false };
 		background.set(id, entry);
 		showBackground(ctx);
-		const deliver = (content: string) => {
+		void report.then((content) => {
+			entry.done = true;
 			if (controller.signal.aborted) return;
 			background.delete(id);
 			showBackground(ctx);
-			// An idle session must wake through a user message: a custom message starts the turn without
-			// before_agent_start, and Pi then drops the poteto_mode and pstack_models prompt sections.
-			if (ctx.isIdle()) pi.sendUserMessage(content);
-			else pi.sendMessage({ customType: "pstack-task", content, display: true }, { triggerTurn: true, deliverAs: "followUp" });
-		};
-		runTask(task, parent, TASK_SESSIONS_DIR, ctx.cwd, controller.signal, (result) => {
-			entry.progress = result;
-		}).then(
-			(result) => deliver(`Background task ${id} finished.\n\n${formatFinal([result])}`),
-			(error: unknown) => deliver(`Background task ${id} (${task.description}) failed to start: ${String(error)}`),
-		);
+			if (entry.waiters === 0) deliverReport(content, ctx);
+		});
 		return id;
 	};
 
@@ -260,11 +276,12 @@ export default function pstack(pi: ExtensionAPI) {
 		name: "task_status",
 		label: "Task status",
 		description:
-			"List running background subagents started with `task` (id, elapsed time, turns, last activity), and optionally stop some by id. A stopped task sends no report.",
+			"List running background subagents started with `task` (id, elapsed time, turns, last activity). `stop` ends tasks by id; a stopped task sends no report. `wait` blocks until the given tasks finish and returns their reports here instead of as later messages: use it when your next step needs a background result.",
 		parameters: Type.Object({
 			stop: Type.Optional(Type.Array(Type.String(), { description: "Background task ids to stop, e.g. [\"bg-3\"]." })),
+			wait: Type.Optional(Type.Array(Type.String(), { description: "Background task ids to wait for, e.g. [\"bg-1\"]." })),
 		}),
-		async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
+		async execute(_toolCallId, params, signal, _onUpdate, ctx) {
 			const stopped: string[] = [];
 			const unknown: string[] = [];
 			for (const id of params.stop ?? []) {
@@ -277,10 +294,38 @@ export default function pstack(pi: ExtensionAPI) {
 				background.delete(id);
 				stopped.push(id);
 			}
+
+			const waited = (params.wait ?? []).flatMap((id) => {
+				const entry = background.get(id);
+				if (!entry) unknown.push(id);
+				return entry ? [entry] : [];
+			});
+			let reports: string[] = [];
+			if (waited.length > 0) {
+				for (const entry of waited) entry.waiters++;
+				const aborted = new Promise<"aborted">((resolve) => {
+					if (signal?.aborted) resolve("aborted");
+					signal?.addEventListener("abort", () => resolve("aborted"), { once: true });
+				});
+				const outcome = await Promise.race([Promise.all(waited.map((entry) => entry.report)), aborted]);
+				for (const entry of waited) entry.waiters--;
+				if (outcome === "aborted") {
+					// Reports that finished during the interrupted wait were held back for it; send them now.
+					for (const entry of waited) {
+						if (entry.done && entry.waiters === 0 && !entry.controller.signal.aborted) {
+							void entry.report.then((content) => deliverReport(content, ctx));
+						}
+					}
+					throw new Error("task_status: wait aborted");
+				}
+				reports = outcome;
+			}
+
 			showBackground(ctx);
 			const now = Date.now();
 			const running = [...background].map(([id, entry]) => ({ id, startedAt: entry.startedAt, progress: entry.progress }));
-			return { content: [{ type: "text", text: formatBackgroundStatus(running, stopped, unknown, now) }], details: undefined };
+			const status = formatBackgroundStatus(running, stopped, unknown, now);
+			return { content: [{ type: "text", text: [...reports, status].join("\n\n---\n\n") }], details: undefined };
 		},
 	});
 }
