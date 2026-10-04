@@ -27,6 +27,7 @@ import {
 	type TaskSpec,
 	addUsage,
 	currentDepth,
+	inheritedReadonly,
 	emptyUsage,
 	formatBackgroundStatus,
 	formatFinal,
@@ -111,12 +112,15 @@ export default function pstack(pi: ExtensionAPI) {
 		ctx.ui.setWidget("pstack-todos", open ? renderTodos(todos) : undefined);
 	};
 
-	pi.on("session_start", async (_event, ctx) => {
+	const restoreBranchState = (ctx: ExtensionContext) => {
 		const branch = ctx.sessionManager.getBranch();
 		mode = restoreModeState(branch);
 		ctx.ui.setStatus("pstack", mode.enabled ? "poteto" : undefined);
 		showTodos(restoreTodos(branch), ctx);
-	});
+	};
+
+	pi.on("session_start", async (_event, ctx) => restoreBranchState(ctx));
+	pi.on("session_tree", async (_event, ctx) => restoreBranchState(ctx));
 
 	pi.on("before_agent_start", async (event, ctx) => {
 		const skillPath = potetoSkillInvocation(event.prompt);
@@ -126,7 +130,8 @@ export default function pstack(pi: ExtensionAPI) {
 
 		const sections = (event.systemPromptOptions.sections ??= {});
 		if (mode.enabled) sections.poteto_mode = modeReminder(mode);
-		const sessionFile = ctx.sessionManager.getSessionFile();
+		// Subagent sessions share one directory across projects, so only the top-level session names its transcripts.
+		const sessionFile = currentDepth() === 0 ? ctx.sessionManager.getSessionFile() : undefined;
 		if (sessionFile) {
 			sections.pstack_session = sessionSection(sessionFile, ctx.sessionManager.getSessionDir());
 		}
@@ -139,6 +144,10 @@ export default function pstack(pi: ExtensionAPI) {
 		description: "Apply poteto-mode to a task and keep it on (sticky). `/poteto-mode off` turns it off.",
 		handler: async (args, ctx) => {
 			const request = args.trim();
+			if (request === "on") {
+				pi.sendUserMessage("/skill:poteto-mode", { expandPromptTemplates: true, deliverAs: "followUp" });
+				return;
+			}
 			if (request === "off") {
 				setMode({ ...mode, enabled: false }, ctx);
 				ctx.ui.notify("Poteto mode off.", "info");
@@ -194,7 +203,8 @@ export default function pstack(pi: ExtensionAPI) {
 			),
 		}),
 		async execute(_toolCallId, params, signal, onUpdate, ctx) {
-			const tasks = params.tasks as TaskSpec[];
+			const forceReadonly = inheritedReadonly();
+			const tasks = (params.tasks as TaskSpec[]).map((task) => (forceReadonly ? { ...task, readonly: true } : task));
 			const depth = currentDepth();
 			validateTasks(tasks, depth);
 
@@ -230,11 +240,15 @@ export default function pstack(pi: ExtensionAPI) {
 
 			const usage = emptyUsage();
 			for (const result of results) addUsage(usage, result.usage);
-			const note = params.background ? "Ran in the foreground: background tasks need an interactive top-level session.\n\n" : "";
+			const notes = [
+				params.background ? "Ran in the foreground: background tasks need an interactive top-level session." : "",
+				forceReadonly ? "Ran read-only: this subagent is read-only, so every subagent it spawns is too." : "",
+			].filter(Boolean);
 			return {
-				content: [{ type: "text", text: note + formatFinal(results) }],
+				content: [{ type: "text", text: [...notes, formatFinal(results)].join("\n\n") }],
 				details: undefined,
 				usage,
+				isError: results.every((result) => result.status === "failed"),
 			};
 		},
 	});
@@ -249,9 +263,13 @@ export default function pstack(pi: ExtensionAPI) {
 		}),
 		async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
 			const stopped: string[] = [];
+			const unknown: string[] = [];
 			for (const id of params.stop ?? []) {
 				const entry = background.get(id);
-				if (!entry) continue;
+				if (!entry) {
+					unknown.push(id);
+					continue;
+				}
 				entry.controller.abort();
 				background.delete(id);
 				stopped.push(id);
@@ -259,7 +277,7 @@ export default function pstack(pi: ExtensionAPI) {
 			showBackground(ctx);
 			const now = Date.now();
 			const running = [...background].map(([id, entry]) => ({ id, startedAt: entry.startedAt, progress: entry.progress }));
-			return { content: [{ type: "text", text: formatBackgroundStatus(running, stopped, now) }], details: undefined };
+			return { content: [{ type: "text", text: formatBackgroundStatus(running, stopped, unknown, now) }], details: undefined };
 		},
 	});
 }

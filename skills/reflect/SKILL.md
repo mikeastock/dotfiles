@@ -28,7 +28,7 @@ Pi transcripts are JSONL session files: a header line, then one entry per line, 
 
 One `task` call with three entries, `agent: "general"`, `readonly: true`, with `model` set as below. Read-only keeps MCP access for context lookups (tickets, chat threads, observability traces referenced in the transcript).
 
-Each reviewer and the synthesizer name a role line in the pstack model config (`~/.pi/agent/pstack-models.md`) and a default. Set `model` to that line's value, or to the default if the config or the line is missing. Leave `model` unset when the value is `auto` or `inherit-parent`. If a `task` entry fails because its model is unavailable, rerun it on the default and say so. If the default is unavailable too, use the closest model of the same family from `pi --list-models`.
+Each reviewer and the synthesizer name a role line in the pstack model config (`~/.pi/agent/pstack-models.md`) and a default. Set `model` to that line's value, or to the default if the config or the line is missing. Leave `model` unset when the value is `auto` or `inherit-parent`. If a `task` entry fails on its model, rerun it once on the same model with a lower thinking suffix, or none, when the error names the thinking level. If the model itself is unavailable, use the closest model of the same family from `pi --list-models`, never a costlier tier than the one configured, and say so.
 
 | Lens | Role line | Default `model` | Prompt template |
 |---|---|---|---|

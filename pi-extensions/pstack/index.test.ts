@@ -6,8 +6,11 @@ import { describe, it } from "node:test";
 import { MODE_ENTRY_TYPE, modeReminder, potetoSkillInvocation, restoreModeState } from "./mode.ts";
 import {
 	type TaskResult,
+	agentSystemPrompt,
 	applyChildEvent,
 	buildChildArgs,
+	childError,
+	inheritedReadonly,
 	capOutput,
 	childSystemPrompt,
 	currentDepth,
@@ -30,7 +33,7 @@ function freshResult(): TaskResult {
 
 describe("buildChildArgs", () => {
 	it("runs an explicit model without the parent thinking level", () => {
-		assert.deepEqual(buildChildArgs({ description: "d", prompt: "do it", model: "xai/grok-4.7:xhigh" }, parent, session), [
+		assert.deepEqual(buildChildArgs({ description: "d", prompt: "do it", model: "xai/grok-4.7:xhigh" }, parent, session, 1), [
 			"--mode",
 			"json",
 			"-p",
@@ -47,7 +50,7 @@ describe("buildChildArgs", () => {
 
 	it("inherits the parent model and thinking level for inherit-parent, auto, and omitted models", () => {
 		for (const model of ["inherit-parent", "auto", undefined]) {
-			assert.deepEqual(buildChildArgs({ description: "d", prompt: "p", model }, parent, session).slice(7, 11), [
+			assert.deepEqual(buildChildArgs({ description: "d", prompt: "p", model }, parent, session, 1).slice(7, 11), [
 				"--model",
 				"openai/gpt-5.6-luna",
 				"--thinking",
@@ -57,7 +60,7 @@ describe("buildChildArgs", () => {
 	});
 
 	it("drops edit and write tools for read-only tasks and appends the system prompt file", () => {
-		const args = buildChildArgs({ description: "d", prompt: "-starts-with-dash", readonly: true }, {}, session, "/tmp/sp.md");
+		const args = buildChildArgs({ description: "d", prompt: "-starts-with-dash", readonly: true }, {}, session, 1, "/tmp/sp.md");
 		assert.deepEqual(args, [
 			"--mode",
 			"json",
@@ -88,6 +91,27 @@ describe("findTranscript", () => {
 	});
 });
 
+describe("delegation limits", () => {
+	it("removes the task tools from children at the nesting limit, alongside read-only exclusions", () => {
+		const args = buildChildArgs({ description: "d", prompt: "p", readonly: true }, {}, session, 2);
+		assert.deepEqual(args.slice(args.indexOf("--exclude-tools"), args.indexOf("--exclude-tools") + 2), ["--exclude-tools", "edit,write,task,task_status"]);
+		assert.ok(!buildChildArgs({ description: "d", prompt: "p" }, {}, session, 1).includes("--exclude-tools"));
+	});
+
+	it("reads the inherited read-only flag from the environment", () => {
+		assert.equal(inheritedReadonly({ PSTACK_TASK_READONLY: "1" }), true);
+		assert.equal(inheritedReadonly({}), false);
+	});
+});
+
+describe("childError", () => {
+	it("drops Pi's session-creation warning and keeps the real error", () => {
+		const stderr = "Warning: No project session found with id abc; creating a new session\nError: Model \"foo/bar\" not found\n";
+		assert.equal(childError(stderr), 'Error: Model "foo/bar" not found');
+		assert.equal(childError("Warning: No project session found with id abc; creating a new session\n"), "");
+	});
+});
+
 describe("childSystemPrompt", () => {
 	it("is empty for a writable general task", () => {
 		assert.equal(childSystemPrompt({ description: "d", prompt: "p" }), undefined);
@@ -100,8 +124,17 @@ describe("childSystemPrompt", () => {
 		assert.doesNotMatch(prompt ?? "", /^---/);
 	});
 
-	it("points poteto-agent at the installed poteto-mode skill", () => {
-		assert.match(childSystemPrompt({ description: "d", prompt: "p", agent: "poteto-agent" }) ?? "", /~\/\.agents\/skills\/poteto-mode\/SKILL\.md/);
+	it("inlines the poteto-mode skill body into the poteto-agent prompt", async () => {
+		const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), "pstack-skill-"));
+		const skillFile = path.join(dir, "SKILL.md");
+		await fs.promises.writeFile(skillFile, "---\nname: poteto-mode\n---\n\n# Poteto mode\n\nLast line of the skill.\n");
+		const prompt = agentSystemPrompt("poteto-agent", skillFile) ?? "";
+		assert.ok(prompt.startsWith("# Poteto subagent"));
+		assert.match(prompt, new RegExp(`<skill name="poteto-mode" location="${skillFile}">`));
+		assert.match(prompt, /# Poteto mode\n\nLast line of the skill\.\n<\/skill>$/);
+		assert.doesNotMatch(prompt, /name: poteto-mode/);
+		assert.throws(() => agentSystemPrompt("poteto-agent", path.join(dir, "missing.md")), /ENOENT/);
+		await fs.promises.rm(dir, { recursive: true });
 	});
 });
 
@@ -163,7 +196,7 @@ describe("formatting", () => {
 	it("caps long output and reports failures with their error", () => {
 		assert.match(capOutput("x".repeat(60 * 1024)), /\[output truncated: 10240 bytes omitted\]$/);
 		const failed = { ...freshResult(), status: "failed" as const, error: "boom", description: "probe" };
-		assert.match(formatFinal([failed]), /## \[1\] probe[\s\S]*status: failed[\s\S]*Error: boom/);
+		assert.match(formatFinal([failed]), /## \[1\] probe[\s\S]*status: failed[\s\S]*Failed: boom/);
 	});
 });
 
@@ -171,10 +204,10 @@ describe("formatBackgroundStatus", () => {
 	it("lists running tasks with elapsed minutes and last activity, and names stopped ids", () => {
 		const progress = { ...pendingResult({ description: "owner #12", prompt: "p", agent: "poteto-agent" }), turns: 4, lastActivity: "bash gh pr checks" };
 		assert.equal(
-			formatBackgroundStatus([{ id: "bg-2", startedAt: 0, progress }], ["bg-1"], 125_000),
-			"Stopped: bg-1\nRunning background tasks:\nbg-2: owner #12 (poteto-agent, 2m, 4 turns) \u00b7 last: bash gh pr checks",
+			formatBackgroundStatus([{ id: "bg-2", startedAt: 0, progress }], ["bg-1"], ["bg-9"], 125_000),
+			"Stopped: bg-1\nNot running (unknown or already finished): bg-9\nRunning background tasks:\nbg-2: owner #12 (poteto-agent, 2m, 4 turns) \u00b7 last: bash gh pr checks",
 		);
-		assert.equal(formatBackgroundStatus([], [], 0), "No background tasks running.");
+		assert.equal(formatBackgroundStatus([], [], [], 0), "No background tasks running.");
 	});
 });
 

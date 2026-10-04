@@ -12,7 +12,7 @@ metadata:
 
 Explore the codebase to answer "how does X work?" questions. Produce architectural explanations at the level of a senior engineer onboarding onto a subsystem, enough to build a working mental model, not so much that it reads like annotated source code.
 
-Each spawn below names a role line in the pstack model config (`~/.pi/agent/pstack-models.md`) and a default. Set `model` to that line's value, or to the default if the config or the line is missing. Leave `model` unset when the value is `auto` or `inherit-parent`. If a `task` entry fails because its model is unavailable, rerun it on the default and say so. If the default is unavailable too, use the closest model of the same family from `pi --list-models`.
+Each spawn below names a role line in the pstack model config (`~/.pi/agent/pstack-models.md`) and a default. Set `model` to that line's value, or to the default if the config or the line is missing. Leave `model` unset when the value is `auto` or `inherit-parent`. If a `task` entry fails on its model, rerun it once on the same model with a lower thinking suffix, or none, when the error names the thinking level. If the model itself is unavailable, use the closest model of the same family from `pi --list-models`, never a costlier tier than the one configured, and say so.
 
 ## Step 1. Assess Complexity
 

@@ -15,9 +15,12 @@ export const MAX_TASKS = 12;
 export const MAX_CONCURRENCY = 6;
 export const MAX_DEPTH = 2;
 export const DEPTH_ENV = "PSTACK_TASK_DEPTH";
+/** Set on read-only children so every subagent they spawn is read-only too. */
+export const READONLY_ENV = "PSTACK_TASK_READONLY";
 const OUTPUT_CAP_BYTES = 50 * 1024;
 const MAX_PROMPT_BYTES = 100 * 1024;
 const READONLY_EXCLUDED_TOOLS = ["edit", "write"];
+const DELEGATION_TOOLS = ["task", "task_status"];
 const READONLY_NOTICE =
 	"This is a read-only task. Do not create, modify, or delete files, and do not run commands that change the repository or external systems.";
 
@@ -50,6 +53,10 @@ export interface TaskResult {
 
 const AGENTS_DIR = fileURLToPath(new URL("./agents/", import.meta.url));
 
+export function inheritedReadonly(env: NodeJS.ProcessEnv = process.env): boolean {
+	return env[READONLY_ENV] === "1";
+}
+
 export function currentDepth(env: NodeJS.ProcessEnv = process.env): number {
 	const depth = Number.parseInt(env[DEPTH_ENV] ?? "0", 10);
 	return Number.isFinite(depth) && depth > 0 ? depth : 0;
@@ -59,9 +66,15 @@ export function stripFrontmatter(markdown: string): string {
 	return markdown.replace(/^---\n[\s\S]*?\n---\n?/, "").trim();
 }
 
-export function agentSystemPrompt(agent: AgentType): string | undefined {
+export const POTETO_SKILL_FILE = path.join(os.homedir(), ".agents", "skills", "poteto-mode", "SKILL.md");
+
+export function agentSystemPrompt(agent: AgentType, potetoSkillFile = POTETO_SKILL_FILE): string | undefined {
 	if (agent === "general") return undefined;
-	return stripFrontmatter(fs.readFileSync(path.join(AGENTS_DIR, `${agent}.md`), "utf8"));
+	const prompt = stripFrontmatter(fs.readFileSync(path.join(AGENTS_DIR, `${agent}.md`), "utf8"));
+	if (agent !== "poteto-agent") return prompt;
+	// Inline the skill: models asked to "read it in full" often stop after the first page.
+	const skill = stripFrontmatter(fs.readFileSync(potetoSkillFile, "utf8"));
+	return `${prompt}\n\n<skill name="poteto-mode" location="${potetoSkillFile}">\nReferences are relative to ${path.dirname(potetoSkillFile)}.\n\n${skill}\n</skill>`;
 }
 
 export function resolveModel(spec: TaskSpec, parent: ParentModel): { model?: string; thinkingLevel?: string } {
@@ -77,12 +90,19 @@ export interface ChildSession {
 	id: string;
 }
 
-export function buildChildArgs(spec: TaskSpec, parent: ParentModel, session: ChildSession, systemPromptFile?: string): string[] {
+export function buildChildArgs(
+	spec: TaskSpec,
+	parent: ParentModel,
+	session: ChildSession,
+	childDepth: number,
+	systemPromptFile?: string,
+): string[] {
 	const args = ["--mode", "json", "-p", "--session-dir", session.dir, "--session-id", session.id];
 	const { model, thinkingLevel } = resolveModel(spec, parent);
 	if (model) args.push("--model", model);
 	if (thinkingLevel) args.push("--thinking", thinkingLevel);
-	if (spec.readonly) args.push("--exclude-tools", READONLY_EXCLUDED_TOOLS.join(","));
+	const excluded = [...(spec.readonly ? READONLY_EXCLUDED_TOOLS : []), ...(childDepth >= MAX_DEPTH ? DELEGATION_TOOLS : [])];
+	if (excluded.length > 0) args.push("--exclude-tools", excluded.join(","));
 	if (systemPromptFile) args.push("--append-system-prompt", systemPromptFile);
 	args.push("--", spec.prompt);
 	return args;
@@ -154,7 +174,7 @@ export function applyChildEvent(result: TaskResult, line: string): boolean {
 	const message = event.message;
 	result.turns++;
 	addUsage(result.usage, message.usage);
-	if (message.model && !result.model) result.model = `${message.provider}/${message.model}`;
+	if (message.model) result.model = `${message.provider}/${message.model}`;
 	for (const part of message.content) {
 		if (part.type === "toolCall") result.lastActivity = describeToolCall(part.name, part.arguments);
 	}
@@ -168,6 +188,15 @@ export function applyChildEvent(result: TaskResult, line: string): boolean {
 		result.error = message.errorMessage ?? `child stopped: ${message.stopReason}`;
 	}
 	return true;
+}
+
+/** Pi warns on stderr when `--session-id` creates the session; that line is never the failure. */
+export function childError(stderr: string): string {
+	return stderr
+		.split("\n")
+		.filter((line) => line.trim() && !line.startsWith("Warning: No project session found with id"))
+		.join("\n")
+		.trim();
 }
 
 export function capOutput(output: string): string {
@@ -225,14 +254,15 @@ export async function runTask(
 		}
 		await fs.promises.mkdir(sessionDir, { recursive: true });
 		const session = { dir: sessionDir, id: randomUUID() };
-		const invocation = piInvocation(buildChildArgs(spec, parent, session, systemPromptFile));
+		const childDepth = currentDepth() + 1;
+		const invocation = piInvocation(buildChildArgs(spec, parent, session, childDepth, systemPromptFile));
 		let stderr = "";
 		let aborted = false;
 
 		const exitCode = await new Promise<number>((resolve) => {
 			const child = spawn(invocation.command, invocation.args, {
 				cwd: spec.cwd ?? defaultCwd,
-				env: { ...process.env, [DEPTH_ENV]: String(currentDepth() + 1) },
+				env: { ...process.env, [DEPTH_ENV]: String(childDepth), ...(spec.readonly ? { [READONLY_ENV]: "1" } : {}) },
 				stdio: ["ignore", "pipe", "pipe"],
 			});
 			let buffer = "";
@@ -263,7 +293,7 @@ export async function runTask(
 		});
 
 		if (aborted) result.error = "aborted";
-		else if (exitCode !== 0 && !result.error) result.error = stderr.trim() || `pi exited with code ${exitCode}`;
+		else if (exitCode !== 0 && !result.error) result.error = childError(stderr) || `pi exited with code ${exitCode}`;
 		result.status = result.error ? "failed" : "done";
 		result.transcript = await findTranscript(session);
 		onChange(result);
@@ -304,6 +334,7 @@ export function pendingResult(spec: TaskSpec): TaskResult {
 export function formatBackgroundStatus(
 	running: Array<{ id: string; startedAt: number; progress: TaskResult }>,
 	stopped: string[],
+	unknown: string[],
 	now: number,
 ): string {
 	const lines = running.map(({ id, startedAt, progress }) => {
@@ -313,6 +344,7 @@ export function formatBackgroundStatus(
 	});
 	return [
 		...(stopped.length > 0 ? [`Stopped: ${stopped.join(", ")}`] : []),
+		...(unknown.length > 0 ? [`Not running (unknown or already finished): ${unknown.join(", ")}`] : []),
 		running.length > 0 ? `Running background tasks:\n${lines.join("\n")}` : "No background tasks running.",
 	].join("\n");
 }
@@ -332,7 +364,7 @@ export function formatFinal(results: TaskResult[]): string {
 		.map((result, index) => {
 			const transcript = result.transcript ? `\ntranscript: ${result.transcript}` : "";
 			const header = `## [${index + 1}] ${result.description}\nagent: ${result.agent} · model: ${result.model ?? "parent model"} · status: ${result.status} · turns: ${result.turns}${transcript}`;
-			const body = result.status === "failed" ? `Error: ${result.error}\n\n${result.output}`.trim() : result.output || "(no output)";
+			const body = result.status === "failed" ? `Failed: ${result.error}\n\n${result.output}`.trim() : result.output || "(no output)";
 			return `${header}\n\n${capOutput(body)}`;
 		})
 		.join("\n\n---\n\n");

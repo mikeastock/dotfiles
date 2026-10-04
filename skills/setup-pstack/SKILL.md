@@ -35,7 +35,7 @@ The default role-to-model mapping is the config shape shown in step 5 below. If 
 
 ### 4. Validate
 
-Every real model written must be in the detected set. `inherit-parent` and `auto` always pass. If a chosen model is not available, stop and ask again.
+Every real model written must be in the detected set, and must actually run with its thinking suffix: not every model accepts every level. Test each distinct value once with `pi -p --no-session --model <value> "reply ok"`, in parallel. `inherit-parent` and `auto` always pass. If a chosen value fails, drop to the next lower thinking level that runs and say so, or stop and ask again when no level runs.
 
 ### 5. Write the config
 
