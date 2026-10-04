@@ -142,6 +142,7 @@ Pi settings and models are copied by `make install`. Extensions, prompts, and th
 - `eli5` — dead-simple HTML picture explainer for any topic, vendored from `anthropics/claude-plugins-community` (`eli5@claude-community`) commit `863e70d`
 - `bro` — restate the last message in plain human language, vendored from `dmmulroy/skills` commit `cbd1929` (explicit invocation only)
 - `product-description` — outside-in, feature-by-feature behavior spec of a product from its code and tests, vendored from `steveruizok` gist `83ae5c53` revision `f9435a3`
+- pstack (Pi only) — poteto's rigor workflow from `cursor/plugins` commit `e43c7ee`, ported to Pi alongside the [`pstack` extension](pi-extensions/pstack/README.md): `poteto-mode` with its playbooks, the 24 `principle-*` skills, `how`, `why`, `recall`, `blast-radius`, `architect`, `arena`, `swarm`, `interrogate`, `figure-it-out`, `reflect`, `correct`, `automate-me`, `tdd`, `benchmark-checklist`, `no-comments`, `show-me-your-work`, `technical-writing`, `typescript-best-practices`, `create-verification-skill`, `maintain-verification-skill`, and `setup-pstack` (explicit invocation only, except `setup-pstack`)
 
 ### Notable plugin skills
 
@@ -173,6 +174,7 @@ Pi settings and models are copied by `make install`. Extensions, prompts, and th
 - `pi-prompt-shelf` — local copy of `tanishqkancharla/pi-prompt-shelf`; shelves editor prompts per session with shortcuts and `/shelf`
 - `full-read-for-paths` — upgrades partial `read` calls to full reads for configured resource-file paths
 - `revdiff` — adds `/revdiff` to launch the revdiff TUI and send captured annotations back to Pi
+- `pstack` — [runtime for the pstack skills](pi-extensions/pstack/README.md): a `task` subagent tool (per-call model, parallel and background runs), `task_status`, `todo_write`, sticky `/poteto-mode`, and `~/.pi/agent/pstack-models.md` injection
 
 ## Structure
 
@@ -187,12 +189,15 @@ dotfiles/
 ├── skills/                  # custom agent skills
 │   ├── agent-browser/       # fast browser automation CLI for AI agents
 │   ├── before-and-after/    # GitHub PR screenshot and video formatting
+│   ├── poteto-mode/         # pstack entry point, playbooks, and PR/orchestration scripts
+│   ├── principle-*/         # pstack principles, one per skill
 │   ├── reddit-search/       # Gemini-grounded Reddit search and thread resolution
 │   ├── ui-recording-timeline/ # interactive UI recording paint timelines
 │   └── writing-pr/          # PR title and body guidance
 ├── configs/                 # shared AGENTS.md for Codex and Pi
 ├── amp-plugins/             # custom Amp plugins
 ├── pi-extensions/           # Pi extensions
+│   ├── pstack/             # pstack runtime: task subagents, todos, sticky poteto-mode
 │   └── wafer/              # Wafer Serverless model provider
 ├── pi-themes/               # Pi themes
 ├── prompts/                 # Pi prompt templates
