@@ -10,6 +10,7 @@ import {
 	applyChildEvent,
 	buildChildArgs,
 	childError,
+	readableError,
 	inheritedReadonly,
 	capOutput,
 	childSystemPrompt,
@@ -17,8 +18,10 @@ import {
 	emptyUsage,
 	formatBackgroundStatus,
 	formatFinal,
+	formatProgress,
 	mapWithConcurrency,
 	pendingResult,
+	plannedModel,
 	findTranscript,
 	validateTasks,
 } from "./task.ts";
@@ -28,7 +31,7 @@ const parent = { model: "openai/gpt-5.6-luna", thinkingLevel: "high" };
 const session = { dir: "/s", id: "abc" };
 
 function freshResult(): TaskResult {
-	return { description: "d", agent: "general", status: "running", output: "", turns: 0, usage: emptyUsage() };
+	return { description: "d", agent: "general", inheritedModel: false, status: "running", output: "", turns: 0, usage: emptyUsage() };
 }
 
 describe("buildChildArgs", () => {
@@ -98,9 +101,29 @@ describe("delegation limits", () => {
 		assert.ok(!buildChildArgs({ description: "d", prompt: "p" }, {}, session, 1).includes("--exclude-tools"));
 	});
 
+	it("never gives comment-sicko the task tools", () => {
+		const args = buildChildArgs({ description: "d", prompt: "p", agent: "comment-sicko" }, {}, session, 1);
+		assert.equal(args[args.indexOf("--exclude-tools") + 1], "task,task_status");
+	});
+
+	it("rejects a cwd that is not an existing directory", () => {
+		assert.throws(() => validateTasks([{ description: "w", prompt: "p", cwd: "/definitely/not/here" }], 0), /cwd \/definitely\/not\/here is not an existing directory/);
+		assert.doesNotThrow(() => validateTasks([{ description: "w", prompt: "p", cwd: os.tmpdir() }], 0));
+	});
+
 	it("reads the inherited read-only flag from the environment", () => {
 		assert.equal(inheritedReadonly({ PSTACK_TASK_READONLY: "1" }), true);
 		assert.equal(inheritedReadonly({}), false);
+	});
+});
+
+describe("readableError", () => {
+	it("pulls the innermost message out of a provider JSON error", () => {
+		assert.equal(
+			readableError('400 {"type":"error","error":{"type":"invalid_request_error","message":"thinking level minimal is not supported"}}'),
+			"thinking level minimal is not supported",
+		);
+		assert.equal(readableError("connection reset"), "connection reset");
 	});
 });
 
@@ -192,6 +215,29 @@ describe("applyChildEvent", () => {
 	});
 });
 
+describe("plannedModel", () => {
+	it("splits an explicit model's thinking suffix and marks parent-model tasks as inherited", () => {
+		assert.deepEqual(plannedModel({ description: "d", prompt: "p", model: "xai/grok-4.7:medium" }, parent), {
+			model: "xai/grok-4.7",
+			thinking: "medium",
+			inherited: false,
+		});
+		assert.deepEqual(plannedModel({ description: "d", prompt: "p", model: "auto" }, parent), {
+			model: "openai/gpt-5.6-luna",
+			thinking: "high",
+			inherited: true,
+		});
+		assert.deepEqual(plannedModel({ description: "d", prompt: "p", model: "xai/grok-4.7" }, parent), { model: "xai/grok-4.7", thinking: undefined, inherited: false });
+	});
+
+	it("shows the planned model in progress before the child reports, and flags inheritance in the header", () => {
+		const pending = pendingResult({ description: "c3", prompt: "p", model: "xai/grok-4.7:medium" }, parent);
+		assert.match(formatProgress([pending]), /\(general, xai\/grok-4\.7, 0 turns\)/);
+		const inherited = { ...pendingResult({ description: "w", prompt: "p" }, parent), status: "done" as const, output: "ok" };
+		assert.match(formatFinal([inherited]), /model: openai\/gpt-5\.6-luna \(inherited from parent\) · thinking: high · status: done/);
+	});
+});
+
 describe("formatting", () => {
 	it("caps long output and reports failures with their error", () => {
 		assert.match(capOutput("x".repeat(60 * 1024)), /\[output truncated: 10240 bytes omitted\]$/);
@@ -202,7 +248,7 @@ describe("formatting", () => {
 
 describe("formatBackgroundStatus", () => {
 	it("lists running tasks with elapsed minutes and last activity, and names stopped ids", () => {
-		const progress = { ...pendingResult({ description: "owner #12", prompt: "p", agent: "poteto-agent" }), turns: 4, lastActivity: "bash gh pr checks" };
+		const progress = { ...pendingResult({ description: "owner #12", prompt: "p", agent: "poteto-agent" }, {}), turns: 4, lastActivity: "bash gh pr checks" };
 		assert.equal(
 			formatBackgroundStatus([{ id: "bg-2", startedAt: 0, progress }], ["bg-1"], ["bg-9"], 125_000),
 			"Stopped: bg-1\nNot running (unknown or already finished): bg-9\nRunning background tasks:\nbg-2: owner #12 (poteto-agent, 2m, 4 turns) \u00b7 last: bash gh pr checks",
@@ -239,10 +285,12 @@ describe("todos", () => {
 			["2/4 done", "[x] 1. repro", "[~] 2. fix", "[-] 3. bench", "[ ] 4. pr"],
 		);
 		assert.deepEqual(renderTodos([]), ["(no todos)"]);
-		assert.deepEqual(renderTodos([{ content: "1. Reproduce it", status: "pending" }, { content: "2) Fix it", status: "pending" }]), [
-			"0/2 done",
+		assert.deepEqual(renderTodos([{ content: "1. Reproduce it", status: "pending" }, { content: "2) Fix it", status: "pending" }, { content: "3 - Ship it", status: "pending" }, { content: "Step 4: Report", status: "pending" }]), [
+			"0/4 done",
 			"[ ] 1. Reproduce it",
 			"[ ] 2. Fix it",
+			"[ ] 3. Ship it",
+			"[ ] 4. Report",
 		]);
 	});
 

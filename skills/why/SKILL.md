@@ -85,7 +85,7 @@ Launch all matching investigators in a single `task` call so they run concurrent
 
 Subagent config (each):
 - `agent`: `general`
-- `model`: the `why investigators` line, default `xai/grok-4.7:xhigh`
+- `model`: the `why investigators` line, default `xai/grok-4.7:xhigh`. Always pass it. Omitting `model` silently runs the investigator on your own model.
 - `readonly`: `true`. Read-only drops the edit and write tools but keeps MCP access.
 
 Each investigator gets:
@@ -129,7 +129,7 @@ If your scope assessment suggests a single-commit trivial target where the PR de
 Spawn one synthesizer subagent:
 
 - `agent`: `general`
-- `model`: the `why synthesizer` line, default `anthropic/claude-opus-5-5:max`
+- `model`: the `why synthesizer` line, default `anthropic/claude-opus-5-5:max`. Always pass it.
 - `readonly`: `true`. The synthesizer's quality check spot-verifies citations, which can require MCP access, and read-only keeps it.
 
 The synthesizer gets:

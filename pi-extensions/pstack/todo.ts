@@ -11,7 +11,7 @@ export interface TodoDetails {
 }
 
 // Models often number items themselves; the widget numbers them already.
-const LEADING_NUMBER = /^\s*\d+[.)]\s+/;
+const LEADING_NUMBER = /^\s*(?:step\s+)?\d+\s*[.):-]\s+/i;
 
 const MARKS: Record<TodoStatus, string> = { pending: "[ ]", in_progress: "[~]", completed: "[x]", cancelled: "[-]" };
 

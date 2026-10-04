@@ -23,6 +23,7 @@ import {
 	AGENT_TYPES,
 	MAX_CONCURRENCY,
 	MAX_TASKS,
+	POTETO_SKILL_FILE,
 	type TaskResult,
 	type TaskSpec,
 	addUsage,
@@ -102,7 +103,7 @@ export default function pstack(pi: ExtensionAPI) {
 			(result) => `Background task ${id} finished.\n\n${formatFinal([result])}`,
 			(error: unknown) => `Background task ${id} (${task.description}) failed to start: ${String(error)}`,
 		);
-		const entry: BackgroundEntry = { controller, progress: pendingResult(task), startedAt: Date.now(), report, waiters: 0, done: false };
+		const entry: BackgroundEntry = { controller, progress: pendingResult(task, parent), startedAt: Date.now(), report, waiters: 0, done: false };
 		background.set(id, entry);
 		showBackground(ctx);
 		void report.then((content) => {
@@ -164,7 +165,9 @@ export default function pstack(pi: ExtensionAPI) {
 		handler: async (args, ctx) => {
 			const request = args.trim();
 			if (request === "on") {
-				pi.sendUserMessage("/skill:poteto-mode", { expandPromptTemplates: true, deliverAs: "followUp" });
+				// No task yet: turn the mode on without a turn. The reminder points at the skill once a task arrives.
+				setMode({ enabled: true, skillPath: POTETO_SKILL_FILE }, ctx);
+				ctx.ui.notify("Poteto mode on.", "info");
 				return;
 			}
 			if (request === "off") {
@@ -217,7 +220,7 @@ export default function pstack(pi: ExtensionAPI) {
 			background: Type.Optional(
 				Type.Boolean({
 					description:
-						"Return immediately and keep working. Each subagent's report arrives later as its own message that starts a new turn. Default false: the call blocks until every subagent finishes. Ignored inside subagents and print mode.",
+						"Return immediately and keep working. Each report arrives later as its own message: at your next tool call while you are busy, or as a new turn when idle. Use `task_status` with `wait` when your next step needs a report. Default false: the call blocks until every subagent finishes. Ignored inside subagents and print mode.",
 				}),
 			),
 		}),
@@ -240,14 +243,14 @@ export default function pstack(pi: ExtensionAPI) {
 					content: [
 						{
 							type: "text",
-							text: `Started ${ids.length} background task(s). Each report arrives as a separate message when it finishes.\n${lines.join("\n")}`,
+							text: `Started ${ids.length} background task(s). Each report arrives as a separate message when it finishes, or call task_status with wait to collect it.\n${lines.join("\n")}`,
 						},
 					],
 					details: undefined,
 				};
 			}
 
-			const progress = tasks.map(pendingResult);
+			const progress = tasks.map((task) => pendingResult(task, parent));
 			const report = () => onUpdate?.({ content: [{ type: "text", text: formatProgress(progress) }], details: undefined });
 
 			const results = await mapWithConcurrency(tasks, MAX_CONCURRENCY, (task, index) =>

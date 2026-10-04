@@ -40,6 +40,10 @@ export interface ParentModel {
 
 export interface TaskResult {
 	description: string;
+	/** Thinking level the child was started with, from the model suffix or the parent. */
+	thinking?: string;
+	/** True when the task named no model and ran on the parent's. */
+	inheritedModel: boolean;
 	transcript?: string;
 	agent: AgentType;
 	model?: string;
@@ -85,6 +89,16 @@ export function resolveModel(spec: TaskSpec, parent: ParentModel): { model?: str
 	return { model: requested };
 }
 
+const THINKING_SUFFIX = /:(off|minimal|low|medium|high|xhigh|max)$/;
+
+/** The model and thinking level a task starts with, split for display. */
+export function plannedModel(spec: TaskSpec, parent: ParentModel): { model?: string; thinking?: string; inherited: boolean } {
+	const requested = spec.model?.trim();
+	const inherited = !requested || (PARENT_MODEL_ALIASES as readonly string[]).includes(requested);
+	const { model, thinkingLevel } = resolveModel(spec, parent);
+	return { model: model?.replace(THINKING_SUFFIX, ""), thinking: model?.match(THINKING_SUFFIX)?.[1] ?? thinkingLevel, inherited };
+}
+
 export interface ChildSession {
 	dir: string;
 	id: string;
@@ -101,7 +115,9 @@ export function buildChildArgs(
 	const { model, thinkingLevel } = resolveModel(spec, parent);
 	if (model) args.push("--model", model);
 	if (thinkingLevel) args.push("--thinking", thinkingLevel);
-	const excluded = [...(spec.readonly ? READONLY_EXCLUDED_TOOLS : []), ...(childDepth >= MAX_DEPTH ? DELEGATION_TOOLS : [])];
+	// Comment Sicko is a leaf reviewer: given task, it re-delegates the whole job to another copy of itself.
+	const leaf = childDepth >= MAX_DEPTH || spec.agent === "comment-sicko";
+	const excluded = [...(spec.readonly ? READONLY_EXCLUDED_TOOLS : []), ...(leaf ? DELEGATION_TOOLS : [])];
 	if (excluded.length > 0) args.push("--exclude-tools", excluded.join(","));
 	if (systemPromptFile) args.push("--append-system-prompt", systemPromptFile);
 	args.push("--", spec.prompt);
@@ -121,6 +137,9 @@ export function validateTasks(tasks: TaskSpec[], depth: number): void {
 	if (tasks.length === 0) throw new Error("task: pass at least one task.");
 	if (tasks.length > MAX_TASKS) throw new Error(`task: at most ${MAX_TASKS} tasks per call, got ${tasks.length}.`);
 	for (const task of tasks) {
+		if (task.cwd && !fs.statSync(task.cwd, { throwIfNoEntry: false })?.isDirectory()) {
+			throw new Error(`task "${task.description}": cwd ${task.cwd} is not an existing directory.`);
+		}
 		if (Buffer.byteLength(task.prompt, "utf8") > MAX_PROMPT_BYTES) {
 			throw new Error(
 				`task "${task.description}": prompt exceeds ${MAX_PROMPT_BYTES / 1024} KB. Write the context to a file and pass its path.`,
@@ -185,9 +204,26 @@ export function applyChildEvent(result: TaskResult, line: string): boolean {
 		.trim();
 	if (text) result.output = text;
 	if (message.stopReason === "error" || message.stopReason === "aborted") {
-		result.error = message.errorMessage ?? `child stopped: ${message.stopReason}`;
+		result.error = message.errorMessage ? readableError(message.errorMessage) : `child stopped: ${message.stopReason}`;
 	}
 	return true;
+}
+
+/** Provider errors often arrive as a JSON body; surface its innermost `message`. */
+export function readableError(errorMessage: string): string {
+	const json = errorMessage.slice(errorMessage.indexOf("{"));
+	try {
+		let value: unknown = JSON.parse(json);
+		let message: string | undefined;
+		while (value && typeof value === "object") {
+			const record = value as { message?: unknown; error?: unknown };
+			if (typeof record.message === "string") message = record.message;
+			value = record.error;
+		}
+		return message ?? errorMessage;
+	} catch {
+		return errorMessage;
+	}
 }
 
 /** Pi warns on stderr when `--session-id` creates the session; that line is never the failure. */
@@ -233,16 +269,7 @@ export async function runTask(
 	signal: AbortSignal | undefined,
 	onChange: (result: TaskResult) => void,
 ): Promise<TaskResult> {
-	const agent = spec.agent ?? "general";
-	const result: TaskResult = {
-		description: spec.description,
-		agent,
-		model: resolveModel(spec, parent).model,
-		status: "running",
-		output: "",
-		turns: 0,
-		usage: emptyUsage(),
-	};
+	const result = pendingResult(spec, parent);
 
 	const systemPrompt = childSystemPrompt(spec);
 	const tmpDir = systemPrompt ? await fs.promises.mkdtemp(path.join(os.tmpdir(), "pstack-task-")) : undefined;
@@ -320,10 +347,14 @@ export async function mapWithConcurrency<TIn, TOut>(
 	return results;
 }
 
-export function pendingResult(spec: TaskSpec): TaskResult {
+export function pendingResult(spec: TaskSpec, parent: ParentModel): TaskResult {
+	const planned = plannedModel(spec, parent);
 	return {
 		description: spec.description,
 		agent: spec.agent ?? "general",
+		model: planned.model,
+		thinking: planned.thinking,
+		inheritedModel: planned.inherited,
 		status: "running",
 		output: "",
 		turns: 0,
@@ -363,7 +394,9 @@ export function formatFinal(results: TaskResult[]): string {
 	return results
 		.map((result, index) => {
 			const transcript = result.transcript ? `\ntranscript: ${result.transcript}` : "";
-			const header = `## [${index + 1}] ${result.description}\nagent: ${result.agent} · model: ${result.model ?? "parent model"} · status: ${result.status} · turns: ${result.turns}${transcript}`;
+			const thinking = result.thinking ? ` · thinking: ${result.thinking}` : "";
+			const inherited = result.inheritedModel ? " (inherited from parent)" : "";
+			const header = `## [${index + 1}] ${result.description}\nagent: ${result.agent} · model: ${result.model ?? "parent model"}${inherited}${thinking} · status: ${result.status} · turns: ${result.turns}${transcript}`;
 			const body = result.status === "failed" ? `Failed: ${result.error}\n\n${result.output}`.trim() : result.output || "(no output)";
 			return `${header}\n\n${capOutput(body)}`;
 		})

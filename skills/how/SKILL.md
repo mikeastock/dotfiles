@@ -28,7 +28,7 @@ When in doubt, take the simple path.
 Decompose the question into 2 to 4 exploration angles, each a distinct slice of the subsystem. Spawn all explorers in a single `task` call:
 
 - `agent`: `general`
-- `model`: the `how explorer` line, default `xai/grok-4.7:xhigh`
+- `model`: the `how explorer` line, default `xai/grok-4.7:xhigh`. Always pass it. Omitting `model` silently runs the explorer on your own model.
 - `readonly`: `true`
 
 Each explorer gets the prompt in `references/explorer-prompt.md` with its angle filled in. Then go to Step 3.
