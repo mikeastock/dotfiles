@@ -103,11 +103,11 @@ describe("OpenAI service tiers", () => {
 		}
 	});
 
-	it("supports Ultrafast only on Astra and Sol preview, without falling back to Fast", () => {
-		for (const id of ["gpt-6-astra", "gpt-5.6-sol"]) {
-			assert.equal(_test.serviceTier({ provider: "openai", id }, "ultrafast"), "ultrafast");
+	it("supports Ultrafast on Astra, Sol preview, and Sol 6.1, without falling back to Fast", () => {
+		for (const id of ["gpt-6-astra", "gpt-5.6-sol", "gpt-6.1-sol"]) {
+			assert.equal(_test.serviceTier({ provider: "openai", id }, "ultrafast"), "ultrafast", id);
 		}
-		for (const id of ["gpt-5.5", "gpt-5.6-terra", "gpt-5.6-luna", "gpt-6-sol", "gpt-6-luna", "gpt-6.1-sol"]) {
+		for (const id of ["gpt-5.5", "gpt-5.6-terra", "gpt-5.6-luna", "gpt-6-sol", "gpt-6-luna"]) {
 			assert.equal(_test.serviceTier({ provider: "openai", id }, "ultrafast"), undefined, id);
 		}
 	});
@@ -141,6 +141,34 @@ describe("OpenAI service tiers", () => {
 		assert.equal(_test.applyServiceTier({}, { ...model, id: "gpt-6-sol" }, "ultrafast"), undefined);
 		for (const payload of [undefined, null, "payload", 0, []]) {
 			assert.equal(_test.applyServiceTier(payload, model, "fast"), undefined);
+		}
+	});
+});
+
+describe("status messages", () => {
+	it("reports active modes without cost or access warnings", () => {
+		for (const id of ["gpt-6-astra", "gpt-5.6-sol", "gpt-6.1-sol"]) {
+			for (const mode of ["fast", "ultrafast"] as const) {
+				assert.equal(_test.stateMessage({ provider: "openai", id }, mode), `${mode} enabled (openai/${id}).`);
+			}
+		}
+	});
+
+	it("reports inactive and disabled modes without hiding their state", () => {
+		for (const model of [
+			{ provider: "openai", id: "gpt-6-sol" },
+			{ provider: "openai-codex", id: "gpt-6.1-sol" },
+			undefined,
+		]) {
+			const label = model ? `${model.provider}/${model.id}` : "no active model";
+			assert.equal(
+				_test.stateMessage(model, "ultrafast"),
+				`ultrafast enabled but inactive (${label}); no supported service tier requested.`,
+			);
+			assert.equal(
+				_test.stateMessage(model, "off"),
+				"OpenAI speed override disabled. Requests keep their configured service tier.",
+			);
 		}
 	});
 });
@@ -264,19 +292,19 @@ describe("real Pi extension runtime (no provider calls)", () => {
 		assert.deepEqual(errors, []);
 	});
 
-	it("sends Ultrafast on Astra and becomes inactive after switching to unsupported Sol", async () => {
+	it("sends Ultrafast on supported models including Sol 6.1 and stays inactive on Sol 6", async () => {
 		const { session, errors } = await createSession({ mode: "ultrafast" });
 		const base = session.model!;
-		await session.setModel({ ...base, id: "gpt-6-astra" });
-		const astra = { model: "gpt-6-astra", reasoning: { effort: "high" } };
-		assert.deepEqual(await session.extensionRunner.emitBeforeProviderRequest(astra), { ...astra, service_tier: "ultrafast" });
-		await session.setModel({ ...base, id: "gpt-6-sol" });
-		const sol = { model: "gpt-6-sol" };
-		assert.equal(await session.extensionRunner.emitBeforeProviderRequest(sol), sol);
-		await session.setModel({ ...base, id: "gpt-5.6-sol" });
-		assert.deepEqual(await session.extensionRunner.emitBeforeProviderRequest({ model: "gpt-5.6-sol" }), {
-			model: "gpt-5.6-sol", service_tier: "ultrafast",
-		});
+		for (const id of ["gpt-6-astra", "gpt-6.1-sol", "gpt-5.6-sol"]) {
+			await session.setModel({ ...base, id });
+			const payload = { model: id, service_tier: "flex", reasoning: { effort: "high" } };
+			assert.deepEqual(await session.extensionRunner.emitBeforeProviderRequest(payload), {
+				...payload, service_tier: "ultrafast",
+			});
+			await session.setModel({ ...base, id: "gpt-6-sol" });
+			const sol = { model: "gpt-6-sol", service_tier: "flex" };
+			assert.equal(await session.extensionRunner.emitBeforeProviderRequest(sol), sol);
+		}
 		assert.deepEqual(errors, []);
 	});
 

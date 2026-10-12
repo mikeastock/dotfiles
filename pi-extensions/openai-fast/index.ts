@@ -23,7 +23,7 @@ const FAST_MODELS = new Set([
 ]);
 // https://developers.openai.com/api/docs/guides/ultrafast-mode
 // GPT-5.6 Sol requires preview access; GPT-6 Astra is available at limited API rate limits.
-const ULTRAFAST_MODELS = new Set(["gpt-5.6-sol", "gpt-6-astra"]);
+const ULTRAFAST_MODELS = new Set(["gpt-5.6-sol", "gpt-6-astra", "gpt-6.1-sol"]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -43,6 +43,15 @@ function applyServiceTier(payload: unknown, model: OpenAIModel | undefined, mode
 	const tier = serviceTier(model, mode);
 	if (!tier || !isRecord(payload)) return;
 	return { ...payload, service_tier: tier };
+}
+
+function stateMessage(model: OpenAIModel | undefined, mode: SpeedMode): string {
+	if (mode === "off") return "OpenAI speed override disabled. Requests keep their configured service tier.";
+	const modelLabel = model ? `${model.provider}/${model.id}` : "no active model";
+	if (!serviceTier(model, mode)) {
+		return `${mode} enabled but inactive (${modelLabel}); no supported service tier requested.`;
+	}
+	return `${mode} enabled (${modelLabel}).`;
 }
 
 function commandMode(args: string, current: SpeedMode): SpeedMode | "status" {
@@ -162,22 +171,7 @@ export default function openaiFastExtension(pi: ExtensionAPI): void {
 
 	function notifyState(ctx: ExtensionContext): void {
 		if (!ctx.hasUI) return;
-		if (mode === "off") {
-			ctx.ui.notify("OpenAI speed override disabled. Requests keep their configured service tier.", "info");
-			return;
-		}
-		const modelLabel = ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : "no active model";
-		if (!serviceTier(ctx.model, mode)) {
-			ctx.ui.notify(`${mode} enabled but inactive (${modelLabel}); no supported service tier requested.`, "warning");
-			return;
-		}
-		ctx.ui.notify(`${mode} enabled (${modelLabel}). Higher usage costs apply.`, "info");
-		if (mode === "ultrafast") {
-			ctx.ui.notify(
-				"Ultrafast requires OpenAI API access (GPT-5.6 Sol: limited preview). ChatGPT-subscription access is unconfirmed. Pi (through 1.0.0) prices Ultrafast at the standard rate; its displayed cost is too low.",
-				"warning",
-			);
-		}
+		ctx.ui.notify(stateMessage(ctx.model, mode), "info");
 	}
 
 	pi.registerFlag("fast", { description: "Start with OpenAI Fast mode enabled", type: "boolean", default: false });
@@ -192,7 +186,7 @@ export default function openaiFastExtension(pi: ExtensionAPI): void {
 				try {
 					await settingsWriteQueue;
 				} catch (error) {
-					if (ctx.hasUI) ctx.ui.notify(`openai-fast: failed to write settings: ${String(error)}`, "warning");
+					if (ctx.hasUI) ctx.ui.notify(`openai-fast: failed to write settings: ${String(error)}`, "error");
 					else throw error;
 				}
 			}
@@ -206,7 +200,7 @@ export default function openaiFastExtension(pi: ExtensionAPI): void {
 		try {
 			persisted = await loadPersistedMode(ctx.cwd);
 		} catch (error) {
-			if (ctx.hasUI) ctx.ui.notify(`openai-fast: failed to load settings: ${String(error)}`, "warning");
+			if (ctx.hasUI) ctx.ui.notify(`openai-fast: failed to load settings: ${String(error)}`, "error");
 			else throw error;
 		}
 		mode = startupMode(persisted, pi.getFlag("fast") === true, pi.getFlag("ultrafast") === true);
@@ -230,6 +224,7 @@ export const _test = {
 	ULTRAFAST_MODELS,
 	serviceTier,
 	applyServiceTier,
+	stateMessage,
 	commandMode,
 	startupMode,
 	injectFastIntoFooterLine,
