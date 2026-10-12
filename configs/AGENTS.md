@@ -55,6 +55,9 @@
 
 ## Testing Philosophy
 
-- Avoid mock tests; do unit or e2e (end-to-end) instead. Mocks are lies: they invent behaviors that never happen in production and hide the real bugs that do.
-- Test everything with rigor. Our intent is ensuring a new person contributing to the same code base cannot break our stuff and that nothing slips by. We love rigour.
-- Unless the user asks otherwise, run only the tests you added or modified instead of the entire suite to avoid wasting time.
+- Unit tests are banned. Do not write, restore, or add infrastructure for them, and do not disguise them as integration or end-to-end tests. Only e2e (end-to-end) tests are allowed.
+- Exercise real user flows through public interfaces with real components and storage. Do not use mocks, stubs, or direct calls to internal helpers.
+- Before writing a test, name the bug it catches. Cover meaningful happy paths and likely user-visible refusals, with one test per distinct failure mode. Do not assert source-code strings or implementation structure.
+- New e2e files, helpers, fixtures, and runners require explicit user approval. A request to implement, fix, test, or verify something does not by itself authorize adding them.
+- When no approved test change is in scope, verify through direct end-to-end runtime checks and static gates. Use disposable environments, report reproducible commands and evidence, and state what was not verified.
+- Unless the user asks otherwise, run only the affected e2e checks instead of the entire suite.

@@ -10,5 +10,5 @@
     "skipLibCheck": true,
     "types": ["node"]
   },
-  "include": ["app.tsx", "src/**/*.ts", "src/**/*.tsx", "vitest.config.ts"]
+  "include": ["app.tsx", "src/**/*.ts", "src/**/*.tsx"]
 }

@@ -200,7 +200,6 @@ dotfiles/
 ├── bb-plugins/              # forked bb plugins
 ├── scripts/build.py         # agent build/install system
 ├── scripts/dotfiles.sh      # mise bootstrap wrapper
-├── tests/                   # agent tooling tests
 └── Makefile                 # dotfiles + agent commands
 ```
 

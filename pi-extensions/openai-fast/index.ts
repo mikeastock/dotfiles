@@ -218,16 +218,3 @@ export default function openaiFastExtension(pi: ExtensionAPI): void {
 	});
 	pi.on("before_provider_request", (event, ctx) => applyServiceTier(event.payload, ctx.model, mode));
 }
-
-export const _test = {
-	FAST_MODELS,
-	ULTRAFAST_MODELS,
-	serviceTier,
-	applyServiceTier,
-	stateMessage,
-	commandMode,
-	startupMode,
-	injectFastIntoFooterLine,
-	loadPersistedMode,
-	persistMode,
-};

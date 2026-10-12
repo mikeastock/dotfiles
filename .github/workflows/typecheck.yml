@@ -1,4 +1,4 @@
-name: Test
+name: Typecheck
 
 on:
   push:
@@ -8,14 +8,14 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: test-${{ github.ref }}
+  group: typecheck-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
-  test:
+  typecheck:
     runs-on: ubuntu-latest
 
     steps:
@@ -33,30 +33,11 @@ jobs:
           node-version: '24'
           cache: 'pnpm'
 
-      - name: Install ripgrep
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ripgrep
-
-      - name: Install mise
-        run: |
-          curl -fsSL https://mise.run | sh
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-
       - name: Install dependencies
         run: |
           pnpm install --frozen-lockfile
           npm ci --prefix bb-plugins/bb-plugin-t3sidebar
           npm ci --prefix bb-plugins/bb-plugin-tok-speed
-
-      - name: Run shell tests
-        run: ./tests/run-all.sh
-
-      - name: Run TypeScript tests
-        run: |
-          pnpm test
-          npm test --prefix bb-plugins/bb-plugin-t3sidebar
-          npm test --prefix bb-plugins/bb-plugin-tok-speed
 
       - name: Typecheck
         run: |

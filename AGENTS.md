@@ -28,17 +28,6 @@ Skills are specialized instruction sets that guide AI agents through specific ta
 ├── scripts/
 │   ├── build.py                    # Python build system (requires Python 3.11+)
 │   └── dotfiles.sh                 # mise bootstrap wrapper
-├── tests/                          # Test suite (shell + node --test)
-│   ├── test-helpers.sh             # Shared test utilities
-│   ├── test-make.sh                # Makefile tests
-│   ├── test-skill-doctor.sh        # skill-doctor collector/renderer tests
-│   ├── test-dotfiles.sh            # mise home/omarchy installer tests
-│   ├── test-grok-review.sh         # grok-review launcher tests
-│   ├── test-amp-worktree.sh        # amp-worktree tests
-│   ├── test-technical-explainer-comic.sh
-│   ├── test-tmux-skill-scripts.sh
-│   ├── *.test.ts                   # TypeScript tests (pnpm test)
-│   └── run-all.sh                  # Run all shell suites
 ├── build/                          # Generated during build (gitignored)
 │   ├── amp/
 │   ├── claude/
@@ -92,18 +81,29 @@ make install
 | `make clean` | Remove all installed artifacts and build directory |
 | `make plugin-update` | Update all plugin submodules to latest |
 
-### Testing
+### Verification: end-to-end only
+
+**Unit tests are banned. Do not write, restore, or add infrastructure for them.** This applies to extensions, plugins, skills, scripts, and vendored code maintained in this repository. Do not disguise unit tests as integration or end-to-end tests.
+
+All previous test suites have been removed. There is currently no automated end-to-end suite or `test` command. Future tests must follow these rules:
+
+- Exercise real user flows through public interfaces: installed agent commands, CLI processes, HTTP APIs, or the running UI. Use real components and storage, not mocks, stubs, or direct calls to internal helpers.
+- Cover a few meaningful happy paths and likely user-visible refusals. Before writing a test, name the bug it catches. One test per distinct failure mode; avoid duplicate coverage and matrices of near-identical cases.
+- Assert observable behavior, not source-code strings, implementation structure, private invariants, or the existence of tests.
+- New end-to-end files, helpers, fixtures, and runners require explicit user approval. A request to implement, fix, test, or verify something does not by itself authorize adding them. Never recreate the removed suites automatically.
+- When no approved test change is in scope, use direct end-to-end runtime checks and the static gates below. Use disposable directories and a temporary HOME for installation checks; do not alter real agent installations as a side effect of verification.
+- Run only the affected end-to-end checks. Report the exact command, observed result, and any logs, screenshots, or other reproducible evidence. Be explicit about flows not verified; typechecking alone does not prove runtime behavior.
+
+Static gates (not tests):
+
 ```bash
-./tests/run-all.sh          # Run all shell suites
-./tests/test-make.sh        # Test Makefile commands
-pnpm test                   # TypeScript tests (tests/*.test.ts)
 pnpm typecheck
+npm run typecheck --prefix bb-plugins/bb-plugin-t3sidebar
+npm run typecheck --prefix bb-plugins/bb-plugin-tok-speed
 ```
 
-Tests use a sandbox environment (temporary HOME directory) to avoid affecting real agent installations. The test framework provides assertion helpers in `tests/test-helpers.sh`.
-
 ### CI/CD
-GitHub Actions (`.github/workflows/test.yml`) runs `./tests/run-all.sh`, `pnpm test`, `pnpm typecheck`, and the tests/typecheck of each vendored bb plugin (`bb-plugins/bb-plugin-t3sidebar`, `bb-plugins/bb-plugin-tok-speed`) on push/PR to main/master.
+GitHub Actions (`.github/workflows/typecheck.yml`) runs the root and both vendored BB plugin typechecks on push/PR to main/master. It does not run tests.
 
 ## Code Conventions
 
@@ -171,13 +171,6 @@ Extensions use the unified `ExtensionAPI` which provides:
 - Command registration via `pi.registerCommand("name", { ... })`
 - UI interactions via `pi.ui.select()`, `pi.ui.confirm()`, etc.
 
-### Test Scripts (Bash)
-- Source `test-helpers.sh` for shared utilities
-- Use `setup_sandbox` for isolated testing
-- Use assertion helpers: `assert_success`, `assert_file_exists`, `assert_output_contains`, etc.
-- Call `print_summary` at end to report results
-- Set `trap cleanup EXIT` for automatic cleanup
-
 ## Installation Locations
 
 | Agent | Skills | Extensions | Config |
@@ -225,5 +218,5 @@ Extensions use the unified `ExtensionAPI` which provides:
 - The `build/` directory is regenerated on each build
 - Running `make clean` removes both installed files and build artifacts
 - **Keep README.md up to date**: When adding, removing, or renaming skills or extensions, update the corresponding README lists and directory structure
-- **Keep this file's test list current**: When adding, removing, or renaming a test script or CI step, update the `tests/` tree and Testing section above in the same change
+- **Keep verification guidance current**: Update the verification and CI sections when changing gates or adding explicitly approved end-to-end checks. Unit tests remain prohibited.
 - **Requires Python 3.11+** for the build system (uses `tomllib` from stdlib)
