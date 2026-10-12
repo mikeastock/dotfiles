@@ -423,24 +423,22 @@ the installer for you.
 | Load workspace skills and rules | Starts sessions with the workspace trusted. |
 | Muse's own OS sandbox | `off` by default — see below. |
 | Sandbox network | `enabled` (default here), `proxy-only`, or `restricted`. See below. |
-| HTTPS proxy | An `http://` proxy every Muse process uses, set as `HTTPS_PROXY`. Empty connects directly. See below. |
 
-### HTTPS proxy
+### Reaching Muse through a proxy
 
 Meta's API accepts keys from some datacenter IPs but serves them no models: the
-catalog comes back empty and every model is `model_not_found`. A host behind
-such an IP reaches Muse through a proxy on a different egress. Muse honors only
-`http://` proxies, not SOCKS, so an SSH SOCKS tunnel needs an HTTP front:
+catalog is empty and every model is `model_not_found`. Set
+`BB_MUSE_HTTPS_PROXY` in the bb daemon's environment on that host and every
+Muse child, including the catalog probe, routes through it as `HTTPS_PROXY`
+(loopback excluded). Muse honors only `http://` proxies, not SOCKS, so an SSH
+SOCKS tunnel needs an HTTP front:
 
 ```sh
 ssh -N -D 127.0.0.1:1080 user@other-host
 uvx --python 3.12 pproxy -l http://127.0.0.1:8888 -r socks5://127.0.0.1:1080
-bb plugin config provider-muse set httpsProxy http://127.0.0.1:8888
+echo 'BB_MUSE_HTTPS_PROXY=http://127.0.0.1:8888' >> ~/.bb/bb-service.env
+systemctl --user restart bb
 ```
-
-bb passes provider options to threads but not to model listing, so the plugin's
-server mirrors the setting to `https-proxy.json` in the bridge's data directory,
-where the catalog child reads it.
 
 ## Usage reporting
 

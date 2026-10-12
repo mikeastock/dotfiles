@@ -5,8 +5,11 @@ export const MUSE_PLUGIN_ID = "provider-muse";
 export const MUSE_PROVIDER_ID = "muse";
 
 export const MUSE_EXECUTABLE_ENV = "BB_MUSE_EXECUTABLE";
-/** The proxy setting, mirrored by the server into the bridge's data directory. */
-export const MUSE_HTTPS_PROXY_FILE = "https-proxy.json";
+/**
+ * An http:// proxy every Muse child routes through. Meta serves no models to
+ * some datacenter IPs, so a host behind one reaches Muse through a proxy.
+ */
+export const MUSE_HTTPS_PROXY_ENV = "BB_MUSE_HTTPS_PROXY";
 export const MUSE_HOME_ENV = "MUSE_HOME";
 
 export const MUSE_DEFAULT_EXECUTABLE = "muse";
@@ -39,7 +42,6 @@ export const museProviderOptionsSchema = z.object({
   sandboxNetwork: z.enum(["enabled", "proxy-only", "restricted"]).optional(),
   tokenBudget: z.number().int().positive().nullable().optional(),
   planLabel: z.string().min(1).nullable().optional(),
-  httpsProxy: z.string().min(1).nullable().optional(),
 });
 export type MuseProviderOptions = z.infer<typeof museProviderOptionsSchema>;
 

@@ -34,8 +34,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "zod": "^4.3.6",
-    "@get-bb/plugin-sdk": "0.5.9"
+    "@get-bb/plugin-sdk": "0.6.31",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
