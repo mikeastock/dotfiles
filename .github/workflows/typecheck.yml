@@ -38,9 +38,11 @@ jobs:
           pnpm install --frozen-lockfile
           npm ci --prefix bb-plugins/bb-plugin-t3sidebar
           npm ci --prefix bb-plugins/bb-plugin-tok-speed
+          npm ci --prefix bb-plugins/bb-plugin-provider-muse
 
       - name: Typecheck
         run: |
           pnpm typecheck
           npm run typecheck --prefix bb-plugins/bb-plugin-t3sidebar
           npm run typecheck --prefix bb-plugins/bb-plugin-tok-speed
+          npm run typecheck --prefix bb-plugins/bb-plugin-provider-muse

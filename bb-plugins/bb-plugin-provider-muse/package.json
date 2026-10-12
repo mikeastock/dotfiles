@@ -1,0 +1,44 @@
+{
+  "name": "bb-plugin-provider-muse",
+  "version": "0.16.1",
+  "type": "module",
+  "description": "Muse Code (Meta) as a first-class BB agent provider.",
+  "license": "MIT",
+  "keywords": [
+    "bb-plugin",
+    "bb-provider",
+    "muse",
+    "muse-code",
+    "meta",
+    "muse-spark"
+  ],
+  "engines": {
+    "bb": ">=0.41",
+    "bbPluginSdk": ">=0.4.34"
+  },
+  "bb": {
+    "name": "Muse Code",
+    "description": "Run Meta's Muse Code agent in BB threads: streaming timeline, approvals, subagents, model picker, health and subscription usage.",
+    "branding": {
+      "icon": "./icons/muse.svg",
+      "experimental_icons": {
+        "muse": "./icons/muse.svg",
+        "workflow": "./icons/workflow.svg"
+      }
+    },
+    "server": "./server.ts",
+    "host": "./host.ts"
+  },
+  "scripts": {
+    "build": "bb plugin build",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^4.3.6",
+    "@get-bb/plugin-sdk": "0.5.9"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  }
+}
