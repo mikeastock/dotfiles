@@ -100,10 +100,11 @@ Static gates (not tests):
 pnpm typecheck
 npm run typecheck --prefix bb-plugins/bb-plugin-t3sidebar
 npm run typecheck --prefix bb-plugins/bb-plugin-tok-speed
+npm run typecheck --prefix bb-plugins/bb-plugin-provider-muse
 ```
 
 ### CI/CD
-GitHub Actions (`.github/workflows/typecheck.yml`) runs the root and both vendored BB plugin typechecks on push/PR to main/master. It does not run tests.
+GitHub Actions (`.github/workflows/typecheck.yml`) runs the root and vendored BB plugin typechecks on push/PR to main/master. It does not run tests.
 
 ## Code Conventions
 
