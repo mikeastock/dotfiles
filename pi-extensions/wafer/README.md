@@ -36,8 +36,7 @@ ZDR is not requested by default. See [Wafer's Serverless docs](https://docs.wafe
 ## Verification
 
 ```bash
-node --import tsx --test pi-extensions/wafer/index.test.ts
 pnpm typecheck
 ```
 
-Tests cover registration, catalog metadata, reasoning mappings, and credential resolution using Pi's real registry. Authenticated inference (streaming, tools, images, usage, and cancellation) requires a live key and is not covered by these tests.
+Verifying authenticated inference (streaming, tools, images, usage, and cancellation) requires a live key.

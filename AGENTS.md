@@ -96,7 +96,7 @@ make install
 ```bash
 ./tests/run-all.sh          # Run all shell suites
 ./tests/test-make.sh        # Test Makefile commands
-pnpm test                   # TypeScript tests (pi-extensions, tests/*.test.ts)
+pnpm test                   # TypeScript tests (tests/*.test.ts)
 pnpm typecheck
 ```
 

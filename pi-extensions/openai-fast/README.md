@@ -69,9 +69,8 @@ Verified against OpenAI documentation on September 29, 2026, and against Pi 1.0.
 ## Development
 
 ```bash
-pnpm exec node --import tsx --test pi-extensions/openai-fast/index.test.ts
 pnpm typecheck
 make install-extensions
 ```
 
-After installing, run `/reload` in Pi. Tests use temporary settings directories and the real Pi SDK extension runtime; they make no model-provider calls.
+After installing, run `/reload` in Pi.
