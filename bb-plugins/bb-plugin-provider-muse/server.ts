@@ -1,7 +1,10 @@
+import { mkdir, writeFile } from "node:fs/promises";
+import { join } from "node:path";
 import type { BbPluginApi } from "@get-bb/plugin-sdk";
 import {
   MUSE_ICON_GLYPH,
   MUSE_REASONING_LEVELS,
+  MUSE_HTTPS_PROXY_FILE,
   MUSE_INSTALL_URL,
   MUSE_LOGIN_COMMAND,
   MUSE_PROVIDER_ID,
@@ -30,8 +33,21 @@ function nonEmptyStringOrNull(value: unknown): string | null {
   return typeof value === "string" && value.trim() !== "" ? value.trim() : null;
 }
 
+/**
+ * bb hands provider options to a thread but not to a model list, so the proxy
+ * is mirrored where the bridge reads it before listing models.
+ */
+async function mirrorHttpsProxy(bb: BbPluginApi, value: unknown): Promise<void> {
+  const dir = join(bb.server.experimental_dataDir, "plugins", bb.pluginId, "bridge-data");
+  await mkdir(dir, { recursive: true });
+  await writeFile(
+    join(dir, MUSE_HTTPS_PROXY_FILE),
+    `${JSON.stringify({ url: nonEmptyStringOrNull(value) })}\n`,
+  );
+}
+
 export default function plugin(bb: BbPluginApi) {
-  bb.settings.define({
+  const settings = bb.settings.define({
     windowTokenBudget: {
       type: "string",
       label: `Rolling ${MUSE_USAGE_WINDOW_HOURS}-hour token budget`,
@@ -44,6 +60,13 @@ export default function plugin(bb: BbPluginApi) {
       label: "Plan label",
       description:
         "How your Muse subscription is shown in usage surfaces, for example \"High usage\".",
+      default: "",
+    },
+    httpsProxy: {
+      type: "string",
+      label: "HTTPS proxy",
+      description:
+        "An http:// proxy URL every Muse process routes through, for example http://127.0.0.1:8888. Meta returns no models to some datacenter IPs, so a host behind one reaches Muse through a proxy. Muse does not speak SOCKS. Leave empty to connect directly.",
       default: "",
     },
     trustWorkspace: {
@@ -69,6 +92,17 @@ export default function plugin(bb: BbPluginApi) {
       options: ["enabled", "proxy-only", "restricted"],
       default: "enabled",
     },
+  });
+
+  const mirror = (value: unknown) =>
+    mirrorHttpsProxy(bb, value).catch((error: unknown) =>
+      bb.log.warn(`could not mirror the HTTPS proxy setting: ${String(error)}`),
+    );
+  void settings.get().then((values) => mirror(values.httpsProxy));
+  settings.onChange((next, prev) => {
+    if (next.httpsProxy !== prev.httpsProxy) {
+      void mirror(next.httpsProxy);
+    }
   });
 
   bb.providers.register({
@@ -119,6 +153,7 @@ export default function plugin(bb: BbPluginApi) {
               : "enabled",
         tokenBudget: parseTokenBudget(context.settings.windowTokenBudget),
         planLabel: nonEmptyStringOrNull(context.settings.planLabel),
+        httpsProxy: nonEmptyStringOrNull(context.settings.httpsProxy),
       };
     },
   });

@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import {
   BRIDGE_INBOUND_REQUEST_METHODS,
@@ -109,6 +109,7 @@ import { MUSE_TOOL_PROXY_SCRIPT } from "./tool-proxy/script.js";
 import {
   MUSE_APPROVAL_ALLOW_ALL,
   MUSE_DEFAULT_REASONING_LEVEL,
+  MUSE_HTTPS_PROXY_FILE,
   MUSE_REASONING_EFFORTS,
   MUSE_SESSION_EXTENSION_KIND,
   museApprovalMode,
@@ -256,6 +257,47 @@ let toolProxy: ToolProxyEndpoint | null = null;
 let toolProxyScriptPath: string | null = null;
 let maintenanceConnection: MspConnection | null = null;
 let maintenanceConnectionPromise: Promise<MspConnection> | null = null;
+
+/**
+ * bb sends provider options with a thread, never with a model list, so the
+ * plugin's server mirrors the proxy setting into the bridge's data directory
+ * and the catalog child reads it from there: a host whose IP Meta serves no
+ * models would otherwise list none.
+ */
+let httpsProxy: string | null = null;
+
+function httpsProxyPath(): string | null {
+  return bridgeDataDir === null ? null : join(bridgeDataDir, MUSE_HTTPS_PROXY_FILE);
+}
+
+async function readHttpsProxy(): Promise<string | null> {
+  const path = httpsProxyPath();
+  if (path === null) {
+    return null;
+  }
+  try {
+    const stored = JSON.parse(await readFile(path, "utf8")) as { url?: unknown };
+    return typeof stored.url === "string" && stored.url !== "" ? stored.url : null;
+  } catch {
+    return null;
+  }
+}
+
+/** A changed proxy retires the catalog child, which holds the old env. */
+function useHttpsProxy(url: string | null): void {
+  if (url === httpsProxy) {
+    return;
+  }
+  httpsProxy = url;
+  maintenanceConnection?.kill();
+  maintenanceConnection = null;
+}
+
+function proxyEnv(): NodeJS.ProcessEnv {
+  return httpsProxy === null
+    ? {}
+    : { HTTPS_PROXY: httpsProxy, https_proxy: httpsProxy };
+}
 
 /**
  * Drops a callback whose runtime has already been replaced, so a late reply can
@@ -556,6 +598,7 @@ function childEnv(
   });
   return {
     ...base,
+    ...proxyEnv(),
     ...(envVars ?? {}),
     ...(configHome === null ? {} : { XDG_CONFIG_HOME: configHome }),
   };
@@ -627,6 +670,9 @@ async function constructRuntime(args: {
     attachment.dynamicTools,
   );
   attachment.configHome = configHome;
+  useHttpsProxy(
+    parseProviderOptions(args.options.providerOptions).httpsProxy ?? null,
+  );
   const env = childEnv(args.options.envVars, configHome);
   await ensureMuseDataDirSafe(env);
 
@@ -2765,6 +2811,7 @@ async function maintenanceChild(cwd: string): Promise<MspConnection> {
 }
 
 async function listModels(cwd: string): Promise<AvailableModel[]> {
+  useHttpsProxy(await readHttpsProxy());
   const connection = await maintenanceChild(cwd);
   const result = await connection.request({
     method: MSP_METHODS.modelList,
