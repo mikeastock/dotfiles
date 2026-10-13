@@ -6,6 +6,30 @@
       "apiKey": "$GEMINI_API_KEY",
       "models": [
         {
+          "id": "gemini-4-argon",
+          "name": "Gemini 4 Argon",
+          "reasoning": true,
+          "thinkingLevelMap": {
+            "off": null,
+            "minimal": null,
+            "low": "low",
+            "medium": "medium",
+            "high": "high"
+          },
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 1048576,
+          "maxTokens": 65536,
+          "cost": {
+            "input": 2,
+            "output": 10,
+            "cacheRead": 0.1,
+            "cacheWrite": 0
+          }
+        },
+        {
           "id": "gemini-3.8-flash",
           "name": "Gemini 3.8 Flash",
           "reasoning": true,
