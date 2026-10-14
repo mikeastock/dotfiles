@@ -33,6 +33,7 @@ min_version = "2026.9.2"
 "~/.pi/agent/AGENTS.md" = { source = "configs/AGENTS.md", mode = "copy" }
 "~/.pi/agent/models.json" = { source = ".pi/agent/models.json", mode = "copy" }
 "~/.pi/agent/settings.json" = { source = ".pi/agent/settings.json", mode = "copy" }
+"~/.claude/settings.json" = { source = "configs/claude/settings.json", mode = "copy" }
 
 [bootstrap.macos.defaults]
 "com.apple.screencapture" = { "disable-shadow" = true }
