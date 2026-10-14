@@ -89,11 +89,12 @@ A plugin's bb id is its `package.json` name with the `bb-plugin-` prefix strippe
 - `bb-plugin-diffr` — [diffr](https://github.com/devdotfast/whiteboard/tree/main/diffr)'s structural, AST-aware diffs of a thread's workspace in the thread's right panel. Runs diffr on the workspace's machine through a `bb.host` entry and draws its NDJSON with diffr's vendored viewer model; needs `diffr` installed there. See `bb-plugins/bb-plugin-diffr/README.md`.
 - `bb-plugin-t3sidebar` — the earlier fork of [SawyerHood/bb-plugin-t3sidebar](https://github.com/SawyerHood/bb-plugin-t3sidebar), kept for its auto-settle-on-merge sweep.
 
-### Amp / Codex / OpenCode / Pi configs
+### Amp / Claude Code / Codex / OpenCode / Pi configs
 
 These are copied by `make dotfiles` (or `make install DOTFILES=1`):
 
 - `.config/amp/settings.json` → `~/.config/amp/settings.json`
+- `configs/claude/settings.json` → `~/.claude/settings.json`
 - `.config/opencode/opencode.jsonc` → `~/.config/opencode/opencode.jsonc`
 - `.codex/config.toml` → `~/.codex/config.toml`
 - `configs/AGENTS.md` → `~/.codex/AGENTS.md` and `~/.pi/agent/AGENTS.md`
