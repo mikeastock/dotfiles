@@ -1,0 +1,238 @@
+#!/usr/bin/env bash
+# Spawn and collect poteto-mode subagents as bb child threads.
+set -euo pipefail
+
+skill_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+usage() {
+  cat <<'EOF'
+Usage:
+  bb-task spawn --title <title> (--prompt <text> | --prompt-file <path>) [options]
+  bb-task wait [--timeout <seconds>] <thread-id>...
+
+Spawn options:
+  --agent <name>        poteto-agent (default), comment-sicko, or none
+  --model <slug>        inherit-parent (default), auto, claude-opus-5-5-<effort>,
+                        grok-4.7-<effort>[-fast], or <provider>:<model>[:<effort>]
+  --readonly            Tell the child it must not change files, git, or remote state
+  --worktree            Run in a fresh managed worktree instead of this thread's workspace
+  --base-branch <ref>   Exact base ref for --worktree
+
+spawn prints the child thread ID. wait blocks until each thread settles, then
+prints its final output. It exits non-zero when any thread failed.
+EOF
+}
+
+die() {
+  printf 'bb-task: %s\n' "$1" >&2
+  exit 2
+}
+
+require_thread_context() {
+  local name
+  for name in BB_PROJECT_ID BB_THREAD_ID BB_ENVIRONMENT_ID; do
+    if [[ -z "${!name:-}" ]]; then
+      die "$name is not set; run bb-task from inside a bb thread"
+    fi
+  done
+}
+
+# Sets provider, model, and effort from a pstack model slug.
+resolve_model() {
+  local slug="$1"
+  provider=""
+  model=""
+  effort=""
+
+  case "$slug" in
+    inherit-parent | auto)
+      return
+      ;;
+    *:*)
+      IFS=: read -r provider model effort <<<"$slug"
+      ;;
+    claude-opus-5-5-*)
+      provider=pi
+      model=anthropic/claude-opus-5-5
+      effort="${slug#claude-opus-5-5-}"
+      ;;
+    grok-4.7-*)
+      provider=pi
+      model=xai/grok-4.7
+      effort="${slug#grok-4.7-}"
+      effort="${effort%-fast}"
+      if [[ "$effort" == max ]]; then
+        effort=xhigh
+      fi
+      ;;
+    *)
+      die "unknown model slug '$slug'; see references/bb-runtime.md"
+      ;;
+  esac
+
+  if [[ -z "$provider" || -z "$model" ]]; then
+    die "model '$slug' must name a provider and a model"
+  fi
+  case "$effort" in
+    "" | none | low | medium | high | xhigh | max) ;;
+    *) die "unknown reasoning level '$effort' in '$slug'" ;;
+  esac
+}
+
+agent_preamble() {
+  local agent="$1"
+  local file="$skill_dir/agents/$agent.md"
+  if [[ ! -f "$file" ]]; then
+    die "unknown agent '$agent'"
+  fi
+  awk 'NR == 1 && /^---$/ { in_frontmatter = 1; next }
+       in_frontmatter && /^---$/ { in_frontmatter = 0; next }
+       !in_frontmatter' "$file" |
+    sed "s#{{POTETO_MODE_DIR}}#$skill_dir#g"
+}
+
+spawn() {
+  local title="" prompt="" prompt_file="" agent=poteto-agent slug=inherit-parent
+  local readonly=false worktree=false base_branch=""
+
+  while (($#)); do
+    case "$1" in
+      --title) title="$2"; shift 2 ;;
+      --prompt) prompt="$2"; shift 2 ;;
+      --prompt-file) prompt_file="$2"; shift 2 ;;
+      --agent) agent="$2"; shift 2 ;;
+      --model) slug="$2"; shift 2 ;;
+      --readonly) readonly=true; shift ;;
+      --worktree) worktree=true; shift ;;
+      --base-branch) base_branch="$2"; shift 2 ;;
+      -h | --help) usage; exit 0 ;;
+      *) die "unknown spawn option '$1'" ;;
+    esac
+  done
+
+  require_thread_context
+  if [[ -z "$title" ]]; then
+    die "spawn needs --title"
+  fi
+  if [[ -n "$prompt" && -n "$prompt_file" ]] || [[ -z "$prompt" && -z "$prompt_file" ]]; then
+    die "spawn needs exactly one of --prompt or --prompt-file"
+  fi
+  if [[ -n "$prompt_file" && ! -f "$prompt_file" ]]; then
+    die "prompt file '$prompt_file' does not exist"
+  fi
+  if [[ -n "$base_branch" && "$worktree" == false ]]; then
+    die "--base-branch needs --worktree"
+  fi
+  resolve_model "$slug"
+
+  brief="$(mktemp "${TMPDIR:-/tmp}/bb-task.XXXXXX")"
+  trap 'rm -f "$brief"' EXIT
+  {
+    if [[ "$agent" != none ]]; then
+      agent_preamble "$agent"
+      printf '\n'
+    fi
+    if [[ "$readonly" == true ]]; then
+      printf '%s\n\n' "This is a read-only task. Do not create, edit, or delete files. Do not commit, push, open PRs, post comments, or run commands that change state. Report everything in your final reply."
+    fi
+    printf '## Task\n\n'
+    if [[ -n "$prompt_file" ]]; then
+      cat "$prompt_file"
+    else
+      printf '%s\n' "$prompt"
+    fi
+  } >"$brief"
+
+  local args=(
+    thread spawn --json
+    --project "$BB_PROJECT_ID"
+    --parent-self
+    --lifecycle-owner-thread "$BB_THREAD_ID"
+    --title "$title"
+    --prompt-file "$brief"
+  )
+  if [[ "$worktree" == true ]]; then
+    args+=(--new-environment worktree)
+    if [[ -n "$base_branch" ]]; then
+      args+=(--base-branch "$base_branch")
+    fi
+  else
+    args+=(--environment "$BB_ENVIRONMENT_ID")
+  fi
+  if [[ -n "$provider" ]]; then
+    args+=(--provider "$provider" --model "$model")
+  fi
+  if [[ -n "$effort" ]]; then
+    args+=(--reasoning-level "$effort")
+  fi
+
+  bb "${args[@]}" | jq -er '.id'
+}
+
+thread_status() {
+  bb thread show "$1" --json | jq -er '.thread.status'
+}
+
+wait_for() {
+  local timeout=7200
+  while (($#)); do
+    case "$1" in
+      --timeout) timeout="$2"; shift 2 ;;
+      -h | --help) usage; exit 0 ;;
+      --*) die "unknown wait option '$1'" ;;
+      *) break ;;
+    esac
+  done
+  if (($# == 0)); then
+    die "wait needs at least one thread ID"
+  fi
+
+  local failed=0 id status deadline
+  for id in "$@"; do
+    deadline=$((SECONDS + timeout))
+    # A fresh child can report idle before its first turn starts, so require
+    # the thread to have been seen working or to have produced output.
+    local seen_work=false
+    while true; do
+      status="$(thread_status "$id")"
+      case "$status" in
+        pending | starting | active | stopping) seen_work=true ;;
+        error) break ;;
+        idle)
+          if [[ "$seen_work" == true || -n "$(bb thread output "$id" 2>/dev/null)" ]]; then
+            break
+          fi
+          ;;
+      esac
+      if ((SECONDS >= deadline)); then
+        status=timeout
+        break
+      fi
+      sleep 5
+    done
+
+    printf '=== %s (%s)\n' "$id" "$status"
+    if [[ "$status" == idle ]]; then
+      bb thread output "$id"
+    else
+      failed=1
+      bb thread log "$id" --format minimal --limit 1 || true
+    fi
+    printf '\n'
+  done
+  return "$failed"
+}
+
+if (($# == 0)); then
+  usage
+  exit 2
+fi
+
+command="$1"
+shift
+case "$command" in
+  spawn) spawn "$@" ;;
+  wait) wait_for "$@" ;;
+  -h | --help | help) usage ;;
+  *) die "unknown command '$command'" ;;
+esac

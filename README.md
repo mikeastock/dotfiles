@@ -34,7 +34,7 @@ A bare `mise dot apply` from this repo skips the environment-specific files. Una
 
 ## Agent Skills / Extensions Tooling
 
-This repo also contains reusable skills, prompt templates, and extensions for Amp, Claude Code, and Pi Coding Agent.
+This repo also contains reusable skills, prompt templates, and extensions for Amp, Claude Code, Pi Coding Agent, and bb.
 
 ### Requirements
 
@@ -108,6 +108,8 @@ OpenCode keeps `{env:MODEL_API_KEY}` and `{env:RUNINFRA_GATEWAY_KEY}` in git. A 
 
 Plugin skills can be restricted to explicit user invocation with `skills_user_invocable_only` in `plugins.toml`. Custom skills use `metadata.user-invocable-only: true` in `SKILL.md`. The build emits `disable-model-invocation: true` for Claude and Pi, plus `policy.allow_implicit_invocation: false` in `agents/openai.yaml` for Codex. The Codex metadata is included in the Pi/shared build because Codex also scans `~/.agents/skills`.
 
+Codex and bb are opt-in skill targets. A custom skill reaches `~/.codex/skills` or `~/.bb/skills` only when its frontmatter names that agent, for example `agents: [bb]`. bb injects `~/.bb/skills` into threads for every provider, so a bb-only skill works the same in Pi, Claude Code, and Codex threads.
+
 ### Pi
 
 Pi itself is the official experimental managed install under `~/.pi`:
@@ -144,6 +146,7 @@ Pi settings and models are copied by `make install`. Extensions, prompts, and th
 - `eli5` — dead-simple HTML picture explainer for any topic, vendored from `anthropics/claude-plugins-community` (`eli5@claude-community`) commit `863e70d`
 - `bro` — restate the last message in plain human language, vendored from `dmmulroy/skills` commit `cbd1929` (explicit invocation only)
 - `product-description` — outside-in, feature-by-feature behavior spec of a product from its code and tests, vendored from `steveruizok` gist `83ae5c53` revision `f9435a3`
+- `poteto-mode` (bb only) — Lauren Tan's poteto mode: playbooks, principles, and multi-model subagent workflows, vendored from [`cursor/plugins`](https://github.com/cursor/plugins/tree/1e5c90a4b6f249917bd21fe361b3a2a7deb741b8/pstack) `pstack` 0.15.24 (commit `1e5c90a`). The skills it routes to (`how`, `architect`, `swarm`, `arena`, `interrogate`, the `principle-*` set, and others) are bundled under `skills/poteto-mode/skills/` so bb lists one skill. Local changes: `references/bb-runtime.md` maps Cursor's `Task` tool, model slugs, and `cursor-team-kit` skills to bb; `scripts/bb-task` spawns subagents as bb child threads and collects their replies; `SKILL.md`'s routing and Subagents sections point at both; upstream tests and `setup-pstack` are dropped (explicit invocation only)
 
 ### Notable plugin skills
 
@@ -189,6 +192,7 @@ dotfiles/
 ├── skills/                  # custom agent skills
 │   ├── agent-browser/       # fast browser automation CLI for AI agents
 │   ├── before-and-after/    # GitHub PR screenshot and video formatting
+│   ├── poteto-mode/         # bb-only poteto mode with bundled pstack skills
 │   ├── reddit-search/       # Gemini-grounded Reddit search and thread resolution
 │   ├── ui-recording-timeline/ # interactive UI recording paint timelines
 │   └── writing-pr/          # PR title and body guidance
