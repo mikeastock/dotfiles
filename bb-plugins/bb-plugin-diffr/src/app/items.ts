@@ -11,10 +11,16 @@ export type Item =
   | { kind: "row"; key: string; fileIndex: number; row: ViewerRow }
   | { kind: "note"; key: string; fileIndex: number; text: string; tone: "muted" | "error" | "load" };
 
-export const HEADER_HEIGHT = 32;
-export const ROW_HEIGHT = 20;
+/** Row geometry. Touch screens get rows and chevrons big enough to tap (24px minimum). */
+export interface Metrics {
+  row: number;
+  header: number;
+  chevron: number;
+}
+export const FINE_METRICS: Metrics = { row: 20, header: 32, chevron: 16 };
+export const COARSE_METRICS: Metrics = { row: 28, header: 40, chevron: 28 };
 
-export const itemHeight = (item: Item) => (item.kind === "header" ? HEADER_HEIGHT : ROW_HEIGHT);
+export const itemHeight = (item: Item, metrics: Metrics) => (item.kind === "header" ? metrics.header : metrics.row);
 
 export interface ViewState {
   layout: Layout;

@@ -24,7 +24,9 @@ Open **Diffr** from the thread header button, the right panel's new-tab launcher
 
 Changes and Branch compare against the working tree and include untracked files: the plugin copies the index to a temporary file, marks untracked files intent-to-add there, and points diffr at it with `GIT_INDEX_FILE`. The repository's real index is never touched.
 
-The toolbar switches unified and split layouts, opens every fold, restores diffr's folds, and runs diffr again. The panel also runs again when the thread's agent finishes a turn. Click a file header to close it, a line number to select a line, and shift-click to extend the selection; **Add … to chat** appends `path:start-end` to the thread's composer.
+The toolbar switches unified and split layouts, opens every fold, restores diffr's folds, and runs diffr again. The panel also runs again when the thread's agent finishes a turn. Click a file header to close it and a line number to select a line. Selecting a second line on the same side makes a range (shift-click also extends one); **Add to chat** appends `path:start-end` to the thread's composer.
+
+On phones (bb's compact viewport, under 768px) the panel fills the screen: it stays unified, keeps each file name visible in its header, and confirms **Add to chat** with a toast because the composer is hidden behind it. On touch screens rows, chevrons, and toolbar controls grow to at least 24px.
 
 Colours come from bb's active code theme, so the diff follows the user's palette and light/dark mode.
 

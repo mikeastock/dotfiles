@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, 
 import { foldBackground, type Layout, type RenderSpan, type SplitLineCell, type UnifiedLineCell } from "../vendor/diffr/document/rows";
 import type { Palette } from "../vendor/diffr/theme/palette";
 import { filePath, type FileChange } from "../vendor/diffr/protocol/wire";
-import { itemHeight, type Item } from "./items";
+import { itemHeight, type Item, type Metrics } from "./items";
 import type { DiffData } from "./model";
 
 export type Side = "old" | "new";
@@ -21,6 +21,7 @@ export interface DiffListProps {
   items: Item[];
   palette: Palette;
   layout: Layout;
+  metrics: Metrics;
   closed: ReadonlySet<string>;
   selection: LineSelection | null;
   scrollRequest: { fileIndex: number; seq: number } | null;
@@ -31,7 +32,6 @@ export interface DiffListProps {
 }
 
 const OVERSCAN = 12;
-const CHEVRON_WIDTH = 16;
 
 const STATUS: Record<FileChange["status"], { letter: string; title: string }> = {
   added: { letter: "A", title: "Added" },
@@ -82,7 +82,7 @@ function useViewport(ref: RefObject<HTMLDivElement | null>) {
 }
 
 export function DiffList(props: DiffListProps) {
-  const { data, items, palette, layout, scrollRequest } = props;
+  const { data, items, palette, layout, metrics, scrollRequest } = props;
   const scroller = useRef<HTMLDivElement>(null);
   const viewport = useViewport(scroller);
   const [scrollTop, setScrollTop] = useState(0);
@@ -91,10 +91,10 @@ export function DiffList(props: DiffListProps) {
     const result = new Array<number>(items.length + 1);
     result[0] = 0;
     items.forEach((item, index) => {
-      result[index + 1] = result[index]! + itemHeight(item);
+      result[index + 1] = result[index]! + itemHeight(item, metrics);
     });
     return result;
-  }, [items]);
+  }, [items, metrics]);
   const total = offsets[items.length]!;
   const digits = useMemo(() => lineDigits(data), [data]);
   const columns = useMemo(() => (layout === "unified" ? contentColumns(items) : 0), [items, layout]);
@@ -124,7 +124,7 @@ export function DiffList(props: DiffListProps) {
   const numberColumns = layout === "unified" ? 2 * (digits + 2) : digits + 2;
   const innerWidth =
     layout === "unified"
-      ? `max(100%, calc(${CHEVRON_WIDTH}px + ${numberColumns + 2 + columns + 2}ch))`
+      ? `max(100%, calc(${metrics.chevron}px + ${numberColumns + 2 + columns + 2}ch))`
       : "100%";
 
   const mounted: ReactNode[] = [];
@@ -133,7 +133,7 @@ export function DiffList(props: DiffListProps) {
     mounted.push(
       <div
         key={item.key}
-        style={{ position: "absolute", top: offsets[index], left: 0, width: "100%", height: itemHeight(item) }}
+        style={{ position: "absolute", top: offsets[index], left: 0, width: "100%", height: itemHeight(item, metrics) }}
       >
         <ItemView {...props} item={item} digits={digits} viewportWidth={viewport.width} />
       </div>,
@@ -144,7 +144,7 @@ export function DiffList(props: DiffListProps) {
     <div
       ref={scroller}
       className="min-h-0 flex-1 overflow-auto font-mono text-xs"
-      style={{ background: palette.bg, color: palette.fg, lineHeight: "20px" }}
+      style={{ background: palette.bg, color: palette.fg, lineHeight: `${metrics.row}px` }}
       onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
     >
       <div style={{ position: "relative", height: total, width: innerWidth }}>{mounted}</div>
@@ -203,18 +203,23 @@ function FileHeader(props: ItemViewProps & { fileIndex: number }) {
       <span title={status.title} className="font-mono font-semibold" style={{ color: statusColor }}>
         {status.letter}
       </span>
-      <span className="min-w-0 flex-1 truncate">
-        {renamedFrom ? <span style={{ color: palette.fileHeaderDir }}>{renamedFrom} → </span> : null}
-        <span style={{ color: palette.fileHeaderDir }}>{path.slice(0, slash + 1)}</span>
-        <span className="font-medium">{path.slice(slash + 1)}</span>
+      {/* The directory gives way first, so a narrow panel still shows the file name. */}
+      <span className="flex min-w-0 flex-1">
+        <span className="min-w-0 truncate" style={{ color: palette.fileHeaderDir }}>
+          {renamedFrom ? `${renamedFrom} → ` : null}
+          {path.slice(0, slash + 1)}
+        </span>
+        <span className="min-w-0 shrink-0 truncate font-medium" style={{ maxWidth: "100%" }}>
+          {path.slice(slash + 1)}
+        </span>
       </span>
       {entry.tags.map((tag) => (
-        <span key={tag} className="rounded px-1 text-[10px]" style={{ background: palette.chrome, color: palette.muted }}>
+        <span key={tag} className="hidden rounded px-1 text-[10px] sm:inline" style={{ background: palette.chrome, color: palette.muted }}>
           {tag}
         </span>
       ))}
       {stats?.fallback ? (
-        <span title={`Line diff: ${stats.fallback.message}`} style={{ color: palette.muted }}>
+        <span title={`Line diff: ${stats.fallback.message}`} className="hidden sm:inline" style={{ color: palette.muted }}>
           line diff
         </span>
       ) : null}
@@ -235,7 +240,7 @@ function Note(props: ItemViewProps & { item: Extract<Item, { kind: "note" }> }) 
     position: "sticky" as const,
     left: 0,
     width: viewportWidth || "100%",
-    paddingLeft: CHEVRON_WIDTH + 8,
+    paddingLeft: props.metrics.chevron + 8,
     color: item.tone === "error" ? palette.removedText : item.tone === "load" ? palette.accent : palette.muted,
   };
   if (item.tone === "load") {
@@ -288,10 +293,10 @@ function Spans({ spans }: { spans: RenderSpan[] }) {
 }
 
 function Chevron(props: ItemViewProps & { fileIndex: number; cell: SplitLineCell | UnifiedLineCell }) {
-  const { cell, palette, fileIndex, onToggleFold } = props;
+  const { cell, palette, fileIndex, onToggleFold, metrics } = props;
   const fold = cell.fold;
   return (
-    <span className="inline-flex shrink-0 justify-center" style={{ width: CHEVRON_WIDTH }}>
+    <span className="inline-flex shrink-0 justify-center" style={{ width: metrics.chevron }}>
       {fold ? (
         <button
           type="button"
@@ -326,7 +331,7 @@ function LineNumber(props: ItemViewProps & { fileIndex: number; side: Side; line
   return (
     <button
       type="button"
-      title="Select line; shift-click to extend"
+      title="Select line; select another line to make a range"
       aria-label={`Select ${side} line ${line}`}
       className="shrink-0 pr-[1ch] text-right tabular-nums hover:underline"
       style={style}

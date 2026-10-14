@@ -19,7 +19,8 @@ import { filePath } from "../vendor/diffr/protocol/wire";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { DiffList, type LineSelection, type Side } from "./DiffList";
-import { buildItems, foldsFor } from "./items";
+import { buildItems, COARSE_METRICS, FINE_METRICS, foldsFor } from "./items";
+import { COARSE_POINTER_QUERY, COMPACT_VIEWPORT_QUERY, useMediaQuery } from "./useMediaQuery";
 import { parseDiff, type DiffData } from "./model";
 import { paletteFromCodeTheme } from "./palette";
 import { splitArgs } from "./args";
@@ -119,7 +120,11 @@ export function DiffrPanel({ threadId }: PluginThreadPanelProps) {
     () => paletteFromCodeTheme(codeTheme.theme ?? fallbackTheme(codeTheme.mode)),
     [codeTheme.theme, codeTheme.mode],
   );
-  const [layout, setLayout] = useState<Layout>(readLayout);
+  const [chosenLayout, setLayout] = useState<Layout>(readLayout);
+  // Two code columns do not fit on a phone; the saved choice returns on a wider screen.
+  const isCompact = useMediaQuery(COMPACT_VIEWPORT_QUERY);
+  const layout: Layout = isCompact ? "unified" : chosenLayout;
+  const metrics = useMediaQuery(COARSE_POINTER_QUERY) ? COARSE_METRICS : FINE_METRICS;
   const [folds, setFolds] = useState<ReadonlyMap<number, ReadonlySet<number>>>(new Map());
   const [closed, setClosed] = useState<ReadonlySet<string>>(new Set());
   const [loaded, setLoaded] = useState<ReadonlySet<string>>(new Set());
@@ -165,13 +170,14 @@ export function DiffrPanel({ threadId }: PluginThreadPanelProps) {
     }
   };
 
+  // A second line on the same side of the same file makes a range, so touch
+  // screens can select one without shift. Shift-click extends any selection.
   const selectLine = useCallback((fileIndex: number, side: Side, line: number, extend: boolean) => {
     setSelection((current) => {
-      if (extend && current && current.fileIndex === fileIndex && current.side === side) {
+      const sameSide = current !== null && current.fileIndex === fileIndex && current.side === side;
+      if (sameSide && current.start === line && current.end === line) return null;
+      if (sameSide && (extend || current.start === current.end)) {
         return { fileIndex, side, start: Math.min(current.start, line), end: Math.max(current.end, line) };
-      }
-      if (current && current.fileIndex === fileIndex && current.side === side && current.start === line && current.end === line) {
-        return null;
       }
       return { fileIndex, side, start: line, end: line };
     });
@@ -186,6 +192,8 @@ export function DiffrPanel({ threadId }: PluginThreadPanelProps) {
       composer.insert(`${reference} `, { at: "end" });
       composer.focus();
       setSelection(null);
+      // On a phone this panel covers the composer, so say where the text went.
+      if (isCompact) toast.success(`Added ${reference} to your message`);
       return;
     }
     if (await copyToClipboard({ text: reference })) toast.success(`Copied ${reference}`);
@@ -226,6 +234,7 @@ export function DiffrPanel({ threadId }: PluginThreadPanelProps) {
               onClick={() => setModeKind(option.kind)}
               className={cn(
                 "rounded px-2 py-0.5 text-xs",
+                metrics === COARSE_METRICS && "min-h-8",
                 modeKind === option.kind ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-foreground",
               )}
             >
@@ -233,19 +242,23 @@ export function DiffrPanel({ threadId }: PluginThreadPanelProps) {
             </button>
           ))}
         </div>
-        <div className="flex-1" />
-        <ToolbarButton label={layout === "unified" ? "Split view" : "Unified view"} onClick={() => changeLayout(layout === "unified" ? "split" : "unified")}>
-          <Icon name={layout === "unified" ? "Columns2" : "ListView"} className="size-3.5" />
-        </ToolbarButton>
-        <ToolbarButton label="Expand every fold" onClick={expandAll} disabled={!data}>
-          <span className="text-[11px]">Expand</span>
-        </ToolbarButton>
-        <ToolbarButton label="Restore diffr's folds" onClick={resetFolds} disabled={!data}>
-          <span className="text-[11px]">Fold</span>
-        </ToolbarButton>
-        <ToolbarButton label="Run diffr again" onClick={refresh} disabled={loading}>
-          <Icon name={loading ? "Spinner" : "RotateCcw"} className={cn("size-3.5", loading && "animate-spin")} />
-        </ToolbarButton>
+        {/* One group, so a narrow panel wraps it to its own row instead of splitting it. */}
+        <div className="ml-auto flex items-center gap-1">
+          {isCompact ? null : (
+            <ToolbarButton label={layout === "unified" ? "Split view" : "Unified view"} onClick={() => changeLayout(layout === "unified" ? "split" : "unified")}>
+              <Icon name={layout === "unified" ? "Columns2" : "ListView"} className="size-3.5" />
+            </ToolbarButton>
+          )}
+          <ToolbarButton label="Expand every fold" onClick={expandAll} disabled={!data}>
+            <span className="text-[11px]">Expand</span>
+          </ToolbarButton>
+          <ToolbarButton label="Restore diffr's folds" onClick={resetFolds} disabled={!data}>
+            <span className="text-[11px]">Fold</span>
+          </ToolbarButton>
+          <ToolbarButton label="Run diffr again" onClick={refresh} disabled={loading}>
+            <Icon name={loading ? "Spinner" : "RotateCcw"} className={cn("size-3.5", loading && "animate-spin")} />
+          </ToolbarButton>
+        </div>
       </div>
       {modeKind === "custom" ? (
         <form onSubmit={runCustom} className="flex items-center gap-2 border-b border-border px-2 py-1.5">
@@ -257,7 +270,7 @@ export function DiffrPanel({ threadId }: PluginThreadPanelProps) {
             aria-label="diffr arguments"
             className="min-w-0 flex-1 rounded border border-border bg-transparent px-2 py-0.5 font-mono text-xs outline-none focus:border-ring"
           />
-          <button type="submit" className="rounded border border-border px-2 py-0.5 text-xs hover:bg-accent">
+          <button type="submit" className="rounded border border-border px-2 py-0.5 text-xs hover:bg-accent [@media(pointer:coarse)]:min-h-8">
             Run
           </button>
         </form>
@@ -268,27 +281,35 @@ export function DiffrPanel({ threadId }: PluginThreadPanelProps) {
             type="button"
             aria-expanded={showFiles}
             onClick={() => setShowFiles((value) => !value)}
-            className="flex items-center gap-1 hover:text-foreground"
+            className="flex shrink-0 items-center gap-1 whitespace-nowrap hover:text-foreground [@media(pointer:coarse)]:min-h-8"
             title={`diffr ${args.join(" ")}`}
           >
             <span aria-hidden>{showFiles ? "▾" : "▸"}</span>
             {data.inventory.length} {data.inventory.length === 1 ? "file" : "files"}
           </button>
-          <span className="font-mono tabular-nums">
+          <span className="shrink-0 whitespace-nowrap font-mono tabular-nums">
             <span className="text-green-600 dark:text-green-400">+{totals.added}</span>{" "}
             <span className="text-red-600 dark:text-red-400">−{totals.removed}</span>
           </span>
           <span className="min-w-0 flex-1 truncate">{comparisonLabel(data.comparison.lhs, data.comparison.rhs)}</span>
-          {reference ? (
-            <button
-              type="button"
-              onClick={addToChat}
-              className="shrink-0 truncate rounded bg-accent px-2 py-0.5 text-accent-foreground"
-              title="Add the selected lines to this thread's message"
-            >
-              Add {reference} to chat
-            </button>
-          ) : null}
+        </div>
+      ) : null}
+      {reference ? (
+        <div className="flex items-center gap-2 border-b border-border px-2 py-1 text-xs">
+          <span className="min-w-0 flex-1 truncate font-mono" title={reference}>
+            {reference}
+          </span>
+          <button
+            type="button"
+            onClick={addToChat}
+            aria-label={`Add ${reference} to chat`}
+            className="shrink-0 rounded bg-accent px-2 py-0.5 text-accent-foreground [@media(pointer:coarse)]:min-h-8"
+          >
+            Add to chat
+          </button>
+          <ToolbarButton label="Clear selection" onClick={() => setSelection(null)}>
+            <span aria-hidden>×</span>
+          </ToolbarButton>
         </div>
       ) : null}
       {data && showFiles ? (
@@ -300,7 +321,7 @@ export function DiffrPanel({ threadId }: PluginThreadPanelProps) {
               <li key={fileIndex}>
                 <button
                   type="button"
-                  className="flex w-full items-center gap-2 px-2 py-0.5 text-left hover:bg-accent"
+                  className="flex w-full items-center gap-2 px-2 py-0.5 text-left hover:bg-accent [@media(pointer:coarse)]:py-2"
                   onClick={() => setScrollRequest({ fileIndex, seq: Date.now() })}
                 >
                   <span className="min-w-0 flex-1 truncate font-mono">{filePath(entry.file)}</span>
@@ -335,6 +356,7 @@ export function DiffrPanel({ threadId }: PluginThreadPanelProps) {
           items={items}
           palette={palette}
           layout={layout}
+          metrics={metrics}
           closed={closed}
           selection={selection}
           scrollRequest={scrollRequest}
@@ -374,7 +396,7 @@ function ToolbarButton({
       title={label}
       onClick={onClick}
       disabled={disabled}
-      className="flex h-6 min-w-6 items-center justify-center rounded px-1 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50"
+      className="flex h-6 min-w-6 items-center justify-center rounded px-1 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50 [@media(pointer:coarse)]:h-8 [@media(pointer:coarse)]:min-w-8"
     >
       {children}
     </button>
