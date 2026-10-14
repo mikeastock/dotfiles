@@ -101,6 +101,7 @@ pnpm typecheck
 npm run typecheck --prefix bb-plugins/bb-plugin-t3sidebar
 npm run typecheck --prefix bb-plugins/bb-plugin-tok-speed
 npm run typecheck --prefix bb-plugins/bb-plugin-provider-muse
+npm run typecheck --prefix bb-plugins/bb-plugin-diffr
 ```
 
 ### CI/CD
