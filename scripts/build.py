@@ -3,7 +3,7 @@
 Build system for AI agent plugins.
 
 Reads plugins.toml and builds/installs skills, prompt templates,
-and extensions for Claude Code, Codex CLI, and Pi Agent.
+and extensions for Claude Code, Codex CLI, Pi Agent, and bb.
 
 Requires Python 3.11+ (uses tomllib from stdlib).
 """
@@ -69,6 +69,9 @@ INSTALL_PATHS = {
     "codex": {
         "skills": HOME / ".codex" / "skills",
     },
+    "bb": {
+        "skills": HOME / ".bb" / "skills",
+    },
     "pi": {
         "skills": HOME / ".agents" / "skills",
         "extensions": HOME / ".pi" / "agent" / "extensions",
@@ -82,6 +85,8 @@ INSTALL_MANIFEST = STATE_DIR / "agent-install-manifest.json"
 INSTALL_MANIFEST_VERSION = 1
 
 AGENTS = ["amp", "claude", "pi"]  # Agents that get broad skill builds
+# Agents that only get custom skills naming them in the `agents` frontmatter
+OPT_IN_AGENTS = ["codex", "bb"]
 
 
 def empty_install_manifest() -> dict:
@@ -938,7 +943,7 @@ def build_skills(plugins: dict[str, Plugin]):
     print("Building skills...")
 
     # Clean build directory
-    for agent in [*AGENTS, "codex"]:
+    for agent in [*AGENTS, *OPT_IN_AGENTS]:
         agent_dir = BUILD_DIR / agent
         if agent_dir.exists():
             shutil.rmtree(agent_dir)
@@ -1027,34 +1032,31 @@ def build_skills(plugins: dict[str, Plugin]):
                         print(f"  {name} (custom) [{', '.join(built_for_agents)}]")
                     built.add(name)
 
-    # Process Codex-only custom skills. Keep this narrow: only skills that
-    # explicitly opt into codex are built for the codex install target.
+    # Opt-in agents only receive custom skills that name them explicitly.
     if SKILLS_DIR.exists():
-        built_for_codex = []
         for skill_dir in sorted(SKILLS_DIR.iterdir()):
             if not skill_dir.is_dir():
                 continue
             skill_md = find_skill_markdown(skill_dir)
             if skill_md is None:
                 continue
-            allowed_agents = parse_skill_agents(skill_md.read_text())
-            if allowed_agents is None or "codex" not in allowed_agents:
-                continue
+            skill_content = skill_md.read_text()
+            allowed_agents = parse_skill_agents(skill_content) or []
             name = skill_dir.name
-            result = build_skill(
-                name,
-                skill_dir,
-                "codex",
-                user_invocable_only=parse_skill_user_invocable_only(
-                    skill_md.read_text()
-                ),
-            )
-            if result is True:
-                built_for_codex.append(name)
-
-        for name in built_for_codex:
-            print(f"  {name} (custom) [codex]")
-            built.add(name)
+            for agent in OPT_IN_AGENTS:
+                if agent not in allowed_agents:
+                    continue
+                result = build_skill(
+                    name,
+                    skill_dir,
+                    agent,
+                    user_invocable_only=parse_skill_user_invocable_only(
+                        skill_content
+                    ),
+                )
+                if result is True:
+                    print(f"  {name} (custom) [{agent}]")
+                    built.add(name)
 
     print(f"  Built {len(built)} skills")
 

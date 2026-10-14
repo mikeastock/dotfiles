@@ -23,7 +23,7 @@ help:
 	@echo "  make install-non-interactive Install for headless/automated environments (skips interactive extensions)"
 	@echo "  make dotfiles                Install machine dotfiles (auto-detects Omarchy)"
 	@echo "  make dotfiles-clean          Remove machine dotfile links"
-	@echo "  make install-skills          Install skills only (Amp, Claude Code, Pi agent)"
+	@echo "  make install-skills          Install skills only (Amp, Claude Code, Codex, Pi agent, bb)"
 	@echo "  make install-amp-plugins     Install Amp plugins from amp-plugins/"
 	@echo "  make install-extensions      Install extensions only (Pi agent)"
 	@echo "  make install-prompts         Install prompt templates only (Pi agent)"

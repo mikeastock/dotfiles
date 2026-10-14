@@ -30,6 +30,7 @@ Skills are specialized instruction sets that guide AI agents through specific ta
 │   └── dotfiles.sh                 # mise bootstrap wrapper
 ├── build/                          # Generated during build (gitignored)
 │   ├── amp/
+│   ├── bb/
 │   ├── claude/
 │   ├── codex/
 │   └── pi/
@@ -122,7 +123,7 @@ GitHub Actions (`.github/workflows/typecheck.yml`) runs the root and vendored BB
   agents: [claude]  # Only install for claude (omit for all agents)
   ---
   ```
-  The `agents` field is stripped from the built skill.
+  The `agents` field is stripped from the built skill. Omitting it installs for Amp, Claude, and Pi only. Codex and bb are opt-in: they receive a custom skill only when its `agents` list names them.
 - Use `metadata.user-invocable-only: true` to prevent auto-triggering. The build emits `disable-model-invocation: true` for Claude and Pi, plus `policy.allow_implicit_invocation: false` for Codex:
   ```yaml
   ---
@@ -178,6 +179,7 @@ Extensions use the unified `ExtensionAPI` which provides:
 | Agent | Skills | Extensions | Config |
 |-------|--------|------------|--------|
 | Amp | `~/.config/agents/skills/` | N/A | `~/.config/amp/settings.json` |
+| bb | `~/.bb/skills/` (opt-in) | N/A | N/A |
 | Claude Code | `~/.claude/skills/` | N/A | N/A |
 | Codex | `~/.codex/skills/` | N/A | `~/.codex/config.toml` |
 | OpenCode | N/A | N/A | `~/.config/opencode/opencode.jsonc` |
