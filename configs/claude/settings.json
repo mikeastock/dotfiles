@@ -1,0 +1,31 @@
+{
+  "cleanupPeriodDays": 36500,
+  "env": {
+    "CLAUDE_AFK_TIMEOUT_MS": "2147483647"
+  },
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
+  "model": "opus",
+  "enabledPlugins": {},
+  "extraKnownMarketplaces": {
+    "paper": {
+      "source": {
+        "source": "github",
+        "repo": "paper-design/agent-plugins"
+      }
+    }
+  },
+  "effortLevel": "high",
+  "promptSuggestionEnabled": false,
+  "tui": "fullscreen",
+  "skipDangerousModePermissionPrompt": true,
+  "skipWorkflowUsageWarning": true,
+  "theme": "dark",
+  "verbose": false,
+  "switchModelsOnFlag": false,
+  "agentPushNotifEnabled": true,
+  "fastMode": true,
+  "idleCompaction": false
+}

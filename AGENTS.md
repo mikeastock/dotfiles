@@ -188,7 +188,7 @@ Extensions use the unified `ExtensionAPI` which provides:
 |-------|--------|------------|--------|
 | Amp | `~/.config/agents/skills/` | N/A | `~/.config/amp/settings.json` |
 | bb | `~/.bb/skills/` (opt-in) | N/A | N/A |
-| Claude Code | `~/.claude/skills/` | N/A | N/A |
+| Claude Code | `~/.claude/skills/` | N/A | `~/.claude/settings.json` |
 | Codex | `~/.codex/skills/` | N/A | `~/.codex/config.toml` |
 | OpenCode | N/A | N/A | `~/.config/opencode/opencode.jsonc` |
 | Pi Agent | `~/.agents/skills/` | `~/.pi/agent/extensions/` | `~/.pi/agent/settings.json` |
