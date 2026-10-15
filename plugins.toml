@@ -6,13 +6,20 @@
 #                     use "." when SKILL.md lives at the plugin repo root
 #   skills_path_by_agent - Optional agent-specific skill paths, keyed by amp/claude/pi
 #   skills          - List of skills to install: ["*"] for all, [] or omit for none
-#   skills_skip_agents - Agents that should not receive this plugin's skills (optional)
+#   skills_agents   - Agents that receive this plugin's skills (default: amp, claude, pi);
+#                     list codex or bb here to target those opt-in agents
+#   skills_bundle   - Per skill, sibling skill names/globs copied into <skill>/skills/
+#   skills_exclude  - Glob patterns of files removed from built plugin skills
 #   skills_user_invocable_only - Skills that require explicit user invocation (optional)
 #   extensions_path - Glob pattern(s) to find extensions (default: "extensions/*.ts")
 #   extensions      - List of extensions to install: ["*"] for all, [] or omit for none
 #   prompts_path    - Glob pattern(s) to find prompt templates (default: "prompts/*.md")
 #   prompts         - List of prompt templates to install: ["*"] for all, [] or omit for none
 #   alias           - Optional prefix to prevent name collisions
+#
+# Local edits to a plugin skill live in patches/<skill>.patch and are applied at
+# build time. Edit them with `make skill-patch SKILL=<skill>` and save with
+# `make skill-patch-commit SKILL=<skill>`.
 #
 # Plugin directories use hyphen separator: owner/repo -> plugins/owner-repo/
 
@@ -77,3 +84,18 @@ skills = [ "better-github-skill" ]
 url = "https://github.com/humanlayer/skills"
 skills_path = "plugins/show-me/skills/*"
 skills = [ "show-me" ]
+
+["cursor/plugins"]
+url = "https://github.com/cursor/plugins"
+skills_path = "pstack/skills/*"
+skills = [ "poteto-mode" ]
+skills_agents = [ "bb" ]
+skills_exclude = [ "**/*.test.ts", "**/*.test-helper.ts", "**/types.compile.ts" ]
+# poteto-mode reads these sibling skills by path; bundle them under poteto-mode/skills/
+[ "cursor/plugins".skills_bundle ]
+poteto-mode = [
+  "architect", "arena", "benchmark-checklist", "bro", "create-verification-skill",
+  "figure-it-out", "how", "interrogate", "ketchup", "maintain-verification-skill",
+  "no-comments", "principle-*", "reflect", "show-me-your-work", "swarm", "tdd",
+  "technical-writing", "typescript-best-practices", "unslop", "why",
+]

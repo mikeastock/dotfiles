@@ -37,3 +37,6 @@
 [submodule "plugins/humanlayer-skills"]
 	path = plugins/humanlayer-skills
 	url = https://github.com/humanlayer/skills
+[submodule "plugins/cursor-plugins"]
+	path = plugins/cursor-plugins
+	url = https://github.com/cursor/plugins
