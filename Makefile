@@ -9,7 +9,7 @@ BUILD_SCRIPT := $(CURDIR)/scripts/build.py
 FORCE_FLAG := $(if $(FORCE),--force,)
 DOTFILES_ARGS ?=
 
-.PHONY: all install install-non-interactive dotfiles dotfiles-clean install-skills install-amp-plugins install-extensions install-prompts install-themes amp-plugin-types amp-plugin-check package-manager-security-config build clean help submodule-init plugin-update check-python
+.PHONY: all install install-non-interactive dotfiles dotfiles-clean install-skills install-amp-plugins install-extensions install-prompts install-themes skill-patch skill-patch-commit amp-plugin-types amp-plugin-check package-manager-security-config build clean help submodule-init plugin-update check-python
 
 all: help
 
@@ -31,6 +31,8 @@ help:
 	@echo "  make amp-plugin-types        Refresh local Amp plugin TypeScript declarations"
 	@echo "  make amp-plugin-check        Refresh Amp plugin declarations and typecheck plugins"
 	@echo "  make package-manager-security-config Configure global npm/pnpm/bun/uv package security settings"
+	@echo "  make skill-patch SKILL=name  Open an editable copy of a plugin skill with its patch applied"
+	@echo "  make skill-patch-commit SKILL=name  Save that copy's edits to patches/<name>.patch"
 	@echo "  make build                   Build skills/prompts/themes (without installing)"
 	@echo "  make plugin-update           Update all plugin submodules to latest"
 	@echo "  make clean                   Remove all installed skills, extensions, and build artifacts"
@@ -87,6 +89,12 @@ install-prompts: check-python
 
 install-themes: check-python
 	@$(PYTHON) "$(BUILD_SCRIPT)" install-themes $(FORCE_FLAG)
+
+skill-patch: check-python
+	@$(PYTHON) "$(BUILD_SCRIPT)" skill-patch $(SKILL)
+
+skill-patch-commit: check-python
+	@$(PYTHON) "$(BUILD_SCRIPT)" skill-patch-commit $(SKILL)
 
 amp-plugin-types: check-python
 	@$(PYTHON) $(CURDIR)/scripts/update_amp_plugin_types.py

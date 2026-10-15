@@ -19,6 +19,7 @@ Skills are specialized instruction sets that guide AI agents through specific ta
 ├── mise.omarchy.toml               # Omarchy-only links, bashrc block, login shell
 ├── plugins/                        # Git submodules (skill sources, owner-repo format)
 │   └── <owner>-<repo>/
+├── patches/                        # Local changes to plugin skills (<skill>.patch)
 ├── skills/                         # Custom skills (local)
 │   └── <skill-name>/
 │       ├── SKILL.md                # Skill definition (YAML frontmatter + markdown)
@@ -43,10 +44,15 @@ Skills are specialized instruction sets that guide AI agents through specific ta
 ### Skills
 Skills follow the [Agent Skills specification](https://agentskills.io/specification.md). When creating or modifying skills, fetch the latest specification from that URL for current format requirements.
 
-### Skill Overrides
-Files in `skill-overrides/<skill>-<agent>.md` are **appended** to the skill's SKILL.md during build. This allows agent-specific customizations without modifying upstream skills, and applies to both plugin and custom skills.
+### Skill Patches
+Local changes to a plugin skill live in `patches/<skill>.patch`, a `git diff` against the pristine skill as the build assembles it (after `skills_bundle` and `skills_exclude`). The build applies the patch before installing and fails if it no longer applies. Never edit files inside `plugins/`; edit custom skills in `skills/` directly.
 
-Custom skills can also include per-skill overrides at `skills/<skill>/overrides/<agent>.md`, which are appended after `skill-overrides` for that skill.
+```bash
+make skill-patch SKILL=<skill>         # editable copy in build/skill-patch/<skill>/ with the patch applied
+make skill-patch-commit SKILL=<skill>  # write its changes to patches/<skill>.patch
+```
+
+The patch header records the plugin commit it was written against. After a submodule bump breaks the patch, `make skill-patch` rebuilds that old pristine tree and replays the patch with `git apply --3way`. Conflicts use standard markers, where `ours` is the new upstream and `theirs` is the patch. `skill-patch-commit` refuses while markers remain.
 
 ### Plugin Configuration
 All plugin configuration is in `plugins.toml`. Plugins use fully qualified names (`owner/repo`) as table keys. The corresponding directory uses hyphen separator: `owner/repo` → `plugins/owner-repo/`.
@@ -55,7 +61,9 @@ Each plugin can specify:
 - `url` - Git repository URL (required)
 - `skills_path` - Glob pattern to find skills (default: `skills/*`)
 - `skills` - List of skills to install: `["*"]` for all, `["a", "b"]` for specific, `[]` or omit for none
-- `skills_skip_agents` - Agents that should not receive this plugin's skills (optional)
+- `skills_agents` - Agents that receive this plugin's skills (default: amp, claude, pi). List `codex` or `bb` to target those opt-in agents
+- `skills_bundle` - Per skill, sibling skill names or globs copied into `<skill>/skills/` so one installed skill carries the skills it reads by path
+- `skills_exclude` - Glob patterns of files removed from built plugin skills
 - `extensions_path` - Glob pattern to find extensions (default: `extensions/*.ts`)
 - `extensions` - List of extensions to install: `["*"]` for all, `["a", "b"]` for specific, `[]` or omit for none
 - `alias` - Optional prefix to prevent name collisions
@@ -75,7 +83,7 @@ make install
 | `make install DOTFILES=1` | Build and install agent artifacts plus machine dotfiles |
 | `make dotfiles` | Install machine dotfiles (auto-detects Omarchy) |
 | `make dotfiles-clean` | Remove machine dotfile links |
-| `make install-non-interactive` | Install for headless/automated environments (skips interactive extensions and overrides) |
+| `make install-non-interactive` | Install for headless/automated environments (skips interactive extensions) |
 | `make build` | Build skills to `build/` without installing |
 | `make install-skills` | Install skills only |
 | `make install-extensions` | Install Pi extensions only |
@@ -196,9 +204,10 @@ Extensions use the unified `ExtensionAPI` which provides:
 6. Run `make install` to build and install
 7. Update README.md: add to "Notable custom skills" and directory structure
 
-### Adding a Skill Override
-1. Create `skill-overrides/<skill-name>-<agent>.md` (agent: `claude` or `pi`)
-2. Content will be appended to the skill during build
+### Patching a Plugin Skill
+1. Run `make skill-patch SKILL=<skill-name>` and edit the printed copy
+2. Run `make skill-patch-commit SKILL=<skill-name>` to write `patches/<skill-name>.patch`
+3. Run `make install-skills` and verify the installed skill
 
 ### Adding an Extension (Pi only)
 1. Fetch the [Pi Coding Agent extensions documentation](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/extensions.md) for the current API

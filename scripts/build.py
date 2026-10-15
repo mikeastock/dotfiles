@@ -11,9 +11,11 @@ Requires Python 3.11+ (uses tomllib from stdlib).
 import argparse
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -51,8 +53,9 @@ AMP_PLUGINS_DIR = ROOT / "amp-plugins"
 
 PI_EXTENSIONS_DIR = ROOT / "pi-extensions"
 PI_THEMES_DIR = ROOT / "pi-themes"
-OVERRIDES_DIR = ROOT / "skill-overrides"
+PATCHES_DIR = ROOT / "patches"
 BUILD_DIR = ROOT / "build"
+SKILL_PATCH_DIR = BUILD_DIR / "skill-patch"
 CONFIG_FILE = ROOT / "plugins.toml"
 
 # Installation paths
@@ -249,7 +252,9 @@ class Plugin:
     skills_path: list[str] = field(default_factory=lambda: ["skills/*"])
     skills_path_by_agent: dict[str, list[str]] = field(default_factory=dict)
     skills: list[str] = field(default_factory=list)  # Empty = none, ["*"] = all
-    skills_skip_agents: list[str] = field(default_factory=list)
+    skills_agents: list[str] = field(default_factory=list)  # Empty = broad agents
+    skills_bundle: dict[str, list[str]] = field(default_factory=dict)
+    skills_exclude: list[str] = field(default_factory=list)
     skills_user_invocable_only: list[str] = field(default_factory=list)
     extensions_path: list[str] = field(default_factory=lambda: ["extensions/*.ts"])
     extensions: list[str] = field(default_factory=list)  # Empty = none, ["*"] = all
@@ -262,6 +267,22 @@ class Plugin:
     def dir_name(self) -> str:
         """Directory name for this plugin (owner-repo format)."""
         return plugin_dir_name(self.name)
+
+    @property
+    def root(self) -> Path:
+        return PLUGINS_DIR / self.dir_name
+
+    def skill_agents(self) -> list[str]:
+        """Agents that receive this plugin's skills."""
+        return self.skills_agents or AGENTS
+
+    def skill_needs_staging(self, upstream_name: str, name: str) -> bool:
+        """Whether the skill must be assembled before it can be built."""
+        return bool(
+            self.skills_bundle.get(upstream_name)
+            or self.skills_exclude
+            or skill_patch_path(name).exists()
+        )
 
     def skill_paths_for(self, agent: str | None) -> list[str]:
         """Return agent-specific skill paths when configured."""
@@ -309,13 +330,27 @@ class Plugin:
                 return [items]
             return list(items)
 
+        def normalize_agents(plugin_name: str, items) -> list[str]:
+            agents = normalize_items(items)
+            unknown = sorted(set(agents) - set(AGENTS) - set(OPT_IN_AGENTS))
+            if unknown:
+                sys.exit(
+                    f"Error: {plugin_name} skills_agents has unknown agents: {', '.join(unknown)}"
+                )
+            return agents
+
         return cls(
             name=name,
             url=data["url"],
             skills_path=normalize_path(data.get("skills_path", "skills/*")),
             skills_path_by_agent=normalize_path_map(data.get("skills_path_by_agent")),
             skills=normalize_items(data.get("skills")),
-            skills_skip_agents=normalize_items(data.get("skills_skip_agents")),
+            skills_agents=normalize_agents(name, data.get("skills_agents")),
+            skills_bundle={
+                str(skill): normalize_items(bundled)
+                for skill, bundled in data.get("skills_bundle", {}).items()
+            },
+            skills_exclude=normalize_items(data.get("skills_exclude")),
             skills_user_invocable_only=normalize_items(
                 data.get("skills_user_invocable_only")
             ),
@@ -879,9 +914,6 @@ def build_skill(
     dest = BUILD_DIR / agent / name
     dest.mkdir(parents=True, exist_ok=True)
 
-    # Check for overrides: global or local per-skill
-    override = OVERRIDES_DIR / f"{name}-{agent}.md"
-    local_override = source / "overrides" / f"{agent}.md"
     dest_skill_md = dest / "SKILL.md"
 
     # Process content: normalize frontmatter and strip agents field
@@ -894,26 +926,14 @@ def build_skill(
             True,
         )
 
-    # Apply global and per-skill overrides.
-    use_override = override.exists()
-    use_local_override = local_override.exists()
-
-    with open(dest_skill_md, "w") as out:
-        out.write(skill_content)
-        if use_override:
-            out.write("\n")
-            out.write(override.read_text())
-        if use_local_override:
-            out.write("\n")
-            out.write(local_override.read_text())
+    dest_skill_md.write_text(skill_content)
 
     # Copy additional files
     for item in source.iterdir():
-        # Skip skill docs (rewritten above), local overrides, caches, and VCS
-        # metadata. Root-level single-skill plugin submodules expose a .git file
-        # that must not ship into installed skill directories.
+        # Skip skill docs (rewritten above), caches, and VCS metadata.
+        # Root-level single-skill plugin submodules expose a .git file that
+        # must not ship into installed skill directories.
         if item.name.lower() == "skill.md" or item.name in {
-            "overrides",
             "__pycache__",
             ".git",
         }:
@@ -938,6 +958,228 @@ def build_skill(
     return True
 
 
+PATCH_BASE_PATTERN = re.compile(r"^base: \S+@([0-9a-f]{40})$", re.MULTILINE)
+PATCH_AUTHOR = [
+    "-c",
+    "user.name=skill-patch",
+    "-c",
+    "user.email=skill-patch@localhost",
+    "-c",
+    "commit.gpgsign=false",
+]
+_staging_root: Path | None = None
+
+
+def git(args: list[str], cwd: Path, *, check: bool = True) -> subprocess.CompletedProcess:
+    result = subprocess.run(["git", *args], cwd=cwd, capture_output=True, text=True)
+    if check and result.returncode != 0:
+        sys.exit(f"Error: git {' '.join(args)} failed in {cwd}:\n{result.stderr.strip()}")
+    return result
+
+
+def skill_patch_path(name: str) -> Path:
+    return PATCHES_DIR / f"{name}.patch"
+
+
+def patch_base(patch: Path) -> str:
+    match = PATCH_BASE_PATTERN.search(patch.read_text())
+    if match is None:
+        sys.exit(f"Error: {patch} has no 'base: <plugin>@<commit>' header line")
+    return match.group(1)
+
+
+def plugin_commit(plugin: Plugin) -> str:
+    return git(["rev-parse", "HEAD"], cwd=plugin.root).stdout.strip()
+
+
+def staging_root() -> Path:
+    """Scratch space outside the repo, so `git apply` acts on plain files."""
+    global _staging_root
+    if _staging_root is None:
+        _staging_root = Path(tempfile.mkdtemp(prefix="dotfiles-skill-staging-"))
+        import atexit
+
+        atexit.register(shutil.rmtree, _staging_root, ignore_errors=True)
+    return _staging_root
+
+
+def assemble_plugin_skill(plugin: Plugin, skill_path: Path, dest: Path) -> None:
+    """Copy a plugin skill with its bundled sibling skills, minus excluded files."""
+    ignore = shutil.ignore_patterns(".git")
+    shutil.copytree(skill_path, dest, ignore=ignore)
+
+    for pattern in plugin.skills_bundle.get(skill_path.name, []):
+        matches = sorted(
+            path
+            for path in skill_path.parent.glob(pattern)
+            if path.is_dir() and path != skill_path
+        )
+        if not matches:
+            sys.exit(
+                f"Error: {plugin.name} skills_bundle entry '{pattern}' for "
+                f"'{skill_path.name}' matches no sibling skill"
+            )
+        for match in matches:
+            shutil.copytree(match, dest / "skills" / match.name, ignore=ignore)
+
+    for pattern in plugin.skills_exclude:
+        for path in list(dest.glob(pattern)):
+            if path.exists() or path.is_symlink():
+                remove_path(path)
+
+
+def apply_skill_patch(plugin: Plugin, name: str, skill_dir: Path) -> None:
+    patch = skill_patch_path(name)
+    if not patch.exists():
+        return
+
+    result = git(
+        ["apply", "--whitespace=nowarn", str(patch)], cwd=skill_dir, check=False
+    )
+    if result.returncode != 0:
+        sys.exit(
+            f"Error: {patch.relative_to(ROOT)} does not apply to "
+            f"{plugin.name}@{plugin_commit(plugin)[:7]} "
+            f"(written against {patch_base(patch)[:7]}):\n"
+            f"{result.stderr.strip()}\n"
+            f"Rebase it with `make skill-patch SKILL={name}`, then "
+            f"`make skill-patch-commit SKILL={name}`."
+        )
+
+
+def stage_plugin_skill(plugin: Plugin, name: str, skill_path: Path) -> Path:
+    """Assemble a plugin skill and apply its patch in scratch space."""
+    dest = Path(tempfile.mkdtemp(prefix=f"{name}-", dir=staging_root())) / name
+    assemble_plugin_skill(plugin, skill_path, dest)
+    apply_skill_patch(plugin, name, dest)
+    return dest
+
+
+def find_plugin_skill(plugins: dict[str, Plugin], name: str) -> tuple[Plugin, Path]:
+    for plugin in plugins.values():
+        for agent in plugin.skill_agents():
+            for skill_name, path in discover_items(plugin, "skills", agent=agent):
+                if skill_name == name:
+                    return plugin, path
+    sys.exit(f"Error: no enabled plugin skill named '{name}'")
+
+
+def plugin_skill_at(plugin: Plugin, skill_path: Path, commit: str) -> Path:
+    """Extract the plugin at an older commit and return the skill's path there."""
+    import io
+    import tarfile
+
+    archive = subprocess.run(
+        ["git", "archive", commit], cwd=plugin.root, capture_output=True
+    )
+    if archive.returncode != 0:
+        sys.exit(
+            f"Error: {plugin.name}@{commit[:7]} is not in {plugin.root.relative_to(ROOT)}. "
+            f"Fetch it with `git -C {plugin.root.relative_to(ROOT)} fetch origin {commit}`."
+        )
+    root = Path(tempfile.mkdtemp(prefix="plugin-", dir=staging_root()))
+    with tarfile.open(fileobj=io.BytesIO(archive.stdout)) as tar:
+        tar.extractall(root, filter="data")
+    return root / skill_path.relative_to(plugin.root)
+
+
+def replace_worktree(repo: Path, plugin: Plugin, skill_path: Path) -> None:
+    """Replace everything but .git in repo with the assembled pristine skill."""
+    for child in repo.iterdir():
+        if child.name != ".git":
+            remove_path(child)
+    assembled = Path(tempfile.mkdtemp(dir=staging_root())) / "skill"
+    assemble_plugin_skill(plugin, skill_path, assembled)
+    for child in assembled.iterdir():
+        shutil.move(str(child), repo / child.name)
+
+
+def commit_worktree(repo: Path, message: str) -> None:
+    git(["add", "-A"], cwd=repo)
+    git([*PATCH_AUTHOR, "commit", "-q", "--allow-empty", "-m", message], cwd=repo)
+
+
+def skill_patch(plugins: dict[str, Plugin], name: str) -> None:
+    """Prepare an editable copy of a plugin skill with its patch applied."""
+    plugin, skill_path = find_plugin_skill(plugins, name)
+    edit_dir = SKILL_PATCH_DIR / name
+    if edit_dir.exists():
+        sys.exit(
+            f"Error: {edit_dir.relative_to(ROOT)} already exists. Finish it with "
+            f"`make skill-patch-commit SKILL={name}` or delete it to start over."
+        )
+
+    commit = plugin_commit(plugin)
+    patch = skill_patch_path(name)
+    base = patch_base(patch) if patch.exists() else None
+
+    edit_dir.mkdir(parents=True)
+    git(["init", "-q"], cwd=edit_dir)
+    git(["config", "skill-patch.commit", commit], cwd=edit_dir)
+    if base is not None and base != commit:
+        # Record the old pristine tree so `git apply --3way` can find the
+        # patch's preimage blobs and merge them with the new upstream.
+        replace_worktree(edit_dir, plugin, plugin_skill_at(plugin, skill_path, base))
+        commit_worktree(edit_dir, f"{plugin.name}@{base}")
+    replace_worktree(edit_dir, plugin, skill_path)
+    commit_worktree(edit_dir, f"{plugin.name}@{commit}")
+    git(["tag", "pristine"], cwd=edit_dir)
+
+    print(f"Pristine {name} from {plugin.name}@{commit[:7]} -> {edit_dir}")
+    if patch.exists():
+        apply = git(
+            ["apply", "--3way", "--whitespace=nowarn", str(patch)],
+            cwd=edit_dir,
+            check=False,
+        )
+        if apply.returncode == 0:
+            print(f"  Applied {patch.relative_to(ROOT)}")
+        else:
+            print(f"  {patch.relative_to(ROOT)} conflicts with the new upstream:")
+            print("  " + apply.stderr.strip().replace("\n", "\n  "))
+            print("  Resolve the conflict markers before committing the patch.")
+    print(f"Edit the files there, then run `make skill-patch-commit SKILL={name}`.")
+
+
+def skill_patch_commit(plugins: dict[str, Plugin], name: str) -> None:
+    """Write the edits in the skill-patch copy to patches/<name>.patch."""
+    plugin, _ = find_plugin_skill(plugins, name)
+    edit_dir = SKILL_PATCH_DIR / name
+    if not (edit_dir / ".git").exists():
+        sys.exit(f"Error: no edit copy for {name}. Run `make skill-patch SKILL={name}` first.")
+
+    commit = git(["config", "skill-patch.commit"], cwd=edit_dir).stdout.strip()
+    if commit != plugin_commit(plugin):
+        sys.exit(
+            f"Error: {plugin.name} moved since `make skill-patch`. Delete "
+            f"{edit_dir.relative_to(ROOT)} and run `make skill-patch SKILL={name}` again."
+        )
+
+    git(["add", "-A"], cwd=edit_dir)
+    diff = git(
+        ["diff", "--cached", "--binary", "--full-index", "pristine"], cwd=edit_dir
+    ).stdout
+    if re.search(r"^\+(<{7}|={7}|>{7})( |$)", diff, re.MULTILINE):
+        sys.exit(f"Error: conflict markers remain in {edit_dir.relative_to(ROOT)}")
+
+    patch = skill_patch_path(name)
+    if diff.strip():
+        PATCHES_DIR.mkdir(exist_ok=True)
+        patch.write_text(
+            f"Local changes to the {name} skill from {plugin.name}.\n"
+            f"base: {plugin.name}@{commit}\n"
+            f"Edit with `make skill-patch SKILL={name}`.\n\n"
+            f"{diff}"
+        )
+        print(f"Wrote {patch.relative_to(ROOT)}")
+    elif patch.exists():
+        patch.unlink()
+        print(f"No changes left; removed {patch.relative_to(ROOT)}")
+    else:
+        print("No changes; nothing written")
+    shutil.rmtree(edit_dir)
+
+
 def build_skills(plugins: dict[str, Plugin]):
     """Build all skills from plugins and custom skills directory."""
     print("Building skills...")
@@ -959,10 +1201,9 @@ def build_skills(plugins: dict[str, Plugin]):
             skipped_plugins.append(plugin.name)
             continue
 
+        plugin_agents = plugin.skill_agents()
         skills_by_name: dict[str, dict[str, Path]] = {}
-        for agent in AGENTS:
-            if agent in plugin.skills_skip_agents:
-                continue
+        for agent in plugin_agents:
             for name, path in discover_items(plugin, "skills", agent=agent):
                 skills_by_name.setdefault(name, {})[agent] = path
 
@@ -973,10 +1214,15 @@ def build_skills(plugins: dict[str, Plugin]):
                 )
                 continue
             built_for_agents = []
-            for agent in AGENTS:
+            staged: dict[Path, Path] = {}
+            for agent in plugin_agents:
                 path = paths_by_agent.get(agent)
                 if path is None:
                     continue
+                if plugin.skill_needs_staging(path.name, name):
+                    if path not in staged:
+                        staged[path] = stage_plugin_skill(plugin, name, path)
+                    path = staged[path]
                 result = build_skill(
                     name,
                     path,
@@ -1396,13 +1642,20 @@ def main():
             "install-themes",
             "clean",
             "submodule-init",
+            "skill-patch",
+            "skill-patch-commit",
         ],
         help="Command to run",
     )
     parser.add_argument(
+        "skill",
+        nargs="?",
+        help="Plugin skill name for skill-patch and skill-patch-commit",
+    )
+    parser.add_argument(
         "--non-interactive",
         action="store_true",
-        help="Skip interactive extensions and overrides (for headless/automated environments)",
+        help="Skip interactive extensions (for headless/automated environments)",
     )
     parser.add_argument(
         "--force",
@@ -1453,6 +1706,13 @@ def main():
         install_themes(force=args.force)
     elif args.command == "clean":
         clean()
+    elif args.command in {"skill-patch", "skill-patch-commit"}:
+        if not args.skill:
+            sys.exit(f"Error: {args.command} needs a skill name")
+        if args.command == "skill-patch":
+            skill_patch(plugins, args.skill)
+        else:
+            skill_patch_commit(plugins, args.skill)
 
 
 if __name__ == "__main__":

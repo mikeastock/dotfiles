@@ -53,6 +53,8 @@ make install-skills
 make install-amp-plugins
 make install-prompts
 make install-themes
+make skill-patch SKILL=<skill>          # editable copy of a plugin skill with its patch applied
+make skill-patch-commit SKILL=<skill>   # save that copy's edits to patches/<skill>.patch
 make install-extensions
 make build                   # build agent artifacts only
 make clean                   # clean agent build/install artifacts
@@ -108,7 +110,19 @@ OpenCode keeps `{env:MODEL_API_KEY}` and `{env:RUNINFRA_GATEWAY_KEY}` in git. A 
 
 Plugin skills can be restricted to explicit user invocation with `skills_user_invocable_only` in `plugins.toml`. Custom skills use `metadata.user-invocable-only: true` in `SKILL.md`. The build emits `disable-model-invocation: true` for Claude and Pi, plus `policy.allow_implicit_invocation: false` in `agents/openai.yaml` for Codex. The Codex metadata is included in the Pi/shared build because Codex also scans `~/.agents/skills`.
 
-Codex and bb are opt-in skill targets. A custom skill reaches `~/.codex/skills` or `~/.bb/skills` only when its frontmatter names that agent, for example `agents: [bb]`. bb injects `~/.bb/skills` into threads for every provider, so a bb-only skill works the same in Pi, Claude Code, and Codex threads.
+Codex and bb are opt-in skill targets. A custom skill reaches `~/.codex/skills` or `~/.bb/skills` only when its frontmatter names that agent, for example `agents: [bb]`. A plugin's skills reach them only when `skills_agents` in `plugins.toml` lists them. bb injects `~/.bb/skills` into threads for every provider, so a bb-only skill works the same in Pi, Claude Code, and Codex threads.
+
+### Patching plugin skills
+
+Local changes to a plugin skill live in `patches/<skill>.patch` instead of a vendored copy, so upstream stays a pinned submodule. The build applies each patch after assembling the skill and stops with an error when a patch no longer applies.
+
+```bash
+make skill-patch SKILL=poteto-mode         # copy in build/skill-patch/poteto-mode/, patch applied
+# edit files there
+make skill-patch-commit SKILL=poteto-mode  # rewrite patches/poteto-mode.patch
+```
+
+To take an upstream update, bump the submodule (`make plugin-update`, or `git -C plugins/<owner>-<repo> checkout <ref>`) and run `make install-skills`. If the patch fails, `make skill-patch` replays it with `git apply --3way` against the new upstream. Resolve the conflict markers (`ours` is upstream, `theirs` is the patch), then run `make skill-patch-commit`.
 
 ### Pi
 
@@ -146,7 +160,6 @@ Pi settings and models are copied by `make install`. Extensions, prompts, and th
 - `eli5` — dead-simple HTML picture explainer for any topic, vendored from `anthropics/claude-plugins-community` (`eli5@claude-community`) commit `863e70d`
 - `bro` — restate the last message in plain human language, vendored from `dmmulroy/skills` commit `cbd1929` (explicit invocation only)
 - `product-description` — outside-in, feature-by-feature behavior spec of a product from its code and tests, vendored from `steveruizok` gist `83ae5c53` revision `f9435a3`
-- `poteto-mode` (bb only) — Lauren Tan's poteto mode: playbooks, principles, and multi-model subagent workflows, vendored from [`cursor/plugins`](https://github.com/cursor/plugins/tree/1e5c90a4b6f249917bd21fe361b3a2a7deb741b8/pstack) `pstack` 0.15.24 (commit `1e5c90a`). The skills it routes to (`how`, `architect`, `swarm`, `arena`, `interrogate`, the `principle-*` set, and others) are bundled under `skills/poteto-mode/skills/` so bb lists one skill. Local changes: `references/bb-runtime.md` maps Cursor's `Task` tool, model slugs, and `cursor-team-kit` skills to bb; `scripts/bb-task` spawns subagents as bb child threads and collects their replies; `SKILL.md`'s routing and Subagents sections point at both; upstream tests and `setup-pstack` are dropped (explicit invocation only)
 
 ### Notable plugin skills
 
@@ -158,6 +171,7 @@ Pi settings and models are copied by `make install`. Extensions, prompts, and th
 - `effect` — opinionated production Effect v4 guide from `kitlangton/skills`, pinned as a plugin submodule at commit `30dee860`
 - `better-github-skill` — agent-optimized `gh` workflows (PR snapshot, review threads, CI failures) from `AVGVSTVS96/better-github-skill`
 - `show-me` — concise visual explanations (diagrams, code-shape sketches, HTML artifacts) from `humanlayer/skills`
+- `poteto-mode` (bb only) — Lauren Tan's poteto mode from `cursor/plugins` pstack: playbooks, principles, and multi-model subagent workflows. The skills it reads by path (`how`, `architect`, `swarm`, `arena`, `interrogate`, the `principle-*` set, and others) are bundled under `poteto-mode/skills/` with `skills_bundle`, so bb lists one skill. `patches/poteto-mode.patch` adds `references/bb-runtime.md`, which maps Cursor's `Task` tool, model slugs, and `cursor-team-kit` skills to bb, and `scripts/bb-task`, which spawns subagents as bb child threads and collects their replies (explicit invocation only)
 
 ### Notable custom Pi prompt templates
 
@@ -192,7 +206,6 @@ dotfiles/
 ├── skills/                  # custom agent skills
 │   ├── agent-browser/       # fast browser automation CLI for AI agents
 │   ├── before-and-after/    # GitHub PR screenshot and video formatting
-│   ├── poteto-mode/         # bb-only poteto mode with bundled pstack skills
 │   ├── reddit-search/       # Gemini-grounded Reddit search and thread resolution
 │   ├── ui-recording-timeline/ # interactive UI recording paint timelines
 │   └── writing-pr/          # PR title and body guidance
@@ -203,6 +216,7 @@ dotfiles/
 ├── pi-themes/               # Pi themes
 ├── prompts/                 # Pi prompt templates
 ├── plugins/                 # plugin submodules
+├── patches/                 # local changes to plugin skills
 ├── bb-plugins/              # forked bb plugins
 ├── scripts/build.py         # agent build/install system
 ├── scripts/dotfiles.sh      # mise bootstrap wrapper
