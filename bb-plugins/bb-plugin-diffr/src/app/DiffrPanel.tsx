@@ -19,9 +19,9 @@ import { filePath } from "../vendor/diffr/protocol/wire";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { DiffList, type LineSelection, type Side } from "./DiffList";
-import { buildItems, COARSE_METRICS, FINE_METRICS, foldsFor } from "./items";
+import { buildItems, COARSE_METRICS, FINE_METRICS, foldsFor, wantsRecord } from "./items";
 import { COARSE_POINTER_QUERY, COMPACT_VIEWPORT_QUERY, useMediaQuery } from "./useMediaQuery";
-import { parseDiff, type DiffData } from "./model";
+import { loadRecord, parseRun, type DiffData, type Loads } from "./model";
 import { paletteFromCodeTheme } from "./palette";
 import { splitArgs } from "./args";
 
@@ -35,6 +35,9 @@ const MODES: { kind: ModeKind; label: string; title: string }[] = [
 
 const LAYOUT_KEY = "bb-diffr:layout";
 const BUSY = new Set(["starting", "active", "stopping"]);
+/** File records read at once; each read is one or more small RPCs. */
+const PARALLEL_READS = 3;
+const NO_LOADS: Loads = { files: new Map(), failures: new Map() };
 
 function fallbackTheme(mode: "dark" | "light"): PluginCodeThemeData {
   return mode === "light"
@@ -58,7 +61,6 @@ function errorMessage(cause: unknown) {
 function useDiff(threadId: string, mode: DiffMode) {
   const rpc = useRpc<typeof rpcContract>();
   const [data, setData] = useState<DiffData | null>(null);
-  const [args, setArgs] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const request = useRef(0);
@@ -70,8 +72,7 @@ function useDiff(threadId: string, mode: DiffMode) {
       .call("diff", { threadId, mode: JSON.parse(modeKey) as DiffMode })
       .then((result) => {
         if (id !== request.current) return;
-        setData(parseDiff(result.ndjson));
-        setArgs(result.args);
+        setData(parseRun(result));
         setError(null);
       })
       .catch((cause: unknown) => {
@@ -82,7 +83,64 @@ function useDiff(threadId: string, mode: DiffMode) {
       });
   }, [rpc, threadId, modeKey]);
   useEffect(refresh, [refresh]);
-  return { data, args, error, loading, refresh };
+  return { data, error, loading, refresh };
+}
+
+/**
+ * Reads the records the panel wants, a few at a time, in manifest order:
+ * every shown file under the size limit, plus any file the user asked for.
+ */
+function useRecords(threadId: string, data: DiffData | null, requested: ReadonlySet<string>) {
+  const rpc = useRpc<typeof rpcContract>();
+  const [loads, setLoads] = useState<Loads>(NO_LOADS);
+  const [reading, setReading] = useState<ReadonlySet<number>>(new Set());
+  const run = useRef<string | null>(null);
+  useEffect(() => {
+    run.current = data?.runId ?? null;
+    setLoads(NO_LOADS);
+    setReading(new Set());
+  }, [data]);
+  useEffect(() => {
+    if (data === null || data.runId !== run.current || reading.size >= PARALLEL_READS) return;
+    const next = data.records.findIndex(
+      (record, index) =>
+        !reading.has(index) &&
+        !loads.files.has(index) &&
+        !loads.failures.has(index) &&
+        wantsRecord(record, filePath(data.inventory[index]!.file), requested),
+    );
+    if (next < 0) return;
+    const { runId } = data;
+    setReading((current) => new Set(current).add(next));
+    const read = (offset: number, length: number) => rpc.call("read", { threadId, runId, offset, length });
+    loadRecord(read, data.records[next]!)
+      .then((file) => {
+        if (run.current === runId) setLoads((current) => ({ ...current, files: new Map(current.files).set(next, file) }));
+      })
+      .catch((cause: unknown) => {
+        if (run.current === runId) {
+          setLoads((current) => ({ ...current, failures: new Map(current.failures).set(next, errorMessage(cause)) }));
+        }
+      })
+      .finally(() => {
+        if (run.current !== runId) return;
+        setReading((current) => {
+          const remaining = new Set(current);
+          remaining.delete(next);
+          return remaining;
+        });
+      });
+  }, [rpc, threadId, data, loads, reading, requested]);
+  /** Forget a failed read so the loader tries it again. */
+  const retry = useCallback((index: number) => {
+    setLoads((current) => {
+      if (!current.failures.has(index)) return current;
+      const failures = new Map(current.failures);
+      failures.delete(index);
+      return { ...current, failures };
+    });
+  }, []);
+  return { loads, reading: reading.size > 0, retry };
 }
 
 /** Run again when the thread's agent finishes a turn, since it may have edited files. */
@@ -112,7 +170,7 @@ export function DiffrPanel({ threadId }: PluginThreadPanelProps) {
     () => (modeKind === "custom" ? { kind: "custom", args: customArgs } : { kind: modeKind }),
     [modeKind, customArgs],
   );
-  const { data, args, error, loading, refresh } = useDiff(threadId, mode);
+  const { data, error, loading, refresh } = useDiff(threadId, mode);
   useRefreshAfterTurns(threadId, refresh);
 
   const codeTheme = useCodeTheme();
@@ -127,30 +185,31 @@ export function DiffrPanel({ threadId }: PluginThreadPanelProps) {
   const metrics = useMediaQuery(COARSE_POINTER_QUERY) ? COARSE_METRICS : FINE_METRICS;
   const [folds, setFolds] = useState<ReadonlyMap<number, ReadonlySet<number>>>(new Map());
   const [closed, setClosed] = useState<ReadonlySet<string>>(new Set());
-  const [loaded, setLoaded] = useState<ReadonlySet<string>>(new Set());
+  const [requested, setRequested] = useState<ReadonlySet<string>>(new Set());
+  const { loads, reading, retry } = useRecords(threadId, data, requested);
   const [selection, setSelection] = useState<LineSelection | null>(null);
   const [showFiles, setShowFiles] = useState(false);
   const [scrollRequest, setScrollRequest] = useState<{ fileIndex: number; seq: number } | null>(null);
 
   // Fold ids belong to one diffr run; a new run starts from diffr's defaults.
-  // Closed and loaded files are kept by path.
+  // Closed and requested files are kept by path.
   useEffect(() => {
     setFolds(new Map());
     setSelection(null);
   }, [data]);
 
   const items = useMemo(
-    () => (data ? buildItems(data, { layout, palette, folds, closed, loaded }) : []),
-    [data, layout, palette, folds, closed, loaded],
+    () => (data ? buildItems(data, loads, { layout, palette, folds, closed, requested }) : []),
+    [data, loads, layout, palette, folds, closed, requested],
   );
 
   const toggleFold = useCallback(
     (fileIndex: number, id: number) => {
-      const file = data?.files[fileIndex];
+      const file = loads.files.get(fileIndex);
       if (!file) return;
       setFolds((current) => new Map(current).set(fileIndex, toggled(foldsFor(file, fileIndex, current), id)));
     },
-    [data],
+    [loads],
   );
   const expandAll = () => {
     if (!data) return;
@@ -212,10 +271,10 @@ export function DiffrPanel({ threadId }: PluginThreadPanelProps) {
   const totals = useMemo(() => {
     let added = 0;
     let removed = 0;
-    for (const file of data?.files ?? []) {
-      if (file?.diff.type !== "text") continue;
-      added += file.diff.stats.textual.added;
-      removed += file.diff.stats.textual.removed;
+    for (const record of data?.records ?? []) {
+      if (record?.summary.kind !== "text") continue;
+      added += record.summary.stats.added;
+      removed += record.summary.stats.removed;
     }
     return { added, removed };
   }, [data]);
@@ -256,7 +315,7 @@ export function DiffrPanel({ threadId }: PluginThreadPanelProps) {
             <span className="text-[11px]">Fold</span>
           </ToolbarButton>
           <ToolbarButton label="Run diffr again" onClick={refresh} disabled={loading}>
-            <Icon name={loading ? "Spinner" : "RotateCcw"} className={cn("size-3.5", loading && "animate-spin")} />
+            <Icon name={loading || reading ? "Spinner" : "RotateCcw"} className={cn("size-3.5", (loading || reading) && "animate-spin")} />
           </ToolbarButton>
         </div>
       </div>
@@ -282,7 +341,7 @@ export function DiffrPanel({ threadId }: PluginThreadPanelProps) {
             aria-expanded={showFiles}
             onClick={() => setShowFiles((value) => !value)}
             className="flex shrink-0 items-center gap-1 whitespace-nowrap hover:text-foreground [@media(pointer:coarse)]:min-h-8"
-            title={`diffr ${args.join(" ")}`}
+            title={`diffr ${data.args.join(" ")}`}
           >
             <span aria-hidden>{showFiles ? "▾" : "▸"}</span>
             {data.inventory.length} {data.inventory.length === 1 ? "file" : "files"}
@@ -315,8 +374,8 @@ export function DiffrPanel({ threadId }: PluginThreadPanelProps) {
       {data && showFiles ? (
         <ul className="max-h-[40%] shrink-0 overflow-y-auto border-b border-border py-1 text-xs">
           {data.inventory.map((entry, fileIndex) => {
-            const file = data.files[fileIndex];
-            const stats = file?.diff.type === "text" ? file.diff.stats.textual : null;
+            const summary = data.records[fileIndex]?.summary;
+            const stats = summary?.kind === "text" ? summary.stats : null;
             return (
               <li key={fileIndex}>
                 <button
@@ -353,6 +412,7 @@ export function DiffrPanel({ threadId }: PluginThreadPanelProps) {
       ) : (
         <DiffList
           data={data}
+          loads={loads}
           items={items}
           palette={palette}
           layout={layout}
@@ -362,7 +422,11 @@ export function DiffrPanel({ threadId }: PluginThreadPanelProps) {
           scrollRequest={scrollRequest}
           onToggleFold={toggleFold}
           onToggleFile={(path) => setClosed((current) => toggled(current, path))}
-          onLoadFile={(path) => setLoaded((current) => new Set(current).add(path))}
+          onLoadFile={(path) => {
+            setRequested((current) => new Set(current).add(path));
+            const index = data.inventory.findIndex((entry) => filePath(entry.file) === path);
+            if (index >= 0) retry(index);
+          }}
           onSelectLine={selectLine}
         />
       )}
