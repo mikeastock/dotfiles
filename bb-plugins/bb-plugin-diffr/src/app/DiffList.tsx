@@ -5,7 +5,7 @@ import { foldBackground, type Layout, type RenderSpan, type SplitLineCell, type 
 import type { Palette } from "../vendor/diffr/theme/palette";
 import { filePath, type FileChange } from "../vendor/diffr/protocol/wire";
 import { itemHeight, type Item, type Metrics } from "./items";
-import type { DiffData } from "./model";
+import type { DiffData, Loads } from "./model";
 
 export type Side = "old" | "new";
 
@@ -18,6 +18,7 @@ export interface LineSelection {
 
 export interface DiffListProps {
   data: DiffData;
+  loads: Loads;
   items: Item[];
   palette: Palette;
   layout: Layout;
@@ -56,15 +57,27 @@ function contentColumns(items: Item[]): number {
 }
 
 /** Digits for the widest line number in any file. */
-function lineDigits(data: DiffData): number {
+function lineDigits(loads: Loads): number {
   let lines = 0;
-  for (const file of data.files) {
-    if (file?.diff.type !== "text") continue;
+  for (const file of loads.files.values()) {
+    if (file.diff.type !== "text") continue;
     for (const side of [file.diff.lhs, file.diff.rhs]) {
       if (side) lines = Math.max(lines, side.text.split("\n").length);
     }
   }
   return Math.max(3, String(lines).length);
+}
+
+/** The first item whose bottom is below `top`; `offsets` has one more entry than there are items. */
+function firstVisible(offsets: number[], top: number): number {
+  let low = 0;
+  let high = offsets.length - 1;
+  while (low < high) {
+    const mid = (low + high) >> 1;
+    if (offsets[mid + 1]! <= top) low = mid + 1;
+    else high = mid;
+  }
+  return low;
 }
 
 function useViewport(ref: RefObject<HTMLDivElement | null>) {
@@ -82,10 +95,12 @@ function useViewport(ref: RefObject<HTMLDivElement | null>) {
 }
 
 export function DiffList(props: DiffListProps) {
-  const { data, items, palette, layout, metrics, scrollRequest } = props;
+  const { items, palette, layout, metrics, scrollRequest } = props;
   const scroller = useRef<HTMLDivElement>(null);
   const viewport = useViewport(scroller);
   const [scrollTop, setScrollTop] = useState(0);
+  /** The first item in view and how far into it the view starts, as of the last render. */
+  const anchor = useRef<{ items: Item[]; key: string; delta: number } | null>(null);
 
   const offsets = useMemo(() => {
     const result = new Array<number>(items.length + 1);
@@ -96,7 +111,7 @@ export function DiffList(props: DiffListProps) {
     return result;
   }, [items, metrics]);
   const total = offsets[items.length]!;
-  const digits = useMemo(() => lineDigits(data), [data]);
+  const digits = useMemo(() => lineDigits(props.loads), [props.loads]);
   const columns = useMemo(() => (layout === "unified" ? contentColumns(items) : 0), [items, layout]);
 
   useEffect(() => {
@@ -107,14 +122,26 @@ export function DiffList(props: DiffListProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scrollRequest]);
 
-  // First item whose bottom is below the top of the view.
-  let low = 0;
-  let high = items.length;
-  while (low < high) {
-    const mid = (low + high) >> 1;
-    if (offsets[mid + 1]! <= scrollTop) low = mid + 1;
-    else high = mid;
-  }
+  // Files load and folds change above the view; keep the line in view where it
+  // was instead of letting the content shift under the reader.
+  useLayoutEffect(() => {
+    const element = scroller.current;
+    if (!element) return;
+    const previous = anchor.current;
+    if (previous && previous.items !== items) {
+      const index = items.findIndex((item) => item.key === previous.key);
+      const target = index >= 0 ? offsets[index]! + previous.delta : null;
+      if (target !== null && Math.abs(element.scrollTop - target) > 1) {
+        element.scrollTop = target;
+        setScrollTop(element.scrollTop);
+      }
+    }
+    const top = element.scrollTop;
+    const first = Math.min(firstVisible(offsets, top), items.length - 1);
+    anchor.current = items.length ? { items, key: items[first]!.key, delta: top - offsets[first]! } : null;
+  });
+
+  const low = firstVisible(offsets, scrollTop);
   const first = Math.max(0, low - OVERSCAN);
   let last = low;
   while (last < items.length && offsets[last]! < scrollTop + viewport.height) last++;
@@ -174,11 +201,11 @@ function FileHeader(props: ItemViewProps & { fileIndex: number }) {
   const entry = data.inventory[fileIndex]!;
   const path = filePath(entry.file);
   const isClosed = closed.has(path);
-  const file = data.files[fileIndex];
+  const summary = data.records[fileIndex]?.summary;
   const status = STATUS[entry.status];
   const slash = path.lastIndexOf("/");
   const renamedFrom = entry.file.lhs && entry.file.rhs && entry.file.lhs.path !== entry.file.rhs.path ? entry.file.lhs.path : null;
-  const stats = file?.diff.type === "text" ? file.diff.stats : null;
+  const text = summary?.kind === "text" ? summary : null;
   const statusColor =
     entry.status === "added" ? palette.addedText : entry.status === "deleted" ? palette.removedText : palette.accent;
   return (
@@ -218,16 +245,16 @@ function FileHeader(props: ItemViewProps & { fileIndex: number }) {
           {tag}
         </span>
       ))}
-      {stats?.fallback ? (
-        <span title={`Line diff: ${stats.fallback.message}`} className="hidden sm:inline" style={{ color: palette.muted }}>
+      {text?.fallback ? (
+        <span title={`Line diff: ${text.fallback}`} className="hidden sm:inline" style={{ color: palette.muted }}>
           line diff
         </span>
       ) : null}
-      {file?.diff.type === "binary" ? <span style={{ color: palette.muted }}>binary</span> : null}
-      {stats ? (
+      {summary?.kind === "binary" ? <span style={{ color: palette.muted }}>binary</span> : null}
+      {text ? (
         <span className="font-mono tabular-nums">
-          <span style={{ color: palette.addedText }}>+{stats.textual.added}</span>{" "}
-          <span style={{ color: palette.removedText }}>−{stats.textual.removed}</span>
+          <span style={{ color: palette.addedText }}>+{text.stats.added}</span>{" "}
+          <span style={{ color: palette.removedText }}>−{text.stats.removed}</span>
         </span>
       ) : null}
     </button>

@@ -3,8 +3,9 @@
 import { defaultCollapsed } from "../vendor/diffr/document/regions";
 import { rowsForFile, type Layout, type ViewerRow } from "../vendor/diffr/document/rows";
 import type { Palette } from "../vendor/diffr/theme/palette";
-import { filePath, fileVisibility, type DiffFile } from "../vendor/diffr/protocol/wire";
-import type { DiffData } from "./model";
+import { filePath, type DiffFile } from "../vendor/diffr/protocol/wire";
+import type { FileRecord } from "../contract";
+import type { DiffData, Loads } from "./model";
 
 export type Item =
   | { kind: "header"; key: string; fileIndex: number }
@@ -29,8 +30,20 @@ export interface ViewState {
   folds: ReadonlyMap<number, ReadonlySet<number>>;
   /** Paths the user closed to their header. */
   closed: ReadonlySet<string>;
-  /** Paths diffr hid by default that the user chose to load. */
-  loaded: ReadonlySet<string>;
+  /** Paths the user chose to load: files diffr hid, and files too large to load unasked. */
+  requested: ReadonlySet<string>;
+}
+
+/** Records up to this size load as soon as diffr finishes; larger ones wait for a click. */
+export const AUTO_LOAD_BYTES = 8 * 1024 * 1024;
+
+const megabytes = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+
+/** Whether the panel should read this file's record now. */
+export function wantsRecord(record: FileRecord | null, path: string, requested: ReadonlySet<string>): boolean {
+  if (record === null || record.summary.kind !== "text") return false;
+  if (requested.has(path)) return true;
+  return !record.summary.hidden.collapsed && record.length <= AUTO_LOAD_BYTES;
 }
 
 const defaults = new WeakMap<DiffFile, ReadonlySet<number>>();
@@ -64,32 +77,32 @@ function cachedRows(file: DiffFile, fileIndex: number, layout: Layout, palette: 
   return rows;
 }
 
-export function buildItems(data: DiffData, state: ViewState): Item[] {
+export function buildItems(data: DiffData, loads: Loads, state: ViewState): Item[] {
   const items: Item[] = [];
   data.inventory.forEach((entry, fileIndex) => {
     const path = filePath(entry.file);
+    const note = (key: string, text: string, tone: "muted" | "error" | "load") =>
+      items.push({ kind: "note", key: `${fileIndex}:${key}`, fileIndex, text, tone });
     items.push({ kind: "header", key: `${fileIndex}:header`, fileIndex });
     if (state.closed.has(path)) return;
-    const failure = data.failures[fileIndex];
-    if (failure !== undefined) {
-      items.push({ kind: "note", key: `${fileIndex}:failure`, fileIndex, text: failure, tone: "error" });
-      return;
-    }
-    const file = data.files[fileIndex];
+    const record = data.records[fileIndex] ?? null;
+    if (record === null) return void note("missing", "diffr sent no diff for this file", "muted");
+    const { summary } = record;
+    if (summary.kind === "error") return void note("error", summary.message, "error");
+    if (summary.kind === "binary") return void note("binary", "Binary file", "muted");
+    const file = loads.files.get(fileIndex);
     if (file === undefined) {
-      items.push({ kind: "note", key: `${fileIndex}:missing`, fileIndex, text: "diffr sent no diff for this file", tone: "muted" });
-      return;
-    }
-    const visibility = fileVisibility(file);
-    if (visibility.collapsed && !state.loaded.has(path)) {
-      items.push({
-        kind: "note",
-        key: `${fileIndex}:load`,
-        fileIndex,
-        text: `Load diff${visibility.label ? ` · ${visibility.label}` : ""}`,
-        tone: "load",
-      });
-      return;
+      const failure = loads.failures.get(fileIndex);
+      if (failure !== undefined) {
+        note("failure", failure, "error");
+        return void note("load", "Try loading again", "load");
+      }
+      if (wantsRecord(record, path, state.requested)) return void note("loading", "Loading…", "muted");
+      const reasons = [
+        summary.hidden.collapsed ? summary.hidden.label || "Hidden by default" : null,
+        record.length > AUTO_LOAD_BYTES ? `large diff, ${megabytes(record.length)}` : null,
+      ].filter((reason) => reason !== null);
+      return void note("load", `Load diff · ${reasons.join(" · ")}`, "load");
     }
     const collapsed = foldsFor(file, fileIndex, state.folds);
     for (const row of cachedRows(file, fileIndex, state.layout, state.palette, collapsed)) {

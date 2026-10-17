@@ -12,7 +12,17 @@ diffr runs on the machine that holds the thread's workspace (through the plugin'
 curl -fsSL https://install.dev.fast/diffr | sh
 ```
 
-The plugin runs the `diffr binary` setting (default `diffr`) and falls back to `~/.local/bin/diffr`, where the install script puts it. diffr's own configuration (`diffr config`) applies, including its bundled plugins and pseudocode summaries.
+The plugin runs the `diffr binary` setting (default `diffr`) and falls back to `~/.local/bin/diffr`, where the install script puts it. diffr's own configuration (`diffr config`) applies, including its bundled plugins and pseudocode summaries, except that the plugin passes `--byte-limit` from its **Structural diff size limit** setting (default 262144 bytes; empty keeps diffr's limit). diffr's own 1 MB default lets one large JSON or data file take minutes to diff structurally; above the limit a file gets a plain line diff.
+
+## How a diff reaches the panel
+
+diffr's NDJSON carries each changed file's full text on both sides plus a capture name for every token, so a one-line change in a 5,000-line file is about 4 MB, and a modest branch can be tens of megabytes. Host RPC responses are capped at 8 MiB, so the host never returns the stream itself:
+
+1. `diff` runs diffr, writes the NDJSON to the plugin's data directory on that machine, and returns the manifest plus each file's byte range and a summary (line counts, line-diff fallback, hidden by default, or the file's error).
+2. The panel draws every file header from those summaries, then reads records with `read`, three at a time in manifest order, in gzip-compressed ranges of at most 4 MiB.
+3. Records over 8 MiB, and files diffr hides (generated, vendored, deleted), wait for **Load diff**.
+
+Runs are deleted after an hour, or once 10 newer runs exist. If a run has expired, run diffr again.
 
 ## Use
 
@@ -32,7 +42,9 @@ Colours come from bb's active code theme, so the diff follows the user's palette
 
 ## Limits
 
-- Host RPC output is capped at 8 MiB, so the plugin refuses a diff whose NDJSON exceeds 6 MB. Narrow it with Custom paths.
+- diffr gets 100 seconds per run. A run that takes longer is stopped with a message suggesting a lower size limit or Custom paths.
+- Runs over 512 MB of NDJSON are refused.
+- diffr exits with status 2 when some files fail (for example, a PDF that is not UTF-8). The panel still shows the run and each failed file's error.
 - diffr's subcommands (`config`, `upgrade`, …) are refused in Custom; only revisions, paths, and diff options pass through.
 - Fold state resets whenever diffr runs again, because fold ids belong to one run. Closed and loaded files are kept by path.
 
