@@ -107,6 +107,7 @@ NOUNS = [
 
 DEFAULT_BUCKET = "buildr-bizops-artifacts"
 DEFAULT_BASE_URL = "https://artifacts.buildrtools.com"
+DOTENV_PATH = Path.home() / ".env"
 DEFAULT_MAX_FILES = 2000
 DEFAULT_MAX_DEPTH = 20
 MAX_FILE_BYTES = 1_073_741_824
@@ -123,6 +124,7 @@ class ArtifactFile:
 def main() -> int:
     args = parse_args()
     try:
+        load_dotenv(DOTENV_PATH)
         artifact_files = collect_input_files(args)
         slug = generate_slug()
         upload_files(artifact_files, slug)
@@ -142,6 +144,28 @@ def parse_args() -> argparse.Namespace:
     source.add_argument("--html-file", help="File whose contents should be uploaded as index.html")
     source.add_argument("--html", help="Inline HTML to upload as index.html")
     return parser.parse_args()
+
+
+def load_dotenv(path: Path) -> None:
+    """Fill missing environment variables from a dotenv file. Exported values win."""
+    if not path.is_file():
+        return
+
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+
+        name, value = line.split("=", 1)
+        name = name.removeprefix("export ").strip()
+        value = value.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in "'\"":
+            value = value[1:-1]
+        else:
+            value = value.split(" #", 1)[0].rstrip()
+
+        if name and name not in os.environ:
+            os.environ[name] = value
 
 
 def collect_input_files(args: argparse.Namespace) -> list[ArtifactFile]:
