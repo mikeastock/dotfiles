@@ -158,7 +158,7 @@ Pi settings and models are copied by `make install`. Extensions, prompts, and th
 - `tmux` — remote control tmux sessions through the active server, with an agent-neutral fallback socket when no server is running
 - `buildr-artifacts` — publish browser-viewable Buildr artifacts as static S3-hosted HTML/assets or stateful Vite apps served from Codexbox with `bld.run` URLs
 - `socratic-quiz` — guided Socratic questioning for deep understanding, vendored from `pchalasani/claude-code-tools` commit `29ae733`
-- `e2e-proof` — test a change end to end as a real user and report a verdict backed by commands, outputs, and screenshots (explicit invocation only)
+- `e2e-proof` — test a change end to end and give irrefutable proof it works (explicit invocation only)
 - `eli5` — dead-simple HTML picture explainer for any topic, vendored from `anthropics/claude-plugins-community` (`eli5@claude-community`) commit `863e70d`
 - `bro` — restate the last message in plain human language, vendored from `dmmulroy/skills` commit `cbd1929` (explicit invocation only)
 - `product-description` — outside-in, feature-by-feature behavior spec of a product from its code and tests, vendored from `steveruizok` gist `83ae5c53` revision `f9435a3`
