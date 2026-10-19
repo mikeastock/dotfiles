@@ -22,18 +22,41 @@ interface RepoRef {
 let cloneRoot: string | undefined;
 const clones = new Map<string, Promise<string>>();
 
-/** Match repository, tree, and blob URLs; issues, PRs, and other pages are left to Exa. */
-function parseRepoUrl(url: string): RepoRef | undefined {
+/** Branch and tag names on the remote. Uses gh credentials when available so private repos resolve too. */
+async function remoteRefs(owner: string, repo: string, signal?: AbortSignal): Promise<Set<string>> {
+	const { stdout } = await run(
+		"git",
+		["-c", "credential.helper=", "-c", "credential.helper=!gh auth git-credential", "ls-remote", "--heads", "--tags", `https://github.com/${owner}/${repo}.git`],
+		{ timeout: CLONE_TIMEOUT_MS, signal, maxBuffer: 64 * 1024 * 1024, env: { ...process.env, GIT_TERMINAL_PROMPT: "0" } },
+	);
+	return new Set(stdout.split("\n").map((line) => line.split("\t")[1]?.replace(/^refs\/(heads|tags)\//, "").replace(/\^\{\}$/, "")).filter(Boolean));
+}
+
+/**
+ * Match repository, tree, and blob URLs; issues, PRs, and other pages are left to Exa.
+ * In /tree/<ref>/<path> URLs the ref may itself contain slashes (feature/x), so the longest
+ * leading run of segments that names a real branch or tag wins. Git forbids a ref that is a
+ * prefix directory of another (main and main/x), so at most one split matches.
+ */
+async function parseRepoUrl(url: string, signal?: AbortSignal): Promise<RepoRef | undefined> {
 	const parsed = new URL(url);
 	if (parsed.hostname !== "github.com") return undefined;
 
-	const [owner, rawRepo, kind, ref, ...rest] = parsed.pathname.split("/").filter(Boolean);
+	const [owner, rawRepo, kind, ...refAndPath] = parsed.pathname.split("/").filter(Boolean).map(decodeURIComponent);
 	if (!owner || !rawRepo) return undefined;
 	const repo = rawRepo.replace(/\.git$/, "");
 
 	if (!kind) return { owner, repo, path: "", kind: "root" };
-	if ((kind === "tree" || kind === "blob") && ref) return { owner, repo, ref, path: rest.join("/"), kind };
-	return undefined;
+	if ((kind !== "tree" && kind !== "blob") || refAndPath.length === 0) return undefined;
+
+	if (refAndPath.length > 1) {
+		const refs = await remoteRefs(owner, repo, signal).catch(() => new Set<string>());
+		for (let n = refAndPath.length; n > 1; n--) {
+			const ref = refAndPath.slice(0, n).join("/");
+			if (refs.has(ref)) return { owner, repo, ref, path: refAndPath.slice(n).join("/"), kind };
+		}
+	}
+	return { owner, repo, ref: refAndPath[0], path: refAndPath.slice(1).join("/"), kind };
 }
 
 async function clone({ owner, repo, ref }: RepoRef, signal?: AbortSignal): Promise<string> {
@@ -80,11 +103,11 @@ function readText(file: string): string | undefined {
  * Returns undefined for non-repository URLs or when cloning fails, so the caller can use Exa instead.
  */
 export async function fetchGitHub(url: string, signal?: AbortSignal): Promise<Page | undefined> {
-	const target = parseRepoUrl(url);
-	if (!target) return undefined;
-
+	let target: RepoRef | undefined;
 	let dir: string;
 	try {
+		target = await parseRepoUrl(url, signal);
+		if (!target) return undefined;
 		dir = await cachedClone(target, signal);
 	} catch {
 		return undefined;
