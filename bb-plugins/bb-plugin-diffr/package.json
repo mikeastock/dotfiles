@@ -18,21 +18,21 @@
     "skills": []
   },
   "dependencies": {
-    "get-east-asian-width": "^1.4.0",
-    "string-width": "^8.1.0",
-    "zod": "^4.6.5"
+    "get-east-asian-width": "^1.7.0",
+    "string-width": "^8.3.0",
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "@get-bb/plugin-sdk": "0.6.31",
-    "@types/better-sqlite3": "^7.6.13",
-    "@types/node": "^22.0.0",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "clsx": "^2.1.1",
     "hono": "^4.13.13",
     "sonner": "^1.7.4",
     "tailwind-merge": "^3.4.0",
-    "typescript": "^5.7.0"
+    "typescript": "^7.0.2"
   },
   "description": "diffr's structural, AST-aware diffs in a bb thread panel.",
   "license": "MIT",

@@ -1,13 +1,13 @@
 Local changes to the poteto-mode skill from cursor/plugins.
-base: cursor/plugins@850d7f2e9f5e55dff7eb00a0a479337fe79eb22f
+base: cursor/plugins@d457567332aa6989e753ea289f30ea2bfbc80bc0
 Edit with `make skill-patch SKILL=poteto-mode`.
 
 diff --git a/SKILL.md b/SKILL.md
-index ac3d64ff001a653f6a3c7148fd60e4926d317043..4a76a6111a117ef3c6bdacec506920d72264490a 100644
+index 21993f546032ca37671d5f1caf39c9a82ab4fa9d..e1257bbcaef59709c3371bb9e3b400530257c0ed 100644
 --- a/SKILL.md
 +++ b/SKILL.md
 @@ -2,13 +2,11 @@
- name: Poteto Mode
+ name: poteto-mode
  description: poteto's agent style for concise, detailed responses, deliberate subagents, unslopped prose, simple code, and verified work. Use for poteto, /poteto-mode, or requests to work in this style.
  disable-model-invocation: true
 -icon: crown

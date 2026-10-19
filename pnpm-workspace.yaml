@@ -1,0 +1,7 @@
+minimumReleaseAge: 10080
+
+# Dev dependencies are only used for typechecking; none need install scripts.
+allowBuilds:
+  '@google/genai': false
+  esbuild: false
+  protobufjs: false
