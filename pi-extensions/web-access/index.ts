@@ -1,369 +1,178 @@
-import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { Text } from "@earendil-works/pi-tui";
-import { Type } from "typebox";
 import { StringEnum } from "@earendil-works/pi-ai";
-import { searchWithExa, parseDomainFilters } from "./exa.js";
-import { fetchAllContent } from "./extract.js";
-import { clearCloneCache } from "./github-extract.js";
+import {
+	DEFAULT_MAX_BYTES,
+	DEFAULT_MAX_LINES,
+	formatSize,
+	truncateHead,
+	type AgentToolResult,
+	type ExtensionAPI,
+	type Theme,
+} from "@earendil-works/pi-coding-agent";
+import { Text } from "@earendil-works/pi-tui";
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { Type } from "typebox";
+import { fetchPages, search, type FetchedPage, type SearchResponse } from "./exa.ts";
+import { fetchGitHub, removeClones } from "./github.ts";
 
-interface SearchResult {
-	title: string;
-	url: string;
-	text: string;
+const LIMITS = `Output is truncated to ${DEFAULT_MAX_LINES} lines or ${formatSize(DEFAULT_MAX_BYTES)}; the full text is then saved to a file you can read.`;
+const READ_ONLY_WEB = { readOnlyHint: true, openWorldHint: true };
+
+interface WebDetails {
+	summary: string;
+	fullOutputPath?: string;
 }
 
-function formatSearchSummary(results: SearchResult[], answer: string): string {
-	let output = answer ? `${answer}\n\n---\n\n**Sources:**\n` : "";
-	output += results.map((r, i) => `${i + 1}. ${r.title}\n   ${r.url}`).join("\n\n");
-	return output;
+/** Keep model-facing output within Pi's limits; save the complete text to a file when it overflows. */
+function toolResult(text: string, summary: string) {
+	const truncation = truncateHead(text, { maxLines: DEFAULT_MAX_LINES, maxBytes: DEFAULT_MAX_BYTES });
+	if (!truncation.truncated) return { content: [{ type: "text" as const, text }], details: { summary } as WebDetails };
+
+	const fullOutputPath = join(mkdtempSync(join(tmpdir(), "pi-web-")), "output.md");
+	writeFileSync(fullOutputPath, text);
+	const note = `\n\n[Truncated: showing ${truncation.outputLines} of ${truncation.totalLines} lines. Full output: ${fullOutputPath}]`;
+	return {
+		content: [{ type: "text" as const, text: truncation.content + note }],
+		details: { summary, fullOutputPath } as WebDetails,
+	};
+}
+
+function nonEmpty(single: string | undefined, many: string[] | undefined): string[] {
+	return [...(many ?? []), ...(single ? [single] : [])].map((s) => s.trim()).filter(Boolean);
+}
+
+function formatSearch(query: string, response: SearchResponse): string {
+	const lines = response.notices.map((notice) => `Notice: ${notice}`);
+	if (response.results.length === 0) lines.push("No results.");
+	response.results.forEach((r, i) => {
+		const date = r.publishedDate ? ` (${r.publishedDate.slice(0, 10)})` : "";
+		lines.push(`### ${i + 1}. ${r.title}${date}\n${r.url}${r.excerpt ? `\n\n${r.excerpt}` : ""}`);
+	});
+	return `## ${query}\n\n${lines.join("\n\n")}`;
+}
+
+function formatPage({ url, page, error }: FetchedPage): string {
+	return page ? `# ${page.title}\n${page.url}\n\n${page.text}` : `# ${url}\n\nError: ${error}`;
+}
+
+function renderCall(label: string, items: string[], theme: Theme) {
+	const shown = items.length > 1 ? `${items[0]} (+${items.length - 1} more)` : (items[0] ?? "");
+	return new Text(theme.fg("toolTitle", theme.bold(`${label} `)) + theme.fg("accent", shown), 0, 0);
+}
+
+/** One summary line; the expanded view adds the start of the model-facing text. Errors have no details and show their message. */
+function renderResult(result: AgentToolResult<unknown>, expanded: boolean, theme: Theme) {
+	const body = result.content.map((c) => (c.type === "text" ? c.text : "")).join("\n");
+	const details = result.details as WebDetails | undefined;
+	if (!details) return new Text(theme.fg("error", body), 0, 0);
+
+	const saved = details.fullOutputPath ? ` · full output: ${details.fullOutputPath}` : "";
+	const preview = expanded ? `\n${theme.fg("dim", body.split("\n").slice(0, 40).join("\n"))}` : "";
+	return new Text(theme.fg("muted", details.summary + saved) + preview, 0, 0);
 }
 
 export default function (pi: ExtensionAPI) {
-	// --- Session lifecycle ---
-
-	pi.on("session_start", async () => clearCloneCache());
-	pi.on("session_tree", async () => clearCloneCache());
-	pi.on("session_shutdown", () => clearCloneCache());
-
-	// --- Tools ---
+	pi.on("session_shutdown", () => removeClones());
 
 	pi.registerTool({
 		name: "web_search",
 		label: "Web Search",
 		description:
-			"Search the web using Exa AI. Returns semantically relevant results with source citations. " +
-			"For comprehensive research, prefer queries (plural) with 2-4 varied angles over a single query. " +
-			"When includeContent is true, full page text is returned inline with each result.",
+			"Search the web with Exa. Returns ranked sources with URLs, publish dates, and query-relevant excerpts. " +
+			"Pass several phrasings in 'queries' to search different angles in parallel. " +
+			"Use fetch_content to read a full page. " +
+			LIMITS,
+		promptSnippet: "Search the web for current information, documentation, and sources",
+		annotations: READ_ONLY_WEB,
 		parameters: Type.Object({
-			query: Type.Optional(Type.String({ description: "Single search query. For research tasks, prefer 'queries' with multiple varied angles instead." })),
-			queries: Type.Optional(Type.Array(Type.String(), { description: "Multiple queries searched in sequence, each returning its own results." })),
-			numResults: Type.Optional(Type.Number({ description: "Results per query (default: 5, max: 20)" })),
-			includeContent: Type.Optional(Type.Boolean({ description: "Return full page text for each result (default: false, returns snippets)" })),
-			recencyFilter: Type.Optional(
-				StringEnum(["day", "week", "month", "year"], { description: "Filter by recency" }),
+			query: Type.Optional(Type.String({ description: "Search query." })),
+			queries: Type.Optional(Type.Array(Type.String(), { description: "Several queries searched in parallel, each with its own results." })),
+			objective: Type.Optional(
+				Type.String({
+					maxLength: 4096,
+					description: "Goal for this search: which documents should rank first, which to exclude, and what facts to extract.",
+				}),
 			),
-			domainFilter: Type.Optional(Type.Array(Type.String(), { description: "Limit to domains (prefix with - to exclude)" })),
+			numResults: Type.Optional(Type.Integer({ minimum: 1, maximum: 20, description: "Results per query (default 5)." })),
+			recency: Type.Optional(StringEnum(["day", "week", "month", "year"] as const, { description: "Only pages published within this window." })),
+			domains: Type.Optional(
+				Type.Array(Type.String(), {
+					description: "Restrict to domains or paths (example.com, example.com/docs, *.example.com). Prefix with - to exclude.",
+				}),
+			),
 		}),
 
-		async execute(_toolCallId, params, signal, onUpdate) {
-			const queryList = params.queries ?? (params.query ? [params.query] : []);
-			if (queryList.length === 0) {
-				return {
-					content: [{ type: "text", text: "Error: No query provided. Use 'query' or 'queries' parameter." }],
-					details: { error: "No query provided" },
-				};
-			}
+		async execute(_toolCallId, params, signal) {
+			const queries = nonEmpty(params.query, params.queries);
+			if (queries.length === 0) throw new Error("Provide 'query' or 'queries'.");
 
-			const domainFilters = params.domainFilter ? parseDomainFilters(params.domainFilter) : null;
-
-			interface QueryResultData {
-				query: string;
-				answer: string;
-				results: SearchResult[];
-				error: string | null;
-			}
-
-			const searchResults: QueryResultData[] = [];
-
-			let cancelled = false;
-			for (let i = 0; i < queryList.length; i++) {
-				if (signal?.aborted) {
-					cancelled = true;
-					break;
-				}
-
-				const query = queryList[i];
-				onUpdate?.({
-					content: [{ type: "text", text: `Searching ${i + 1}/${queryList.length}: "${query}"...` }],
-					details: { phase: "search", progress: i / queryList.length, currentQuery: query },
-				});
-
-				try {
-					const response = await searchWithExa(query, {
+			const settled = await Promise.allSettled(
+				queries.map((query) =>
+					search(query, {
 						numResults: params.numResults,
-						includeContent: params.includeContent,
-						recencyFilter: params.recencyFilter,
-						includeDomains: domainFilters?.include,
-						excludeDomains: domainFilters?.exclude,
+						objective: params.objective,
+						recency: params.recency,
+						domains: params.domains,
 						signal,
-					});
+					}),
+				),
+			);
+			signal?.throwIfAborted();
 
-					const results: SearchResult[] = response.results.map(r => ({
-						title: r.title,
-						url: r.url,
-						text: r.text,
-					}));
+			const failures = settled.filter((s) => s.status === "rejected");
+			if (failures.length === queries.length) throw (failures[0] as PromiseRejectedResult).reason;
 
-					searchResults.push({ query, answer: response.answer, results, error: null });
-				} catch (err) {
-					if (signal?.aborted) {
-						cancelled = true;
-						break;
-					}
-					const message = err instanceof Error ? err.message : String(err);
-					searchResults.push({ query, answer: "", results: [], error: message });
-				}
-			}
-
-			const sc = searchResults.filter(r => !r.error).length;
-			const tr = searchResults.reduce((sum, r) => sum + r.results.length, 0);
-
-			if (cancelled && searchResults.length === 0) {
-				return {
-					content: [{ type: "text", text: "Search cancelled." }],
-					details: { cancelled: true, queries: queryList, queryCount: queryList.length, successfulQueries: 0, totalResults: 0 },
-				};
-			}
-
-			let output = "";
-			if (cancelled) output += "*Search cancelled — showing partial results.*\n\n";
-			for (const { query, answer, results, error } of searchResults) {
-				if (queryList.length > 1) output += `## Query: "${query}"\n\n`;
-				if (error) output += `Error: ${error}\n\n`;
-				else if (results.length === 0) output += "No results found.\n\n";
-				else output += formatSearchSummary(results, answer) + "\n\n";
-			}
-
-			return {
-				content: [{ type: "text", text: output.trim() }],
-				details: {
-					cancelled,
-					queries: queryList,
-					queryCount: queryList.length,
-					successfulQueries: sc,
-					totalResults: tr,
-				},
-			};
+			const sections = settled.map((s, i) =>
+				s.status === "fulfilled" ? formatSearch(queries[i], s.value) : `## ${queries[i]}\n\nError: ${s.reason instanceof Error ? s.reason.message : s.reason}`,
+			);
+			const sources = settled.reduce((n, s) => n + (s.status === "fulfilled" ? s.value.results.length : 0), 0);
+			const failed = failures.length > 0 ? `, ${failures.length} failed` : "";
+			return toolResult(sections.join("\n\n---\n\n"), `${sources} sources from ${queries.length} queries${failed}`);
 		},
 
-		renderCall(args, theme) {
-			const { query, queries } = args as { query?: string; queries?: string[] };
-			const queryList = queries ?? (query ? [query] : []);
-			if (queryList.length === 0) {
-				return new Text(theme.fg("toolTitle", theme.bold("search ")) + theme.fg("error", "(no query)"), 0, 0);
-			}
-			if (queryList.length === 1) {
-				const display = queryList[0].length > 60 ? queryList[0].slice(0, 57) + "..." : queryList[0];
-				return new Text(theme.fg("toolTitle", theme.bold("search ")) + theme.fg("accent", `"${display}"`), 0, 0);
-			}
-			const lines = [theme.fg("toolTitle", theme.bold("search ")) + theme.fg("accent", `${queryList.length} queries`)];
-			for (const q of queryList.slice(0, 5)) {
-				const display = q.length > 50 ? q.slice(0, 47) + "..." : q;
-				lines.push(theme.fg("muted", `  "${display}"`));
-			}
-			if (queryList.length > 5) {
-				lines.push(theme.fg("muted", `  ... and ${queryList.length - 5} more`));
-			}
-			return new Text(lines.join("\n"), 0, 0);
-		},
-
-		renderResult(result, { expanded, isPartial }, theme) {
-			const details = result.details as {
-				queryCount?: number;
-				successfulQueries?: number;
-				totalResults?: number;
-				error?: string;
-				phase?: string;
-				progress?: number;
-				currentQuery?: string;
-				cancelled?: boolean;
-			};
-
-			if (isPartial) {
-				const progress = details?.progress ?? 0;
-				const bar = "\u2588".repeat(Math.floor(progress * 10)) + "\u2591".repeat(10 - Math.floor(progress * 10));
-				const query = details?.currentQuery || "";
-				const display = query.length > 40 ? query.slice(0, 37) + "..." : query;
-				return new Text(theme.fg("accent", `[${bar}] ${display}`) + theme.fg("dim", "  (esc to cancel)"), 0, 0);
-			}
-
-			if (details?.cancelled && (details?.totalResults ?? 0) === 0) {
-				return new Text(theme.fg("warning", "Cancelled"), 0, 0);
-			}
-
-			if (details?.error) {
-				return new Text(theme.fg("error", `Error: ${details.error}`), 0, 0);
-			}
-
-			const cancelledTag = details?.cancelled ? theme.fg("warning", " (cancelled)") : "";
-			const queryInfo = details?.queryCount === 1 ? "" : `${details?.successfulQueries}/${details?.queryCount} queries, `;
-			const statusLine = theme.fg("success", `${queryInfo}${details?.totalResults ?? 0} sources`) + cancelledTag;
-
-			if (!expanded) {
-				const textContent = result.content.find((c) => c.type === "text")?.text || "";
-				const firstLine = (textContent.split("\n").find(l => l.trim() && !l.startsWith("[") && !l.startsWith("#") && !l.startsWith("---"))?.trim() || "").replace(/\*\*/g, "");
-				const preview = firstLine.length > 80 ? firstLine.slice(0, 77) + "..." : firstLine;
-				if (preview) {
-					return new Text(statusLine + "\n" + theme.fg("dim", preview), 0, 0);
-				}
-				return new Text(statusLine, 0, 0);
-			}
-
-			const lines = [statusLine];
-			const textContent = result.content.find((c) => c.type === "text")?.text || "";
-			const preview = textContent.length > 500 ? textContent.slice(0, 500) + "..." : textContent;
-			lines.push(theme.fg("dim", preview));
-
-			return new Text(lines.join("\n"), 0, 0);
-		},
+		renderCall: (args, theme) => renderCall("search", nonEmpty(args.query, args.queries), theme),
+		renderResult: (result, { expanded }, theme) => renderResult(result, expanded, theme),
 	});
 
 	pi.registerTool({
 		name: "fetch_content",
 		label: "Fetch Content",
 		description:
-			"Fetch URL(s) and extract readable content as markdown. " +
-			"GitHub URLs are cloned locally for full file access. " +
-			"All other URLs are extracted via Exa AI's content parser.",
+			"Read web pages as clean text via Exa (cached, with a live crawl when the page is not cached). " +
+			"GitHub repository, tree, and blob URLs are shallow-cloned instead, returning the local clone path, file list, and README or file content. " +
+			LIMITS,
+		promptSnippet: "Read web pages, docs, and GitHub repositories as text",
+		annotations: READ_ONLY_WEB,
 		parameters: Type.Object({
-			url: Type.Optional(Type.String({ description: "Single URL to fetch" })),
-			urls: Type.Optional(Type.Array(Type.String(), { description: "Multiple URLs (parallel)" })),
-			forceClone: Type.Optional(Type.Boolean({
-				description: "Force cloning large GitHub repositories that exceed the size threshold",
-			})),
+			url: Type.Optional(Type.String({ description: "URL to fetch." })),
+			urls: Type.Optional(Type.Array(Type.String(), { description: "Several URLs fetched together." })),
+			fresh: Type.Optional(Type.Boolean({ description: "Skip Exa's cache and crawl the live page. Slower; use when cached content may be stale." })),
 		}),
 
-		async execute(_toolCallId, params, signal, onUpdate) {
-			const urlList = params.urls ?? (params.url ? [params.url] : []);
-			if (urlList.length === 0) {
-				return {
-					content: [{ type: "text", text: "Error: No URL provided." }],
-					details: { error: "No URL provided" },
-				};
-			}
+		async execute(_toolCallId, params, signal) {
+			const urls = nonEmpty(params.url, params.urls);
+			if (urls.length === 0) throw new Error("Provide 'url' or 'urls'.");
 
-			if (signal?.aborted) {
-				return {
-					content: [{ type: "text", text: "Fetch cancelled." }],
-					details: { cancelled: true, urls: urlList, urlCount: urlList.length, successful: 0, totalChars: 0 },
-				};
-			}
+			const invalid = urls.filter((url) => !URL.canParse(url));
+			if (invalid.length > 0) throw new Error(`Invalid URL: ${invalid.join(", ")}`);
 
-			onUpdate?.({
-				content: [{ type: "text", text: `Fetching ${urlList.length} URL(s)...` }],
-				details: { phase: "fetch", progress: 0 },
+			const github = await Promise.all(urls.map((url) => fetchGitHub(url, signal)));
+			const rest = urls.filter((_, i) => !github[i]);
+			const fetched = rest.length > 0 ? await fetchPages(rest, { fresh: params.fresh, signal }) : [];
+
+			const pages = urls.map((url, i): FetchedPage => {
+				const page = github[i];
+				return page ? { url, page } : fetched.find((f) => f.url === url)!;
 			});
+			const ok = pages.filter((p) => p.page).length;
+			if (ok === 0) throw new Error(pages.map((p) => `${p.url}: ${p.error}`).join("\n"));
 
-			const fetchResults = await fetchAllContent(urlList, signal, {
-				forceClone: params.forceClone,
-			});
-
-			const cancelled = signal?.aborted ?? false;
-			const successful = fetchResults.filter((r) => !r.error).length;
-			const totalChars = fetchResults.reduce((sum, r) => sum + r.content.length, 0);
-
-			if (cancelled && successful === 0) {
-				return {
-					content: [{ type: "text", text: "Fetch cancelled." }],
-					details: { cancelled: true, urls: urlList, urlCount: urlList.length, successful: 0, totalChars: 0 },
-				};
-			}
-
-			if (urlList.length === 1) {
-				const result = fetchResults[0];
-				if (result.error) {
-					const isCancelled = cancelled || result.error === "Aborted";
-					return {
-						content: [{ type: "text", text: isCancelled ? "Fetch cancelled." : `Error: ${result.error}` }],
-						details: { cancelled: isCancelled, urls: urlList, urlCount: 1, successful: 0, error: isCancelled ? undefined : result.error },
-					};
-				}
-
-				return {
-					content: [{ type: "text", text: result.content }],
-					details: {
-						urls: urlList, urlCount: 1, successful: 1,
-						totalChars: result.content.length, title: result.title,
-					},
-				};
-			}
-
-			let output = "";
-			if (cancelled) output += "*Fetch cancelled — showing partial results.*\n\n";
-			for (const { url, title, content, error } of fetchResults) {
-				output += `## ${title || url}\n`;
-				output += `URL: ${url}\n\n`;
-				if (error) {
-					output += `Error: ${error}\n\n`;
-				} else {
-					output += `${content}\n\n`;
-				}
-				output += "---\n\n";
-			}
-
-			return {
-				content: [{ type: "text", text: output.trim() }],
-				details: { cancelled, urls: urlList, urlCount: urlList.length, successful, totalChars },
-			};
+			const text = pages.map(formatPage).join("\n\n---\n\n");
+			return toolResult(text, `${ok}/${urls.length} pages, ${formatSize(Buffer.byteLength(text))}`);
 		},
 
-		renderCall(args, theme) {
-			const { url, urls } = args as { url?: string; urls?: string[] };
-			const urlList = urls ?? (url ? [url] : []);
-			if (urlList.length === 0) {
-				return new Text(theme.fg("toolTitle", theme.bold("fetch ")) + theme.fg("error", "(no URL)"), 0, 0);
-			}
-			if (urlList.length === 1) {
-				const display = urlList[0].length > 60 ? urlList[0].slice(0, 57) + "..." : urlList[0];
-				return new Text(theme.fg("toolTitle", theme.bold("fetch ")) + theme.fg("accent", display), 0, 0);
-			}
-			const lines = [theme.fg("toolTitle", theme.bold("fetch ")) + theme.fg("accent", `${urlList.length} URLs`)];
-			for (const u of urlList.slice(0, 5)) {
-				const display = u.length > 60 ? u.slice(0, 57) + "..." : u;
-				lines.push(theme.fg("muted", "  " + display));
-			}
-			if (urlList.length > 5) {
-				lines.push(theme.fg("muted", `  ... and ${urlList.length - 5} more`));
-			}
-			return new Text(lines.join("\n"), 0, 0);
-		},
-
-		renderResult(result, { expanded, isPartial }, theme) {
-			const details = result.details as {
-				urlCount?: number;
-				successful?: number;
-				totalChars?: number;
-				error?: string;
-				title?: string;
-				phase?: string;
-				progress?: number;
-				cancelled?: boolean;
-			};
-
-			if (isPartial) {
-				const progress = details?.progress ?? 0;
-				const bar = "\u2588".repeat(Math.floor(progress * 10)) + "\u2591".repeat(10 - Math.floor(progress * 10));
-				return new Text(theme.fg("accent", `[${bar}] ${details?.phase || "fetching"}`) + theme.fg("dim", "  (esc to cancel)"), 0, 0);
-			}
-
-			if (details?.cancelled && (details?.successful ?? 0) === 0) {
-				return new Text(theme.fg("warning", "Cancelled"), 0, 0);
-			}
-
-			if (details?.error) {
-				return new Text(theme.fg("error", `Error: ${details.error}`), 0, 0);
-			}
-
-			if (details?.urlCount === 1) {
-				const title = details?.title || "Untitled";
-				const statusLine = theme.fg("success", title) + theme.fg("muted", ` (${details?.totalChars ?? 0} chars)`);
-
-				const textContent = result.content.find((c) => c.type === "text")?.text || "";
-				if (!expanded) {
-					const brief = textContent.length > 200 ? textContent.slice(0, 200) + "..." : textContent;
-					return new Text(statusLine + "\n" + theme.fg("dim", brief), 0, 0);
-				}
-				const preview = textContent.length > 500 ? textContent.slice(0, 500) + "..." : textContent;
-				return new Text(statusLine + "\n" + theme.fg("dim", preview), 0, 0);
-			}
-
-			const cancelledTag = details?.cancelled ? theme.fg("warning", " (cancelled)") : "";
-			const countColor = (details?.successful ?? 0) > 0 ? "success" : "error";
-			const statusLine = theme.fg(countColor, `${details?.successful}/${details?.urlCount} URLs`) + theme.fg("muted", ` (${details?.totalChars ?? 0} chars)`) + cancelledTag;
-			if (!expanded) return new Text(statusLine, 0, 0);
-			const textContent = result.content.find((c) => c.type === "text")?.text || "";
-			const preview = textContent.length > 500 ? textContent.slice(0, 500) + "..." : textContent;
-			return new Text(statusLine + "\n" + theme.fg("dim", preview), 0, 0);
-		},
+		renderCall: (args, theme) => renderCall("fetch", nonEmpty(args.url, args.urls), theme),
+		renderResult: (result, { expanded }, theme) => renderResult(result, expanded, theme),
 	});
 }

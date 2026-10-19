@@ -1,6 +1,0 @@
-packages:
-  - .
-allowBuilds:
-  '@google/genai': false
-  koffi: false
-  protobufjs: false

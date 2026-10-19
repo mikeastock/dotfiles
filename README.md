@@ -193,6 +193,7 @@ Pi settings and models are copied by `make install`. Extensions, prompts, and th
 - `pi-prompt-shelf` — local copy of `tanishqkancharla/pi-prompt-shelf`; shelves editor prompts per session with shortcuts and `/shelf`
 - `full-read-for-paths` — upgrades partial `read` calls to full reads for configured resource-file paths
 - `revdiff` — adds `/revdiff` to launch the revdiff TUI and send captured annotations back to Pi
+- `web-access` — Exa-backed `web_search` (parallel queries, highlights, objective/recency/domain filters) and `fetch_content` (Exa page text, optional live crawl, shallow clones for GitHub repo/tree/blob URLs). Needs `EXA_API_KEY`; oversized output is truncated with the full text saved to a temp file
 
 ## Structure
 
@@ -213,7 +214,8 @@ dotfiles/
 ├── configs/                 # shared AGENTS.md for Codex and Pi
 ├── amp-plugins/             # custom Amp plugins
 ├── pi-extensions/           # Pi extensions
-│   └── wafer/              # Wafer Serverless model provider
+│   ├── wafer/              # Wafer Serverless model provider
+│   └── web-access/         # Exa web search and page fetch
 ├── pi-themes/               # Pi themes
 ├── prompts/                 # Pi prompt templates
 ├── plugins/                 # plugin submodules
