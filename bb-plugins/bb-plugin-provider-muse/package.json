@@ -34,11 +34,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@get-bb/plugin-sdk": "0.6.31",
-    "zod": "^4.3.6"
+    "zod": "^4.6.6"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
-    "typescript": "^5.7.0"
+    "@get-bb/plugin-sdk": "0.6.31",
+    "@types/node": "^26.6.5",
+    "typescript": "^7.0.2"
   }
 }
