@@ -182,8 +182,8 @@ importers:
         specifier: ^7.32.0
         version: 7.32.0(@aws-sdk/credential-provider-node@3.972.85)(@smithy/signature-v4@5.7.4)(undici@8.10.2)(ws@8.22.0)
       typebox:
-        specifier: ^1.3.37
-        version: 1.3.37
+        specifier: ^1.4.0
+        version: 1.4.0
       typescript:
         specifier: ^7.0.2
         version: 7.0.2
@@ -955,8 +955,8 @@ packages:
   typebox@1.3.27:
     resolution: {integrity: sha512-zu+jc1pcy4UiNThxikUr36f0Rybk9PEeCg/NE6adeWr/SKsdNO4EzZHYRDlv2YCVAfj3Odq3dESSo/jNyoBXzA==}
 
-  typebox@1.3.37:
-    resolution: {integrity: sha512-k+Qogwk7lztlItGvFf5v4GZPPStFAFehAyOKYeuqIHzi3dfTFqPOTx38JG09hmpcK6TQgctrTD06U/0CTTpM1g==}
+  typebox@1.4.0:
+    resolution: {integrity: sha512-fn+ul/Cox0pYuGHN2WoehRhHUTJ3aj22Cn56c4AmLxELiwSoO6g2Fg6hpkOKIdCdRc16TN5N47Sdq7KDQIQqgA==}
 
   typescript@7.0.2:
     resolution: {integrity: sha512-8FYau96o3NKOhbjKi/qNvG/W5jhzxkbdm5sj9AbZ/5T5sWqn3hJgLfGx27sRKZWTvyzCP8dLRBTf5tBTSRVUNA==}
@@ -1763,7 +1763,7 @@ snapshots:
 
   typebox@1.3.27: {}
 
-  typebox@1.3.37: {}
+  typebox@1.4.0: {}
 
   typescript@7.0.2:
     optionalDependencies:
