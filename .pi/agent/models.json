@@ -1,5 +1,51 @@
 {
   "providers": {
+    "anthropic-fast": {
+      "name": "Anthropic (Fast mode)",
+      "baseUrl": "https://api.anthropic.com",
+      "api": "anthropic-messages",
+      "apiKey": "$ANTHROPIC_API_KEY",
+      "models": [
+        {
+          "id": "claude-opus-5-5",
+          "name": "Claude Opus 5.5 (Fast)",
+          "reasoning": true,
+          "thinkingLevelMap": {
+            "off": null,
+            "minimal": null,
+            "low": "low",
+            "medium": "medium",
+            "high": "high",
+            "xhigh": "xhigh",
+            "max": "max"
+          },
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 1000000,
+          "maxTokens": 128000,
+          "cost": {
+            "input": 8,
+            "output": 40,
+            "cacheRead": 0.8,
+            "cacheWrite": 10
+          },
+          "promptCache": {
+            "short": 300,
+            "long": 3600
+          },
+          "compat": {
+            "supportsMidConvoEffort": true,
+            "supportsMidConvoSystemMessages": true,
+            "supportsMidConvoToolChanges": true,
+            "forceAdaptiveThinking": true,
+            "supportsTemperature": false,
+            "supportsStrictTools": true
+          }
+        }
+      ]
+    },
     "google": {
       "baseUrl": "https://generativelanguage.googleapis.com/v1beta",
       "api": "google-generative-ai",
