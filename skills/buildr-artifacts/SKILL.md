@@ -1,7 +1,7 @@
 ---
 name: buildr-artifacts
 description: Publish browser-viewable artifacts. Use static mode for S3-hosted HTML artifacts and Vite app mode for stateful apps that should run on Codexbox with a bld.run URL.
-compatibility: Static mode requires aws CLI and Codexbox instance role permissions for the artifact S3 bucket. Vite app mode requires npm, tailscale, and an existing per-user bld.run DNS record.
+compatibility: Static mode requires aws CLI and artifact S3 bucket credentials from ~/.env (ARTIFACT_AWS_*) or the Codexbox instance role. Vite app mode requires npm, tailscale, and an existing per-user bld.run DNS record.
 metadata:
   homepage: https://artifacts.buildrtools.com
 allowed-tools: Bash({baseDir}/scripts/share_artifact.py:*) Bash({baseDir}/scripts/serve_vite_app.py:*) Read
@@ -92,7 +92,7 @@ Both scripts print only the shareable URL on success. Report that URL to the use
 
 ## Environment
 
-Codexbox normally sources these from `/home/codex/.config/codexbox/env`, populated from Secrets Manager:
+Static uploads read these from `~/.env` (dotenv format, optional `export` prefix). Variables already exported in the process environment take precedence over `~/.env`:
 
 - `ARTIFACT_AWS_REGION` — AWS region, falls back to `AWS_REGION`, then `us-east-1`
 - `ARTIFACT_AWS_ACCESS_KEY_ID` — optional artifact-scoped AWS access key for static uploads
@@ -102,7 +102,7 @@ Codexbox normally sources these from `/home/codex/.config/codexbox/env`, populat
 - `ARTIFACT_BASE_URL` — URL base, defaults to `https://artifacts.buildrtools.com`
 - `BLD_RUN_HOST` — optional Vite app URL host override, for example `mike.bld.run`
 
-Static uploads use the `ARTIFACT_AWS_*` values when provided; otherwise they rely on the Codexbox instance role or normal AWS CLI credential resolution.
+Static uploads use the `ARTIFACT_AWS_*` values when provided; otherwise they rely on the Codexbox instance role or normal AWS CLI credential resolution. Vite app mode does not read `~/.env`; export `BLD_RUN_HOST` or pass `--url-host`.
 
 ## Safety Rules
 
@@ -119,5 +119,5 @@ The script preserves the pi extension's constraints:
 
 - Prefer writing artifacts under `tmp/` or another scratch directory, then upload the final directory.
 - Do not upload secrets or raw customer data unless the user explicitly requests it and confirms the artifact is safe to share internally.
-- If static upload fails with missing credentials or access denied, check that the Codexbox instance role has artifact bucket permissions.
+- If static upload fails with missing credentials or access denied, check that `~/.env` defines `ARTIFACT_AWS_ACCESS_KEY_ID` and `ARTIFACT_AWS_SECRET_ACCESS_KEY` with artifact bucket permissions, or that the Codexbox instance role has them.
 - If Vite starts but the URL does not load, check the app logs in `~/.cache/buildr-artifacts/vite-apps/<slug>/` and confirm the printed port is reachable over Tailscale.
