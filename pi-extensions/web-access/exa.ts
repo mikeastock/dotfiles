@@ -1,210 +1,132 @@
-import { CONFIG_DIR_NAME } from "@earendil-works/pi-coding-agent";
-import { existsSync, readFileSync } from "node:fs";
-import { homedir } from "node:os";
-import { join } from "node:path";
+import { setTimeout as sleep } from "node:timers/promises";
 
-const EXA_SEARCH_URL = "https://api.exa.ai/search";
-const EXA_CONTENTS_URL = "https://api.exa.ai/contents";
-const DEFAULT_TIMEOUT_MS = 30000;
-const CONFIG_PATH = join(homedir(), CONFIG_DIR_NAME, "web-search.json");
-
-export interface ExaSearchResult {
-	title: string;
-	url: string;
-	text: string;
-	publishedDate?: string;
-}
-
-export interface ExaSearchResponse {
-	query: string;
-	answer: string;
-	results: ExaSearchResult[];
-}
-
-export interface ExaContentsResult {
-	url: string;
-	title: string;
-	text: string;
-	author?: string;
-	publishedDate?: string;
-}
-
-export interface ExaContentsResponse {
-	results: ExaContentsResult[];
-	statuses: Array<{ id: string; status: string }>;
-}
+const EXA_API = "https://api.exa.ai";
+const REQUEST_TIMEOUT_MS = 60_000;
+const MAX_ATTEMPTS = 3;
+const HIGHLIGHT_CHARS = 2_000;
 
 export interface SearchOptions {
 	numResults?: number;
-	includeDomains?: string[];
-	excludeDomains?: string[];
-	startPublishedDate?: string;
-	endPublishedDate?: string;
-	includeContent?: boolean;
+	objective?: string;
+	recency?: "day" | "week" | "month" | "year";
+	domains?: string[];
 	signal?: AbortSignal;
 }
 
-export interface ContentsOptions {
-	signal?: AbortSignal;
+export interface SearchResult {
+	title: string;
+	url: string;
+	publishedDate?: string;
+	excerpt: string;
 }
 
-interface WebSearchConfig {
-	exaApiKey?: string;
+export interface SearchResponse {
+	results: SearchResult[];
+	notices: string[];
 }
 
-function loadConfig(): WebSearchConfig {
-	if (existsSync(CONFIG_PATH)) {
-		try {
-			return JSON.parse(readFileSync(CONFIG_PATH, "utf-8")) as WebSearchConfig;
-		} catch {
-			return {};
+export interface Page {
+	url: string;
+	title: string;
+	text: string;
+}
+
+export interface FetchedPage {
+	url: string;
+	page?: Page;
+	error?: string;
+}
+
+const RECENCY_DAYS = { day: 1, week: 7, month: 30, year: 365 };
+
+async function exaRequest<T>(path: string, body: object, signal?: AbortSignal): Promise<T> {
+	const apiKey = process.env.EXA_API_KEY;
+	if (!apiKey) throw new Error("EXA_API_KEY is not set. Get a key at https://dashboard.exa.ai/api-keys");
+
+	const timeout = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
+	const requestSignal = signal ? AbortSignal.any([signal, timeout]) : timeout;
+
+	for (let attempt = 1; ; attempt++) {
+		const response = await fetch(`${EXA_API}${path}`, {
+			method: "POST",
+			headers: { "x-api-key": apiKey, "Content-Type": "application/json" },
+			body: JSON.stringify(body),
+			signal: requestSignal,
+		});
+		if (response.ok) return (await response.json()) as T;
+
+		const retryable = response.status === 429 || response.status >= 500;
+		if (retryable && attempt < MAX_ATTEMPTS) {
+			await sleep(1_000 * attempt, undefined, { signal: requestSignal });
+			continue;
 		}
+		throw new Error(`Exa ${path} failed with HTTP ${response.status}: ${(await response.text()).slice(0, 300)}`);
 	}
-	return {};
 }
 
-function getApiKey(): string {
-	const config = loadConfig();
-	const key = process.env.EXA_API_KEY || config.exaApiKey;
-	if (!key) {
-		throw new Error(
-			"Exa API key not found. Either:\n" +
-			`  1. Create ${CONFIG_PATH} with { "exaApiKey": "your-key" }\n` +
-			"  2. Set EXA_API_KEY environment variable\n" +
-			"Get a key at https://exa.ai"
-		);
-	}
-	return key;
-}
-
-function recencyToDate(recency: string): string {
-	const now = new Date();
-	switch (recency) {
-		case "day": now.setDate(now.getDate() - 1); break;
-		case "week": now.setDate(now.getDate() - 7); break;
-		case "month": now.setMonth(now.getMonth() - 1); break;
-		case "year": now.setFullYear(now.getFullYear() - 1); break;
-		default: return "";
-	}
-	return now.toISOString();
-}
-
-export function parseDomainFilters(domains: string[]): { include: string[]; exclude: string[] } {
-	const include: string[] = [];
-	const exclude: string[] = [];
-	for (const d of domains) {
-		if (d.startsWith("-")) {
-			exclude.push(d.slice(1));
-		} else {
-			include.push(d);
-		}
-	}
-	return { include, exclude };
-}
-
-export async function searchWithExa(
-	query: string,
-	options: SearchOptions & { recencyFilter?: string } = {},
-): Promise<ExaSearchResponse> {
-	const apiKey = getApiKey();
-	const numResults = Math.min(options.numResults ?? 5, 20);
-	const includeContent = options.includeContent ?? false;
-
-	const body: Record<string, unknown> = {
-		query,
-		numResults,
-		type: "auto",
-		contents: includeContent ? { text: true } : { text: { maxCharacters: 300 } },
+/** Split "-example.com" entries into excludeDomains, the rest into includeDomains. */
+function domainFilters(domains: string[] = []) {
+	const include = domains.filter((d) => !d.startsWith("-"));
+	const exclude = domains.filter((d) => d.startsWith("-")).map((d) => d.slice(1));
+	return {
+		...(include.length > 0 && { includeDomains: include }),
+		...(exclude.length > 0 && { excludeDomains: exclude }),
 	};
-
-	if (options.includeDomains?.length) body.includeDomains = options.includeDomains;
-	if (options.excludeDomains?.length) body.excludeDomains = options.excludeDomains;
-	if (options.startPublishedDate) body.startPublishedDate = options.startPublishedDate;
-	if (options.endPublishedDate) body.endPublishedDate = options.endPublishedDate;
-
-	if ((options as { recencyFilter?: string }).recencyFilter) {
-		const date = recencyToDate((options as { recencyFilter?: string }).recencyFilter!);
-		if (date) body.startPublishedDate = date;
-	}
-
-	const response = await fetch(EXA_SEARCH_URL, {
-		method: "POST",
-		headers: {
-			"Content-Type": "application/json",
-			"x-api-key": apiKey,
-			Accept: "application/json",
-		},
-		body: JSON.stringify(body),
-		signal: options.signal ?? AbortSignal.timeout(DEFAULT_TIMEOUT_MS),
-	});
-
-	if (!response.ok) {
-		const errorText = await response.text();
-		throw new Error(`Exa search error ${response.status}: ${errorText.slice(0, 300)}`);
-	}
-
-	const data = await response.json() as { results?: Array<{ title?: string; url?: string; text?: string; publishedDate?: string }> };
-
-	const results: ExaSearchResult[] = (data.results ?? []).map(r => ({
-		title: r.title ?? "",
-		url: r.url ?? "",
-		text: r.text ?? "",
-		publishedDate: r.publishedDate,
-	}));
-
-	// Exa /search doesn't return a synthesized answer — build a summary from snippets
-	const answer = results.length > 0
-		? results
-			.filter(r => r.text)
-			.slice(0, 3)
-			.map((r, i) => `${i + 1}. **${r.title}**: ${r.text.slice(0, 200).trim()}${r.text.length > 200 ? "..." : ""}`)
-			.join("\n\n")
-		: "";
-
-	return { query, answer, results };
 }
 
-export async function fetchContents(
-	urls: string[],
-	options: ContentsOptions = {},
-): Promise<ExaContentsResponse> {
-	const apiKey = getApiKey();
+export async function search(query: string, options: SearchOptions = {}): Promise<SearchResponse> {
+	const startPublishedDate = options.recency
+		? new Date(Date.now() - RECENCY_DAYS[options.recency] * 86_400_000).toISOString()
+		: undefined;
 
-	const response = await fetch(EXA_CONTENTS_URL, {
-		method: "POST",
-		headers: {
-			"Content-Type": "application/json",
-			"x-api-key": apiKey,
-			Accept: "application/json",
+	const data = await exaRequest<{
+		results?: Array<{ title?: string; url: string; publishedDate?: string; highlights?: string[] }>;
+		notices?: Array<{ message: string }>;
+	}>(
+		"/search",
+		{
+			query,
+			type: "auto",
+			numResults: options.numResults ?? 5,
+			...(options.objective && { objective: options.objective }),
+			...(startPublishedDate && { startPublishedDate }),
+			...domainFilters(options.domains),
+			contents: { highlights: { maxCharacters: HIGHLIGHT_CHARS } },
 		},
-		body: JSON.stringify({
-			urls,
-			text: true,
-			livecrawl: "fallback",
-		}),
-		signal: options.signal ?? AbortSignal.timeout(DEFAULT_TIMEOUT_MS),
-	});
-
-	if (!response.ok) {
-		const errorText = await response.text();
-		throw new Error(`Exa contents error ${response.status}: ${errorText.slice(0, 300)}`);
-	}
-
-	const data = await response.json() as {
-		results?: Array<{ url?: string; title?: string; text?: string; author?: string; publishedDate?: string }>;
-		statuses?: Array<{ id: string; status: string }>;
-	};
-
-	const results: ExaContentsResult[] = (data.results ?? []).map(r => ({
-		url: r.url ?? "",
-		title: r.title ?? "",
-		text: r.text ?? "",
-		author: r.author,
-		publishedDate: r.publishedDate,
-	}));
+		options.signal,
+	);
 
 	return {
-		results,
-		statuses: data.statuses ?? [],
+		results: (data.results ?? []).map((r) => ({
+			title: r.title || r.url,
+			url: r.url,
+			publishedDate: r.publishedDate ?? undefined,
+			excerpt: (r.highlights ?? []).join("\n…\n").trim(),
+		})),
+		notices: (data.notices ?? []).map((n) => n.message),
 	};
+}
+
+/** Fetch page text for many URLs in one Exa request. Per-URL failures are reported, not thrown. */
+export async function fetchPages(urls: string[], options: { fresh?: boolean; signal?: AbortSignal } = {}): Promise<FetchedPage[]> {
+	const data = await exaRequest<{
+		results?: Array<{ id: string; url: string; title?: string; text?: string }>;
+		statuses?: Array<{ id: string; status: string; error?: { tag?: string; httpStatusCode?: number } }>;
+	}>(
+		"/contents",
+		{ urls, text: true, ...(options.fresh && { maxAgeHours: 0 }) },
+		options.signal,
+	);
+
+	const results = new Map((data.results ?? []).map((r) => [r.id, r]));
+	const statuses = new Map((data.statuses ?? []).map((s) => [s.id, s]));
+
+	return urls.map((url) => {
+		const result = results.get(url);
+		if (result?.text) {
+			return { url, page: { url: result.url, title: result.title || result.url, text: result.text } };
+		}
+		const error = statuses.get(url)?.error;
+		return { url, error: error ? `${error.tag ?? "error"} (HTTP ${error.httpStatusCode ?? "?"})` : "no content returned" };
+	});
 }
