@@ -29,4 +29,7 @@ require("default.hypr.toggles")
 -- o.window("qemu", { workspace = "5" })
 
 -- Stem darkening so SF Pro / CFF fonts don't look anemic on HiDPI (Mac-like).
-hl.env("FREETYPE_PROPERTIES", "cff:no-stem-darkening=0 autofitter:no-stem-darkening=0")
+-- hl.env("FREETYPE_PROPERTIES", "cff:no-stem-darkening=0 autofitter:no-stem-darkening=0")
+
+-- oma-cast launcher bindings
+require("hypr.oma-cast")
