@@ -31,11 +31,6 @@ skills = [ "frontend-design" ]
 url = "https://github.com/kitlangton/skills"
 skills = [ "effect" ]
 
-["pbakaus/impeccable"]
-url = "https://github.com/pbakaus/impeccable.git"
-skills_path_by_agent = { amp = ".agents/skills/*", claude = ".claude/skills/*", pi = ".pi/skills/*" }
-skills = [ "impeccable" ]
-
 ["mattpocock/skills"]
 url = "https://github.com/mattpocock/skills"
 skills_path = "skills/*/*" # Skills are grouped by category directories

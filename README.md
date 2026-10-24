@@ -181,7 +181,6 @@ Verify text generation with `pi -p --model meta/muse-wonder-1.0 "Reply exactly: 
 - `shaping`, `breadboarding`, and `breadboard-reflection` — explicit-only product shaping and breadboard workflows from `rjs/shaping-skills`
 - `prototype`, `grill-with-docs`, `teach`, and `writing-great-skills` — workflow and teaching skills from `mattpocock/skills`
 - `improve` — codebase audit and self-contained implementation planning skill from `shadcn/improve`
-- `impeccable` — frontend design, critique, polish, and live iteration skill from `pbakaus/impeccable`
 - `thermo-nuclear-code-review` — strict structural and architectural code review skill from `intercom/2x-skills`
 - `effect` — opinionated production Effect v4 guide from `kitlangton/skills`, pinned as a plugin submodule at commit `30dee860`
 - `better-github-skill` — agent-optimized `gh` workflows (PR snapshot, review threads, CI failures) from `AVGVSTVS96/better-github-skill`
