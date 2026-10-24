@@ -13,7 +13,8 @@
     "anthropic/claude-opus-5-5",
     "xai/grok-4.7",
     "wafer/GLM-5.3",
-    "openai/gpt-6.1-sol"
+    "openai/gpt-6.1-sol",
+    "meta/muse-wonder-1.0"
   ],
   "packages": [
     "npm:pi-verbosity-control",

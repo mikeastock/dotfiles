@@ -136,6 +136,18 @@ pi update
 
 Pi settings and models are copied by `make install`. Extensions, prompts, and themes install in the same command. `pi-configs/pi-patch/` is an optional Ghostty/tmux image patch for the managed Pi install.
 
+#### Muse Wonder in Pi
+
+The configured `pi-meta-oauth` package supplies `meta/muse-wonder-1.0`, included in the model cycle. Use the **Pi** provider in bb (not the separate Muse Code provider), or launch it directly:
+
+```bash
+pi --model meta/muse-wonder-1.0 --thinking high
+```
+
+On a new machine, install the package with `pi install npm:pi-meta-oauth`, then run `/login meta` inside Pi. Existing installs can update it with `pi update npm:pi-meta-oauth`. Credentials stay in Pi's private `auth.json`; no key belongs in these dotfiles. Wonder's model definition comes from the package, so no duplicate entry is needed in `models.json`.
+
+Verify text generation with `pi -p --model meta/muse-wonder-1.0 "Reply exactly: WONDER_OK"`. Meta can return transient HTTP 500 errors; Pi's normal retry handles these. The standard model is selected deliberately: `-contributor` variants have different data-use terms.
+
 ### Notable custom skills
 
 - `agent-browser` — fast browser automation CLI for AI agents with CDP accessibility tree snapshots and refs, vendored from `vercel-labs/agent-browser` commit `44583ac`
