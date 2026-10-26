@@ -11,6 +11,7 @@
 - Prefer concrete wording over unexplained jargon. Use established domain terminology when it is the most precise choice, and briefly define it when the intended audience may not know it.
 - Preserve material evidence, constraints, tradeoffs, caveats, and uncertainty.
 - Do not rewrite code, identifiers, commands, quoted text, or prescribed formats merely to satisfy this style rule.
+- End any turn that reports on long-running or delegated work with a short status: **Goal**, **Done**, **Next**, **Needs you** (or "nothing").
 
 ## Semantic Commits
 
