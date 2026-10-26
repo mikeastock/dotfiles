@@ -205,6 +205,7 @@ Verify text generation with `pi -p --model meta/muse-wonder-1.0 "Reply exactly: 
 - `handoff` and `session-query` — vendored from `buildrtech/dotagents` commit `a484ad4`
 - `openai-fast` — [OpenAI Fast and Ultrafast service tiers](pi-extensions/openai-fast/README.md); `/openai-fast [off|fast|ultrafast|status]` selects speed for supported `openai` models, with `--fast`/`--ultrafast` startup flags and inline `⚡`/`⚡⚡` indicators. Settings use `openai-fast.mode`; replaces the Codex-only command and boolean setting.
 - `anthropic-fast` — sends `speed: "fast"` for the `anthropic-fast` provider defined in `.pi/agent/models.json` (`anthropic-fast/claude-opus-5-5`, API key via `ANTHROPIC_API_KEY`, billed at fast-mode rates)
+- `cswap-anthropic` — Pi's `anthropic` OAuth uses Claude Code's active login (`~/.claude/.credentials.json`), so the account that [claude-swap](https://github.com/realiti4/claude-swap) (`cswap auto`) selects applies to the next Pi request. Refreshes take Claude Code's credential locks; `@gotgenes/pi-anthropic-auth` still shapes requests
 - `pi-prompt-shelf` — local copy of `tanishqkancharla/pi-prompt-shelf`; shelves editor prompts per session with shortcuts and `/shelf`
 - `full-read-for-paths` — upgrades partial `read` calls to full reads for configured resource-file paths
 - `revdiff` — adds `/revdiff` to launch the revdiff TUI and send captured annotations back to Pi
@@ -230,6 +231,7 @@ dotfiles/
 ├── amp-plugins/             # custom Amp plugins
 ├── pi-extensions/           # Pi extensions
 │   ├── anthropic-fast/     # Anthropic fast mode for the anthropic-fast provider
+│   ├── cswap-anthropic/    # Pi Anthropic OAuth via cswap's active Claude Code login
 │   ├── wafer/              # Wafer Serverless model provider
 │   └── web-access/         # Exa web search and page fetch
 ├── pi-themes/               # Pi themes
