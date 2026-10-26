@@ -72,3 +72,7 @@
 [credential "https://gist.github.com"]
 	helper = 
 	helper = !/home/mikeastock/.local/share/mise/installs/gh/2.98.0/gh_2.98.0_linux_amd64/bin/gh auth git-credential
+[credential "https://git.cafe"]
+	helper = 
+	helper = !cafe auth http credential --host 'git.cafe'
+	useHttpPath = true
