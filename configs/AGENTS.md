@@ -11,7 +11,7 @@
 - Prefer concrete wording over unexplained jargon. Use established domain terminology when it is the most precise choice, and briefly define it when the intended audience may not know it.
 - Preserve material evidence, constraints, tradeoffs, caveats, and uncertainty.
 - Do not rewrite code, identifiers, commands, quoted text, or prescribed formats merely to satisfy this style rule.
-- End any turn that reports on long-running or delegated work with a short status: **Goal**, **Done**, **Next**, **Needs you** (or "nothing").
+- End any turn that reports on long-running or delegated work with a short status: **Goal**, **Done**, **Next**, **Needs you** (or "nothing"), format on newlines.
 
 ## Semantic Commits
 
@@ -28,21 +28,6 @@
 - Prefer a clear, useful message over pedantic format perfection
 
 ## Language Guidance
-
-### Ruby
-
-- Prefer straightforward Ruby control flow over defensive branching when invariants are already enforced upstream.
-- In Ruby services, optimize for linear readability: fetch records, transform data, execute side effects.
-- Keep service object interfaces lean: remove unused params/dependencies instead of carrying them forward.
-- Prefer intent-revealing private method names over clever abstractions.
-- Prefer memoization for DB-backed lookups inside a service/object lifecycle to prevent accidental repeat queries and N+1-style footguns.
-- Only use trailing conditionals (`return if ...`, `raise if ...`) for early returns/guards. Never use them for real logic checks; use standard `if`/`unless` blocks instead.
-
-## Worktrees
-
-- Always create worktrees in a directory that is not nested inside the repository being worked on.
-- Bad: `/path/to/project/.worktrees/feature-branch` (nested inside the repo checkout).
-- Good: `/path/to/worktrees/feature-branch/project` (separate worktrees area outside the repo checkout).
 
 ## Mindset & Process
 
