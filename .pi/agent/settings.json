@@ -11,6 +11,7 @@
     "google/gemini-4-argon",
     "google/gemini-3.8-flash",
     "anthropic/claude-opus-5-5",
+    "anthropic-fast/claude-opus-5-5",
     "xai/grok-4.7",
     "wafer/GLM-5.3",
     "openai/gpt-6.1-sol",
