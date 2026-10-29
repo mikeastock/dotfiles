@@ -28,7 +28,7 @@
           "cost": {
             "input": 8,
             "output": 40,
-            "cacheRead": 0.8,
+            "cacheRead": 0.4,
             "cacheWrite": 10
           },
           "promptCache": {
