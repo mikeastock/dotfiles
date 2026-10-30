@@ -30,5 +30,6 @@
   "openai-fast": {
     "mode": "ultrafast"
   },
-  "tuiMode": "regular"
+  "tuiMode": "regular",
+  "lastChangelogVersion": "1.4.0"
 }

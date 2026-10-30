@@ -28,6 +28,7 @@ min_version = "2026.9.2"
 "~/.local/bin" = { source = "bin", mode = "symlink-each" }
 "~/.config/amp/settings.json" = { source = ".config/amp/settings.json", mode = "copy" }
 "~/.config/opencode/opencode.jsonc" = { source = ".config/opencode/opencode.jsonc", mode = "copy" }
+"~/.config/systemd/user/opencode.service" = { source = ".config/systemd/user/opencode.service", mode = "copy" }
 "~/.codex/config.toml" = { source = ".codex/config.toml", mode = "copy" }
 "~/.codex/AGENTS.md" = { source = "configs/AGENTS.md", mode = "copy" }
 "~/.pi/agent/AGENTS.md" = { source = "configs/AGENTS.md", mode = "copy" }

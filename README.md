@@ -98,12 +98,13 @@ These are copied by `make dotfiles` (or `make install DOTFILES=1`):
 - `.config/amp/settings.json` → `~/.config/amp/settings.json`
 - `configs/claude/settings.json` → `~/.claude/settings.json`
 - `.config/opencode/opencode.jsonc` → `~/.config/opencode/opencode.jsonc`
+- `.config/systemd/user/opencode.service` → `~/.config/systemd/user/opencode.service`
 - `.codex/config.toml` → `~/.codex/config.toml`
 - `configs/AGENTS.md` → `~/.codex/AGENTS.md` and `~/.pi/agent/AGENTS.md`
 - `.pi/agent/models.json` → `~/.pi/agent/models.json`
 - `.pi/agent/settings.json` → `~/.pi/agent/settings.json`
 
-OpenCode keeps `{env:MODEL_API_KEY}` and `{env:RUNINFRA_GATEWAY_KEY}` in git. A later apply overwrites the live files; capture local edits with `mise dot add` first. The default OpenCode model is `meta/muse-spark-1.2`.
+A later apply overwrites the live files; capture local edits with `mise dot add` first.
 
 ### Managed install behavior
 

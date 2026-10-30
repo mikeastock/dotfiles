@@ -1,0 +1,15 @@
+[Unit]
+Description=OpenCode shared background server (published via Tailscale Serve)
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h
+Environment=PATH=/home/mikeastock/.local/share/mise/shims:/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:/home/mikeastock/.cargo/bin:/home/mikeastock/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStart=/home/linuxbrew/.linuxbrew/bin/opencode serve --service
+Restart=always
+RestartSec=3
+KillMode=mixed
+
+[Install]
+WantedBy=default.target
