@@ -2,14 +2,14 @@
 
 OpenCode plugin that lets agents use secrets you provide without seeing their values.
 
-Forked from [vimtor/opencode-plugins](https://github.com/vimtor/opencode-plugins/tree/main/packages/opencode-blindfold) at `9d1e947` (v0.5.0). The source files are unchanged from upstream's `plugin/src/`. This copy drops the OpenCode Desktop GUI part (`gui.ts`, which needs a Vite build) and the tests, so secrets are entered in the TUI only. Requires OpenCode V2.
+Forked from [vimtor/opencode-plugins](https://github.com/vimtor/opencode-plugins/tree/main/packages/opencode-blindfold) at `9d1e947` (v0.5.0). The source files are unchanged from upstream's `plugin/src/`, flattened into this directory; the tests are dropped. Requires OpenCode V2 with the TUI, or OpenCode Desktop.
 
 ## How it works
 
 1. When a task needs a secret, the agent calls `blindfold.get` with a name, such as `GITHUB_TOKEN`, and a reason. If the secret isn't stored yet, you're asked for it. The plugin's system instructions tell the agent to do this instead of asking you to paste secrets into the chat.
    - In Code Mode (preferred), `tools.blindfold.get({ name, reason })` returns the value to the running code only.
    - With Code Mode disabled, `blindfold_get` is a regular tool that stores the secret and never returns the value.
-2. The TUI opens a dialog where you paste the value. The value goes to the plugin and never to the agent. If you don't answer within 10 minutes, the request fails.
+2. The TUI or OpenCode Desktop opens a dialog where you paste the value. Desktop hides what you type. The value goes to the plugin and never to the agent. If you don't answer within 10 minutes, the request fails.
 3. The agent uses the secret without reading it:
    - In Code Mode, through the value `tools.blindfold.get` returns, e.g. in a `fetch` header.
    - A shell command receives it as an environment variable only when the command names it, e.g. `GH_TOKEN="$GITHUB_TOKEN" gh api user`. OpenCode asks you to approve such commands. Commands that don't name it, such as `printenv`, never get the value.
@@ -22,7 +22,7 @@ Secrets are kept in memory and are lost when the OpenCode service restarts. Enco
 
 ## Install
 
-`make dotfiles` links this directory to `~/.config/opencode/plugins/blindfold`. OpenCode discovers it there and loads its server, TUI, and RPC parts; no `opencode.jsonc` or `cli.json` entry is needed. If no TUI responds to a secret request within 5 seconds, the request fails.
+`make install` builds the Desktop bundle (`dist/gui-experimental.cjs`), and `make dotfiles` links this directory to `~/.config/opencode/plugins/blindfold`. OpenCode discovers it there and loads its server, TUI, RPC, and Desktop parts; no `opencode.jsonc` or `cli.json` entry is needed. `npm run dev` rebuilds the Desktop bundle on change. If no TUI or Desktop window responds to a secret request within 5 seconds, the request fails.
 
 ## Configure
 
@@ -96,7 +96,7 @@ git clone https://github.com/vimtor/opencode-plugins /tmp/opencode-plugins
 git -C /tmp/opencode-plugins diff 9d1e947 HEAD -- packages/opencode-blindfold/plugin/src
 ```
 
-Copy changed files from `plugin/src/` (except `gui.ts`) and update the commit here and in the repo README.
+Copy changed files from `plugin/src/` and update the commit here and in the repo README.
 
 ## License
 

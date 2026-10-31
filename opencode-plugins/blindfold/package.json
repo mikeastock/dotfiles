@@ -7,10 +7,23 @@
   "exports": {
     ".": "./server.ts",
     "./tui": "./tui.ts",
-    "./rpc": "./rpc.ts"
+    "./rpc": "./rpc.ts",
+    "./gui-experimental": "./dist/gui-experimental.cjs"
+  },
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "typecheck": "tsc --noEmit"
   },
   "license": "MIT",
   "dependencies": {
-    "@opencode/plugin": "2.2.0"
+    "@opencode/plugin": "2.2.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "solid-js": "^1.9.0",
+    "typescript": "^5.9.0",
+    "vite": "^7.0.0",
+    "vite-plugin-solid": "^2.11.0"
   }
 }

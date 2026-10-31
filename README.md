@@ -96,7 +96,7 @@ A plugin's bb id is its `package.json` name with the `bb-plugin-` prefix strippe
 OpenCode plugins live in `opencode-plugins/<plugin>/`. `make install` builds them, and `make dotfiles` links them into `~/.config/opencode/plugins/`, where OpenCode discovers them.
 
 - `inbox-sidebar` — makes the Archived section of OpenCode Desktop's Inbox sidebar collapsible, collapsed by default. See `opencode-plugins/inbox-sidebar/README.md`.
-- `blindfold` — lets agents use secrets you enter in a TUI dialog (or list in its `secrets` option, including `op://` 1Password references) without the values reaching the model: values are redacted from tool results, model context, and provider requests, and shell commands get a secret as an env var only when they name it, after your approval. Forked from [vimtor/opencode-plugins](https://github.com/vimtor/opencode-plugins/tree/main/packages/opencode-blindfold) at `9d1e947` (v0.5.0), without its OpenCode Desktop GUI part or tests. It is plain TypeScript with no build step; OpenCode provides `@opencode/plugin`. See `opencode-plugins/blindfold/README.md`.
+- `blindfold` — lets agents use secrets you enter in a dialog (or list in its `secrets` option, including `op://` 1Password references) without the values reaching the model: values are redacted from tool results, model context, and provider requests, and shell commands get a secret as an env var only when they name it, after your approval. Forked from [vimtor/opencode-plugins](https://github.com/vimtor/opencode-plugins/tree/main/packages/opencode-blindfold) at `9d1e947` (v0.5.0), without its tests. Secrets are entered in a TUI or OpenCode Desktop dialog. See `opencode-plugins/blindfold/README.md`.
 
 ### Amp / Claude Code / Codex / OpenCode / Pi configs
 

@@ -79,6 +79,8 @@ build: check-python
 build-opencode-plugins:
 	@npm ci --silent --no-audit --no-fund --prefix opencode-plugins/inbox-sidebar
 	@npm run build --silent --prefix opencode-plugins/inbox-sidebar
+	@npm ci --silent --no-audit --no-fund --prefix opencode-plugins/blindfold
+	@npm run build --silent --prefix opencode-plugins/blindfold
 
 install-skills: check-python
 	@$(PYTHON) "$(BUILD_SCRIPT)" install-skills $(FORCE_FLAG)

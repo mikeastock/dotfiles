@@ -41,6 +41,7 @@ jobs:
           npm ci --prefix bb-plugins/bb-plugin-provider-muse
           npm ci --prefix bb-plugins/bb-plugin-diffr
           npm ci --prefix opencode-plugins/inbox-sidebar
+          npm ci --prefix opencode-plugins/blindfold
 
       - name: Typecheck
         run: |
@@ -50,3 +51,4 @@ jobs:
           npm run typecheck --prefix bb-plugins/bb-plugin-provider-muse
           npm run typecheck --prefix bb-plugins/bb-plugin-diffr
           npm run typecheck --prefix opencode-plugins/inbox-sidebar
+          npm run typecheck --prefix opencode-plugins/blindfold
