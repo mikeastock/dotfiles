@@ -26,6 +26,8 @@ Skills are specialized instruction sets that guide AI agents through specific ta
 │       └── <additional files>      # Supporting scripts/resources
 ├── pi-extensions/                  # Custom Pi extensions (local)
 │   └── <extension-name>/index.ts
+├── opencode-plugins/               # Custom OpenCode plugins (local)
+│   └── <plugin-name>/
 ├── scripts/
 │   ├── build.py                    # Python build system (requires Python 3.11+)
 │   └── dotfiles.sh                 # mise bootstrap wrapper
@@ -111,10 +113,11 @@ npm run typecheck --prefix bb-plugins/bb-plugin-t3sidebar
 npm run typecheck --prefix bb-plugins/bb-plugin-tok-speed
 npm run typecheck --prefix bb-plugins/bb-plugin-provider-muse
 npm run typecheck --prefix bb-plugins/bb-plugin-diffr
+npm run typecheck --prefix opencode-plugins/inbox-sidebar
 ```
 
 ### CI/CD
-GitHub Actions (`.github/workflows/typecheck.yml`) runs the root and vendored BB plugin typechecks on push/PR to main/master. It does not run tests.
+GitHub Actions (`.github/workflows/typecheck.yml`) runs the root, vendored BB plugin, and OpenCode plugin typechecks on push/PR to main/master. It does not run tests.
 
 ## Code Conventions
 

@@ -9,7 +9,7 @@ BUILD_SCRIPT := $(CURDIR)/scripts/build.py
 FORCE_FLAG := $(if $(FORCE),--force,)
 DOTFILES_ARGS ?=
 
-.PHONY: all install install-non-interactive dotfiles dotfiles-clean install-skills install-amp-plugins install-extensions install-prompts install-themes skill-patch skill-patch-commit amp-plugin-types amp-plugin-check package-manager-security-config build clean help submodule-init plugin-update check-python
+.PHONY: all install install-non-interactive dotfiles dotfiles-clean build-opencode-plugins install-skills install-amp-plugins install-extensions install-prompts install-themes skill-patch skill-patch-commit amp-plugin-types amp-plugin-check package-manager-security-config build clean help submodule-init plugin-update check-python
 
 all: help
 
@@ -23,6 +23,7 @@ help:
 	@echo "  make install-non-interactive Install for headless/automated environments (skips interactive extensions)"
 	@echo "  make dotfiles                Install machine dotfiles (auto-detects Omarchy)"
 	@echo "  make dotfiles-clean          Remove machine dotfile links"
+	@echo "  make build-opencode-plugins  Build the OpenCode Desktop plugins"
 	@echo "  make install-skills          Install skills only (Amp, Claude Code, Codex, Pi agent, bb)"
 	@echo "  make install-amp-plugins     Install Amp plugins from amp-plugins/"
 	@echo "  make install-extensions      Install extensions only (Pi agent)"
@@ -45,7 +46,7 @@ check-python:
 	@$(PYTHON) -c "import sys; sys.exit(0 if sys.version_info >= (3, 11) else 1)" 2>/dev/null || \
 		(echo "Error: Python 3.11+ required (for tomllib)"; exit 1)
 
-install: check-python
+install: check-python build-opencode-plugins
 	@$(PYTHON) "$(BUILD_SCRIPT)" install $(FORCE_FLAG)
 ifneq ($(filter 1 true yes,$(DOTFILES)),)
 	@$(CURDIR)/scripts/dotfiles.sh auto $(DOTFILES_ARGS)
@@ -54,7 +55,7 @@ else
 	@echo "All skills, prompt templates, themes, extensions, and Amp plugins installed"
 endif
 
-install-non-interactive: check-python
+install-non-interactive: check-python build-opencode-plugins
 	@$(PYTHON) "$(BUILD_SCRIPT)" install --non-interactive $(FORCE_FLAG)
 ifneq ($(filter 1 true yes,$(DOTFILES)),)
 	@$(CURDIR)/scripts/dotfiles.sh auto --skip-packages --skip-shell $(DOTFILES_ARGS)
@@ -74,6 +75,10 @@ submodule-init:
 
 build: check-python
 	@$(PYTHON) "$(BUILD_SCRIPT)" build
+
+build-opencode-plugins:
+	@npm ci --silent --no-audit --no-fund --prefix opencode-plugins/inbox-sidebar
+	@npm run build --silent --prefix opencode-plugins/inbox-sidebar
 
 install-skills: check-python
 	@$(PYTHON) "$(BUILD_SCRIPT)" install-skills $(FORCE_FLAG)

@@ -91,6 +91,12 @@ A plugin's bb id is its `package.json` name with the `bb-plugin-` prefix strippe
 - `bb-plugin-diffr` — [diffr](https://github.com/devdotfast/whiteboard/tree/main/diffr)'s structural, AST-aware diffs of a thread's workspace in the thread's right panel. Runs diffr on the workspace's machine through a `bb.host` entry and draws its NDJSON with diffr's vendored viewer model; needs `diffr` installed there. See `bb-plugins/bb-plugin-diffr/README.md`.
 - `bb-plugin-t3sidebar` — the earlier fork of [SawyerHood/bb-plugin-t3sidebar](https://github.com/SawyerHood/bb-plugin-t3sidebar), kept for its auto-settle-on-merge sweep.
 
+### OpenCode plugins
+
+OpenCode plugins live in `opencode-plugins/<plugin>/`. `make install` builds them, and `make dotfiles` links them into `~/.config/opencode/plugins/`, where OpenCode discovers them.
+
+- `inbox-sidebar` — makes the Archived section of OpenCode Desktop's Inbox sidebar collapsible, collapsed by default. See `opencode-plugins/inbox-sidebar/README.md`.
+
 ### Amp / Claude Code / Codex / OpenCode / Pi configs
 
 These are copied by `make dotfiles` (or `make install DOTFILES=1`):
@@ -239,6 +245,7 @@ dotfiles/
 ├── plugins/                 # plugin submodules
 ├── patches/                 # local changes to plugin skills
 ├── bb-plugins/              # forked bb plugins
+├── opencode-plugins/        # custom OpenCode plugins
 ├── scripts/build.py         # agent build/install system
 ├── scripts/dotfiles.sh      # mise bootstrap wrapper
 └── Makefile                 # dotfiles + agent commands
