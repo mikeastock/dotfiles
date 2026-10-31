@@ -68,7 +68,7 @@ join_csv() {
 bootstrap() {
   local profile="$1"
   local parts=()
-  local extra=()
+  local extra=(--yes --force-dotfiles)
 
   if ((SKIP_PACKAGES == 0)); then
     parts+=(packages)
@@ -80,12 +80,8 @@ bootstrap() {
   if [[ $profile == omarchy ]] && ((SKIP_SHELL == 0)); then
     parts+=(user)
   fi
-  if [[ $profile == omarchy ]]; then
-    extra+=(--force-dotfiles)
-  fi
-
   mise -C "$REPO_ROOT" trust --yes
-  mise -C "$REPO_ROOT" -E "$profile" bootstrap --only "$(join_csv "${parts[@]}")" --yes "${extra[@]}"
+  mise -C "$REPO_ROOT" -E "$profile" bootstrap --only "$(join_csv "${parts[@]}")" "${extra[@]}"
 }
 
 unapply() {
