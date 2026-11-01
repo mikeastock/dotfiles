@@ -84,6 +84,23 @@ bootstrap() {
   mise -C "$REPO_ROOT" -E "$profile" bootstrap --only "$(join_csv "${parts[@]}")" "${extra[@]}"
 }
 
+# Pi writes trust.json itself when you answer /trust, so merge one entry instead of
+# copying the file. Trusting the parent covers every T3 Code worktree.
+trust_pi_worktrees() {
+  local trust_file="${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}/trust.json"
+  local worktrees="$HOME/.t3/worktrees"
+
+  if ! command -v jq >/dev/null 2>&1; then
+    echo "! jq not found; skipping Pi trust for $worktrees" >&2
+    return
+  fi
+
+  mkdir -p "$(dirname "$trust_file")"
+  [[ -s $trust_file ]] || echo '{}' >"$trust_file"
+  jq --arg path "$worktrees" '. + {($path): true}' "$trust_file" >"$trust_file.tmp"
+  mv "$trust_file.tmp" "$trust_file"
+}
+
 unapply() {
   mise -C "$REPO_ROOT" trust --yes
   mise -C "$REPO_ROOT" -E home dot unapply --yes
@@ -127,19 +144,23 @@ case "$COMMAND" in
   auto)
     if is_omarchy; then
       bootstrap omarchy
+      trust_pi_worktrees
       echo "✓ Omarchy dotfiles installed"
     else
       bootstrap home
+      trust_pi_worktrees
       echo "✓ Home dotfiles installed"
     fi
     ;;
   home)
     bootstrap home
+    trust_pi_worktrees
     echo "✓ Home dotfiles installed"
     ;;
   omarchy)
     require_omarchy
     bootstrap omarchy
+    trust_pi_worktrees
     echo "✓ Omarchy dotfiles installed"
     ;;
   clean)
