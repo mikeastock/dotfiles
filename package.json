@@ -9,7 +9,7 @@
     "amp:plugin-check": "pnpm amp:plugin-types && tsc --noEmit --pretty false"
   },
   "devDependencies": {
-    "@earendil-works/pi-ai": "^1.1.0",
+    "@earendil-works/pi-ai": "^1.3.0",
     "@earendil-works/pi-coding-agent": "^1.1.0",
     "@earendil-works/pi-tui": "^1.1.0",
     "@types/node": "^26.6.5",
