@@ -174,7 +174,7 @@ Verify text generation with `pi -p --model meta/muse-wonder-1.0 "Reply exactly: 
 - `simplify` — code and comment simplification skill vendored from `bholmesdev/skills`, extended to cut over-engineering and needless defensiveness (explicit invocation only)
 - `unslop` — AI-writing cleanup and human-voice editing skill vendored from `cursor/plugins` commit `99559f2` (explicit invocation only)
 - `zmx` — guidance for managing persistent background terminal work
-- `t3-cli` — drive T3 Code with the official `t3` CLI: start, message, and read threads, pairing and auth, the background service, and updates; points to the server's MCP tools for what the CLI lacks
+- `t3-cli` — drive T3 Code with the official `t3` CLI: start, message, and read threads, pairing and auth, the background service, and updates; points to the server's MCP tools for what the CLI lacks (explicit invocation only)
 - `skill-doctor` — grade installed skills from real local sessions, then draft skill edits and a report; adapted from `warpdotdev/common-skills` with the collector rewritten on a bundled Letta trajectory pipeline (each run builds its own throwaway data root: `scripts/ingest.sh` pnpm-installs `@letta-ai/trajectory` with a bundled grok-build patch and normalizes recent sessions from every local agent into it) (explicit invocation only)
 - `tmux` — remote control tmux sessions through the active server, with an agent-neutral fallback socket when no server is running
 - `buildr-artifacts` — publish browser-viewable Buildr artifacts as static S3-hosted HTML/assets or stateful Vite apps served from Codexbox with `bld.run` URLs
