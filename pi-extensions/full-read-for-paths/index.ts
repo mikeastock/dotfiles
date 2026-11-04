@@ -42,11 +42,7 @@ export default function (pi: ExtensionAPI) {
 		const input = event.input as Partial<ReadInput>;
 		if (typeof input.path !== "string") return undefined;
 
-		const changed = normalizeReadInputForFullReadPaths(input as ReadInput, ctx.cwd);
-		if (changed && ctx.hasUI) {
-			ctx.ui.notify(`Upgraded partial read to full read: ${input.path}`, "info");
-		}
-
+		normalizeReadInputForFullReadPaths(input as ReadInput, ctx.cwd);
 		return undefined;
 	});
 }
