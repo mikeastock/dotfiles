@@ -7,13 +7,11 @@
   "doubleEscapeAction": "tree",
   "enabledModels": [
     "openai/gpt-6-astra",
-    "openrouter/meta/muse-spark-1.3",
     "google/gemini-4-argon",
     "google/gemini-3.8-flash",
     "anthropic/claude-opus-5-5",
     "anthropic-fast/claude-opus-5-5",
     "xai/grok-4.7",
-    "wafer/GLM-5.3",
     "openai/gpt-6.1-sol",
     "meta/muse-wonder-1.0"
   ],
