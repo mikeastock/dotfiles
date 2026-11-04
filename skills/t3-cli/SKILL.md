@@ -1,6 +1,7 @@
 ---
 name: t3-cli
 description: "Inspect or manage T3 Code with the t3 CLI: start, message, and read threads; projects; pairing and auth; the background service, updates, and remote access. Use for t3 commands and T3 Code configuration on this host."
+agents: [amp, claude, codex, pi]
 metadata:
   user-invocable-only: "true"
 ---
